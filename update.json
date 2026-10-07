@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.4",
-    "changelog":  "- Perbaikan updater: kini memakai fetch() seperti RE-Faster\r\n- Perbaikan kedipan hitam di tab Curve",
+    "latest_version":  "1.8.5",
+    "changelog":  "- Perbaikan updater: kini memakai fetch() seperti RE-Faster\r\n- Perbaikan kedipan hitam di tab Curve\r\n- Upd FItur-Fitur",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",

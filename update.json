@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.6",
+    "latest_version":  "1.8.7",
     "changelog":  "- Perbaikan updater: kini memakai fetch() seperti RE-Faster\r\n- Perbaikan kedipan hitam di tab Curve\r\n- Upd FItur-Fitur\r\n- Fix Bug",
     "files":  [
                   {

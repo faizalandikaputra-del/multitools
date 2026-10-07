@@ -1,0 +1,254 @@
+/* ==========================================================
+   Multi Tool - premium-ornaments.css
+   Third additive pass, loaded AFTER css/fluid-polish.css.
+   Decorative-only: adds ornaments and surface treatments, does
+   not remove or restructure anything in style.css/fluid-polish.css.
+
+   AESTHETIC DIRECTION (v2 - "clean elegant" pass)
+   ------------------------------------------------
+   Replaces the earlier HUD/cyberpunk pass (corner brackets, dot-grid
+   texture) with a quieter, After-Effects-native/Apple-dark-mode feel:
+   soft ambient glow, thin hairline dividers, restrained pulsing status
+   dots, real frosted glass on floating + card surfaces, and a single
+   calm gradient-stroke "signature" trace instead of a HUD frame. Every
+   rule below is additive and reversible - delete this file and the
+   panel is back to the plain style.css/fluid-polish.css look.
+
+   Two CEF-specific constraints shaped every choice below (both already
+   documented elsewhere in this project - see README.txt "AE 2021
+   COMPATIBILITY FIX" and neucurve/nc-glow.js's own note):
+     1. `filter: drop-shadow()` does not render on SVG <path> content
+        inside After Effects' embedded Chromium. Every "icon glow"
+        below uses box-shadow (a shadow of the icon's own rectangular
+        box) instead - never drop-shadow.
+     2. `inset` shorthand is unsupported on AE 2021 (Chromium 74), so
+        every full-cover pseudo-element below spells out
+        top/right/bottom/left instead of `inset: 0`.
+   A third constraint is new to this pass: AE 2021's Chromium 74 also
+   predates `backdrop-filter` and `color-mix()`. Every frosted-glass
+   rule below is wrapped in @supports so that host just keeps
+   style.css's plain opaque surface - nothing breaks, it simply
+   doesn't get the extra polish.
+   ========================================================== */
+
+:root {
+  --ornament-glow: rgba(var(--accent-rgb), 0.45);
+  /* Frosted-glass tokens. Fallback (pre-color-mix) surface below is a fixed dark tint per the
+     design spec; the @supports color-mix() block further down upgrades this to a live tint of
+     the CURRENT --surface, so glass cards still re-tint together with everything else when the
+     user changes Settings > Background color instead of staying pinned to one hardcoded hue. */
+  --glass-surface: rgba(32, 32, 32, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 16px;
+  --ornament-radius: 0.7rem;   /* ~11px - "10-12px" card/button radius from the design spec */
+}
+:root[data-theme="light"] {
+  --glass-surface: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- 1. Ambient background soft glow -----------------------------------------------
+   Two very soft, blurred color pools on .app itself (not .main), so every tab gets the same
+   quiet warmth - including tabs with no custom background image/GIF set (.bg-layer/
+   .bg-motion-layer stay opacity:0 until the user picks one - see css/style.css). .app already
+   has `position: relative` (style.css) and no pre-existing ::before/::after, so this is free.
+   `position: absolute` -> excluded from .app's flex layout (never a 3rd flex item beside
+   .sidebar/.main), z-index:0 -> sits behind .sidebar (z-index 30) and .main (z-index 1), and
+   pointer-events:none -> never intercepts clicks/drags/hover.
+   Kept deliberately faint (opacity 0.08, 60px blur - matching the design spec exactly) so it
+   reads as depth, not decoration: no hard edges, no visible "shape" to notice consciously. */
+.app::before {
+  content: "";
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;   /* not `inset: 0` - see header note */
+  z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 45% at 8% 6%, rgba(var(--accent-rgb), 1), transparent 70%),
+    radial-gradient(ellipse 55% 40% at 94% 96%, rgba(var(--accent-rgb), 1), transparent 70%);
+  filter: blur(60px);
+  opacity: 0.08;
+  will-change: opacity;
+  transform: translateZ(0);
+}
+
+/* ---------- 2. Subtle section dividers + status badges -------------------------------------
+   Ultra-thin hairline under every recurring "section title" pattern across tabs (Text
+   Animation groups, Power Boosters groups, Preset folders' group headings, category-bar
+   labels), plus a small soft-pulsing accent dot before each one - a calm "this section is
+   live" marker rather than a decoration. Deliberately reuses each element's own existing
+   layout (no markup changes) via ::before on the heading text itself. */
+.ta-title,
+.preset-group-heading,
+.cat-toolbar-name {
+  position: relative;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding-bottom: 0.4rem; margin-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="light"] .ta-title,
+:root[data-theme="light"] .preset-group-heading,
+:root[data-theme="light"] .cat-toolbar-name {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+.ta-title::before,
+.preset-group-heading::before,
+.cat-toolbar-name::before {
+  content: ""; flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 5px rgba(var(--accent-rgb), 0.8);
+  animation: ornamentPulse 2.6s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+/* .ta-title-icon already renders its own leading glyph - don't stack a second dot in front of it */
+.ta-title-icon::before { content: none; }
+
+/* Panel title keeps its own always-on "live" status dot (fixed green, not the theme accent,
+   so it reads as a status light rather than a re-themeable decoration - unchanged from the
+   previous pass other than a gentler pulse timing to match the rest of this file). */
+.panel-head h1 { position: relative; padding-left: 0.85rem; }
+.panel-head h1::before {
+  content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #2ecc71;
+  box-shadow: 0 0 6px rgba(46, 204, 113, 0.85);
+  animation: ornamentPulse 2.6s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+@keyframes ornamentPulse {
+  0%, 100% { opacity: 0.55; transform: translateY(-50%) scale(0.85); }
+  50%      { opacity: 1;    transform: translateY(-50%) scale(1); }
+}
+/* Non-absolutely-positioned dots (section titles) don't want the translateY(-50%) baked in */
+.ta-title::before, .preset-group-heading::before, .cat-toolbar-name::before {
+  animation-name: ornamentPulseInline;
+}
+@keyframes ornamentPulseInline {
+  0%, 100% { opacity: 0.55; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1); }
+}
+:root[data-reduce-motion="true"] .panel-head h1::before,
+:root[data-reduce-motion="true"] .ta-title::before,
+:root[data-reduce-motion="true"] .preset-group-heading::before,
+:root[data-reduce-motion="true"] .cat-toolbar-name::before {
+    animation: none; opacity: 0.9;
+  }
+
+/* ---------- 3. Frosted glassmorphism: top action bar + floating overlays + cards -----------
+   Guarded behind @supports so AE 2021's Chromium 74 (predates backdrop-filter) just keeps the
+   plain solid surface from style.css instead of an unblurred half-transparent panel.
+
+   3a. The transient floating overlays (Settings modal, right-click context menu) keep a
+       hardcoded translucent tint per the design spec - they don't participate in
+       Settings.applyCardSurfaces' live re-tint (that function only ever touches
+       --surface/--surface-hover/--surface-sunken/--curve-bg - see main.js), so a fixed tint
+       here can never fall out of sync with anything.
+       .panel-head (the "Easy Layer" title/hint card at the top of the panel) USED to sit in
+       this same hardcoded-tint group, which is why its background stayed pinned to a fixed
+       dark rgba() even after Settings > Background color re-tinted every other card, and even
+       though :root[data-theme="light"] only gave it a two-state light/dark swap, not the live
+       per-hex re-tint. It now uses the live --surface/--border tokens as its base (below) and
+       joins the 3b color-mix group for its translucent lens, so it re-tints in lockstep with
+       .tool/.beat-card/.snippet-card/.info instead of on its own fixed schedule. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .panel-head {
+    background: var(--surface);   /* live token - upgraded to a translucent tint in 3b when color-mix() is also supported */
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border);
+    border-radius: var(--ornament-radius);
+    padding: 0.7rem var(--space-4);
+    margin-left: -0.1rem; margin-right: -0.1rem;
+  }
+  .modal, .ctx-menu {
+    background: var(--glass-surface);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-color: var(--glass-border);
+  }
+
+  /* 3b. Persistent card surfaces (tool tiles, boxed cards, expression rows, and now the panel
+     head) DO participate in that live re-tint via var(--surface), so they only get real
+     frosted glass where BOTH backdrop-filter AND color-mix() are supported: color-mix() lets
+     the tint itself keep reading the live --surface value instead of a hardcoded color, so
+     re-tinting (Settings > Background color) still works exactly as before, just now through a
+     translucent lens instead of an opaque one. Nested inside the backdrop-filter @supports
+     above so a host needs both features before anything changes. Where only backdrop-filter is
+     supported (color-mix() missing), .panel-head simply keeps the opaque var(--surface) base
+     from 3a above - still live-tinted, just not translucent.
+     DELIBERATELY EXCLUDED: .code-editor, .preset-folder-header, .shortcut-tile. Each of those
+     is the masked "content" layer inside a .saber-wrap (saber-wrap--code / --folder / --tile -
+     see style.css's own comment above .saber-wrap). That masking trick only works because the
+     content keeps a fully OPAQUE background and paints over the wrapper's rotating conic-
+     gradient glow, leaving just a thin ring visible in the wrapper's 2px padding gap. Making
+     any of those three translucent let the glow bleed straight through the card's whole
+     interior instead of staying a thin edge trace - the bug this fix addresses. */
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .tool, .beat-card, .snippet-card, .info, .expr-item-code, .panel-head {
+      background: color-mix(in srgb, var(--surface) 78%, transparent);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+  }
+}
+
+/* ---------- 4. Rounded, smooth card corners (10-12px per the design spec) -------------------
+   style.css's --radius-m/--radius-l tokens (8px / ~10.4px) are shared by lots of small chips,
+   pills and round icon buttons (.btn, .cat-tab, .chip, .tab, toggle switches - all
+   intentionally pill/circle-shaped at 999px/50%, not "cards"), so rather than widen those
+   tokens globally this nudges just the boxed "card" surfaces named in the spec.
+   .code-editor / .preset-folder-header / .shortcut-tile are EXCLUDED here too, for a second,
+   related reason: their radius is deliberately calc()'d in style.css to nest exactly inside
+   their .saber-wrap parent's own radius minus its 2px padding (e.g. saber-wrap--folder is
+   `radius-s + 0.15rem + 2px`, its .preset-folder-header child is `radius-s + 0.15rem`).
+   Overriding just the inner radius here would throw off that nesting math and make the glow
+   ring sit unevenly thick at the corners. */
+.tool, .beat-card, .snippet-card, .info, .modal, .ctx-menu {
+  border-radius: var(--ornament-radius);
+}
+
+/* ---------- 5. Neon icon halo on hover/active -----------------------------------------------
+   box-shadow (a shadow of the icon's own box), NOT filter:drop-shadow - see header note. Kept
+   soft (6px spread, 0.45 alpha token) so it reads as a gentle backlight tint, not a glow ring. */
+.tab:hover svg, .tab.is-active svg,
+.icon-btn:hover svg, .social-btn:hover svg {
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--ornament-glow);
+  transition: box-shadow var(--dur-fast) ease;
+}
+
+/* ---------- 6. Refined signature border trace ------------------------------------------------
+   A single fine 1px gradient-stroke (the classic double-background padding-box/border-box
+   trick), used sparingly as the panel's one recurring "signature" accent instead of the earlier
+   HUD corner brackets - here just the focused code editor. Calm and static (no spin, no
+   scan-line) - the panel's existing rotating .saber-wrap conic-gradient ring (Shortcutz tiles,
+   toggles, preset folders) remains the primary animated "active" treatment; this is the quiet,
+   non-animated variant for a text-input surface where a spinning ring would distract while
+   typing. Layers on top of - not instead of - .code-editor's existing focus box-shadow glow
+   in style.css: different CSS property, so both apply with no conflict. */
+.code-editor { border: 1px solid transparent; }
+.code-editor:focus-within {
+  background-image:
+    linear-gradient(var(--surface-sunken), var(--surface-sunken)),
+    linear-gradient(135deg, rgba(var(--accent-rgb), 0.65), rgba(var(--accent-rgb), 0.3));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+/* Primary buttons keep their own accent gradient fill from style.css untouched - this only adds
+   a soft, brief accent glow on hover, echoing the same gradient-stroke language without
+   replacing the button's existing look. */
+.btn-primary:hover {
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.6), 0 0 14px rgba(var(--accent-rgb), 0.35), 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- 7. GPU hints for the new decorative + glass layers ------------------------------
+   Only on elements that gained a new always-on visual effect above (glow, blur, pulse) and had
+   no pre-existing `transform` declared elsewhere to clobber. */
+.app::before,
+.panel-head h1::before,
+.ta-title::before, .preset-group-heading::before, .cat-toolbar-name::before,
+.panel-head, .modal, .ctx-menu,
+.tool, .beat-card, .snippet-card, .info, .expr-item-code {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+:root[data-reduce-motion="true"] .app::before { opacity: 0.06; }

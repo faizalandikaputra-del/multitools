@@ -1,0 +1,37 @@
+/* Multi Tool - mt-gif-export.css : Tools > Export GIF (progress bar, small labels, working state).
+   Colors come from the theme variables only; animation uses transform + opacity (GPU friendly). */
+
+.gif-label {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--fs-label-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.gif-progress { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.gif-progress[hidden] { display: none; }
+
+.gif-progress-bar {
+  position: relative;
+  height: 0.3rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+.gif-progress-fill {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+.gif-progress-text { min-height: 1em; }
+
+/* While exporting: the folder icon is locked, the main button stays clickable (it turns into "Cancel"). */
+.split-btn.is-working .split-icon { opacity: 0.45; pointer-events: none; }
+.split-btn { transition: opacity var(--dur-fast) linear; }

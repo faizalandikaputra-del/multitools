@@ -1,0 +1,122 @@
+/* ==========================================================
+   Multi Tool - fluid-polish.css
+   Additive polish pass, loaded AFTER css/style.css. Every rule
+   here only ADDS to or fine-tunes the existing motion system
+   (--bounce/--smooth, .saber-wrap, panel-in/head-in, .tool's
+   glow layers, etc.) - nothing in style.css is removed or
+   replaced. See the comment on each section for exactly what
+   it touches and why it's safe to layer on top.
+   ========================================================== */
+
+:root {
+  /* A slightly harder-decelerating curve than --smooth, for short/high-frequency motion
+     (shimmer sweep, tab entrance) - "snaps to rest" instead of --smooth's gentler tail.
+     Additive: --bounce/--smooth are untouched and still used everywhere they were. */
+  --fluid: cubic-bezier(0.25, 1, 0.5, 1);
+  --shimmer-dur: 0.85s;
+}
+:root[data-reduce-motion="true"] { --shimmer-dur: 0s; }
+
+/* ---------- 1. Tab-switch entrance -----------------------------------------------------
+   style.css already fades+slides .panel/.panel-head in via the "is-entering" class (see
+   main.js showTab()) using @keyframes panel-in/head-in. Re-declaring those two keyframes
+   here (later in the cascade -> fully replaces the earlier definition, nothing else in
+   style.css references the old one) swaps the curve for --fluid and trims the travel
+   distance a hair for a snappier, more "60fps" settle, and layers in a barely-there scale
+   so it doesn't read as a flat slide. The is-entering toggle mechanism itself in main.js
+   needs no changes. */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(0.65rem) scale(0.992); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes head-in {
+  from { opacity: 0; transform: translateY(0.3rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.panel.is-entering,
+.ta-pane.is-entering { animation-duration: 0.38s; animation-timing-function: var(--fluid); }
+.panel-head.is-entering { animation-duration: 0.3s; animation-timing-function: var(--fluid); }
+
+/* ---------- 2. GPU compositing hints ---------------------------------------------------
+   backface-visibility:hidden + will-change promote these to their own compositor layer
+   ahead of time instead of only on hover, which matters most on CEP's older embedded CEF
+   builds (see README.txt "AE 2021 COMPATIBILITY FIX"). Deliberately NOT touching the
+   `transform` property itself here - several of these (.modal, .ctx-menu, .tool on
+   hover/active) already own their own transform values elsewhere in style.css, and a
+   blanket `transform: translateZ(0)` would silently clobber those instead of composing
+   with them. will-change/backface-visibility carry no such risk. */
+.saber-wrap::before, .saber-wrap::after,
+.tool, .shortcut-tile, .preset-item, .expr-item, .qce-res-tile, .snippet-card,
+.panel.is-entering, .panel-head.is-entering,
+.modal, .ctx-menu, .tab-indicator {
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* ---------- 3. Shimmer light-sweep on hover --------------------------------------------
+   A soft diagonal highlight that sweeps across a card on hover. Implemented as a SECOND
+   background-image (via background-position), not a new pseudo-element:
+     - .tool already reserves ::before (hover glow flash) and ::after (border + resting
+       glow, box-shadow only, no background) - the sweep rides on ::after's otherwise-empty
+       background instead of adding a 3rd/4th paint layer.
+     - .shortcut-tile / .preset-item / .expr-item / .qce-res-tile / .snippet-card have no
+       reserved pseudo-elements, so the sweep is set directly on the element as the
+       background-image LONGHAND. style.css sets their base color with the `background`
+       SHORTHAND (e.g. `background: var(--surface)`), which only defines background-color
+       at cascade time here - my background-image declaration (later in the cascade, same
+       specificity) wins for that one longhand while background-color is left completely
+       alone, so the card keeps its exact resting color.
+   Background paint is always clipped to the element's own border-box regardless of
+   `overflow`, so this can never bleed past rounded corners even where overflow:hidden
+   isn't set. A tile with a user-set custom background image (inline style, e.g. Shortcutz
+   "has-bg") simply keeps winning via inline-style specificity - shimmer quietly no-ops
+   there instead of fighting it. */
+.tool::after {
+  background-image: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+  background-size: 250% 100%;
+  background-position: 160% 0;
+  background-repeat: no-repeat;
+  transition: opacity var(--dur-fast) linear, background-position var(--shimmer-dur) var(--fluid);
+}
+.tool:hover::after { background-position: -60% 0; }
+
+.shortcut-tile, .preset-item, .expr-item, .qce-res-tile, .snippet-card {
+  background-image: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.10) 50%, transparent 65%);
+  background-size: 250% 100%;
+  background-position: 160% 0;
+  background-repeat: no-repeat;
+  transition: background-position var(--shimmer-dur) var(--fluid);
+}
+.shortcut-tile:hover, .preset-item:hover, .expr-item:hover, .qce-res-tile:hover, .snippet-card:hover {
+  background-position: -60% 0;
+}
+:root[data-reduce-motion="true"] .tool::after,
+:root[data-reduce-motion="true"] .shortcut-tile,
+:root[data-reduce-motion="true"] .preset-item,
+:root[data-reduce-motion="true"] .expr-item,
+:root[data-reduce-motion="true"] .qce-res-tile,
+:root[data-reduce-motion="true"] .snippet-card {
+    transition: none; background-position: 160% 0 !important;
+  }
+
+/* ---------- 4. Elastic tactile press ----------------------------------------------------
+   style.css already gives most interactive elements (.tool, .btn, .chip, .social-btn,
+   .qce-res-tile, .ctx-item...) a springy :active scale. Filling in the few card types that
+   only had a hover/box-shadow state, on the same --bounce curve so press feedback still
+   matches the rest of the panel. Lower specificity than .preset-item.is-pressing (the
+   long-press favorite affordance already in style.css), so that mechanism is untouched. */
+.preset-item:active, .expr-item:active, .snippet-card:active {
+  transform: scale(0.985);
+  transition: transform var(--dur-micro) var(--bounce);
+}
+
+/* ---------- 5. Neon focus halo ----------------------------------------------------------
+   Extends the same accent glow style.css already gives .text-input/.code-area/.code-editor
+   to the remaining native form controls that didn't have one yet. */
+select:focus-visible,
+input[type="range"]:focus-visible,
+input[type="number"]:focus-visible,
+input[type="color"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
+}

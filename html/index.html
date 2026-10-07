@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi Tool</title>
+  <!-- Interface style (Settings > Style): apply the saved choice BEFORE first paint so there is no flash of the wrong look.
+       Material You sets data-theme to its palette scheme (light or dark; js/mt-material.js). Logic + picker: js/mt-uitheme.js -->
+  <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
+  <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
+  <link rel="stylesheet" href="../css/splash.css?v=1">
+  <link rel="stylesheet" href="../css/style.css?v=12">
+  <!-- Additive UI polish pass (shimmer sweep, refined easing, GPU hints) - loaded after
+       style.css on purpose, see the file's own header comment for what it does and doesn't
+       touch. -->
+  <link rel="stylesheet" href="../css/fluid-polish.css?v=9">
+  <!-- Premium visual ornament pass (ambient mesh glow, hairline section dividers, status pulse
+       dots, glassmorphism, refined saber-style border trace) - loaded after fluid-polish.css
+       on purpose, see the file's own header comment for what it does and doesn't touch. -->
+  <link rel="stylesheet" href="../css/premium-ornaments.css?v=9">
+  <!-- Panel refinements pass (grouped capsule cards, range slider fill-trail + floating value
+       bubble, in-flight button pending/success/error states) - loaded after
+       premium-ornaments.css on purpose, see the file's own header comment for what it does and
+       doesn't touch. Companion script: js/panel-refinements.js (loaded at the end of body). -->
+  <link rel="stylesheet" href="../css/panel-refinements.css?v=9">
+  <!-- Ambient colour circles (random drift + slow blink). Must stay BEFORE glass-theme.css, which hides the old static .app::before pools. -->
+  <link rel="stylesheet" href="../css/ambient-orbs.css?v=10">
+  <!-- Tab motion: staggered card entrance + quick panel leave on tab switch (opacity/transform only).
+       Companion: showTab() in js/main.js. Must stay BEFORE glass-theme.css (which stays last). -->
+  <link rel="stylesheet" href="../css/tab-motion.css?v=9">
+  <!-- Cursor flicker fix: explicit I-beam + own compositor layer for text fields (no effects paused). Must stay BEFORE glass-theme.css. -->
+  <link rel="stylesheet" href="../css/cursor-fix.css?v=3">
+  <!-- FINAL pass: "Clean Dark Glassmorphism" design tokens + component overrides. Must stay the LAST
+       stylesheet - it remaps the legacy tokens (--bg/--surface/--border/--shadow-card/--radius-*)
+       and restyles cards, buttons, inputs, modal and sidebar. See the file's own header comment. -->
+  <link rel="stylesheet" href="../css/glass-theme.css?v=9">
+  <!-- v17: hover / press / focus polish for every tab (additive, loaded after glass-theme.css) -->
+  <link rel="stylesheet" href="../css/hover-polish.css?v=1">
+  <!-- Custom tooltip (name only, smooth pop) + smoother sidebar highlight. Companion: js/mt-tooltip.js -->
+  <link rel="stylesheet" href="../css/mt-tooltip.css?v=3">
+  <link rel="stylesheet" href="../css/panel-refresh.css?v=1">
+  <!-- Left navigation: auto-expands (names shown) after 5s of hovering, collapses smoothly on leave. Companion: js/sidebar-expand.js -->
+  <link rel="stylesheet" href="../css/sidebar-expand.css?v=1">
+  <!-- Left navigation: icon + name exactly centred in the highlight (symmetric glow). -->
+  <link rel="stylesheet" href="../css/sidebar-center.css?v=1">
+  <!-- Smooth themed dropdowns for every <select>, softer context menus / accordions. Companion: js/mt-select.js -->
+  <link rel="stylesheet" href="../css/mt-select.css?v=1">
+  <!-- Themed colour picker popover for every <input type="color"> (not the Custom Color wheel). Companion: js/mt-colorpicker.js -->
+  <link rel="stylesheet" href="../css/mt-colorpicker.css?v=1">
+  <!-- Smooth two-part stepper for every <input type="number">. Companion: js/mt-spinbox.js -->
+  <link rel="stylesheet" href="../css/mt-spinbox.css?v=1">
+  <link rel="stylesheet" href="../css/mt-gif-export.css?v=1">
+  <link rel="stylesheet" href="../css/mt-scrub.css?v=1">
+  <!-- Auto update banner + Settings > Updates (js/mt-updater.js) -->
+  <link rel="stylesheet" href="../css/mt-updater.css?v=1">
+  <!-- Settings > Style picker (Glass / Material You) -->
+  <link rel="stylesheet" href="../css/mt-uitheme.css?v=7">
+  <!-- Layout clean-up (anchor/flip grids, wrapping text). Keep after mt-uitheme and before material-theme. -->
+  <link rel="stylesheet" href="../css/mt-tidy.css?v=1">
+  <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
+  <link rel="stylesheet" href="../css/material-theme.css?v=4">
+  <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
+       Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
+  <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
+    try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }
+  </script>
+  <script src="../js/ae2021-compat.js?v=10"></script>
+</head>
+<body>
+  <div class="mt-splash" id="mt-splash" aria-hidden="true">
+    <div class="mts-stack">
+      <div class="mts-mark">
+        <svg viewBox="0 0 48 48"><rect class="mts-box" x="2" y="2" width="44" height="44" rx="12"/>
+          <path class="mts-curve" d="M13 35C25 35 23 13 35 13" pathLength="40"/>
+          <circle class="mts-dot a" cx="13" cy="35" r="2.8"/><circle class="mts-dot b" cx="35" cy="13" r="2.8"/></svg>
+      </div>
+      <div class="mts-title"><span style="--i:0">M</span><span style="--i:1">u</span><span style="--i:2">l</span><span style="--i:3">t</span><span style="--i:4">i</span><span class="sp" style="--i:5"></span><span style="--i:6">T</span><span style="--i:7">o</span><span style="--i:8">o</span><span style="--i:9">l</span></div>
+      <div class="mts-line"></div>
+      <div class="mts-author">author <b>zalfndk</b></div>
+    </div>
+  </div>
+  <script src="../js/splash.js?v=1"></script>
+  <div id="bg-layer" class="bg-layer" aria-hidden="true"></div>
+  <div id="bg-motion-layer" class="bg-motion-layer" aria-hidden="true">
+    <video id="bg-motion-video" class="bg-motion-media" muted loop autoplay playsinline></video>
+    <img id="bg-motion-img" class="bg-motion-media" alt="">
+  </div>
+
+  <div class="app">
+    <!-- Ambient colour circles behind the UI: drift to random positions + blink slowly.
+         Companion: css/ambient-orbs.css (blink) and js/ambient-orbs.js (random movement). -->
+    <div class="ambient-orbs" id="ambient-orbs" aria-hidden="true"><span class="ambient-orb"></span><span class="ambient-orb"></span><span class="ambient-orb"></span></div>
+    <!-- Left sidebar: circular tab buttons -->
+    <nav class="sidebar" aria-label="Tool categories">
+      <div class="tabs" role="tablist" aria-orientation="vertical">
+        <span class="tab-indicator" id="tab-indicator" aria-hidden="true"></span>
+        <button class="tab is-active" role="tab" aria-selected="true" data-tab="easy-layer" aria-label="Easy Layer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="color-palette" aria-label="Color Palette">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 9 9 3 3 0 0 0-3-3h-2a2 2 0 0 1-1.4-3.4A2 2 0 0 0 13 4a9 9 0 0 0-1-1Z"/>
+            <circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="9" cy="15" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="14" cy="16" r="1.1" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="expr-code" aria-label="Expression Code">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="presets" aria-label="Animation Presets">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2Z"/></svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="quick-comp-edit" aria-label="Quick Comp Edit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9.5 2h5"/></svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="anchor-align" aria-label="Anchor Point & Align">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/>
+            <circle cx="12" cy="12" r="2.8"/>
+            <path d="M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2"/>
+          </svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="tools" aria-label="Tools">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2Z"/>
+          </svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="textflex" aria-label="Animator Text">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h16v2M8 5v14M6 19h4M15 11v8M13 19h4M14 11h5"/></svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="shortcutz" aria-label="Shortcutz">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.16 6.6.62-5 4.53 1.5 6.6L12 16.9l-5.99 3.51 1.5-6.6-5-4.53 6.6-.62L12 2.5Z"/></svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="curve" aria-label="Curve">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 20C11 20 13 4 20 4"/>
+            <circle cx="4" cy="20" r="1.5" fill="currentColor" stroke="none"/>
+            <circle cx="20" cy="4" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="info" aria-label="Info / About">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
+        </button>
+      </div>
+
+      <button class="tab refresh-btn" id="refresh-btn" aria-label="Refresh Panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.5L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.5l1.7-2"/><path d="M20 20v-4.5h-4.5"/></svg>
+      </button>
+
+      <button class="tab settings-btn" id="settings-btn" aria-label="Settings" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </nav>
+
+    <!-- Right main area: content grid is rendered by main.js -->
+    <main class="main" id="main">
+      <header class="panel-head">
+        <h1 id="panel-title">Easy Layer</h1>
+        <p id="panel-hint"></p>
+      </header>
+      <section id="panel" class="panel" role="tabpanel" aria-live="polite"></section>
+
+      <!-- "Curve" tab: the full NeuCurve tool. It lives in its own persistent frame (loaded on first
+           open) so its CSS, scripts and global listeners can never clash with Multi Tool, and so it
+           keeps its state while you switch tabs. Files: ../neucurve/ -->
+      <section id="curve-pane" class="curve-pane" role="tabpanel" aria-label="Curve" aria-hidden="true">
+        <div class="curve-stage">
+          <iframe id="curve-frame" class="curve-frame" title="NeuCurve" data-src="../neucurve/index.html" allowtransparency="true" frameborder="0" style="background:transparent"></iframe>
+          <div class="curve-loading" aria-hidden="true"><span class="curve-spinner"></span></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Idle Screensaver clock: sits above the background layers, only visible in Idle Mode (body.is-idle).
+       Style this block freely in css/style.css > "Idle Screensaver". -->
+  <div id="idle-clock" class="idle-clock" aria-hidden="true">
+    <div class="idle-date" id="idle-date"></div>
+    <div class="idle-time" id="idle-time"></div>
+    <div class="idle-session" id="idle-session" aria-hidden="true"></div>
+    <div class="idle-message" id="idle-message-el" aria-hidden="true"></div>
+  </div>
+
+  <!-- Right-click context menu for tool squares -->
+  <div id="ctx-menu" class="ctx-menu" role="menu" aria-hidden="true">
+    <button class="ctx-item" role="menuitem" id="ctx-set">Set custom image</button>
+    <button class="ctx-item" role="menuitem" id="ctx-clear">Remove image</button>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+
+      <!-- Interface style. Glass = the original look (default). Logic: js/mt-uitheme.js -->
+      <div class="field field-column" id="ui-theme-field">
+        <span class="field-label">Style</span>
+        <div class="ui-theme-cards" role="radiogroup" aria-label="Interface style">
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="true" data-ui-theme-opt="glass"><i class="ui-theme-swatch ui-theme-swatch--glass" aria-hidden="true"></i><span>Glass</span></button>
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-ui-theme-opt="material"><i class="ui-theme-swatch ui-theme-swatch--material" aria-hidden="true"><b class="mu-pv-rail"></b><b class="mu-pv-card"></b><b class="mu-pv-btn"></b></i><span>Material You</span></button>
+        </div>
+        <p class="field-note">Material You builds a Pixel-style palette from Theme color: cards, buttons and accents are tones of it. Background color changes the canvas.</p>
+      </div>
+
+      <div class="field">
+        <label for="theme-color">Theme color</label>
+        <div class="field-actions">
+          <button class="btn btn-ghost" id="theme-reset">Default</button>
+          <input type="color" id="theme-color" value="#8b6cf7">
+        </div>
+      </div>
+
+      <!-- Material You only (hidden on Glass): palette swatches set Theme color; Light/Dark picks the scheme. Logic: js/mt-uitheme.js + js/mt-material.js -->
+      <div class="field field-column" id="mu-palette-field">
+        <span class="field-label">Palette</span>
+        <div class="mu-swatches" role="radiogroup" aria-label="Palette color"><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Purple" title="Purple" data-mu-seed="#8b6cf7" style="background:#8b6cf7"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Blue" title="Blue" data-mu-seed="#4285f4" style="background:#4285f4"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Teal" title="Teal" data-mu-seed="#00897b" style="background:#00897b"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Green" title="Green" data-mu-seed="#43a047" style="background:#43a047"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Yellow" title="Yellow" data-mu-seed="#f9ab00" style="background:#f9ab00"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Orange" title="Orange" data-mu-seed="#f4511e" style="background:#f4511e"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Pink" title="Pink" data-mu-seed="#d81b60" style="background:#d81b60"></button><button type="button" class="mu-swatch" role="radio" aria-checked="false" aria-label="Red" title="Red" data-mu-seed="#d93025" style="background:#d93025"></button></div>
+      </div>
+      <div class="field field-column" id="mu-mode-field">
+        <span class="field-label">Light / Dark</span>
+        <div class="ui-theme-cards" role="radiogroup" aria-label="Light or dark">
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="true" data-mu-mode="light"><span>Light</span></button>
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-mu-mode="dark"><span>Dark</span></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="bg-color">Background color</label>
+        <div class="field-actions">
+          <button class="btn btn-ghost" id="bg-reset" type="button">Default</button>
+          <input type="color" id="bg-color" value="#16161a">
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Background image</span>
+        <div class="field-actions">
+          <button class="btn" id="bg-image-set">Choose image</button>
+          <button class="btn btn-ghost" id="bg-image-clear">Remove</button>
+        </div>
+      </div>
+
+      <div class="field field-column">
+        <span class="field-label">Animated background (GIF / MP4 / WebM)</span>
+        <div class="field-actions">
+          <button class="btn" id="bg-motion-set">Choose file</button>
+          <button class="btn btn-ghost" id="bg-motion-clear">Remove</button>
+        </div>
+        <p class="field-note" id="bg-motion-note"></p>
+      </div>
+
+      <!-- Display: opens the background full-screen (UI hidden) with a floating editor for position, opacity
+           and zoom. The Background opacity slider now lives in that editor (#bg-editor, below). Logic:
+           Settings.initBgEditor() in js/main.js. -->
+      <div class="field field-column">
+        <span class="field-label">Display</span>
+        <div class="field-actions">
+          <button class="btn" id="bg-edit-open" type="button">Adjust background</button>
+        </div>
+        <p class="field-note">Shows your background full-screen so you can set its position, opacity and zoom. Drag the background to move it, scroll to zoom.</p>
+      </div>
+
+      <!-- Scale UI: zooms the whole interface (text, boxes, buttons). While the slider is held this window fades
+           out so the real UI behind it can be seen; it comes back on release. Logic: Settings.initUiScale() in
+           js/main.js (localStorage mtx.uiScale), CSS: ".app { zoom }" + body.is-scale-edit in css/style.css. -->
+      <div class="field field-column" id="ui-scale-field">
+        <span class="field-label">Scale UI</span>
+        <div class="bg-editor-row idle-scale-row ui-scale-row">
+          <label for="ui-scale">Size</label>
+          <input type="range" id="ui-scale" min="70" max="150" step="1" value="100" aria-label="Interface scale">
+          <output class="field-row-value" id="ui-scale-val" for="ui-scale">100%</output>
+        </div>
+        <div class="field-actions">
+          <button class="btn btn-ghost" id="ui-scale-reset" type="button">Reset to 100%</button>
+        </div>
+        <p class="field-note">Makes the whole interface (text, boxes, buttons) bigger or smaller. This window hides while you hold the slider so you can see the result &mdash; release to bring it back.</p>
+      </div>
+
+      <!-- Collapsible: hidden by default, expands smoothly (max-height transition driven by main.js) -->
+      <div class="field field-column field-accordion">
+        <button class="accordion-toggle" id="label-toggle" type="button" aria-expanded="false" aria-controls="label-collapse">
+          <span class="accordion-text">
+            <span class="field-label">Easy Layer Label</span>
+            <span class="accordion-action" id="label-toggle-text">Show Label Settings</span>
+          </span>
+          <svg class="accordion-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="collapse" id="label-collapse" role="region" aria-labelledby="label-toggle" aria-hidden="true">
+          <div class="collapse-inner">
+            <p class="field-note">Assign an AE Layer Label color to auto-apply whenever that tool creates a layer.</p>
+            <div class="label-assign-list" id="label-assign-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animations: master switch for all panel animations. Logic: Motion module in main.js (mtx.animations; "0" = off).
+           Independent of the Windows / macOS "Show animations" setting. -->
+      <div class="field field-column">
+        <label class="switch-row" for="anim-enabled">
+          <span>Enable Animations</span>
+          <input type="checkbox" id="anim-enabled" checked>
+          <span class="switch-track"></span>
+        </label>
+        <p class="field-note">Turns all panel animations and transitions on or off. This ignores your operating system's animation setting.</p>
+      </div>
+
+      <!-- Idle Screensaver: after the timeout the UI hides and a clock shows over the (still playing) background.
+           Logic: Idle module in main.js. Stored in localStorage: mtx.idleEnabled / mtx.idleTimeout. -->
+      <div class="field field-column">
+        <label class="switch-row" for="idle-enabled">
+          <span>Enable Idle Screensaver</span>
+          <input type="checkbox" id="idle-enabled">
+          <span class="switch-track"></span>
+        </label>
+        <div class="field-row idle-timeout-row is-disabled" id="idle-timeout-row">
+          <label class="field-label" for="idle-timeout">Idle Timeout (seconds)</label>
+          <input class="idle-num" type="number" id="idle-timeout" min="5" max="3600" step="1" value="60" inputmode="numeric" disabled>
+        </div>
+        <div class="field-row idle-message-row" id="idle-message-row">
+          <label class="field-label" for="idle-message">Idle Custom Message</label>
+          <input class="idle-message-input" type="text" id="idle-message" maxlength="140" placeholder="e.g. Rendering... grab a coffee">
+        </div>
+        <div class="field-row idle-position-row" id="idle-position-row">
+          <label class="field-label" for="idle-position">Clock Position</label>
+          <select class="select" id="idle-position">
+            <option value="top-left">Top Left</option>
+            <option value="top-right">Top Right</option>
+            <option value="bottom-left">Bottom Left</option>
+            <option value="bottom-right">Bottom Right</option>
+            <option value="center">Center</option>
+          </select>
+        </div>
+        <div class="bg-editor-row idle-scale-row" id="idle-scale-row">
+          <label for="idle-scale">Clock Scale</label>
+          <input type="range" id="idle-scale" min="60" max="160" step="1" value="100" aria-label="Idle clock text scale">
+          <output class="field-row-value" id="idle-scale-val" for="idle-scale">100%</output>
+        </div>
+        <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Move the mouse to bring it back.</p>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Tool images</span>
+        <div class="field-actions">
+          <button class="btn btn-ghost" id="reset-tool-images">Clear all tool images</button>
+        </div>
+      </div>
+
+      <!-- Expression Code snippets are also mirrored to ~/Documents/Multitool_CEP_Data/saved_expressions.json
+           (see EXPR_FILE_* in host.jsx / ExprFile in main.js) so they survive an uninstall/update.
+           These two buttons let the user manage that file directly. -->
+      <div class="field field-column">
+        <span class="field-label">Expression Backups</span>
+        <div class="field-actions">
+          <button class="btn" id="expr-backup-export">Backup Expressions</button>
+          <button class="btn btn-ghost" id="expr-backup-import">Import Expressions</button>
+        </div>
+        <p class="field-note">Custom expression snippets are saved automatically to a JSON file in your Documents folder, so they survive reinstalling or updating the extension. Use these to also export/import that file manually.</p>
+      </div>
+
+      <!-- Updates: checks GitHub Releases for a newer version and installs it in place. Logic: js/mt-updater.js -->
+      <div class="field field-column mt-update-field" id="mt-update-field">
+        <span class="field-label">Updates</span>
+        <p class="field-note" id="mt-update-status"></p>
+        <button class="btn btn-primary mt-update-install" id="mt-update-install" hidden>Update Now</button>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="settings-reset">Reset everything</button>
+        <button class="btn" id="mt-update-check">Check update</button>
+        <button class="btn btn-primary" id="settings-close">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Background editor ("Display"): floating panel shown while body.is-bg-edit is set (the rest of the UI
+       is faded out so the background is fully visible). Opacity slider keeps its old ids so the existing
+       opacity code in js/main.js drives it unchanged. -->
+  <div id="bg-editor" class="bg-editor" role="dialog" aria-label="Background display" aria-hidden="true">
+    <div class="bg-editor-head">
+      <strong>Display</strong>
+      <span class="bg-editor-hint">Drag to move &middot; scroll to zoom</span>
+    </div>
+    <div class="bg-editor-row">
+      <label for="bg-motion-opacity">Opacity</label>
+      <input type="range" id="bg-motion-opacity" min="0" max="100" value="100" aria-label="Background opacity">
+      <output class="field-row-value" id="bg-motion-opacity-val" for="bg-motion-opacity">100%</output>
+    </div>
+    <div class="bg-editor-row">
+      <label for="bg-zoom">Zoom</label>
+      <input type="range" id="bg-zoom" min="100" max="300" step="1" value="100" aria-label="Background zoom">
+      <output class="field-row-value" id="bg-zoom-val" for="bg-zoom">100%</output>
+    </div>
+    <div class="bg-editor-row">
+      <label for="bg-pos-x">Position X</label>
+      <input type="range" id="bg-pos-x" min="0" max="100" step="1" value="50" aria-label="Background horizontal position">
+      <output class="field-row-value" id="bg-pos-x-val" for="bg-pos-x">50%</output>
+    </div>
+    <div class="bg-editor-row">
+      <label for="bg-pos-y">Position Y</label>
+      <input type="range" id="bg-pos-y" min="0" max="100" step="1" value="50" aria-label="Background vertical position">
+      <output class="field-row-value" id="bg-pos-y-val" for="bg-pos-y">50%</output>
+    </div>
+    <div class="bg-editor-actions">
+      <button class="btn btn-ghost" id="bg-view-reset" type="button">Reset</button>
+      <button class="btn btn-primary" id="bg-edit-done" type="button">Done</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Update banner (shown by js/mt-updater.js when a newer GitHub release exists) -->
+  <div id="mt-update" class="mt-update" role="status" aria-live="polite" aria-hidden="true">
+    <div class="mt-update-head">
+      <span class="mt-update-dot"></span>
+      <div class="mt-update-text">
+        <div class="mt-update-title" id="mt-update-title">Update available</div>
+        <div class="mt-update-sub" id="mt-update-sub"></div>
+      </div>
+    </div>
+    <div class="mt-update-actions">
+      <button class="btn btn-primary" id="mt-update-now">Update Now</button>
+      <button class="btn btn-ghost" id="mt-update-later">Later</button>
+      <button class="btn btn-ghost mt-update-more" id="mt-update-more">What&rsquo;s new</button>
+    </div>
+    <pre class="mt-update-notes" id="mt-update-notes"></pre>
+    <div class="mt-update-track"><i class="mt-update-bar" id="mt-update-bar"></i></div>
+  </div>
+
+  <input type="file" id="tool-file" accept="image/*" hidden>
+  <input type="file" id="bg-file" accept="image/*" hidden>
+  <input type="file" id="bg-motion-file" accept=".gif,.mp4,.webm,image/gif,video/mp4,video/webm" hidden>
+
+  <script src="../js/CSInterface.js?v=9"></script>
+  <!-- Wheel over the left tab bar switches tabs. Loaded BEFORE main.js / smooth-scroll.js on purpose. -->
+  <script src="../js/tab-wheel.js?v=1"></script>
+  <script src="../js/mt-tooltip.js?v=3"></script>
+  <script src="../js/mt-select.js?v=1"></script>
+  <script src="../js/mt-colorpicker.js?v=1"></script>
+  <script src="../js/mt-spinbox.js?v=1"></script>
+  <!-- GIF encoder for Tools > Export GIF (needs Node.js; must load before main.js) -->
+  <script src="../js/mt-gif.js?v=1"></script>
+  <!-- Drag a label / idle number field left-right to change the value (after mt-spinbox.js) -->
+  <script src="../js/mt-scrub.js?v=1"></script>
+  <!-- Interface style switch (Glass / Material You). Needs main.js (window.mtSyncTheme) -->
+  <script src="../js/mt-material.js?v=3"></script>
+  <script src="../js/mt-uitheme.js?v=10"></script>
+  <script src="../js/sidebar-expand.js?v=1"></script>
+  <script src="../js/main.js?v=18"></script>
+  <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
+       wheel event this script already handled, so load order between the two does not matter. -->
+  <script src="../js/smooth-scroll.js?v=9"></script>
+  <script src="../js/ambient-orbs.js?v=9"></script>
+  <script src="../js/panel-refresh.js?v=1"></script>
+  <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
+  <script src="../js/mt-updater.js?v=16"></script>
+  <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
+       file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
+       by the time any tab (currently just Tools) calls groupifyTaSections(). -->
+  <script src="../js/panel-refinements.js?v=9"></script>
+</body>
+</html>

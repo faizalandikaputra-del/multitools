@@ -1,0 +1,75 @@
+/* NeuCurve - continuous grow -> hold -> shrink glowing-border animation for the primary "APPLY" button, in the
+   same spirit as the "Auto Parent" toggle's neon ring in MultiTool (see style.css .saber-wrap) but drawn as an
+   animated SVG stroke instead of a rotating conic-gradient, so the light visibly TRAVELS around the button's
+   rounded outline: it starts as a small point on the bottom border, grows all the way around into a fully
+   closed glowing ring, holds that ring briefly, then shrinks back down to the exact same point and loops.
+
+   CEF NOTE (important): two separate CEF limitations shaped this file, keep both in mind before "simplifying":
+     1. filter: drop-shadow() on an SVG <path> is not rendered inside After Effects' embedded Chromium - see
+        nc-glow.js for the exact same limitation on the curve itself. So the "neon" look here is built from a
+        stacked, low-opacity soft duplicate instead of a drop-shadow filter. The one filter used -
+        filter: blur() on that soft duplicate - IS supported in CEF and is the same technique MultiTool's own
+        .saber-wrap::after already relies on.
+     2. The actual grow/hold/shrink dash animation is intentionally NOT done with CSS @keyframes on
+        stroke-dasharray here - see nc-apply-glow.js. Animating that property via CSS (especially with
+        calc(var(...)) inside the value list) is unreliable on older/embedded Chromium and can silently render
+        nothing. nc-apply-glow.js drives stroke-dasharray/-dashoffset directly every frame via
+        requestAnimationFrame instead, which works on any CEF version. Do not move that logic back into a
+        CSS @keyframes block.
+
+   Markup is injected by nc-apply-glow.js as an <svg> that is the FIRST CHILD of .apply-btn itself, sized to
+   EXACTLY match the button's own box (no bleed/inset - see nc-apply-glow.js), so the traced border sits right
+   on the button's real 8px-radius edge instead of floating slightly outside it.
+   To turn this off entirely: delete the <script src="./nc-apply-glow.js"> line in index.html. */
+
+.apply-btn {
+  --nc-glow-white: #ffffff;
+}
+
+.nc-apply-glow-svg {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  overflow: visible;              /* the soft blurred layer may still bleed a couple px past the edge */
+  pointer-events: none;           /* clicks always reach the real <button> underneath */
+  z-index: -1;                    /* above the button's own background, below its "APPLY" text */
+}
+
+.nc-apply-glow-trace,
+.nc-apply-glow-trace-soft {
+  fill: none;
+  stroke: var(--nc-glow-white);
+  stroke-linecap: round;          /* rounded ends - shows a soft dot at the point where the trace is closed */
+  transform: translateZ(0);       /* own compositor layer - keeps the sweep at a fluid 60fps */
+}
+
+/* stroke-dasharray / stroke-dashoffset on both of these are set frame-by-frame from nc-apply-glow.js, not
+   from CSS (see the CEF NOTE above) - this block only carries the static look of each layer. */
+.nc-apply-glow-trace {
+  stroke-width: 1.6;
+  opacity: 0.95;
+}
+.nc-apply-glow-trace-soft {
+  stroke-width: 5;
+  filter: blur(2.5px);
+  opacity: 0.35;
+}
+
+/* Hover/click: brighten in place, WITHOUT restarting the loop. Gating the animation itself on hover (adding/
+   removing it) would restart the sweep from 0 every time - the exact "resets/glitches on click" bug MultiTool
+   already hit and documented on .saber-wrap. Boosting brightness costs nothing and never desyncs. */
+.apply-btn:hover .nc-apply-glow-svg,
+.apply-btn:active .nc-apply-glow-svg {
+  filter: brightness(1.3);
+}
+
+/* The actual reduced-motion handling (holding a static, fully-closed ring instead of looping) happens in
+   nc-apply-glow.js via the OPT-IN "data-reduce-motion" attribute (same policy as the panel's own
+   css/style.css) - NOT the OS "prefers-reduced-motion" setting, which used to silently freeze this glow
+   inside After Effects' embedded Chromium whenever the user had Windows "Show animations" off, even though
+   they never asked for anything here to stop moving. This block is just a defensive fallback for the same
+   opt-in attribute, scoped to this document. */
+html[data-reduce-motion="true"] .nc-apply-glow-trace,
+html[data-reduce-motion="true"] .nc-apply-glow-trace-soft {
+  transition: none;
+}

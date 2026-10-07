@@ -1,0 +1,51 @@
+/* mt-updater.css - update banner ("Update Now") + Settings > Updates field (companion: js/mt-updater.js).
+   Chromium-74 safe: no flex gap, no inset, no clamp(). Animates transform/opacity only. */
+.mt-update {
+  position: fixed; top: 8px; left: 8px; right: 8px; z-index: 55;
+  box-sizing: border-box; padding: 10px 12px; overflow: hidden;
+  /* opaque on purpose: the glass theme makes --surface see-through, which let the UI show through the banner */
+  background-color: #1c1c21;
+  background-image: linear-gradient(rgba(var(--accent-rgb, 139, 108, 247), 0.10), rgba(var(--accent-rgb, 139, 108, 247), 0.10));
+  color: var(--text, #f0f0f0);
+  border: 1px solid var(--border, #333); border-radius: var(--radius-m, 8px);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb, 139, 108, 247), 0.25), 0 10px 28px rgba(0, 0, 0, 0.4);
+  transform: translateY(-140%); opacity: 0; pointer-events: none;
+  transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+}
+.mt-update.is-show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+body.is-idle .mt-update { display: none; }
+
+.mt-update-head { display: flex; align-items: center; }
+.mt-update-dot {
+  flex: 0 0 auto; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%;
+  background: var(--accent, #8b6cf7); box-shadow: 0 0 10px rgba(var(--accent-rgb, 139, 108, 247), 0.8);
+  animation: mt-update-pulse 1.8s ease-in-out infinite;
+}
+.mt-update.is-busy .mt-update-dot { animation-duration: 0.8s; }
+@keyframes mt-update-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.55; } }
+.mt-update-text { flex: 1 1 auto; min-width: 0; }
+.mt-update-title { font-size: var(--fs-value, 0.75rem); font-weight: 600; line-height: 1.25; }
+.mt-update-sub { margin-top: 1px; font-size: 0.66rem; color: var(--text-dim, #a0a0a0); line-height: 1.3; font-variant-numeric: tabular-nums; }
+
+.mt-update-actions { display: flex; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.mt-update-actions .btn { margin: 0 6px 0 0; }
+.mt-update-actions .mt-update-more { margin-left: auto; margin-right: 0; }
+.mt-update [hidden], .mt-update-field [hidden] { display: none !important; }
+
+.mt-update-notes {
+  max-height: 0; opacity: 0; overflow: hidden; margin: 0; white-space: pre-wrap;
+  font-family: var(--font, system-ui, sans-serif); font-size: 0.66rem; line-height: 1.45; color: var(--text-dim, #a0a0a0);
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+}
+.mt-update.is-open .mt-update-notes { max-height: 150px; opacity: 1; margin-top: 8px; overflow-y: auto; }
+
+.mt-update-track { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+.mt-update-bar {
+  display: block; width: 100%; height: 100%; background: var(--accent, #8b6cf7);
+  transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.25s ease;
+}
+
+.mt-update-field .mt-update-install { align-self: flex-start; }
+/* Settings footer now holds three buttons (Reset everything / Check update / Done): allow wrapping on a narrow panel */
+#settings-modal .modal-footer { flex-wrap: wrap; align-items: center; gap: 4px; }
+#settings-modal .modal-footer .btn { padding-left: 0.55rem; padding-right: 0.55rem; white-space: nowrap; }

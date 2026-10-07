@@ -1,0 +1,2 @@
+- Perbaikan updater: kini memakai fetch() seperti RE-Faster
+- Perbaikan kedipan hitam di tab Curve

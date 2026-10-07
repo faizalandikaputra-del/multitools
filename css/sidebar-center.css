@@ -1,0 +1,39 @@
+/* sidebar-center.css - left navigation: icon + name sit exactly in the vertical centre of the highlight.
+   Why it looked "pushed down": (1) the highlight's glow was thrown 4px downward (0 4px 14px), so the lit area
+   extended below the icon/name; (2) the icon and the name had no shared centre line (svg inline baseline +
+   "normal" line-height of the label). Now both are block boxes centred by flexbox and the glow is symmetric.
+   Loaded after sidebar-expand.css. Delete this file + its <link> to undo. */
+
+.sidebar .tab {
+  flex: 0 0 auto;                      /* never squeezed: the list scrolls instead (a squeezed tab left the highlight sticking out below it) */
+  min-height: var(--tab-size);
+  height: var(--tab-size);
+  padding: 0;
+  line-height: 1;
+  align-items: center;                 /* icon + name share one centre line */
+}
+.sidebar .tab > svg {
+  display: block;                      /* no inline-baseline gap under the icon */
+  margin-top: 0; margin-bottom: 0;
+}
+.sidebar .tab-label {
+  display: block;
+  align-self: center;
+  line-height: 1.2;
+  padding-top: 0; padding-bottom: 0;
+  margin-top: 0; margin-bottom: 0;
+  -webkit-transform: translateX(-6px) translateZ(0);   /* own layer: no half-pixel text offset */
+}
+.sidebar.is-expanded .tab-label { -webkit-transform: translateX(0) translateZ(0); }
+
+/* highlight: glow spreads evenly around it instead of dropping below it */
+.tab-indicator {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 0 14px var(--accent-glow);
+}
+
+/* Fix: icon + name vanished while a tab was pressed. :active / .is-dragging put a transform on .tab, which makes it a
+   stacking context at z-index:auto, so its icon/label (z-index 2) got trapped BELOW the sliding highlight (z-index 1).
+   Lifting the tab itself above the highlight keeps them visible in every state. */
+.sidebar .tab { z-index: 2; }
+/* the tab now sits above the highlight, so its own hover/press veil must not tint the lit (active) tab */
+.sidebar .tab.is-active::before, .sidebar .tab.is-active:hover::before { opacity: 0; }

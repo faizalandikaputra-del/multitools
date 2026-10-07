@@ -1,0 +1,338 @@
+/* ==========================================================
+   Multi Tool - material-theme.css                      "Material You" (Google Pixel style)
+   Active ONLY under <html data-ui-theme="material"> (Settings > Style; js/mt-uitheme.js). Loaded LAST.
+
+   The look of a Pixel phone's Material You theme: ONE seed colour (Settings > Theme color) is expanded into a tonal
+   palette, and every surface / accent is a tone of it - flat tonal cards (no raised shadows), big rounded corners,
+   a pill-shaped active indicator on the navigation rail, filled-tonal buttons, a filled primary action colour.
+   Light AND dark. Settings > Background color changes the canvas colour; cards and text follow it.
+   Exception: the colour settings (colour swatch inputs + colour picker popup) deliberately keep the GLASS look (section 10).
+
+   WHERE THE COLOURS COME FROM: js/mt-material.js computes the palette and writes --md-* variables on <html>
+   (inline). The values in section 0 are only the first-paint fallback (default purple seed, light) - they are
+   overridden by those inline values as soon as the script runs. This file never hard-codes a colour elsewhere.
+
+   HOW IT WORKS: re-declare the shared tokens glass-theme.css already remaps everything to, then give the few
+   hard-coded components a Material treatment. Selectors carry [data-theme] so they out-rank both glass-theme.css
+   and its :root[data-theme="light"] block regardless of order. Delete this file (and its <link>) and Glass is untouched.
+   CEF / AE 2021 (Chromium 74) SAFE: no inset shorthand, no flex gap, no aspect-ratio, no color-mix.
+   ========================================================== */
+
+/* ---------- 0. Fallback palette (replaced inline by js/mt-material.js) ---------- */
+:root[data-ui-theme="material"] {
+  --md-primary: #6843cb;               --md-on-primary: #ffffff;
+  --md-primary-container: #e2dfff;     --md-on-primary-container: #24005b;
+  --md-secondary: #5f5a7d;
+  --md-secondary-container: #e2dfff;   --md-on-secondary-container: #1d1734;
+  --md-tertiary: #824e68;
+  --md-tertiary-container: #ffd8e9;    --md-on-tertiary-container: #370923;
+  --md-error: #b3261e;                 --md-error-container: #f9dedc;   --md-on-error-container: #410e0b;
+  --md-bg: #f9f9ff;
+  --md-surface-lowest: #ffffff;        --md-surface-low: #f3f2fe;       --md-surface: #eeedf9;
+  --md-surface-high: #e8e7f3;          --md-surface-highest: #e2e1ed;
+  --md-on-surface: #1b1b23;            --md-on-surface-variant: #474557;
+  --md-outline: #777589;               --md-outline-variant: #c6c4da;
+  --md-scrim: rgba(30, 28, 40, 0.32);
+  --md-primary-rgb: 104, 67, 203;      --md-bg-rgb: 249, 249, 255;      --md-on-surface-rgb: 27, 27, 35;
+  --md-secondary-container-rgb: 226, 223, 255;  --md-primary-container-rgb: 226, 223, 255;
+  --md-outline-rgb: 119, 117, 137;     --md-on-primary-rgb: 255, 255, 255;
+}
+
+/* ---------- 1. Tokens ---------- */
+:root[data-ui-theme="material"][data-theme] {
+  --mu-r-card: 24px;
+  --mu-r-big: 28px;
+  --mu-ease: cubic-bezier(0.2, 0, 0, 1);                       /* M3 "emphasized" */
+  --mu-state-hover: linear-gradient(rgba(var(--md-on-surface-rgb), 0.07), rgba(var(--md-on-surface-rgb), 0.07));
+  --mu-state-press: linear-gradient(rgba(var(--md-on-surface-rgb), 0.12), rgba(var(--md-on-surface-rgb), 0.12));
+
+  --panel-bg: var(--md-bg) !important;
+  --bg: var(--md-bg) !important;
+  --surface-card: var(--md-surface) !important;
+  --surface: var(--md-surface) !important;
+  --surface-hover: var(--md-surface-high) !important;
+  --surface-solid: var(--md-surface) !important;
+  --surface-hover-solid: var(--md-surface-high) !important;
+  --surface-sunken: var(--md-surface-low) !important;
+  --field-bg: var(--md-surface-highest);
+  --border-subtle: rgba(var(--md-outline-rgb), 0.22);
+  --border: rgba(var(--md-outline-rgb), 0.22);
+  --border-soft: rgba(var(--md-outline-rgb), 0.12);
+  --border-strong: rgba(var(--md-outline-rgb), 0.5);
+  --highlight-top: transparent;
+  --text: var(--md-on-surface);
+  --text-dim: var(--md-on-surface-variant);
+  --text-faint: var(--md-outline);
+  --overlay: rgba(var(--md-bg-rgb), 0.55);
+  --glass-blur-card: 0px;
+  --radius-card: var(--mu-r-card);
+  --radius-btn: 999px;
+  --radius-m: var(--mu-r-card);
+  --radius-l: var(--mu-r-big);
+  --ornament-radius: var(--mu-r-card);
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-card-active: 0 0 0 2px var(--md-primary);
+  --sidebar-glass-bg: var(--md-bg);
+  --sidebar-glass-edge: transparent;
+  --sidebar-glass-blur: 0px;
+  --sb-thumb: rgba(var(--md-on-surface-rgb), 0.22);
+  --sb-thumb-hover: rgba(var(--md-on-surface-rgb), 0.42);
+
+  /* the accent the whole panel already uses (switches, rings, sliders, selected states) = Material "primary" */
+  --accent: var(--md-primary) !important;
+  --accent-strong: var(--md-primary) !important;
+  --accent-rgb: var(--md-primary-rgb) !important;
+  --accent-soft: rgba(var(--md-primary-rgb), 0.18) !important;
+  --accent-glow: rgba(var(--md-primary-rgb), 0.28) !important;
+  --theme-accent: var(--md-primary) !important;
+  --theme-on-accent: var(--md-on-primary) !important;
+  color-scheme: light;
+}
+:root[data-ui-theme="material"][data-theme="dark"] { color-scheme: dark; }
+
+/* ---------- 2. Canvas: one flat colour (Settings > Background color) ---------- */
+:root[data-ui-theme="material"][data-theme],
+:root[data-ui-theme="material"][data-theme] body { background-color: var(--md-bg); color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body {
+  background-image: none;
+  font-family: "Google Sans Text", "Google Sans", "Product Sans", "Roboto Flex", "Roboto", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+:root[data-ui-theme="material"][data-theme] button,
+:root[data-ui-theme="material"][data-theme] input,
+:root[data-ui-theme="material"][data-theme] select,
+:root[data-ui-theme="material"][data-theme] textarea { font-family: inherit; }
+:root[data-ui-theme="material"][data-theme] .app::before,
+:root[data-ui-theme="material"][data-theme] .app::after,
+:root[data-ui-theme="material"][data-theme] .ambient-orbs { display: none; }
+
+/* ---------- 3. Navigation rail: tonal, pill indicator ---------- */
+:root[data-ui-theme="material"][data-theme] .sidebar {
+  background: var(--md-bg); background-image: none; border-right-color: transparent; box-shadow: none;
+}
+:root[data-ui-theme="material"][data-theme] .tab { color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] .tab:hover { color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] .tab::before { background: rgba(var(--md-on-surface-rgb), 0.08); border-radius: 18px; }
+:root[data-ui-theme="material"][data-theme] .tab.is-active { color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] .tab-indicator {
+  border-radius: 18px; background: var(--md-secondary-container); box-shadow: none;
+}
+
+/* ---------- 4. Header ---------- */
+:root[data-ui-theme="material"][data-theme] .panel-head {
+  background: transparent; box-shadow: none; border-color: transparent; border-radius: 0;
+}
+:root[data-ui-theme="material"][data-theme] .panel-head h1 { font-weight: 600; letter-spacing: 0; color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] #panel-hint { color: var(--md-on-surface-variant); }
+
+/* ---------- 5. Cards = filled tonal surfaces (no shadow, big radius) ---------- */
+:root[data-ui-theme="material"][data-theme] .tool,
+:root[data-ui-theme="material"][data-theme] .beat-card,
+:root[data-ui-theme="material"][data-theme] .snippet-card,
+:root[data-ui-theme="material"][data-theme] .info,
+:root[data-ui-theme="material"][data-theme] .empty,
+:root[data-ui-theme="material"][data-theme] .expr-item,
+:root[data-ui-theme="material"][data-theme] .preset-item,
+:root[data-ui-theme="material"][data-theme] .qce-res-tile,
+:root[data-ui-theme="material"][data-theme] .ta-group,
+:root[data-ui-theme="material"][data-theme] .switch-row,
+:root[data-ui-theme="material"][data-theme] .code-editor,
+:root[data-ui-theme="material"][data-theme] .preset-folder-header,
+:root[data-ui-theme="material"][data-theme] .shortcut-tile {
+  background: var(--md-surface); border: 0; border-radius: var(--mu-r-card); box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--md-on-surface);
+}
+:root[data-ui-theme="material"][data-theme] .tool:hover,
+:root[data-ui-theme="material"][data-theme] .expr-item:hover,
+:root[data-ui-theme="material"][data-theme] .preset-item:hover,
+:root[data-ui-theme="material"][data-theme] .ta-group:hover,
+:root[data-ui-theme="material"][data-theme] .shortcut-tile:hover { background: var(--md-surface-high); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .tool:active,
+:root[data-ui-theme="material"][data-theme] .shortcut-tile:active { background: var(--md-surface-highest); }
+:root[data-ui-theme="material"][data-theme] .tool::before { background: rgba(var(--md-primary-rgb), 0.10); }
+:root[data-ui-theme="material"][data-theme] .tool-code { color: var(--md-on-surface); font-weight: 700; letter-spacing: 0.01em; }
+:root[data-ui-theme="material"][data-theme] .tool-name { color: var(--md-on-surface-variant); font-weight: 500; }
+:root[data-ui-theme="material"][data-theme] .ta-group-head { color: var(--md-on-surface); font-weight: 600; }
+:root[data-ui-theme="material"][data-theme] .ta-title,
+:root[data-ui-theme="material"][data-theme] .preset-group-heading { color: var(--md-on-surface); font-weight: 600; border-bottom-color: var(--border-subtle); }
+
+/* ---------- 6. Buttons: filled-tonal pills (primary = filled with the accent) ---------- */
+:root[data-ui-theme="material"][data-theme] .btn,
+:root[data-ui-theme="material"][data-theme] .btn-apply,
+:root[data-ui-theme="material"][data-theme] .btn-round-add,
+:root[data-ui-theme="material"][data-theme] .btn-round-alt,
+:root[data-ui-theme="material"][data-theme] .split-btn,
+:root[data-ui-theme="material"][data-theme] .align-btn,
+:root[data-ui-theme="material"][data-theme] .anchor-btn,
+:root[data-ui-theme="material"][data-theme] .fit-btn,
+:root[data-ui-theme="material"][data-theme] .flip-btn,
+:root[data-ui-theme="material"][data-theme] .cat-tab,
+:root[data-ui-theme="material"][data-theme] .cat-tab-add,
+:root[data-ui-theme="material"][data-theme] .shortcutz-add-btn,
+:root[data-ui-theme="material"][data-theme] .social-btn,
+:root[data-ui-theme="material"][data-theme] .icon-btn {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container); border: 0; border-radius: 999px;
+  box-shadow: none; font-weight: 500;
+  transition: background-color 0.2s var(--mu-ease), box-shadow 0.2s var(--mu-ease), transform 0.2s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] .btn:hover,
+:root[data-ui-theme="material"][data-theme] .btn-apply:hover,
+:root[data-ui-theme="material"][data-theme] .btn-round-add:hover,
+:root[data-ui-theme="material"][data-theme] .btn-round-alt:hover,
+:root[data-ui-theme="material"][data-theme] .split-btn:hover,
+:root[data-ui-theme="material"][data-theme] .align-btn:hover,
+:root[data-ui-theme="material"][data-theme] .anchor-btn:hover,
+:root[data-ui-theme="material"][data-theme] .fit-btn:hover,
+:root[data-ui-theme="material"][data-theme] .flip-btn:hover,
+:root[data-ui-theme="material"][data-theme] .cat-tab:hover,
+:root[data-ui-theme="material"][data-theme] .cat-tab-add:hover,
+:root[data-ui-theme="material"][data-theme] .shortcutz-add-btn:hover,
+:root[data-ui-theme="material"][data-theme] .social-btn:hover,
+:root[data-ui-theme="material"][data-theme] .icon-btn:hover {
+  background-image: var(--mu-state-hover); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+:root[data-ui-theme="material"][data-theme] .btn:active,
+:root[data-ui-theme="material"][data-theme] .icon-btn:active { background-image: var(--mu-state-press); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .btn-ghost { background: transparent; box-shadow: none; color: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] .btn-ghost:hover { background: rgba(var(--md-primary-rgb), 0.10); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .btn-primary,
+:root[data-ui-theme="material"][data-theme] .cat-tab.is-active {
+  background: var(--md-primary); color: var(--md-on-primary); box-shadow: none;
+}
+:root[data-ui-theme="material"][data-theme] .btn-primary:hover { filter: none; background-image: linear-gradient(rgba(var(--md-on-primary-rgb), 0.10), rgba(var(--md-on-primary-rgb), 0.10)); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28); }
+
+/* segmented + chips */
+:root[data-ui-theme="material"][data-theme] .segmented { background: var(--md-surface-highest); border-radius: 999px; box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .segmented-opt { border-radius: 999px; color: var(--md-on-surface-variant); font-weight: 500; }
+:root[data-ui-theme="material"][data-theme] .segmented-opt.is-active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .chip span { background: transparent; color: var(--md-on-surface-variant); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--md-outline-variant); }
+:root[data-ui-theme="material"][data-theme] .chip:hover span { background: rgba(var(--md-on-surface-rgb), 0.08); }
+:root[data-ui-theme="material"][data-theme] .chip input:checked + span { background: var(--md-secondary-container); color: var(--md-on-secondary-container); box-shadow: none; }
+
+/* ---------- 7. Inputs: filled text fields ---------- */
+:root[data-ui-theme="material"][data-theme] .text-input,
+:root[data-ui-theme="material"][data-theme] .select,
+:root[data-ui-theme="material"][data-theme] select,
+:root[data-ui-theme="material"][data-theme] .code-area,
+:root[data-ui-theme="material"][data-theme] textarea,
+:root[data-ui-theme="material"][data-theme] input[type="number"],
+:root[data-ui-theme="material"][data-theme] input[type="text"] {
+  background-color: var(--md-surface-highest); color: var(--md-on-surface); border: 0; border-radius: 16px; box-shadow: none;
+}
+:root[data-ui-theme="material"][data-theme] .text-input:hover,
+:root[data-ui-theme="material"][data-theme] .select:hover,
+:root[data-ui-theme="material"][data-theme] select:hover { background-color: var(--md-surface-highest); box-shadow: inset 0 0 0 1px var(--md-outline); }
+:root[data-ui-theme="material"][data-theme] .text-input:focus,
+:root[data-ui-theme="material"][data-theme] .select:focus,
+:root[data-ui-theme="material"][data-theme] select:focus,
+:root[data-ui-theme="material"][data-theme] textarea:focus,
+:root[data-ui-theme="material"][data-theme] input[type="number"]:focus,
+:root[data-ui-theme="material"][data-theme] input[type="text"]:focus { background-color: var(--md-surface-highest); box-shadow: inset 0 0 0 2px var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] ::placeholder { color: var(--md-outline); }
+
+/* switches: M3 - outlined small thumb when off, big on-primary thumb on a primary track when on */
+:root[data-ui-theme="material"][data-theme] .switch-track { background: var(--md-surface-highest); box-shadow: inset 0 0 0 2px var(--md-outline); }
+:root[data-ui-theme="material"][data-theme] .switch-track::after { background: var(--md-outline); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .switch-row input:checked ~ .switch-track { background: var(--md-primary); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .switch-row input:checked ~ .switch-track::after { background: var(--md-on-primary); }
+
+/* sliders */
+:root[data-ui-theme="material"][data-theme] input[type="range"]::-webkit-slider-runnable-track { background: var(--md-secondary-container); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] input[type="range"]::-webkit-slider-thumb { background: var(--md-primary); box-shadow: 0 0 0 4px rgba(var(--md-primary-rgb), 0.18); }
+
+/* dropdown menu (js/mt-select.js) + tooltips. The colour picker popup (js/mt-colorpicker.js) stays Glass: see section 10. */
+:root[data-ui-theme="material"][data-theme] .mt-menu {
+  background: var(--md-surface-high); color: var(--md-on-surface); border-radius: 20px; -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.14);
+}
+:root[data-ui-theme="material"][data-theme] .mt-opt { border-radius: 999px; color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] .mt-opt.is-active { background: rgba(var(--md-on-surface-rgb), 0.09); transform: none; }
+:root[data-ui-theme="material"][data-theme] .mt-opt.is-selected { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] .mt-opt.is-selected::before { display: none; }
+:root[data-ui-theme="material"][data-theme] .mt-group { color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] .mt-tip {
+  background: var(--md-on-surface); color: var(--md-bg); border: 0; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+
+/* Settings > Style cards follow the palette too */
+:root[data-ui-theme="material"][data-theme] .ui-theme-card { background: var(--md-surface); box-shadow: none; border-radius: 18px; color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] .ui-theme-card[aria-checked="true"] { background: var(--md-secondary-container); color: var(--md-on-secondary-container); box-shadow: inset 0 0 0 2px var(--md-primary); }
+
+/* ---------- 8. Overlays ---------- */
+:root[data-ui-theme="material"][data-theme] .modal-backdrop { background: var(--md-scrim); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-ui-theme="material"][data-theme] .modal,
+:root[data-ui-theme="material"][data-theme] .ctx-menu {
+  background: var(--md-surface-low); color: var(--md-on-surface); border: 0; border-radius: var(--mu-r-big);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.14); -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-ui-theme="material"][data-theme] .ctx-menu { background: var(--md-surface-high); border-radius: 20px; }
+:root[data-ui-theme="material"][data-theme] .ctx-item { border-radius: 999px; color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] .ctx-item:hover { background: rgba(var(--md-on-surface-rgb), 0.09); }
+:root[data-ui-theme="material"][data-theme] .modal h2 { font-weight: 600; }
+:root[data-ui-theme="material"][data-theme] .field,
+:root[data-ui-theme="material"][data-theme] .modal-footer { border-top-color: var(--border-subtle); }
+:root[data-ui-theme="material"][data-theme] .toast { background: var(--md-on-surface); color: var(--md-bg); border-radius: 999px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.30); }
+
+/* update banner follows the style */
+:root[data-ui-theme="material"][data-theme] .mt-update { background-color: var(--md-surface-high); background-image: none; border: 0; border-radius: var(--mu-r-big); color: var(--md-on-surface); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28); }
+:root[data-ui-theme="material"][data-theme] .mt-update-sub,
+:root[data-ui-theme="material"][data-theme] .mt-update-notes { color: var(--md-on-surface-variant); }
+
+/* ---------- 9. Curve tab: NeuCurve is a dark app with no light variant -> a rounded dark card ----------
+   The rounded corners are NOT made by clipping the <iframe> (border-radius on an iframe leaves a black/white fringe in the
+   corners and along the edge in CEF, whatever is behind it). The frame stays square and the four corners are cut by an overlay
+   of "inverted corner" gradients in the panel background colour instead - same look, nothing to clip. */
+:root[data-ui-theme="material"][data-theme] .curve-frame {
+  background: #17171c !important; border-radius: 0 !important; box-shadow: none;
+}
+:root[data-ui-theme="material"][data-theme] .curve-stage { background: var(--md-bg) !important; }
+:root[data-ui-theme="material"][data-theme] .curve-stage::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 3; pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 100%, transparent calc(var(--mu-r-big, 28px) - 0.5px), var(--md-bg) var(--mu-r-big, 28px)) 0 0 / var(--mu-r-big, 28px) var(--mu-r-big, 28px) no-repeat,
+    radial-gradient(circle at 0 100%, transparent calc(var(--mu-r-big, 28px) - 0.5px), var(--md-bg) var(--mu-r-big, 28px)) 100% 0 / var(--mu-r-big, 28px) var(--mu-r-big, 28px) no-repeat,
+    radial-gradient(circle at 100% 0, transparent calc(var(--mu-r-big, 28px) - 0.5px), var(--md-bg) var(--mu-r-big, 28px)) 0 100% / var(--mu-r-big, 28px) var(--mu-r-big, 28px) no-repeat,
+    radial-gradient(circle at 0 0, transparent calc(var(--mu-r-big, 28px) - 0.5px), var(--md-bg) var(--mu-r-big, 28px)) 100% 100% / var(--mu-r-big, 28px) var(--mu-r-big, 28px) no-repeat;
+}
+
+/* ---------- 10. Colour settings stay GLASS ----------
+   Settings > Theme color / Background color: the swatch inputs and the colour picker popup (js/mt-colorpicker.js) keep the
+   Glass look under Material You - translucent blurred surface, hairline border, light top edge, small radii - instead of the
+   tonal Material treatment. Glass values are hard-coded per scheme (the shared tokens are remapped to --md-* here), so the
+   popup looks exactly like the Glass one; --accent (= Material primary) still tints focus rings and the open state. */
+:root[data-ui-theme="material"][data-theme] {
+  --gc-pop: rgba(45, 45, 55, 0.85);   --gc-field: rgba(0, 0, 0, 0.28);
+  --gc-border: rgba(255, 255, 255, 0.14);  --gc-edge: rgba(255, 255, 255, 0.08);  --gc-hi: rgba(255, 255, 255, 0.05);
+  --gc-text: #f2f2f5;                 --gc-dim: #a1a1ab;
+}
+:root[data-ui-theme="material"][data-theme="light"] {
+  --gc-pop: rgba(255, 255, 255, 0.92); --gc-field: rgba(0, 0, 0, 0.05);
+  --gc-border: rgba(0, 0, 0, 0.16);   --gc-edge: rgba(0, 0, 0, 0.09);  --gc-hi: rgba(255, 255, 255, 0.7);
+  --gc-text: #1f1f26;                 --gc-dim: #63636f;
+}
+:root[data-ui-theme="material"][data-theme] input[type="color"] {
+  background: var(--gc-field); border: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--gc-edge);
+}
+:root[data-ui-theme="material"][data-theme] input[type="color"].mt-cp-open {
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.9), 0 0 0 3px var(--accent-glow);
+}
+:root[data-ui-theme="material"][data-theme] .mt-cp {
+  background: var(--gc-pop); color: var(--gc-text); border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--gc-border), inset 0 1px 0 var(--gc-hi), 0 18px 44px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  :root[data-ui-theme="material"][data-theme] .mt-cp { -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); }
+}
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-hex,
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-rgb input {
+  background-color: var(--gc-field); color: var(--gc-text); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--gc-edge);
+}
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-hex:focus,
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-rgb input:focus {
+  background-color: var(--gc-field); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.9), 0 0 0 3px var(--accent-glow);
+}
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-eye { background: var(--gc-field); color: var(--gc-dim); border-radius: 6px; }
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-eye:hover { background: rgba(var(--accent-rgb), 0.22); color: var(--gc-text); }
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-rgb label span,
+:root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-label { color: var(--gc-dim); }

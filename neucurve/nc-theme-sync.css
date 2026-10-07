@@ -1,0 +1,91 @@
+/* NeuCurve - theme accent sync (companion to nc-theme-sync.js, which sets --mt-accent/--mt-accent-rgb and the
+   "mt-themed" class on <html> from the Multi Tool panel's Theme color picker).
+
+   NeuCurve's compiled bundle already exposes --ui-color and --accent as theming hooks: every button/active-
+   state/preset-border rule in it reads them as var(--ui-color, <its own fallback hex>), clearly meant to be
+   supplied by whatever embeds it. Setting them here is enough for those - no !important needed, since nothing
+   else in NeuCurve ever sets --ui-color/--accent itself.
+
+   --graph-color and --handle-color are different: NeuCurve keeps RE-ASSERTING both, itself, as inline styles
+   on <html> AND <body>, from its own per-model color, every time that model's color is picked/changed. A
+   plain `:root { --graph-color: ... }` from us would only stick until the next time the user touches a curve
+   model, then lose the race back to NeuCurve's own value. A stylesheet rule with !important always outranks
+   a plain (non-!important) inline style regardless of which one was written last or most recently - that's
+   what actually keeps the accent color as the source of truth here no matter what the user does inside
+   NeuCurve afterwards. */
+/* FIX: the Multi Tool Theme color no longer drives NeuCurve. --ui-color / --accent now come from NeuCurve's own
+   Settings > UI Color (the bundle writes --ui-color on <html>/<body> itself), the graph line from Settings > Graph
+   Line Color and the handles from Settings > Handle & Node Color. */
+
+/* Preview-strip circle: the small round "ball" that scrubs along the value-preview track (and its trail) is
+   hardcoded in the compiled bundle to a fixed blue (#3b82f6 / rgba(59,130,246,.4)) - it never reads --ui-color
+   or --accent at all, unlike the rest of NeuCurve. Re-color both from NeuCurve's own --ui-color (Settings > UI Color). */
+html .ball {
+  background: var(--ui-color, #FFD21F) !important;
+  box-shadow: 0 0 6px rgba(var(--nc-ui-rgb, 255, 210, 31), 0.6) !important;
+}
+html .trail {
+  background: rgba(var(--nc-ui-rgb, 255, 210, 31), 0.4) !important;
+}
+
+/* Belt-and-braces for the curve itself: force the main curve <path>'s own SVG "stroke" presentation attribute
+   directly, using the same trick index.html's "mt-embed-bg" style block already relies on for the graph's
+   background <rect> (in SVG, a CSS declaration - even without !important - already beats a presentation
+   attribute; !important here just keeps this ahead of anything else too). Selector matches nc-glow.js's own
+   way of finding this exact path: the direct child <path stroke-width="2.5" fill="none"> of svg.curve-svg.
+   This keeps the visible curve on-theme even if a future NeuCurve build stops reading --graph-color for it. */
+/* FIX: removed - the curve line color now comes only from NeuCurve Settings > Graph Line Color.
+html.mt-themed svg.curve-svg > path[stroke-width="2.5"][fill="none"] {
+  stroke: var(--mt-accent) !important;
+}
+*/
+
+/* ---------------------------------------------------------------------------------------------
+   Background sync (companion to the bgHex/bgRgb handling in nc-theme-sync.js).
+   The Curve tab's visible UI (graph grid, the vertical model rail, the bottom/side library panel,
+   the hint bar) is ALL one component (.graph-shell and its children, Svelte scope "svelte-ybne5g"),
+   and every one of those backgrounds is a hardcoded hex with no var() hook of its own - unlike the
+   accent hooks above (--ui-color/--accent), which the bundle already reads via var() throughout.
+   (.extension-wrapper/.canvas-container/.curve-svg below are a DIFFERENT, separate component that
+   isn't part of this screen - kept in case some other NeuCurve view does render them.)
+   Each gets !important + the tier nc-theme-sync.js derived from the panel's background color that
+   matches its ORIGINAL hardcoded value, so the #1e1e1e/#1a1a1a/#141414/#0a0a0a family's relative
+   "elevation" is kept at any base color instead of just being re-hued flat:
+     .graph-shell   (#1e1e1e, the full-screen shell)        -> --mt-bg-shell-rgb   (offset  0)
+     .side-column   (#1a1a1a, the bottom preset/library panel) -> --mt-bg-side-rgb    (offset -4)
+     .model-rail, .hint (#141414, vertical rail / hint bar) -> --mt-bg-rail-rgb    (offset -10)
+     .canvas-column (#0a0a0a, the actual graph/grid area)   -> --mt-bg-canvas-rgb  (offset -20)
+   --------------------------------------------------------------------------------------------- */
+html.mt-bg-themed .graph-shell {
+  background: rgb(var(--mt-bg-shell-rgb)) !important;
+}
+html.mt-bg-themed .side-column {
+  background: rgb(var(--mt-bg-side-rgb)) !important;
+}
+html.mt-bg-themed .model-rail,
+html.mt-bg-themed .hint {
+  background: rgb(var(--mt-bg-rail-rgb)) !important;
+}
+html.mt-bg-themed .canvas-column {
+  background: rgb(var(--mt-bg-canvas-rgb)) !important;
+}
+
+/* Separate component, not part of the Curve tab screen above, kept for coverage if reachable elsewhere. */
+html.mt-bg-themed .extension-wrapper {
+  background: rgb(var(--mt-bg-side-rgb)) !important;
+}
+html.mt-bg-themed .canvas-container,
+html.mt-bg-themed .curve-svg {
+  background: rgb(var(--mt-bg-canvas-rgb)) !important;
+}
+
+/* The graph's own background is an SVG <rect fill="#0e0e0e">, not a CSS background - a plain CSS `fill`
+   declaration (even without !important) already beats an SVG presentation attribute, so this is belt-and-
+   braces the same way the curve <path>'s stroke rule above is. Scoped to the specific 0,0-origin backdrop
+   rect (x="0" y="0", a direct child of svg.curve-svg) so it can't catch some other, smaller rect later. The
+   ~35 other hardcoded surfaces this same bug affects (canvas floor, side rail, Settings, the preset
+   library, etc.) are handled in nc-theme-sync.js instead (#mt-bg-dynamic-sync) - too many, and too likely to
+   grow in a future NeuCurve build, to hand-list here. */
+html.mt-bg-themed svg.curve-svg > rect[x="0"][y="0"] {
+  fill: rgb(var(--mt-bg-canvas-rgb)) !important;
+}

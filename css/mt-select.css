@@ -1,0 +1,73 @@
+/* Multi Tool - mt-select.css : themed dropdown menu (js/mt-select.js) + smoother context menus / accordions.
+   Everything reads the panel's own tokens (--surface-hover, --accent-rgb, --border-strong, ...), so it follows the
+   Settings theme colour and light/dark theme. Motion = opacity + transform only. */
+
+/* ---------- dropdown menu ---------- */
+.mt-menu {
+  position: fixed; z-index: 100000; left: 0; top: 0; box-sizing: border-box;
+  padding: 5px; border-radius: var(--radius-card, 10px);
+  background: var(--surface-hover, #2d2d2d);
+  box-shadow: inset 0 0 0 1px var(--border-strong, rgba(255,255,255,.14)), inset 0 1px 0 var(--highlight-top, rgba(255,255,255,.05)),
+              0 18px 44px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.28);
+  opacity: 0; transform: translateY(-8px) scale(.94); transform-origin: 50% 0;
+  transition: opacity .16s ease, transform .26s cubic-bezier(.2, .9, .25, 1.08);
+  pointer-events: none; will-change: transform, opacity;
+}
+.mt-menu.is-up { transform: translateY(8px) scale(.94); }
+.mt-menu.is-open { opacity: 1; transform: none; pointer-events: auto; }
+.mt-menu.is-closing { opacity: 0; transform: translateY(-4px) scale(.97); transition: opacity .13s ease, transform .15s ease; pointer-events: none; }
+.mt-menu.is-up.is-closing { transform: translateY(4px) scale(.97); }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .mt-menu { -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); }
+}
+
+.mt-list { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; }
+.mt-list::-webkit-scrollbar { width: 6px; }
+.mt-list::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb, 139,108,247), .35); border-radius: 3px; }
+.mt-list::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb, 139,108,247), .6); }
+
+.mt-opt {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 9px 7px 10px; border-radius: 6px; cursor: pointer; user-select: none;
+  font: inherit; font-size: var(--fs-value, .75rem); line-height: 1.25; color: var(--text, #f0f0f0);
+  transition: background-color .12s linear, color .12s linear, transform .18s cubic-bezier(.22, 1, .36, 1);
+}
+.mt-menu.is-open .mt-opt { animation: mtOptIn .26s cubic-bezier(.22, 1, .36, 1) backwards; animation-delay: var(--d, 0ms); }
+@keyframes mtOptIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+.mt-opt-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mt-opt.is-active { background: rgba(var(--accent-rgb, 139,108,247), .2); transform: translateX(2px); }
+.mt-opt.is-selected { color: var(--accent-strong, var(--accent, #8b6cf7)); font-weight: 600; }
+.mt-opt.is-selected::before {
+  content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; width: 3px; border-radius: 2px;
+  background: var(--accent-strong, var(--accent, #8b6cf7));
+}
+.mt-opt.is-disabled { opacity: .38; cursor: default; }
+.mt-opt-check { flex: 0 0 auto; width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(.5); transition: opacity .15s, transform .2s cubic-bezier(.34, 1.56, .64, 1); }
+.mt-opt.is-selected .mt-opt-check { opacity: 1; transform: none; }
+.mt-group { padding: 8px 10px 3px; font-size: var(--fs-label-sm, .625rem); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim, #a0a0a0); }
+.mt-group:first-child { padding-top: 4px; }
+
+/* the closed select: arrow flips while its menu is open */
+select.select { transition: background-color .16s linear, box-shadow .16s ease, background-position .2s; cursor: pointer; }
+select.select.mt-open { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb, 139,108,247), .9), 0 0 0 3px var(--accent-glow, rgba(139,108,247,.4)); }
+
+/* ---------- context menus (right-click): softer pop + staggered items ---------- */
+.ctx-menu {
+  transform: translateY(-6px) scale(.95);
+  transition: opacity .16s ease, transform .26s cubic-bezier(.2, .9, .25, 1.08), visibility 0s linear .26s;
+}
+.ctx-menu.is-open { transform: none; transition-delay: 0s; }
+.ctx-menu.is-open .ctx-item { animation: mtOptIn .28s cubic-bezier(.22, 1, .36, 1) backwards; }
+.ctx-menu.is-open .ctx-item:nth-child(1) { animation-delay: 15ms; }
+.ctx-menu.is-open .ctx-item:nth-child(2) { animation-delay: 40ms; }
+.ctx-menu.is-open .ctx-item:nth-child(3) { animation-delay: 65ms; }
+.ctx-menu.is-open .ctx-item:nth-child(4) { animation-delay: 90ms; }
+.ctx-menu.is-open .ctx-item:nth-child(5) { animation-delay: 115ms; }
+.ctx-menu.is-open .ctx-item:nth-child(n+6) { animation-delay: 140ms; }
+
+/* ---------- accordion bodies (.collapse): content eases in with the height ---------- */
+.collapse .collapse-inner { opacity: 0; transform: translateY(-6px); transition: opacity .2s ease, transform .3s cubic-bezier(.22, 1, .36, 1); }
+.collapse.is-open .collapse-inner { opacity: 1; transform: none; transition-delay: .06s; }
+
+:root[data-reduce-motion="true"] .mt-menu, :root[data-reduce-motion="true"] .mt-menu.is-closing { transition: opacity .1s linear; transform: none; }
+:root[data-reduce-motion="true"] .mt-menu.is-open .mt-opt, :root[data-reduce-motion="true"] .ctx-menu.is-open .ctx-item { animation: none; }

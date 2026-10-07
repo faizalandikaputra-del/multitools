@@ -1,0 +1,73 @@
+/* splash.css - opening splash: "Multi Tool" + "author zalfndk". Plays on every panel load/refresh.
+   Companion: js/splash.js (removes it when done / on click). Loaded FIRST so it paints before the panel. */
+.mt-splash {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 2147483600;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--bg, #1e1e1e);
+  color: var(--text, #f2f2f5);
+  font-family: var(--font, "Adobe Clean", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif);
+  overflow: hidden; cursor: default;
+  -webkit-user-select: none; user-select: none;
+  animation: mts-out 0.55s cubic-bezier(0.4, 0, 0.2, 1) 2.55s forwards;
+}
+.mt-splash.is-done { display: none; }
+
+/* soft accent glow behind the mark */
+.mt-splash::before {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 150%; height: 150%; margin: -75% 0 0 -75%;
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb, 139, 108, 247), 0.28), rgba(var(--accent-rgb, 139, 108, 247), 0) 70%);
+  opacity: 0; transform: scale(0.5);
+  animation: mts-glow 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+  pointer-events: none;
+}
+
+.mts-stack { position: relative; display: flex; flex-direction: column; align-items: center; max-width: 92%; }
+
+/* ---- mark ---- */
+.mts-mark {
+  width: 74px; height: 74px; margin-bottom: 18px;
+  opacity: 0; transform: scale(0.55);
+  animation: mts-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards;
+}
+.mts-mark svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.mts-box { fill: rgba(var(--accent-rgb, 139, 108, 247), 0.12); stroke: var(--theme-accent, #8b6cf7); stroke-width: 1.6; }
+.mts-curve {
+  fill: none; stroke: var(--theme-accent, #8b6cf7); stroke-width: 2.6; stroke-linecap: round;
+  stroke-dasharray: 40; stroke-dashoffset: 40;
+  animation: mts-draw 0.85s cubic-bezier(0.65, 0, 0.35, 1) 0.45s forwards;
+}
+.mts-dot { fill: var(--theme-accent, #8b6cf7); opacity: 0; animation: mts-fade 0.3s ease forwards; }
+.mts-dot.a { animation-delay: 0.45s; }
+.mts-dot.b { animation-delay: 1.2s; }
+
+/* ---- title: letters rise one by one ---- */
+.mts-title { display: flex; justify-content: center; font-size: 30px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.15; }
+.mts-title span { display: inline-block; opacity: 0; transform: translate3d(0, 14px, 0); animation: mts-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; animation-delay: calc(0.65s + var(--i) * 0.05s); }
+.mts-title .sp { width: 0.32em; }
+
+/* ---- author line ---- */
+.mts-author {
+  margin-top: 10px; font-size: 11.5px; font-weight: 500; letter-spacing: 0.34em; text-transform: lowercase;
+  color: var(--text-dim, rgba(242, 242, 245, 0.62));
+  opacity: 0; transform: translate3d(0, 8px, 0);
+  animation: mts-author 0.8s cubic-bezier(0.22, 1, 0.36, 1) 1.35s forwards;
+}
+.mts-author b { font-weight: 700; color: var(--theme-accent, #8b6cf7); }
+.mts-line {
+  width: 46px; height: 2px; margin-top: 14px; border-radius: 2px; background: var(--theme-accent, #8b6cf7);
+  opacity: 0; transform: scaleX(0); animation: mts-line 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.2s forwards;
+}
+
+@keyframes mts-glow  { to { opacity: 1; transform: scale(1); } }
+@keyframes mts-pop   { to { opacity: 1; transform: scale(1); } }
+@keyframes mts-draw  { to { stroke-dashoffset: 0; } }
+@keyframes mts-fade  { to { opacity: 1; } }
+@keyframes mts-rise  { to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes mts-author{ to { opacity: 1; transform: translate3d(0, 0, 0); letter-spacing: 0.26em; } }
+@keyframes mts-line  { to { opacity: 0.85; transform: scaleX(1); } }
+@keyframes mts-out   { to { opacity: 0; visibility: hidden; transform: scale(1.04); } }
+
+/* Reduce motion: no splash at all */
+:root[data-reduce-motion="true"] .mt-splash { display: none; }

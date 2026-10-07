@@ -1,0 +1,58 @@
+/* sidebar-expand.css - the left navigation grows to the right (showing the tab names) after the cursor has
+   rested on it for 5 s, and shrinks back smoothly when the cursor leaves. Companion: js/sidebar-expand.js.
+   The rail overlays the panel (it has z-index 30) and keeps its flow width constant (width + negative
+   margin-right = constant), so the tab content never reflows while it animates. Loaded after every other css. */
+:root {
+  --sbx-w: 12.5rem;                                   /* expanded width */
+  --sbx-pad: calc((var(--sidebar-w) - var(--tab-size)) / 2);   /* side gap of a tab in both states */
+  --sbx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sbx-dur: 0.4s;
+}
+
+.sidebar {
+  flex: 0 0 auto;
+  width: var(--sidebar-w);
+  margin-right: 0;
+  overflow: hidden;                                   /* labels never leak while collapsed */
+  transition: width var(--sbx-dur) var(--sbx-ease), margin-right var(--sbx-dur) var(--sbx-ease);
+  will-change: width;
+}
+.sidebar.is-expanded {
+  width: var(--sbx-w);
+  margin-right: calc(var(--sidebar-w) - var(--sbx-w));
+}
+
+/* tab = icon box on the left + name on the right */
+.sidebar .tab {
+  display: flex; align-items: center; justify-content: flex-start;
+  width: var(--tab-size);
+  transition: width var(--sbx-dur) var(--sbx-ease), color var(--dur-ui, .2s) ease, background-color .18s ease, transform .18s ease, opacity .18s ease, box-shadow .2s ease;
+}
+.sidebar .tab > svg {
+  flex: 0 0 auto;
+  margin-left: calc((var(--tab-size) - 1.15rem) / 2);  /* keeps the icon exactly where it was */
+}
+.sidebar.is-expanded .tab,
+.sidebar.is-expanded .tab-indicator { width: calc(var(--sbx-w) - 2 * var(--sbx-pad)); }
+
+.tab-indicator { transition: transform 0.46s cubic-bezier(0.22, 1, 0.36, 1), width var(--sbx-dur) var(--sbx-ease); }
+
+.sidebar .tab-label {
+  position: relative; z-index: 2;
+  flex: 1 1 auto; min-width: 0;
+  margin-left: 0.7rem; padding-right: 0.6rem;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: 0; transform: translateX(-6px);
+  transition: opacity 0.18s ease, transform 0.3s var(--sbx-ease);
+  pointer-events: none;
+}
+.sidebar.is-expanded .tab-label {
+  opacity: 1; transform: translateX(0);
+  transition: opacity 0.28s ease 0.1s, transform 0.4s var(--sbx-ease) 0.08s;   /* appears once the rail is mostly open */
+}
+
+:root[data-reduce-motion="true"] .sidebar,
+:root[data-reduce-motion="true"] .sidebar .tab,
+:root[data-reduce-motion="true"] .tab-indicator,
+:root[data-reduce-motion="true"] .sidebar .tab-label { transition: none; }

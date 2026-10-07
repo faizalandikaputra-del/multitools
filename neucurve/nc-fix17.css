@@ -1,0 +1,47 @@
+/* NeuCurve - nc-fix17.css (loaded LAST, after nc-fix16.css)
+   1) No more one big dark block behind the whole preset grid: every surface around the tiles is transparent
+      (also when a panel Background color is set - nc-theme-sync.js paints .preset-grid/.grid-scroll/.preset-container
+      with !important gray in that case).
+   2) Every SAVED preset graph (user presets = draggable tiles) gets its own small box around the thumbnail only;
+      the name stays outside. Built-in presets stay clean (box appears on hover). Selected = accent border + glow.
+      To box the built-in presets too, change the selector `.preset-item[draggable="true"]` to `.preset-item`.
+   3) White ambient glow on the right side of the preset area, behind the tiles. Tune with the two variables below. */
+
+:root {
+  --nc-amb-white: 0.18;     /* white glow strength on the right side (0 = off, ~0.3 = strong) */
+  --nc-amb-width: 55%;      /* how far the glow reaches in from the right edge */
+}
+
+/* ---------- 1) no block behind the grid ---------- */
+html body .shell.shell .preset-grid,
+html body .shell.shell .grid-scroll,
+html body .shell.shell .preset-container,
+html body .shell.shell .library-area,
+html body .shell.shell .variable-section,
+html.mt-bg-themed body .shell.shell .preset-grid,
+html.mt-bg-themed body .shell.shell .grid-scroll,
+html.mt-bg-themed body .shell.shell .preset-container,
+html.mt-bg-themed body .shell.shell .library-area,
+html.mt-bg-themed body .shell.shell .variable-section {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+}
+
+/* ---------- 2) a box on each saved preset graph ---------- */
+html body .shell.shell .preset-item[draggable="true"] .preset-thumbnail {
+  background: rgba(0, 0, 0, .34) !important;
+  border: 1.5px solid rgba(255, 255, 255, .10) !important;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04) !important;
+}
+
+/* ---------- 3) white ambient glow behind the preset tiles ----------
+   Direction / strength / reach are set in NeuCurve Settings > "White Glow" (nc-extras.js writes --nc-amb-bg).
+   The fallback below is the old look (glow from the right) used until the script has run. */
+html body .shell.shell .variable-section { position: relative; isolation: isolate; }
+html body .shell.shell .variable-section::after {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  top: 0; bottom: 0; right: 0; left: 0;
+  background: var(--nc-amb-bg,
+    radial-gradient(ellipse 55% 46% at 100% 30%, rgba(255, 255, 255, var(--nc-amb-white)), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(ellipse 55% 40% at 100% 82%, rgba(255, 255, 255, calc(var(--nc-amb-white) * .7)), rgba(255, 255, 255, 0) 70%));
+}

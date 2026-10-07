@@ -1,0 +1,3 @@
+/* NeuCurve - curve glow is now drawn by nc-glow.js (stacked SVG strokes). The old CSS filter: drop-shadow() rule was
+   removed on purpose: it is not rendered in After Effects' CEF and would only double the glow where it does work. */
+.curve-svg > g.nc-glow { pointer-events: none; }

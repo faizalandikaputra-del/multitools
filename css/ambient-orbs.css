@@ -1,0 +1,43 @@
+/* ==========================================================
+   Multi Tool - ambient-orbs.css
+   Companion to js/ambient-orbs.js. The soft accent-coloured circles behind the UI (they used to be a
+   static .app::before gradient). Now three real elements that:
+     - drift to random positions (js/ambient-orbs.js sets the transform + a slow transition), and
+     - blink very slowly (pure CSS opacity animation below, each orb with its own speed / offset).
+   Only opacity + transform animate (GPU-friendly, no re-layout). Colours follow the theme accent
+   through --accent-rgb. z-index 0 -> sits behind .sidebar (30) and .main (1); never takes clicks.
+   ========================================================== */
+.ambient-orbs {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;   /* not `inset: 0` - AE 2021's Chromium 74 predates it */
+  z-index: 0; pointer-events: none; overflow: hidden;
+}
+.ambient-orb {
+  position: absolute; top: 0; left: 0;
+  width: 220px; height: 220px;                 /* real size is set by js/ambient-orbs.js from the panel size */
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--accent-rgb), 1) 0%,
+    rgba(var(--accent-rgb), 0.55) 38%,
+    rgba(var(--accent-rgb), 0) 100%);
+  opacity: 0.3;
+  transform: translate3d(0, 0, 0);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);   /* gentle ease in + out */
+  will-change: transform, opacity;
+  animation: ambientOrbBlink var(--orb-blink, 8s) ease-in-out var(--orb-delay, 0s) infinite alternate;
+}
+.ambient-orb:nth-child(1) { --orb-blink: 7s;    --orb-delay: 0s; }
+.ambient-orb:nth-child(2) { --orb-blink: 9.5s;  --orb-delay: -3s; }
+.ambient-orb:nth-child(3) { --orb-blink: 12s;   --orb-delay: -6s; }
+
+@keyframes ambientOrbBlink {
+  from { opacity: 0.12; }
+  to   { opacity: 0.46; }
+}
+
+/* Opt-in reduced motion (see style.css): keep the glow, drop the movement + blink. */
+:root[data-reduce-motion="true"] .ambient-orb { animation: none; opacity: 0.28; transition: none !important; }
+
+/* Curve tab open: the orbs sit under the (transparent) NeuCurve iframe and cannot be seen there anyway, but their endless
+   blink/drift kept repainting the panel behind it and made the Curve tab flash black. Hidden = zero repaint. */
+:root.mt-curve-open .ambient-orbs { display: none; }

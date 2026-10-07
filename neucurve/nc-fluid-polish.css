@@ -1,0 +1,32 @@
+/* ==========================================================
+   NeuCurve - nc-fluid-polish.css
+   Additive-only polish patch, loaded LAST (after nc-theme-sync/
+   nc-icons/nc-apply-glow/nc-glow). Deliberately does NOT touch:
+     - the curve glow (nc-glow.js/.css)
+     - the APPLY button's traced-border glow (nc-apply-glow.js/.css)
+     - the falling particles (nc-particles.js)
+     - theme color sync (nc-theme-sync.js/.css)
+   All four are already tuned in detail (see README.txt "CURVE GLOW",
+   "APPLY BUTTON GLOW", "CURVE PARTICLES") and README explicitly warns
+   against rebuilding them from scratch - this file only adds a
+   tactile press + neon focus halo to plain buttons/inputs, matching
+   the feel of css/style.css's .tool/.btn press states in the main
+   Multi Tool panel. .apply-btn is excluded below since it already
+   has its own hover/active feedback (brightness boost on its glow
+   trace) and its glow SVG is sized to match the button exactly -
+   no need to layer anything else on top of it. */
+
+button:not(.apply-btn):active {
+  transform: scale(0.96);
+  transition: transform 0.12s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+select:focus-visible,
+input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 8px rgba(var(--nc-ui-rgb, 255, 210, 31), 0.5);
+}
+
+/* Same opt-in reduced-motion attribute nc-apply-glow.css already checks (NOT the OS
+   prefers-reduced-motion setting - see that file's comment on why). */
+html[data-reduce-motion="true"] button:not(.apply-btn):active { transition: none; }

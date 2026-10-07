@@ -1,0 +1,204 @@
+/* ==========================================================
+   Multi Tool - panel-refinements.css
+   Fourth additive pass, loaded AFTER css/premium-ornaments.css. Nothing in
+   style.css / fluid-polish.css / premium-ornaments.css is removed or
+   restructured - every rule below only adds new selectors or classes.
+   Companion script: js/panel-refinements.js (Feature B + E) and the
+   flashButtonResult()/Bridge changes in js/main.js (Feature C).
+
+   Implements 3 review recommendations:
+     1. Grouped capsule cards        - collapsible ".ta-group" sections
+     2. Range slider fill-trail      - gradient-filled track + floating value bubble
+     3. In-flight button states      - pending sweep -> success check / error shake
+   ========================================================== */
+
+/* ---------- 1. Grouped capsule cards (Feature B) --------------------------------------------
+   Markup is built at runtime by js/panel-refinements.js's groupifyTaSections(), which wraps
+   each top-level ".ta-section" of a rendered tab into:
+     <div class="ta-group [is-open]">
+       <button class="ta-group-head" aria-expanded="...">
+         <span class="ta-group-label">...</span>
+         <svg class="ta-group-chevron">...
+       </button>
+       <div class="ta-group-body"><div class="ta-group-body-inner">...moved content...</div></div>
+     </div>
+   Left-edge accent color cycles automatically by DOM order (nth-of-type) so callers never have
+   to hand-assign a color per group. Open/close animates via a precise scrollHeight max-height
+   (not a big fixed cap) - the same technique main.js's own Settings > Easy Layer Label
+   accordion already uses (see initLabelAccordion), so the motion matches the rest of the app. */
+.ta-group {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  border-left: 2px solid transparent;
+  transition: border-color var(--dur-fast) linear, box-shadow var(--dur-fast) linear;
+}
+.ta-group:hover { box-shadow: var(--shadow-card-hover); }
+.ta-group:nth-of-type(4n+1) { border-left-color: rgba(var(--accent-rgb), 0.8); }
+.ta-group:nth-of-type(4n+2) { border-left-color: #5ea1ff; }
+.ta-group:nth-of-type(4n+3) { border-left-color: #ff9f5e; }
+.ta-group:nth-of-type(4n+4) { border-left-color: #5ed9a0; }
+
+.ta-group-head {
+  display: flex; align-items: center; gap: 0.5rem; width: 100%;
+  padding: 0.65rem var(--space-3); text-align: left;
+  font-size: var(--fs-label-sm); font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+  background: none; border-radius: inherit;
+  transition: color var(--dur-fast) linear, background-color var(--dur-fast) linear;
+}
+.ta-group-head:hover { color: var(--text); background: var(--surface-hover); }
+.ta-group-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ta-group-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ta-group-chevron {
+  flex: 0 0 auto; width: 0.9rem; height: 0.9rem; color: var(--text-dim);
+  transition: transform var(--dur-fast) var(--smooth);
+}
+.ta-group.is-open .ta-group-chevron { transform: rotate(180deg); }
+.ta-group.is-open .ta-group-head { color: var(--text); }
+
+.ta-group-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height var(--dur) var(--smooth);
+}
+.ta-group-body-inner {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
+}
+:root[data-reduce-motion="true"] .ta-group-body,
+:root[data-reduce-motion="true"] .ta-group-chevron { transition: none; }
+
+/* ---------- 2. Range slider fill-trail + floating value bubble (Feature E) ------------------
+   js/panel-refinements.js marks every input[type="range"] it binds with ".rf-slider" and keeps
+   a live --_pct custom property on the element itself (inherited into its own pseudo-elements,
+   which is how this reaches ::-webkit-slider-runnable-track below). Only overrides `background`
+   on the track - the inset well shadow from style.css's own
+   input[type="range"]::-webkit-slider-runnable-track rule is untouched, so the two layer
+   together instead of one replacing the other. */
+input[type="range"].rf-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg,
+    var(--accent) 0%, var(--accent) var(--_pct, 0%),
+    var(--surface-sunken) var(--_pct, 0%), var(--surface-sunken) 100%);
+}
+
+.range-value-bubble {
+  position: fixed; z-index: 9999;
+  transform: translate(-50%, -100%);
+  margin-top: -6px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: var(--fs-label-sm); font-weight: 700; font-variant-numeric: tabular-nums;
+  padding: 0.15rem 0.45rem; border-radius: var(--radius-xs);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur-fast) ease;
+  white-space: nowrap;
+}
+.range-value-bubble::after {
+  content: ""; position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%);
+  width: 7px; height: 7px; background: inherit; clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.range-value-bubble.is-visible { opacity: 1; }
+:root[data-reduce-motion="true"] .range-value-bubble { transition: none; }
+
+/* ---------- 3. In-flight button states (Feature C) -------------------------------------------
+   ".is-pending" / ".is-success" / ".is-error" are toggled from js/main.js's flashButtonResult()
+   (and the busyResult()/busy() wrappers built on top of it). Originally wired at just 3
+   flagship action points; now applied to every actionable button across every tab that reports
+   a real Bridge/host success-or-fail outcome (tool tile Apply, Anchor/Align/Fit, Quick Comp
+   Edit's Match Comp + resolution tiles, Color Palette's Label swatches + image-color-extract,
+   Expression Code Apply, the Tools-tab and Power Boosters action groups, Preset
+   Select/Save/Apply, and the Settings > Expression Backup export/import buttons) - see the
+   comment on flashButtonResult() itself. Preset DELETE deliberately keeps the plain opacity-
+   pulse + its own arm/confirm press feedback instead (a destructive action getting a cheerful
+   green checkmark sends the wrong signal) - that is the one intentional holdout.
+   .tool already owns ::before (hover glow) and ::after (fluid-polish shimmer), so the sweep is
+   added as an EXTRA comma-separated background-image layer instead of taking a pseudo-element -
+   background-image accepts multiple layers natively, each with its own background-position. */
+.tool, .btn-apply, .preset-apply, .btn, .label-swatch,
+.anchor-btn, .align-btn, .fit-btn, .qce-res-tile { position: relative; }
+
+.tool.is-pending, .btn-apply.is-pending, .preset-apply.is-pending, .btn.is-pending,
+.label-swatch.is-pending, .anchor-btn.is-pending, .align-btn.is-pending, .fit-btn.is-pending,
+.qce-res-tile.is-pending {
+  pointer-events: none;
+  background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.32) 50%, transparent 100%);
+  background-size: 55% 100%;
+  background-repeat: no-repeat;
+  animation: rfPendingSweep 1.1s linear infinite;
+}
+@keyframes rfPendingSweep {
+  from { background-position: -55% 0; }
+  to   { background-position: 155% 0; }
+}
+:root[data-reduce-motion="true"] .tool.is-pending,
+:root[data-reduce-motion="true"] .btn-apply.is-pending,
+:root[data-reduce-motion="true"] .preset-apply.is-pending,
+:root[data-reduce-motion="true"] .btn.is-pending,
+:root[data-reduce-motion="true"] .label-swatch.is-pending,
+:root[data-reduce-motion="true"] .anchor-btn.is-pending,
+:root[data-reduce-motion="true"] .align-btn.is-pending,
+:root[data-reduce-motion="true"] .fit-btn.is-pending,
+:root[data-reduce-motion="true"] .qce-res-tile.is-pending { animation: none; opacity: 0.7; }
+
+.is-error { animation: rfErrorShake 0.35s var(--smooth); }
+@keyframes rfErrorShake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-3px); }
+  75%      { transform: translateX(3px); }
+}
+:root[data-reduce-motion="true"] .is-error { animation: none; }
+
+/* ---------- 4. Easy Layer > SOL tile: active-color dot -------------
+   The SOL tile (tool.autoFill in js/main.js) creates a Solid with a Fill effect in the active
+   Color Palette color. .tool already owns ::before/::after, so the dot and the badge are real child
+   spans. Pending = the shared sweep above; success = the badge pops in top-right and its checkmark
+   draws itself (transform/opacity/stroke-dashoffset only). Error = the shared shake. */
+.tool-fill-dot {
+  position: absolute; top: 0.4rem; left: 0.4rem; z-index: 2; pointer-events: none;
+  width: 0.7rem; height: 0.7rem; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 0 0 1.5px rgba(0, 0, 0, 0.25);
+  transition: background-color var(--dur-fast) linear;
+}
+
+/* ---------- 5. Color Wheel (Color Palette > Custom Colors) ----------------------------------
+   Grid + padding-top square (no flex-gap / aspect-ratio / inset: CEF 74 safe). Glass card with an accent
+   glow; the knob and preview chip carry the picked color. */
+.cw {
+  display: grid; grid-row-gap: var(--space-3); box-sizing: border-box;
+  padding: var(--space-3); border-radius: var(--radius-m);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: box-shadow var(--dur) ease, border-color var(--dur) ease;
+}
+.cw.is-dragging { border-color: rgba(var(--accent-rgb), 0.6); box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+.cw-main {
+  display: grid; grid-template-columns: minmax(0, 1fr) 1.5rem; grid-column-gap: var(--space-3);
+  width: 100%; max-width: 15rem; margin: 0 auto; box-sizing: border-box;
+}
+.cw-wheel-box { position: relative; width: 100%; }
+.cw-wheel-box::before { content: ""; display: block; padding-top: 100%; }
+.cw-wheel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; user-select: none; }
+.cw-val {
+  position: relative; border-radius: 999px; cursor: ns-resize; touch-action: none; outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.cw-val:focus-visible { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 0 2px rgba(var(--accent-rgb), 0.7); }
+.cw-knob {
+  position: absolute; left: 50%; top: 0; width: 1.3rem; height: 1.3rem; border-radius: 50%;
+  margin-left: -0.65rem; margin-top: -0.65rem; box-sizing: border-box; pointer-events: none;
+  border: 2px solid #fff; box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.45), 0 0 10px rgba(var(--accent-rgb), 0.6);
+  transition: transform var(--dur-fast) var(--bounce);
+}
+.cw.is-dragging .cw-knob { transform: scale(1.12); }
+.cw-preview { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); grid-column-gap: var(--space-3); align-items: center; }
+.cw-chip {
+  width: 2.6rem; height: 2.6rem; border-radius: var(--radius-s);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 12px rgba(var(--accent-rgb), 0.25);
+}
+.cw-readout { display: grid; grid-row-gap: 0.25rem; min-width: 0; }
+.cw-hex { width: 100%; box-sizing: border-box; font-variant-numeric: tabular-nums; text-transform: uppercase; }
+.cw-rgb { font-size: var(--fs-value); color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-save { width: 100%; box-sizing: border-box; }

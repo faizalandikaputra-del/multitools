@@ -1,0 +1,72 @@
+/* NeuCurve - larger, better-spaced action icons (tool row + APPLY row).
+   Loaded from index.html. No !important: the selectors are deliberately more specific than the compiled
+   (hash-suffixed) rules in assets/index.js, so this keeps working if the bundle is rebuilt.
+   Tune everything from the variables below. */
+:root {
+  --nc-icon-btn: 26px;      /* tool-row button box            (glyph 18 + 4px on each side) */
+  --nc-icon-svg: 18px;      /* tool-row glyph                 (was 13px) */
+  --nc-util-btn: 26px;      /* download / close / settings box */
+  --nc-util-svg: 18px;      /* download / close / settings glyph (was 13px) */
+  --nc-icon-gap: 2px;       /* space between tool-row buttons */
+  --nc-util-gap: 2px;       /* space between utility buttons  */
+  --nc-plate-pad: 2px 4px;  /* padding of the dark plate around the icons (hugs the buttons) */
+  --nc-plate-radius: 7px;   /* plate corner radius = button radius + padding */
+  --nc-apply-h: 26px;       /* APPLY height - matches the icon buttons */
+  --nc-row-gap: 8px;        /* APPLY <-> divider <-> utilities */
+  --nc-icon-backdrop: #161616; /* dark-gray plate (same as the preset cards) behind the icons so they stay visible over a video/GIF background */
+}
+
+/* ---- Tool row (curve, arrow, split, play, diamond, braces, eraser, expand) ---- */
+.action-container .control-row { padding: 3px 0 5px; }
+.action-container .control-row .icon-group {
+  flex-wrap: wrap;                 /* narrow panel: wraps instead of clipping */
+  justify-content: center;
+  gap: var(--nc-icon-gap);
+  padding: var(--nc-plate-pad);
+  max-width: 100%;
+  background: var(--nc-icon-backdrop);
+  border-radius: var(--nc-plate-radius);
+}
+.action-container .control-row .icon-group .icon-btn {
+  width: var(--nc-icon-btn);
+  height: var(--nc-icon-btn);
+  flex: 0 0 auto;
+  border-radius: 5px;
+}
+.action-container .control-row .icon-group .icon-btn svg {
+  width: var(--nc-icon-svg);
+  height: var(--nc-icon-svg);      /* CSS size beats the width="13" height="13" attributes */
+  flex-shrink: 0;
+}
+
+/* ---- APPLY row (APPLY | divider | download, close, settings) ---- */
+.action-container .apply-row {
+  gap: var(--nc-row-gap);
+  margin-top: 6px;
+  margin-bottom: 4px;
+  align-items: center;
+}
+.action-container .apply-row .apply-btn {
+  height: var(--nc-apply-h);
+  font-size: 11px;
+  letter-spacing: .6px;
+  border-radius: 5px;
+  min-width: 0;                    /* lets flex:1 shrink instead of forcing overflow */
+}
+.action-container .apply-row .apply-divider { height: calc(var(--nc-apply-h) - 8px); }
+.action-container .apply-row .utility-group {
+  gap: var(--nc-util-gap);
+  padding: var(--nc-plate-pad);
+  background: var(--nc-icon-backdrop);
+  border-radius: var(--nc-plate-radius);
+}
+.action-container .apply-row .utility-group .utility-btn {
+  width: var(--nc-util-btn);
+  height: var(--nc-util-btn);
+  border-radius: 5px;
+}
+.action-container .apply-row .utility-group .utility-btn svg {
+  width: var(--nc-util-svg);
+  height: var(--nc-util-svg);
+  flex-shrink: 0;
+}

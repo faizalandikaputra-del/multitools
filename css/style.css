@@ -1,0 +1,1987 @@
+/* ==========================================================
+   Multi Tool - style.css
+   Tweak colors/spacing in :root. Animations use transform +
+   opacity only (GPU friendly).
+   ========================================================== */
+
+/* Global background opacity: the ONE variable every tab reads. main.js updates it live from
+   Settings > Background opacity (0 = hidden, 1 = fully visible); --app-bg-veil is 1 minus it. */
+:root { --app-bg-opacity: 1; --app-bg-veil: 0; }
+
+:root {
+  /* Type */
+  --font: "Adobe Clean", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "Fira Code", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fs-title: 0.95rem;
+  --fs-hint: 0.68rem;
+  --fs-code: 1.05rem;
+  --fs-name: 0.62rem;
+  /* Micro-typography: 10-11px uppercase-tracking labels, 12px input/value text */
+  --fs-label: 0.6875rem;      /* ~11px */
+  --fs-label-sm: 0.625rem;    /* ~10px */
+  --fs-value: 0.75rem;        /* 12px */
+  --tracking-label: 0.05em;
+
+  /* Dark theme (default).
+     --surface / --surface-hover / --surface-sunken are the ONE set of card/box background tokens
+     used everywhere in this file (tool tiles, expr-item, preset-item, qce-res-tile, snippet-card,
+     code-editor, inputs, etc). The hex values below are only the first-paint fallback: at runtime
+     Settings.applyCardSurfaces() (js/main.js) recomputes all three from the current --bg every time
+     the panel background color changes (Settings > Background color) and writes them back onto
+     :root as inline styles, so every card across every tab re-tints together instead of staying
+     pinned to these defaults. Never hardcode a card/input background elsewhere - use these vars. */
+  --bg: #1e1e1e;
+  --surface: #252525;
+  --surface-hover: #2d2d2d;
+  --surface-sunken: #181818;      /* inset wells: inputs, tracks, code areas */
+  --border: #333333;
+  --border-soft: #2a2a2a;
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #666666;      /* placeholder text only */
+  /* Theme color: main.js updates these three at runtime (Settings > Theme color) */
+  --theme-accent: #8b6cf7;                    /* Adobe-style purple (default) */
+  --theme-accent-soft: rgba(139, 108, 247, 0.2);
+  --theme-on-accent: #ffffff;
+  --accent: var(--theme-accent);
+  --accent-strong: var(--theme-accent);
+  --accent-soft: var(--theme-accent-soft);
+  --accent-rgb: 139, 108, 247;    /* kept in sync with --theme-accent by main.js, for glows/rings */
+  --on-accent: var(--theme-on-accent);
+  --overlay: rgba(10, 10, 10, 0.62);
+  --danger: #ff6b7a;
+
+  /* Elevation: layered inset hairline + outer separation + soft lift, replacing flat
+     1px solid borders on card-like containers (expr-item, preset-item, snippet-card...).
+     Use --shadow-card as the default resting state and --shadow-card-active for a
+     selected/favorited/focused card - the glow comes from --accent-rgb, no colored border. */
+  --shadow-card: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.3);
+  --shadow-card-active: inset 0 0 0 1px rgba(var(--accent-rgb), 0.5), 0 0 16px rgba(var(--accent-rgb), 0.15);
+
+  /* Spacing / radius tokens */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  /* Extra horizontal inset for .main (left/right only) so card glow/box-shadow and saber
+     borders have breathing room before .main's own overflow-x:hidden clip edge - plain
+     --space-4 (16px) wasn't quite enough for the ~18px hover glow on tool tiles, which is
+     what was reading as "clipped" glow/rounded corners at the panel's left/right edges. */
+  --panel-edge-pad: 1.5rem;
+  /* Fluid gap for responsive tile/card grids (Quick Resolution Presets, tool tiles, action
+     cards, etc.) - scales gently with panel width instead of a fixed px/rem gap that looks
+     cramped when narrow or oddly sparse when the panel is stretched wide. */
+  --gap-fluid-s: clamp(0.25rem, 1.2vw, 0.5rem);
+  --gap-fluid-m: clamp(0.35rem, 1.6vw, 0.75rem);
+  /* Shortcutz ("Speed Dial") row sizing - kept as its own token set since these are full-width
+     list rows (icon + name), not the square .tool grid tiles. Tune sizes here. */
+  --shortcut-card-min-h: 3.375rem; /* ~54px */
+  --shortcut-card-max-h: 3.75rem;  /* ~60px */
+  --radius-xs: 0.35rem;
+  --radius-s: 0.5rem;
+  --radius-m: 0.5rem;      /* 8px: card/container radius per design spec */
+  --radius-l: 0.65rem;     /* slightly larger cards (tool grid squares) */
+  --radius-round: 50%;
+  --sidebar-w: 3.75rem;
+  --tab-size: 2.5rem;
+
+  /* Motion */
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);   /* fluid elastic */
+  --smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 0.4s;
+  --dur-fast: 0.16s;
+  --dur-micro: 0.15s;      /* hover/press micro-interactions */
+}
+
+/* Light variant (used only when After Effects runs a light UI) */
+:root[data-theme="light"] {
+  --bg: #e6e6ea;
+  --surface: #f5f5f8;
+  --surface-hover: #ffffff;
+  --surface-sunken: #ececf0;
+  --border: #c9c9d2;
+  --border-soft: #d6d6dd;
+  --text: #24242b;
+  --text-dim: #6a6a78;
+  --overlay: rgba(255, 255, 255, 0.5);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+button { font-family: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+button:focus { outline: none; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Custom background image ---------- */
+.bg-layer {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity var(--dur) var(--smooth);
+  pointer-events: none;
+}
+.bg-layer.has-img { opacity: var(--app-bg-opacity, 1); }   /* --app-bg-opacity: Settings > Background opacity slider (0-1) */
+.bg-layer::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: var(--overlay); }
+
+/* ---------- Animated (GIF/video) background layer ---------- */
+.bg-motion-layer {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.bg-motion-layer.has-media { opacity: var(--app-bg-opacity, 1); }   /* same global var as .bg-layer, above */
+/* while the slider is being dragged the background follows instantly (no fade) */
+.is-scrubbing .bg-layer,
+.is-scrubbing .bg-motion-layer { transition: none; }
+.bg-motion-media {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  display: none;
+}
+.bg-motion-media.is-active { display: block; }
+
+/* Display > position / zoom (Settings.applyBgView in main.js writes --bg-zoom / --bg-pos-x / --bg-pos-y on
+   #bg-layer and #bg-motion-layer ONLY, not on :root, so dragging never restyles the whole document).
+   Zoom is scale() about the same point as the position, so the layer always keeps covering the screen. */
+.bg-layer {
+  background-position: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
+  transform-origin: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
+  transform: scale(var(--bg-zoom, 1));
+}
+.bg-motion-media {
+  object-position: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
+  transform-origin: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
+  transform: scale(var(--bg-zoom, 1));
+}
+
+/* ---------- Background editor (Settings > Display) ---------- */
+body.is-bg-edit .app {
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.25s var(--smooth), visibility 0s linear 0.25s;
+}
+body.is-bg-edit { cursor: grab; }
+body.is-bg-edit.is-bg-dragging, body.is-bg-edit.is-bg-dragging * { cursor: grabbing; user-select: none; }
+body.is-bg-edit .toast { z-index: 80; }
+.bg-editor {
+  position: fixed; left: 50%; bottom: var(--space-4); z-index: 60;
+  width: min(92vw, 22rem);
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-solid, rgba(28, 28, 32, 0.92));
+  border: 1px solid var(--border); border-radius: var(--radius-card, 14px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+  color: var(--text); cursor: default;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: translate(-50%, 14px);
+  transition: opacity 0.25s var(--smooth), transform 0.3s var(--smooth), visibility 0s linear 0.3s;
+}
+body.is-bg-edit .bg-editor {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transform: translate(-50%, 0);
+  transition: opacity 0.25s var(--smooth), transform 0.3s var(--smooth);
+}
+.bg-editor-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+.bg-editor-head strong { font-size: var(--fs-title, 1rem); font-weight: 600; }
+.bg-editor-hint { font-size: var(--fs-hint, 0.75rem); color: var(--text-dim); }
+.bg-editor-row { display: flex; align-items: center; gap: var(--space-2); }
+.bg-editor-row label { flex: 0 0 4.6rem; font-size: var(--fs-hint, 0.8rem); color: var(--text-dim); }
+.bg-editor-row input[type="range"] { flex: 1; min-width: 0; }
+.bg-editor-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-1); }
+
+/* ---------- Sidebar glass tokens ---------- */
+:root {
+  --sidebar-glass-bg: rgba(40, 40, 40, 0.4);
+  --sidebar-glass-blur: 8px;
+  --sidebar-glass-edge: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="light"] {
+  --sidebar-glass-bg: rgba(255, 255, 255, 0.45);
+  --sidebar-glass-edge: rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Layout ---------- */
+.app { position: relative; display: flex; height: 100%; }
+
+.sidebar {
+  position: relative; z-index: 30;      /* tooltips render above the main area */
+  flex: 0 0 var(--sidebar-w);
+  gap: var(--space-2);
+  display: flex; flex-direction: column; align-items: center;
+  padding: var(--space-3) 0;
+  border-right: 1px solid var(--sidebar-glass-edge);
+  /* Glassmorphism: light blur of the background image/GIF/video behind the tab column only */
+  background-color: var(--sidebar-glass-bg);
+  -webkit-backdrop-filter: blur(var(--sidebar-glass-blur));
+  backdrop-filter: blur(var(--sidebar-glass-blur));
+}
+.tabs {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(0.25rem, 2vh, 0.75rem);
+  /* Scrollable tab list: takes whatever space is left above the pinned
+     settings gear (min-height:0 is required for a flex child to actually
+     shrink/scroll instead of overflowing its container). */
+  flex: 1 1 auto; min-height: 0; width: 100%;
+  overflow-y: auto; overflow-x: hidden;
+  scroll-behavior: smooth; /* CSS-native smooth scrolling, incl. scrollIntoView() calls */
+  -ms-overflow-style: none;  /* old Edge/IE, harmless fallback */
+  scrollbar-width: none;     /* Firefox, harmless fallback */
+}
+/* CEP runs on CEF/Chromium, so this is the rule that actually matters:
+   hides the scrollbar track/thumb while the element stays fully
+   scrollable via wheel/trackpad/keyboard. */
+.tabs::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* ---------- Custom scrollbar (CEP = Chromium, so ::-webkit-scrollbar is what applies) ----------
+   Thin 8px lane, transparent track, pill thumb that brightens on hover. The 2px transparent
+   border + background-clip makes the visible thumb a slim 4px pill with breathing room.
+   .tabs keeps its own "display: none" rule above (more specific, so it still wins). */
+:root {
+  --sb-size: 8px;                       /* width of the scrollbar lane (and of the gutter reserved for it) */
+  --sb-thumb: rgba(255, 255, 255, 0.14);
+  --sb-thumb-hover: rgba(255, 255, 255, 0.30);
+}
+:root[data-theme="light"] {
+  --sb-thumb: rgba(0, 0, 0, 0.22);
+  --sb-thumb-hover: rgba(0, 0, 0, 0.40);
+}
+*::-webkit-scrollbar { width: var(--sb-size); height: var(--sb-size); background: transparent; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  min-height: 2rem;
+  transition: background-color var(--dur-fast) linear;
+}
+*::-webkit-scrollbar-thumb:hover  { background-color: var(--sb-thumb-hover); }
+*::-webkit-scrollbar-thumb:active { background-color: var(--accent); }
+
+.main {
+  position: relative; z-index: 1;
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  /* Left/right padding gets an extra glow buffer on top of the normal space-4 inset, so a card's
+     hover glow / box-shadow (up to ~18px on the tool tiles) has room to fully render before it
+     would hit this wrapper's own clip edge (see overflow-x below) - that's what was making glows
+     and rounded corners look slightly cropped at the panel's left/right edges. */
+  padding: var(--space-4) var(--panel-edge-pad);
+  /* This is the one place overflow-x:hidden belongs: the single top-level scrollable wrapper,
+     so a long tab can never cause a horizontal scrollbar. Inner containers (.panel, .grid, card
+     wrappers, saber borders) must NOT repeat overflow:hidden themselves - it would clip their own
+     glow/box-shadow against their own bounds instead of just against the panel edge. */
+  overflow-x: hidden; overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;   /* smooth momentum scrolling; wheel routing itself is handled by ScrollForward in main.js */
+  scrollbar-gutter: stable;
+  padding-right: calc(var(--panel-edge-pad) - var(--sb-size));   /* the lane already adds the rest: left and right margins match */
+  scroll-behavior: smooth;   /* fluid scrollIntoView(), scrollTo(), anchor and keyboard scrolling */
+  overscroll-behavior: contain;
+}
+
+/* Header and grid are separate flex items: they can never overlap */
+.panel-head { flex: 0 0 auto; margin-bottom: var(--space-4); }
+/* No overflow-x:hidden and no max-width clamp here - .main above already clips at the panel
+   edge with enough buffer for glow; adding a second clip boundary right at this container's own
+   flush-width edge is what was cropping card glow/rounded corners by a pixel or two. */
+.panel { flex: 0 0 auto; padding: var(--space-1) 0 var(--space-4); }
+.panel-head h1 { margin: 0; font-size: var(--fs-title); font-weight: 600; letter-spacing: 0.01em; }
+.panel-head p { margin: var(--space-1) 0 0; font-size: var(--fs-hint); color: var(--text-dim); line-height: 1.4; }
+
+/* ---------- Sidebar circle buttons (smooth slide, NO bounce) ---------- */
+.tabs { position: relative; isolation: isolate; }
+
+/* Sliding highlight: sits behind the active icon, moves with translate().
+   left:50% here + translateX(-50%) in JS keeps it centered on the icon
+   no matter how wide the .tabs container is (icons are centered inside
+   it via align-items:center, so a plain left:0 would drift off-icon). */
+.tab-indicator {
+  position: absolute; left: 50%; top: 0; z-index: 1;
+  width: var(--tab-size); height: var(--tab-size);
+  border-radius: var(--radius-round);
+  background: var(--accent-strong);
+  pointer-events: none;
+  transition: transform 0.32s ease;   /* change to linear if you prefer */
+  will-change: transform;
+}
+
+.tab {
+  position: relative;
+  width: var(--tab-size); height: var(--tab-size);
+  border-radius: var(--radius-round);
+  display: grid; place-items: center;
+  color: var(--text-dim);
+  transition: color var(--dur-fast) ease;
+}
+/* Idle circle behind the icon; hover only changes opacity */
+.tab::before {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0;
+  border-radius: inherit; background: var(--surface-hover);
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) ease;
+}
+.tab:hover::before { opacity: 1; }
+.tab:hover { color: var(--text); }
+.tab svg { position: relative; z-index: 2; transition: transform var(--dur-fast) ease; }
+.tab:active svg { transform: scale(0.9); }
+.tab.is-active { color: var(--on-accent); }
+
+/* ---------- Draggable tab reordering ---------- */
+.tab { cursor: pointer; -webkit-user-select: none; user-select: none; }
+.tab.is-dragging { opacity: 0.35; transform: scale(0.92); }
+/* While a hold-to-drag reorder is active the whole panel shows the grabbing cursor and ignores hover cursors. */
+:root.is-tab-dragging, :root.is-tab-dragging * { cursor: grabbing !important; }
+.tab.drag-over-before { box-shadow: 0 -2px 0 0 var(--accent-strong); }
+.tab.drag-over-after { box-shadow: 0 2px 0 0 var(--accent-strong); }
+
+.settings-btn { margin-top: auto; }
+.settings-btn:hover svg { transform: rotate(60deg); }
+.settings-btn:active svg { transform: rotate(60deg) scale(0.9); }
+.settings-btn svg { transition: transform 0.3s ease; }
+
+/* Tab names use the native title tooltip (never overlaps content) */
+
+/* ---------- Tool grid ---------- */
+.panel.is-entering { animation: panel-in 0.5s var(--smooth) backwards; }   /* backwards: no permanent transform layer afterwards */
+
+/* Auto-fit + minmax: the grid always keeps as many equal columns as fit at >=4.5rem each,
+   wrapping to more (or fewer) columns as the panel is stretched or narrowed, instead of a
+   hard-coded 3-column track that stretches every tile into a giant square on a wide panel.
+   justify-items:center + the .tool max-width below stop the tiles themselves from growing
+   past a sane size once a column track is wider than that - the extra space becomes gap/
+   margin instead of an oversized tile. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  gap: var(--gap-fluid-m);
+  justify-items: center;
+}
+
+.tool {
+  position: relative;
+  width: 100%; max-width: 6.5rem;
+  aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  /* NOTE: no overflow:hidden here (would clip the box-shadow glow below to the box). Rounded-corner
+     clipping of the custom tool image happens on .tool-img itself instead - see below. */
+  /* Glow tokens - tune here. Two states only, each a single static box-shadow (no blur/color value
+     ever animates): resting glow+border live on ::after (always on), hover glow lives on ::before and
+     is revealed purely via an opacity fade - the cheapest possible GPU-composited transition, no
+     layout or paint-heavy shadow interpolation. */
+  --tool-glow: 0 0 0 1px rgba(var(--accent-rgb), 0.35), 0 0 12px rgba(var(--accent-rgb), 0.35);
+  --tool-glow-hover: 0 0 0 1.5px rgba(var(--accent-rgb), 0.85), 0 0 18px rgba(var(--accent-rgb), 0.6);
+  --tool-border-color: rgba(255, 255, 255, 0.08);
+  transition: transform var(--dur) var(--bounce), opacity var(--dur-fast) linear;
+  will-change: transform;
+}
+/* Border ring + resting glow live on one pseudo element - both static values, nothing here ever
+   animates, so this layer costs nothing extra at 60fps. */
+.tool::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--tool-border-color), var(--tool-glow);
+  opacity: 1; pointer-events: none;
+}
+/* Hover glow: a single static box-shadow that only ever fades in/out via opacity - never
+   re-painted with a different blur radius or color, so hovering many tiles in a row stays smooth. */
+.tool::before {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit;
+  box-shadow: var(--tool-glow-hover);
+  background: var(--accent-soft);
+  opacity: 0; pointer-events: none; z-index: 2;
+  transition: opacity var(--dur-fast) linear;
+}
+.tool:hover {
+  transform: translateY(-3px) scale(1.07);
+}
+.tool:hover::before { opacity: 1; }
+.tool:active { transform: scale(0.96); }   /* same transition as hover: no snapping, springs back on release */
+.tool:active::before { opacity: 1; }        /* momentary glow flash on press, even without hover (touch/click) */
+.tool.is-loading { opacity: 0.6; animation: pulse 0.9s ease-in-out infinite; }
+
+.tool-img {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: inherit; overflow: hidden;   /* clips the custom image + its gradient to the tile's rounded corners */
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity var(--dur) var(--smooth);
+}
+.tool.has-img .tool-img { opacity: 1; }
+.tool.has-img .tool-img::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.12) 70%);
+}
+
+.tool-code, .tool-name { position: relative; z-index: 1; text-align: center; padding: 0 var(--space-1); }
+.tool-code { font-size: var(--fs-code); font-weight: 700; letter-spacing: 0.05em; }
+.tool-name {
+  font-size: var(--fs-name); font-weight: 600; color: var(--text-dim); line-height: 1.2;
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tool.has-img .tool-code, .tool.has-img .tool-name { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+
+/* Empty + info states */
+.empty, .info {
+  border: 1px dashed var(--border); border-radius: var(--radius-m);
+  padding: var(--space-4); font-size: 0.72rem; line-height: 1.55; color: var(--text-dim);
+}
+.info { border-style: solid; background: var(--surface); }
+.info strong { color: var(--text); font-weight: 600; }
+.info p { margin: 0 0 var(--space-2); }
+
+/* ---------- Info / About tab: developer profile card ---------- */
+.info-profile { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.info-avatar {
+  position: relative; flex: 0 0 auto; width: 3.6rem; height: 3.6rem;
+  border-radius: var(--radius-round); overflow: hidden;
+  background: var(--surface-hover); box-shadow: inset 0 0 0 1.5px var(--border);
+}
+.info-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.info-avatar.is-empty::after {
+  content: attr(data-initial); position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: grid; place-items: center;
+  font-size: 1.3rem; font-weight: 700; color: var(--text-dim);
+}
+.info-id { min-width: 0; }
+.info-name { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); letter-spacing: 0.01em; }
+.info-tagline { margin: 0.25rem 0 0; font-size: 0.66rem; line-height: 1.45; color: var(--text-dim); }
+
+.info-socials { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); }
+.social-btn {
+  width: 2.2rem; height: 2.2rem; border-radius: var(--radius-round);
+  display: grid; place-items: center; background: var(--surface-hover); color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: transform var(--dur) var(--bounce), color var(--dur-fast) linear,
+    background var(--dur-fast) linear, box-shadow var(--dur-fast) linear;
+}
+.social-btn svg { width: 1.1rem; height: 1.1rem; }
+.social-btn:hover {
+  color: var(--on-accent); background: var(--accent-strong);
+  box-shadow: inset 0 0 0 1.5px var(--accent); transform: translateY(-2px) scale(1.06);
+}
+.social-btn:active { transform: scale(0.9); }
+.social-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.info-divider { height: 1px; background: var(--border); margin: 0 0 var(--space-3); }
+.info-caps { color: var(--text-dim); }
+
+/* ---------- Context menu ---------- */
+.ctx-menu {
+  position: fixed; z-index: 99999 !important; left: 0; top: 0;   /* always above panel cards, modals and toasts; fixed + appended to <body> so no parent overflow can clip it */
+  min-width: 9.5rem; padding: var(--space-1);
+  background: var(--surface-hover); border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.45);
+  opacity: 0; visibility: hidden; transform: scale(0.9); transform-origin: top left;
+  transition: opacity var(--dur-fast) linear, transform var(--dur) var(--bounce), visibility 0s linear var(--dur);
+}
+.ctx-menu.is-open { opacity: 1; visibility: visible; transform: scale(1); transition-delay: 0s; }
+.ctx-item {
+  display: block; width: 100%; text-align: left;
+  padding: 0.45rem 0.6rem; border-radius: 0.35rem; font-size: 0.72rem;
+  transition: transform var(--dur) var(--bounce), background-color var(--dur-fast) linear;
+}
+.ctx-item:hover { background: var(--accent-soft); transform: translateX(2px); }
+.ctx-item:disabled { opacity: 0.4; pointer-events: none; }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60;
+  display: grid; place-items: center; padding: var(--space-4);
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--dur) var(--smooth), visibility 0s linear var(--dur);
+}
+/* pointer-events: none above is the actual fix, not just a belt-and-suspenders extra: visibility is
+   inherited but a descendant CAN re-assert its own visibility: visible (exactly what .collapse.is-open
+   does for the Easy Layer Label accordion below), which escapes this ancestor's `visibility: hidden`
+   and leaves it clickable - invisible (opacity still cascades down correctly) but still intercepting
+   clicks - for as long as that accordion is left open. pointer-events has no such escape hatch here
+   (nothing inside the modal sets pointer-events back to auto), so this closes the hole regardless of
+   which accordion/row is left open when the modal closes. */
+.modal-backdrop.is-open { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.modal {
+  width: 100%; max-width: 22rem; padding: var(--space-4);
+  max-height: calc(100vh - 2 * var(--space-4)); overflow-y: auto;   /* stays usable when the accordion is open */
+  scrollbar-gutter: stable;                                          /* ...without shifting when its scrollbar appears */
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-m);
+  transform: translateY(1rem) scale(0.94);
+  transition: transform 0.45s var(--bounce);
+}
+.modal-backdrop.is-open .modal { transform: none; }
+.modal h2 { margin: 0 0 var(--space-3); font-size: 0.9rem; font-weight: 600; }
+
+.field { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border); }
+.field label, .field-label {
+  font-size: var(--fs-label-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+.field-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; }
+.field-column { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+.field-column .field-actions { justify-content: flex-start; }
+.field-row { display: flex; align-items: center; gap: var(--space-2); }
+.range-label { flex: 0 0 auto; color: var(--text-dim); font-size: 0.7rem; }
+.field-row input[type="range"] { flex: 1; }
+.field-row-value { flex: 0 0 auto; min-width: 2.4rem; text-align: right; font-size: var(--fs-value); font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.field-note { margin: 0; font-size: 0.66rem; color: var(--text-dim); line-height: 1.4; }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; height: 1.1rem; background: none; margin: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.28rem; border-radius: 999px; background: var(--surface-sunken);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--border);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 0.85rem; height: 0.85rem; margin-top: -0.285rem; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+input[type="color"] {
+  width: 2.2rem; height: 1.6rem; padding: 0; border: 1px solid var(--border);
+  border-radius: 0.4rem; background: none; cursor: pointer;
+}
+
+.modal-footer { display: flex; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border); }
+
+.btn {
+  padding: 0.4rem 0.75rem; border-radius: 999px; font-size: 0.7rem;
+  background: var(--surface-hover); border: 1px solid var(--border);
+  transition: transform var(--dur) var(--bounce), filter var(--dur-micro) ease;
+}
+.btn:hover { transform: scale(1.07); }
+.btn:active { transform: scale(0.92); }
+.btn-ghost { background: transparent; color: var(--text-dim); }
+.btn-primary {
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%), linear-gradient(155deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+  border-color: var(--accent-strong); color: var(--on-accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.btn-primary:hover { filter: brightness(1.12); }
+.btn-primary:active { filter: brightness(0.95); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: var(--space-4); z-index: 70;
+  max-width: calc(100% - 2rem); padding: 0.5rem 0.9rem;
+  background: var(--surface-hover); border: 1px solid var(--border); border-radius: 999px;
+  font-size: 0.7rem; text-align: center;
+  transform: translate(-50%, 1.5rem); opacity: 0; pointer-events: none;
+  transition: transform var(--dur) var(--bounce), opacity var(--dur-fast) linear;
+}
+.toast.is-show { transform: translate(-50%, 0); opacity: 1; }
+.toast.is-error { border-color: var(--danger); }
+
+/* ---------- Text Animation tab ---------- */
+.ta { display: flex; flex-direction: column; gap: var(--space-4); }
+.ta-section { display: flex; flex-direction: column; gap: var(--space-2); }
+.ta-title {
+  margin: 0; font-size: var(--fs-label-sm); font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+}
+
+/* Beat Detector title row: same label styling as .ta-title, plus a small leading glyph. */
+.ta-title-icon { display: flex; align-items: center; gap: 0.4rem; }
+.ta-title-icon svg { width: 0.85rem; height: 0.85rem; color: var(--accent); flex: 0 0 auto; }
+
+/* Beat Marker: boxed card matching the tool's reference mockup (centered icon+title, a red
+   warning note, a Threshold field, a Layer/Comp marker-target switch, a full-width Generate
+   button). Deliberately its own self-contained card rather than blending into the flat
+   .ta-section list above - this tool is meant to stand out as its own boxed widget. */
+.beat-card {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-m); background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.beat-card .ta-title-icon { justify-content: center; }
+.beat-card-note { margin: 0; font-size: var(--fs-hint); line-height: 1.4; text-align: center; color: var(--danger); font-weight: 600; }
+.beat-target-row {
+  justify-content: center; gap: var(--space-3); background: none; box-shadow: none; padding: 0.2rem 0;
+}
+.beat-target-row span:not(.switch-track) { font-size: var(--fs-value); color: var(--text-dim); font-weight: 600; }
+
+/* auto-fit so chips wrap onto extra rows on a narrow panel and gain extra columns on a wide
+   one, instead of 2 fixed 1fr columns stretching into oversized pills. max-width on the chip
+   itself caps how big any single pill can get once its column track grows past that. */
+.chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: var(--gap-fluid-s); justify-items: center; }
+.chip { position: relative; display: block; width: 100%; max-width: 9rem; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span {
+  display: block; padding: 0.55rem 0.5rem; text-align: center; font-size: 0.72rem;
+  border-radius: var(--radius-s); background: var(--surface); color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: transform var(--dur) var(--bounce), background-color var(--dur-fast) linear, color var(--dur-fast) linear;
+}
+.chip:hover span { transform: scale(1.05); color: var(--text); }
+.chip:active span { transform: scale(0.92); }
+.chip input:checked + span { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chips-3 { grid-template-columns: repeat(auto-fit, minmax(4.2rem, 1fr)); }
+/* Exactly two equal, full-width columns (e.g. TextFlex Overshoot / Ease) - no empty third slot, no floating small pills. */
+.chips-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+.chips-2 .chip { max-width: none; }
+.chip-solo { display: inline-block; margin-bottom: var(--space-1); }
+
+/* ---------- Color Palette tab ---------- */
+.label-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.2rem, 1fr)); gap: var(--gap-fluid-s); justify-items: center; }
+.label-swatch {
+  position: relative; width: 100%; max-width: 6.5rem; aspect-ratio: 1.4 / 1; border-radius: var(--radius-s); border: 1px solid rgba(0,0,0,0.2);
+  cursor: pointer; transition: transform var(--dur-fast) var(--bounce); display: flex; align-items: flex-end; padding: 0.2rem;
+}
+.label-swatch:hover { transform: translateY(-2px) scale(1.05); }
+.label-swatch:active { transform: scale(0.92); }
+.label-swatch.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+.label-name {
+  font-size: 0.56rem; font-weight: 600; color: rgba(0,0,0,0.65); background: rgba(255,255,255,0.55);
+  border-radius: 0.2rem; padding: 0.05rem 0.25rem; line-height: 1.3; width: 100%; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.palette-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.2rem, 1fr)); gap: var(--gap-fluid-s); justify-items: center; }
+.swatch {
+  position: relative; width: 100%; max-width: 3.2rem; aspect-ratio: 1 / 1; border-radius: var(--radius-s);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  transition: transform var(--dur) var(--bounce);
+}
+.swatch:hover { transform: translateY(-2px) scale(1.06); }
+.swatch:active { transform: scale(0.9); }
+.swatch.is-selected { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 0 2px var(--bg, #18181b), 0 0 0 4px var(--accent-strong); }
+.swatch-remove {
+  position: absolute; top: -0.3rem; right: -0.3rem; width: 1rem; height: 1rem;
+  border-radius: 50%; background: var(--danger); color: #fff; font-size: 0.7rem; line-height: 1rem;
+  display: grid; place-items: center; opacity: 0; transition: opacity var(--dur-fast) ease;
+}
+.swatch:hover .swatch-remove { opacity: 1; }
+.swatch-add {
+  position: absolute; top: -0.3rem; right: -0.3rem; width: 1rem; height: 1rem;
+  border-radius: 50%; background: var(--accent-strong); color: var(--on-accent); font-size: 0.75rem; line-height: 1rem;
+  display: grid; place-items: center; opacity: 0; transition: opacity var(--dur-fast) ease, transform var(--dur-fast) var(--bounce);
+}
+.swatch:hover .swatch-add { opacity: 1; }
+.swatch-add:hover { transform: scale(1.15); }
+
+/* ---------- Image color extraction (Color Palette tab) ---------- */
+.extract-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.extract-filename { font-size: 0.68rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+
+/* ---------- Category tabs (Custom Colors / Expression Code snippets) ---------- */
+.cat-bar { display: flex; align-items: center; gap: var(--space-2); }
+.cat-tabs {
+  display: flex; gap: var(--space-1); overflow-x: auto; flex: 1; min-width: 0;
+  scrollbar-width: none;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex: 0 0 auto; padding: 0.32rem 0.7rem; border-radius: 999px; font-size: 0.68rem; font-weight: 600;
+  color: var(--text-dim); background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  white-space: nowrap; transition: color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, transform var(--dur-fast) var(--bounce);
+}
+.cat-tab:hover { color: var(--text); transform: translateY(-1px); }
+.cat-tab:active { transform: scale(0.95); }
+.cat-tab.is-active { color: var(--on-accent); background: var(--accent-strong); box-shadow: none; }
+.cat-tab-label { max-width: 8.5rem; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
+.cat-tab-add {
+  flex: 0 0 auto; width: 1.6rem; height: 1.6rem; border-radius: 50%; padding: 0; box-sizing: border-box;
+  display: grid; place-items: center; font-size: 0.9rem; line-height: 1; color: var(--text-dim);
+  background: transparent; border: 1px dashed var(--border);
+}
+.cat-tab-add:hover { color: var(--text); border-color: var(--accent); border-style: solid; }
+.cat-add-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; margin-bottom: 12px; }
+.cat-add-row .text-input { flex: 1; }
+.cat-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.cat-toolbar-name {
+  font-size: var(--fs-label-sm); font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cat-toolbar-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+.cat-rename-input { max-width: 12rem; }
+
+.text-input {
+  width: 100%; box-sizing: border-box; padding: 0.5rem 0.75rem; border-radius: var(--radius-s);
+  border: 1px solid transparent;
+  background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--border), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  font-size: var(--fs-value); font-family: inherit;
+  transition: border-color var(--dur-micro) ease, box-shadow var(--dur-micro) ease, background var(--dur-micro) ease;
+}
+.text-input::placeholder { color: var(--text-faint); }
+.text-input:hover { background: var(--surface-hover); }
+/* Was a flat inset ring + a solid 3px accent-soft halo, which read as a pale/white block on
+   dark surfaces (see the Saved Snippets "Category name" field). Replaced with a real border
+   plus a soft glow scaled off --accent-rgb, matching the glow used on tool buttons elsewhere. */
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.35);
+}
+
+/* ---------- Expression Code tab ---------- */
+/* "New / Edit Snippet" card: wraps the whole editor (name field + code editor + actions) in its own
+   dark panel, visually set apart from the "Saved Snippets" list below it. */
+.snippet-card {
+  --snippet-accent: var(--accent);
+  --snippet-accent-glow: rgba(var(--accent-rgb), 0.4);
+  /* Was a hardcoded #1a1a1a - didn't move when the panel background changed. --surface-sunken
+     tracks --bg live (see Settings.applyCardSurfaces in main.js) and sits at the same "recessed
+     well" depth this card was designed at, so the card keeps its look but now stays in sync. */
+  background: var(--surface-sunken);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  padding: var(--space-4) var(--space-3);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Card title: compact uppercase label with a neon accent instead of the generic --text-dim */
+.snippet-card > .ta-title {
+  font-size: 0.6875rem;      /* 11px */
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--snippet-accent);
+}
+
+/* "Snippet name" field: pill-rounded dark well, separate from the card background so it reads
+   as an embedded control, with the same theme-accent focus glow as every other input. */
+.snippet-card .text-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  /* Was #262626 / #2d2d2d (hover, focus) - hardcoded, so it never followed a custom background
+     color either. --surface / --surface-hover are the same dynamically-derived tokens every other
+     input in the panel uses (see .text-input above), so this well now re-tints with the rest. */
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease-in-out;
+}
+.snippet-card .text-input::placeholder { color: var(--text-faint); }
+.snippet-card .text-input:hover { background: var(--surface-hover); }
+.snippet-card .text-input:focus {
+  outline: none;
+  border-color: var(--snippet-accent);
+  background: var(--surface-hover);
+  box-shadow: 0 0 8px var(--snippet-accent-glow);
+}
+
+.code-area {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 5.5rem;
+  padding: 0.625rem 0.75rem; border-radius: var(--radius-s);
+  background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--border), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.5;
+}
+.code-area::placeholder { color: var(--text-faint); }
+.code-area:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--accent), inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px var(--accent-soft);
+}
+/* Thin dark scrollbar - matches the editor chrome instead of the OS default */
+.code-area::-webkit-scrollbar { width: 8px; }
+.code-area::-webkit-scrollbar-track { background: transparent; }
+.code-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+.code-area::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* Editor "chrome": a language header bar above the textarea, like a real code editor tab. The
+   container (not the textarea) owns the border and the focus glow (via :focus-within) - clicking
+   into the textarea lights up the whole block, not just an inner ring. */
+.code-editor {
+  border-radius: var(--radius-m); overflow: hidden;
+  /* Was a hardcoded #1e1e1e (== the DEFAULT --bg, which is why this looked fine until the
+     background color was actually changed). --surface-sunken tracks the live --bg instead. */
+  background: var(--surface-sunken);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+}
+.code-editor:focus-within {
+  box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-soft), 0 0 8px rgba(var(--accent-rgb), 0.35);
+}
+.code-editor-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  padding: 0.4rem 0.6rem; background: var(--surface);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.code-editor-lang {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: var(--fs-label-sm); font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+}
+.code-editor-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--accent); flex: 0 0 auto; box-shadow: 0 0 4px var(--accent); }
+.code-editor-tools { display: flex; gap: 0.15rem; }
+.code-editor .code-area {
+  display: block; border-radius: 0; box-shadow: none; background: transparent;
+}
+.code-editor .code-area:hover { box-shadow: none; }
+.code-editor .code-area:focus { box-shadow: none; }   /* container's :focus-within glow replaces this */
+
+.expr-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.expr-item {
+  position: relative;
+  background: var(--surface); border-radius: var(--radius-s); box-shadow: var(--shadow-card);
+  padding: var(--space-2);
+  /* Entrance animation: replayed every time renderList() rebuilds the list
+     (save/edit/delete/favorite/category switch), staggered per-card via the
+     inline animation-delay set in JS. */
+  animation: exprItemIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: box-shadow var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+@keyframes exprItemIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+:root[data-reduce-motion="true"] .expr-item { animation: none; }
+/* Press-and-hold feedback (long-press to favorite) */
+.expr-item.is-pressing {
+  box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-soft);
+  transform: scale(0.985);
+}
+.expr-item.is-favorite {
+  box-shadow: inset 0 0 0 1px #ffffff, 0 0 8px rgba(255, 255, 255, 0.22);
+}
+.expr-item-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.expr-item-fav-badge { display: grid; place-items: center; flex-shrink: 0; color: #ffffff; }
+.expr-item-fav-badge svg { width: 0.8rem; height: 0.8rem; }
+.icon-star-fill { fill: currentColor; stroke: none; }
+.expr-item-name { flex: 1 1 auto; font-size: 0.74rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.expr-item-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+.icon-btn {
+  width: 1.5rem; height: 1.5rem; border-radius: 6px; display: grid; place-items: center;
+  color: var(--text-dim); transition: color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-fast) var(--bounce);
+}
+.icon-btn svg { width: 0.85rem; height: 0.85rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn:hover { color: var(--text); background: var(--accent-soft); }
+.icon-btn:active { transform: scale(0.88); }
+.icon-btn.is-loading { opacity: 0.5; pointer-events: none; }
+/* Bug fix: this preview used to hard-clip at max-height:4.5em with overflow:hidden,
+   so a snippet longer than ~6 lines had no way to see/scroll to the rest of its code.
+   Now it scrolls internally instead of silently cutting the content off. */
+.expr-item-code {
+  margin: 0.4rem 0 0; font-family: var(--font-mono);
+  font-size: 0.64rem; line-height: 1.4; color: var(--text-dim);
+  max-height: 4.5em; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;
+  cursor: text; /* hints that this box itself scrolls/selects, distinct from the card's long-press */
+}
+.expr-item-code::-webkit-scrollbar { width: 6px; }
+.expr-item-code::-webkit-scrollbar-track { background: transparent; }
+.expr-item-code::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+.expr-item-code::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 0.45rem 0.6rem; border-radius: var(--radius-s); background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border); font-size: 0.72rem; cursor: pointer;
+}
+.switch-row input { position: absolute; opacity: 0; pointer-events: none; }
+.switch-track {
+  position: relative; flex: 0 0 auto; width: 2rem; height: 1.1rem; border-radius: 999px;
+  background: var(--surface-sunken); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--border);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.switch-track::after {
+  content: ""; position: absolute; left: 0.15rem; top: 0.15rem; width: 0.8rem; height: 0.8rem;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition: transform var(--dur) var(--bounce);
+}
+.switch-row input:checked ~ .switch-track {
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35), 0 0 0 3px var(--accent-soft);
+}
+.switch-row input:checked ~ .switch-track::after { transform: translateX(0.9rem); }
+.switch-row input:focus-visible ~ .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Rotating "saber" glow border: wrap any card/toggle in <div class="saber-wrap">...</div> to give it
+   an animated neon light tracing its rounded edge. Two things keep it CONTAINED to just that card
+   (a bug earlier let it wash across the whole panel - see below):
+   1) .saber-wrap has overflow:hidden with its own rounded corners, so nothing - crisp ring or blur -
+      can ever paint outside that card's footprint, no matter how the gradient layers are sized.
+   2) the real content (e.g. .switch-row) keeps its own opaque background and paints on top of both
+      glow layers simply because it comes later in the DOM - masking the gradient down to a thin ring
+      in the wrapper's 2px padding gap.
+   Only .transform ever animates (GPU-composited, no repaint). The rotation itself always runs;
+   .is-active only fades it in/out via opacity - here, driven by the Auto Parent checkbox. (An
+   earlier version added/removed the animation itself on toggle, which restarted the sweep from
+   0deg every click - see the note below.) */
+.saber-wrap {
+  position: relative; display: flex; overflow: hidden;
+  padding: 2px; border-radius: calc(var(--radius-s) + 0.15rem);
+}
+.saber-wrap > .switch-row { position: relative; z-index: 1; flex: 1 1 auto; }
+.saber-wrap::before, .saber-wrap::after {
+  content: ""; position: absolute; top: 50%; left: 50%; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, var(--accent) 15%, var(--accent-strong) 30%, transparent 40%, transparent 100%);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur-fast) linear;
+  will-change: transform, opacity;
+  /* Fixed square (not a % of the card's own width/height) so the gradient always sweeps as a true
+     circle. A % size would scale independently per axis - on a wide-short row like Auto Parent that
+     stretches into a huge lopsided rectangle instead of a ring (the bug seen in-app). 900/1000px
+     comfortably covers this panel even resized wide, and rasterizing a big static gradient once is
+     cheap - only the rotation repeats every frame, and that's transform-only. */
+  transform: translate(-50%, -50%) rotate(0deg);
+  /* Animation runs continuously and is NEVER added/removed by .is-active - only opacity is toggled.
+     Gating the animation itself (adding/removing it on click) restarted it from 0deg every time,
+     which is the "resets/glitches on click" bug: it made the sweep visibly snap back to its start
+     angle on every toggle instead of continuing smoothly. Rotating an invisible layer costs almost
+     nothing, so this trade is worth it. */
+  animation: saberSpin 3s linear infinite;
+}
+.saber-wrap::before { width: 900px; height: 900px; z-index: 0; }                                   /* crisp ring source */
+.saber-wrap::after { width: 1000px; height: 1000px; filter: blur(6px) opacity(0.8); z-index: -1; }  /* softer duplicate, clipped to the same footprint */
+.saber-wrap.is-active::before, .saber-wrap.is-active::after { opacity: 1; }
+@keyframes saberSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Code editor variant of the saber glow above: same rotating conic-gradient ring and the same
+   crisp+blurred double layer for the ambient halo, just sized for a full card instead of a pill-
+   shaped toggle row, and always visible (this container has no on/off state to gate it - it's
+   given the "is-active" class directly in markup rather than toggled by JS). 10px outer radius
+   with a 2px glow gap nests exactly onto the code editor's existing 8px (--radius-m) corners, so
+   the glow traces the rounded edge with no visible seam. */
+.saber-wrap--code { padding: 2px; border-radius: 10px; }
+.saber-wrap--code > .code-editor { position: relative; z-index: 1; flex: 1 1 auto; }
+
+.label-assign-list { display: flex; flex-direction: column; gap: var(--space-1); }
+.label-assign-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 0.2rem 0; }
+.label-assign-row .field-label { display: flex; align-items: center; gap: var(--space-2); }
+.label-assign-swatch { width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; flex: 0 0 auto; border: 1px solid rgba(0,0,0,0.2); }
+.label-assign-row select { min-width: 8.5rem; }
+
+.select {
+  width: 100%; padding: 0.5rem 1.6rem 0.5rem 0.6rem; font-family: inherit; font-size: var(--fs-value); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-s); background-color: var(--surface-sunken);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.45rem center; background-size: 0.9rem;
+}
+.select option { background: var(--surface); color: var(--text); }
+
+.param { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.3rem var(--space-2); }
+.param label {
+  font-size: var(--fs-label-sm); font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+}
+.param { transition: opacity var(--dur-fast) linear; }
+.param.is-off { opacity: 0.45; }   /* Text Animation: value row of a property that is switched off */
+.param .num {
+  width: 4.2rem; padding: 0.25rem 0.4rem; text-align: right; font-family: inherit; font-size: var(--fs-value);
+  font-variant-numeric: tabular-nums;
+  color: var(--text); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-xs);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-user-select: text; user-select: text;
+}
+.param input[type="range"] { grid-column: 1 / -1; width: 100%; margin: 0; height: 1.1rem; background: none; -webkit-appearance: none; appearance: none; }
+.param input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.28rem; border-radius: 999px; background: var(--surface-sunken);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--border);
+}
+.param input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 0.85rem; height: 0.85rem; margin-top: -0.285rem; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.btn-apply {
+  width: 100%; padding: 0.7rem 1rem; border-radius: var(--radius-m); font-size: 0.8rem; font-weight: 600;
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%), linear-gradient(155deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+  color: var(--on-accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform var(--dur) var(--bounce), opacity var(--dur-fast) linear, filter var(--dur-micro) ease;
+}
+.btn-apply:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.1); }
+.btn-apply:active { transform: scale(0.94); filter: brightness(0.95); }
+.btn-apply.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+
+/* "+ Add Custom Shortcut": lives in the Shortcutz tab's own top header now (see Shortcutz.render),
+   above every category, so it needs a bit of breathing room before the first section starts. */
+.shortcutz-add-btn.btn-apply {
+  padding: 0.625rem 1rem; /* 10px 16px */
+  font-size: 0.75rem; /* 12px */
+  margin-bottom: 0.875rem; /* 14px, within the 12-16px spec range */
+}
+
+/* ---------- Quick Comp Edit tab ---------- */
+.qce-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: var(--gap-fluid-s); }
+.qce-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.qce-field label { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); }
+.qce-pill {
+  border-radius: 999px; text-align: center; font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em; padding-top: 0.55rem; padding-bottom: 0.55rem;
+}
+.qce-pill:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Quick Resolution Presets: uniform grid tiles (CapCut/Alight-Motion-style). Every tile is the
+   same fixed size and sits in an equal-width grid column - no more per-ratio width math to keep
+   in sync. The ratio is still legible at a glance via the small .qce-res-shape glyph, which is
+   sized per orientation bucket (landscape / portrait / square, set in main.js) rather than
+   computed live, so it stays crisp instead of stretching to odd proportions.
+   Grid: auto-fit + minmax lets tiles wrap into fewer columns as the panel narrows (down to a
+   2-row layout) instead of shrinking indefinitely or overflowing. */
+.qce-res-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(3.6rem, 1fr));
+  gap: var(--gap-fluid-s); align-items: stretch; justify-items: stretch;
+}
+.qce-res-tile {
+  position: relative; height: 3.4rem; width: 100%; max-width: 6rem; margin: 0 auto;
+  border-radius: var(--radius-s); background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem;
+  transition: background var(--dur-fast) ease, box-shadow var(--dur-fast) ease,
+              transform var(--dur-micro) ease, filter var(--dur-fast) ease;
+}
+.qce-res-tile:hover { filter: brightness(1.18); transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--text-faint); }
+.qce-res-tile:active { transform: scale(0.94); }
+.qce-res-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.qce-res-tile .qce-res-label {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.01em; color: var(--text-dim);
+  pointer-events: none; line-height: 1;
+}
+/* Ratio glyph: a tiny outlined rectangle whose own shape hints at the preset's orientation.
+   Bucketed (not computed from the real ratio) so it always renders at a clean, legible size. */
+.qce-res-shape {
+  border: 1.4px solid currentColor; border-radius: 2px; color: var(--text-faint);
+  opacity: 0.8; pointer-events: none; transition: color var(--dur-fast) ease, opacity var(--dur-fast) ease;
+}
+.qce-res-tile.is-landscape .qce-res-shape { width: 1.3rem; height: 0.75rem; }
+.qce-res-tile.is-portrait  .qce-res-shape { width: 0.75rem; height: 1.3rem; }
+.qce-res-tile.is-square    .qce-res-shape { width: 1rem;    height: 1rem; }
+/* Crop-style corner brackets, shown only on unselected tiles (matches the reference screenshot) */
+.qce-res-corner { position: absolute; width: 0.4rem; height: 0.4rem; border: 1.5px solid var(--text-faint); opacity: 0.65; pointer-events: none; }
+.qce-res-corner-tl { top: 0.2rem; left: 0.2rem; border-right: 0; border-bottom: 0; }
+.qce-res-corner-tr { top: 0.2rem; right: 0.2rem; border-left: 0; border-bottom: 0; }
+.qce-res-corner-bl { bottom: 0.2rem; left: 0.2rem; border-right: 0; border-top: 0; }
+.qce-res-corner-br { bottom: 0.2rem; right: 0.2rem; border-left: 0; border-top: 0; }
+.qce-res-tile.is-active {
+  background: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent-strong);
+}
+.qce-res-tile.is-active .qce-res-label { color: var(--on-accent); font-weight: 800; }
+.qce-res-tile.is-active .qce-res-shape { color: var(--on-accent); opacity: 1; }
+.qce-res-tile.is-active .qce-res-corner { display: none; }
+.qce-res-tile.is-active:hover { filter: brightness(1.08); }
+.qce-res-tile.is-loading { opacity: 0.55; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+
+/* ---------- Save Frame: split buttons (main = auto-save, icon = change folder) ---------- */
+.split-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--gap-fluid-s); }
+.split-btn {
+  --split-divider: rgba(255, 255, 255, 0.28);
+  display: flex; align-items: stretch; min-width: 0; overflow: hidden;
+  border-radius: var(--radius-m); color: var(--on-accent);
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%), linear-gradient(155deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: opacity var(--dur-fast) linear;
+}
+.split-main, .split-icon {
+  position: relative; display: grid; place-items: center; color: inherit; font-weight: 600;
+}
+.split-main { flex: 1 1 auto; min-width: 0; padding: 0.7rem 0.6rem; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.split-icon { flex: 0 0 auto; width: 2.4rem; border-left: 1px solid var(--split-divider); }
+.split-icon svg { width: 1.05rem; height: 1.05rem; transition: transform var(--dur) var(--bounce); }
+/* Hover / press feedback is an opacity-only overlay (GPU friendly, no layout work) */
+.split-main::before, .split-icon::before {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background: var(--on-accent); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) linear;
+}
+.split-main:hover::before, .split-icon:hover::before { opacity: 0.14; }
+.split-main:active::before, .split-icon:active::before { opacity: 0.26; }
+.split-icon:hover svg { transform: scale(1.15); }
+.split-icon:active svg { transform: scale(0.9); }
+.split-main:focus-visible, .split-icon:focus-visible { outline: 2px solid var(--on-accent); outline-offset: -3px; }
+.split-btn.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+.split-btn.is-disabled { opacity: 0.45; pointer-events: none; }
+.save-dir { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Anchor Point & Align tab ---------- */
+.anchor-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap-fluid-s); max-width: 11rem;
+}
+.anchor-btn {
+  aspect-ratio: 1 / 1; border-radius: var(--radius-s);
+  background: var(--surface); box-shadow: var(--shadow-card);
+  color: var(--text-dim); display: grid; place-items: center;
+  transition: transform var(--dur) var(--bounce), box-shadow var(--dur-fast) linear, color var(--dur-fast) linear;
+}
+.anchor-btn svg { width: 1.3rem; height: 1.3rem; }
+.anchor-btn:hover { color: var(--text); box-shadow: inset 0 0 0 1.5px var(--accent); transform: translateY(-1px); }
+.anchor-btn:active { transform: scale(0.92); }
+.anchor-btn.is-loading { opacity: 0.55; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+
+.align-grid,
+.fit-grid,
+.flip-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  gap: var(--gap-fluid-s); justify-items: center;
+}
+.align-btn,
+.fit-btn,
+.flip-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  width: 100%; max-width: 6.5rem; box-sizing: border-box;
+  padding: var(--space-2) var(--space-1); border-radius: var(--radius-s);
+  background: var(--surface); box-shadow: var(--shadow-card);
+  transition: transform var(--dur) var(--bounce), box-shadow var(--dur-fast) linear;
+}
+.align-btn:hover,
+.fit-btn:hover,
+.flip-btn:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.align-btn:active,
+.fit-btn:active,
+.flip-btn:active { transform: scale(0.94); }
+.align-btn.is-loading,
+.fit-btn.is-loading,
+.flip-btn.is-loading { opacity: 0.55; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+.align-icon svg { width: 1.4rem; height: 1.4rem; color: var(--text-dim); }
+.align-icon .align-bounds { fill: none; stroke: var(--border); stroke-dasharray: 2 2; }
+.align-icon svg rect:not(.align-bounds) { fill: var(--accent-strong); stroke: none; }
+.align-text { font-size: 0.62rem; color: var(--text-dim); }
+
+/* Short panels: slightly smaller sidebar circles so 6 tabs + gear always fit */
+@media (max-height: 440px) { :root { --tab-size: 2rem; --sidebar-w: 3.25rem; } }
+
+/* ---------- Curve tab (NeuCurve, hosted in a persistent iframe) ---------- */
+/* The pane keeps its full size while hidden (visibility, not display) so the embedded tool never
+   receives a 0px resize when another tab is showing. NeuCurve brings its own complete UI, so on this
+   tab the Multi Tool header, padding and scrolling are switched off. */
+.curve-pane {
+  --curve-bg: #0a0a0a;                 /* fallback only: overridden live by Settings.applyCardSurfaces()
+                                           in main.js once a custom background color is set, so the
+                                           loading-flash tone matches too - see the JS for details */
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 2;
+  display: flex; flex-direction: column;   /* slider bar on top, NeuCurve below */
+  visibility: hidden; opacity: 0; pointer-events: none;
+}
+.curve-pane.is-active { visibility: visible; opacity: 1; pointer-events: auto; }
+.curve-pane.is-entering { animation: curve-in 0.25s ease both; }   /* opacity only: GPU friendly */
+
+.curve-stage { position: relative; flex: 1 1 auto; min-height: 0; background: var(--curve-bg); }
+
+/* Curve background fix. The stage above used to be a hard-coded opaque #0a0a0a, and NeuCurve paints its own
+   opaque backdrop on top of that, so nothing behind the tab (color, image, GIF/video, or the opacity slider)
+   could ever show through. While a background image/GIF/video is set (html.has-bg-media) the backdrop now
+   becomes see-through by exactly the amount the slider says: slider 100% -> veil 0 -> fully transparent (the
+   background shows in full, like every other tab); slider 0% -> veil 1 -> the original solid color. With no
+   background media the Curve tab looks exactly as before. The iframe applies the same rule to its own
+   wrappers (neucurve/index.html). */
+.curve-pane { --curve-bg-rgb: 10, 10, 10; }
+:root.has-bg-media .curve-stage { background: rgba(var(--curve-bg-rgb), var(--app-bg-veil, 0)); }
+.curve-frame { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: block; width: 100%; height: 100%; border: 0; background: transparent !important; color-scheme: normal; }
+/* Strict transparency: the stage never paints its own color (it only did so while the frame loaded). */
+.curve-pane .curve-stage { background: transparent !important; }
+
+.main.is-curve { padding: 0; overflow: hidden; scrollbar-gutter: auto; }   /* the curve editor has no scrollbar: no lane */
+.main.is-curve > .panel-head,
+.main.is-curve > .panel { display: none; }
+
+.curve-loading { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: none; place-items: center; pointer-events: none; }
+.curve-pane.is-loading .curve-loading { display: grid; }
+.curve-spinner {
+  width: 1.4rem; height: 1.4rem; border-radius: var(--radius-round);
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: curve-spin 0.8s linear infinite; will-change: transform;
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(1.1rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes head-in {
+  from { opacity: 0; transform: translateY(0.4rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
+}
+
+@keyframes curve-spin { to { transform: rotate(360deg); } }
+@keyframes curve-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Very narrow panels (docked thin): tighten outer padding and drop tile names so the
+   auto-fit grids above can still fit at least 2 columns instead of shrinking text unreadably. */
+@media (max-width: 300px) {
+  .main { padding: var(--space-2); }
+  .tool-name { display: none; }
+}
+/* JS-driven equivalent (see initResponsiveLayout in main.js): fires off a ResizeObserver on
+   .app rather than the viewport, so it also reacts correctly to CEP panel resizes that don't
+   raise a window "resize" event. Kept in addition to the media query above, not instead of it. */
+.app[data-panel-size="xs"] .tool-name { display: none; }
+.app[data-panel-size="xs"] .main { padding: var(--space-2); }
+
+/* Reduced motion is now OPT-IN. It used to follow the OS setting (prefers-reduced-motion), which silently
+   disabled every animation whenever Windows "Show animations" / macOS "Reduce motion" was off.
+   To turn animations off on purpose: document.documentElement.setAttribute("data-reduce-motion", "true"). */
+:root[data-reduce-motion="true"] *,
+:root[data-reduce-motion="true"] *::before,
+:root[data-reduce-motion="true"] *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+
+
+/* ---------- Settings: collapsible "Easy Layer Label" accordion ---------- */
+.field-accordion { gap: 0; }
+.accordion-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  padding: 0.55rem 0.7rem; border-radius: var(--radius-s); text-align: left;
+  background: var(--surface-hover); box-shadow: var(--shadow-card);
+  transition: box-shadow var(--dur-fast) linear, transform var(--dur) var(--bounce);
+}
+.accordion-toggle:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.accordion-toggle:active { transform: scale(0.98); }
+.accordion-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.accordion-action {
+  font-size: var(--fs-label-sm); color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: var(--tracking-label);
+}
+.accordion-chevron {
+  flex: 0 0 auto; width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; color: var(--text-dim);
+  transition: transform var(--dur) var(--smooth);
+}
+.accordion-toggle[aria-expanded="true"] .accordion-chevron { transform: rotate(180deg); }
+
+/* max-height is set/cleared by main.js (auto height can't be transitioned in older CEF builds) */
+.collapse {
+  max-height: 0; overflow: hidden; opacity: 0; visibility: hidden;
+  transition: max-height 0.4s var(--smooth), opacity 0.25s linear, visibility 0s linear 0.4s;
+}
+.collapse.is-open { opacity: 1; visibility: visible; transition-delay: 0s, 0s, 0s; }
+.collapse-inner { display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-3); }
+
+/* ---------- Text Animation: Bounce / Transform modes ---------- */
+.ta-pane { display: flex; flex-direction: column; gap: var(--space-4); }
+.ta-pane[hidden] { display: none; }
+.ta-pane.is-entering { animation: panel-in 0.4s var(--smooth) backwards; }
+
+/* ==========================================================
+   Motion polish - hover / focus / press states
+   Only explicit properties are transitioned (never "all"): "all" also animates layout properties such
+   as width, padding and max-height and can trigger reflows in CEF. The look is the same, the cost is lower.
+   ========================================================== */
+.panel-head.is-entering { animation: head-in 0.35s var(--smooth) backwards; }
+
+/* Buttons: colour changes now glide as well (only transform was animated before) */
+.btn {
+  transition: transform var(--dur) var(--bounce), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+.btn:hover { border-color: var(--accent); }
+.btn-ghost:hover { color: var(--text); background: var(--surface-hover); }
+.btn-primary:hover { border-color: var(--text); }
+
+/* Inputs: focus ring / border fade in instead of snapping. Every state keeps the inset "well"
+   shadow (depth) and only adds to it, so hover/focus never look flat. */
+.text-input, .code-area {
+  transition: box-shadow var(--dur-micro) ease, background-color 0.3s ease;
+}
+.text-input:hover, .code-area:hover {
+  box-shadow: inset 0 0 0 1px var(--accent), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.text-input:focus, .code-area:focus {   /* re-stated: must beat :hover above */
+  box-shadow: inset 0 0 0 1px var(--accent), inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px var(--accent-soft);
+}
+
+.param .num {
+  transition: border-color var(--dur-micro) ease, box-shadow var(--dur-micro) ease, background-color 0.3s ease;
+}
+.param .num:hover { border-color: var(--accent); }
+.param .num:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px var(--accent-soft);
+}
+
+.select {
+  transition: border-color var(--dur-micro) ease, box-shadow var(--dur-micro) ease, background-color 0.3s ease;
+}
+.select:hover { border-color: var(--accent); }
+.select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px var(--accent-soft);
+}
+
+input[type="color"] { transition: transform var(--dur) var(--bounce), border-color 0.3s ease; }
+input[type="color"]:hover { transform: scale(1.08); border-color: var(--accent); }
+input[type="color"]:active { transform: scale(0.94); }
+
+/* Range sliders: the thumb grows on hover and shrinks on press. Only the thumb's transform animates,
+   so dragging is never delayed. */
+input[type="range"]::-webkit-slider-thumb {
+  transition: transform var(--dur-fast) var(--smooth), box-shadow 0.3s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(var(--accent-rgb), 0.28);
+}
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(0.95); }
+
+
+/* ==========================================================
+   Idle Screensaver
+   Idle Mode = body.is-idle. The background layers (.bg-layer / .bg-motion-layer) are never touched, so the
+   video keeps playing. UI: fade out (opacity), then body.is-idle-parked -> moved off-screen (set by main.js after
+   the fade) so the browser stops painting it. Clock: fixed full-screen overlay above the background.
+   ========================================================== */
+.app { opacity: 1; transition: opacity 0.2s var(--smooth); }                       /* fast return on exit */
+body.is-idle .app {
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.35s var(--smooth), visibility 0s linear 0.35s;             /* JS PARK_DELAY_MS must stay > 0.35s */
+}
+/* Parked = moved far off-screen instead of display:none. display:none gave the embedded NeuCurve frame a 0x0 size,
+   and on return its graph measured the wrong height (the plot sat too high). An off-screen transform keeps every
+   box at its real size, so nothing is re-measured, and the browser still skips painting what is off-screen. */
+body.is-idle-parked .app { transform: translate3d(-200vw, 0, 0); }
+body.is-idle .toast, body.is-idle .ctx-menu { display: none; }
+
+.idle-clock {
+  --idle-clock-color: #fff;
+  --idle-scale: 1;                            /* set inline by Idle.applyPosition() in main.js, from the Scale slider */
+  /* Corner anchored via [data-position] below instead of a fixed corner, so the
+     Settings > Clock Position dropdown can move it without touching layout here.
+     top/right/bottom/left all start unset; each [data-position] variant sets only
+     the two edges it needs, so the box hugs its own content on the other two. */
+  position: fixed; z-index: 40;
+  display: flex; flex-direction: column;
+  padding: var(--space-4);
+  color: var(--idle-clock-color);
+  font-family: -apple-system, "SF Pro Display", system-ui, "Segoe UI", "Helvetica Neue", sans-serif;
+  pointer-events: none;                       /* mouse events still reach the document -> exits Idle Mode */
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s, top 0.3s var(--smooth), bottom 0.3s var(--smooth), left 0.3s var(--smooth), right 0.3s var(--smooth);
+}
+body.is-idle .idle-clock {
+  opacity: 1; visibility: visible;
+  transition: opacity 0.6s var(--smooth);
+}
+
+.idle-clock[data-position="top-left"]     { top: 0;    left: 0;   align-items: flex-start; justify-content: flex-start; text-align: left; }
+.idle-clock[data-position="top-right"]    { top: 0;    right: 0;  align-items: flex-end;   justify-content: flex-start; text-align: right; }
+.idle-clock[data-position="bottom-left"]  { bottom: 0; left: 0;   align-items: flex-start; justify-content: flex-end;   text-align: left; }
+.idle-clock[data-position="bottom-right"] { bottom: 0; right: 0;  align-items: flex-end;   justify-content: flex-end;  text-align: right; }
+.idle-clock[data-position="center"]       { top: 0; right: 0; bottom: 0; left: 0; align-items: center; justify-content: center; text-align: center; }
+/* .idle-session / .idle-message are inline-flex/inline-block (auto width) so text-align above
+   is what centers THEM as a block within the column; align-items above centers them as flex
+   children. Center mode's chips stay left-aligned text inside themselves (always clearer to read). */
+.idle-clock[data-position="center"] .idle-session,
+.idle-clock[data-position="center"] .idle-message { text-align: left; }
+.idle-date {
+  font-size: calc(var(--idle-scale) * clamp(0.7rem, 2.4vmin, 1.1rem));
+  font-weight: 600; letter-spacing: 0.01em; opacity: 0.9;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+.idle-time {
+  font-size: calc(var(--idle-scale) * clamp(1.8rem, 11vmin, 4rem));
+  font-weight: 600; line-height: 1.05; letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* "Kamu sudah di After Effects selama ..." - lama sesi editing, di bawah jam. Teks diisi oleh
+   Idle.updateClock() di main.js (ikut update tiap menit, tidak ada timer tambahan).
+   Rendered as a frosted notification pill (own background/border) instead of bare
+   drop-shadowed text, so it reads as a status chip regardless of what's behind the
+   idle screen. A small pulsing dot (::before) stands in for a "live" indicator. */
+.idle-session {
+  margin-top: var(--space-2);
+  display: inline-flex; align-items: flex-start; gap: 0.5rem;
+  max-width: min(80vw, 24rem);
+  padding: 0.45rem 0.85rem;
+  font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.1vmin, 0.95rem)); line-height: 1.35;
+  font-weight: 500; letter-spacing: 0.01em; color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1.3rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.idle-session::before {
+  content: ""; margin-top: 0.4em; flex: 0 0 auto; width: 0.4rem; height: 0.4rem; border-radius: 50%;
+  background: var(--accent, #5b8cff);
+  box-shadow: 0 0 0 0 rgba(91, 140, 255, 0.55);
+  animation: idle-session-pulse 2.2s ease-out infinite;
+}
+@keyframes idle-session-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(91, 140, 255, 0.55); }
+  70%  { box-shadow: 0 0 0 0.4rem rgba(91, 140, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(91, 140, 255, 0); }
+}
+.idle-session:empty { display: none; }
+/* Light style with no background image/GIF/video behind the clock: the idle screen is the plain light panel color, so the
+   fixed white text / white-glass chips vanished. Flip to dark text + a frosted white chip. (With a background media the
+   clock keeps its white-on-media look, since that is what is actually behind it.) */
+html[data-theme="light"]:not(.has-bg-media) .idle-clock { --idle-clock-color: var(--text, #1c1b20); }
+html[data-theme="light"]:not(.has-bg-media) .idle-date { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.6); opacity: 0.8; }
+html[data-theme="light"]:not(.has-bg-media) .idle-time { text-shadow: 0 2px 28px rgba(255, 255, 255, 0.55); }
+html[data-theme="light"]:not(.has-bg-media) .idle-session,
+html[data-theme="light"]:not(.has-bg-media) .idle-message {
+  color: var(--text, #1c1b20);
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+
+/* Custom notification below the clock. Base state is hidden (opacity:0, shifted down);
+   .is-in plays the pop-up animation. Toggled by Idle.showMessage()/exit() in main.js so it
+   replays every time Idle Mode is entered, not just once via a CSS state transition.
+   Boxed the same way as .idle-session (frosted card instead of plain shadowed text) so the
+   two read as a matching pair of notification chips stacked under the clock. */
+.idle-message {
+  margin-top: var(--space-3);
+  display: inline-block;
+  max-width: min(80vw, 26rem);
+  padding: 0.65rem 0.95rem;
+  font-size: calc(var(--idle-scale) * clamp(0.85rem, 2.6vmin, 1.15rem));
+  font-weight: 500; line-height: 1.4; color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-m, 0.75rem);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  opacity: 0; transform: translateY(14px);
+}
+.idle-message:empty { display: none; }
+.idle-message.is-in { animation: idle-message-in 0.55s var(--smooth) forwards; }
+@keyframes idle-message-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Frosted glass blur for both chips - guarded like every other backdrop-filter use in this
+   codebase (see glass-theme.css / premium-ornaments.css) so Chromium 74 (AE 2021, predates
+   backdrop-filter) just keeps the plain translucent rgba() background above instead. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .idle-session, .idle-message {
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
+}
+
+/* Settings > Idle Timeout row */
+.idle-timeout-row { justify-content: space-between; transition: opacity var(--dur-fast) linear; }
+.idle-timeout-row.is-disabled { opacity: 0.45; }
+.idle-num {
+  width: 4.5rem; padding: 0.3rem 0.5rem; text-align: right;
+  font: inherit; font-size: var(--fs-value); font-variant-numeric: tabular-nums; color: var(--text);
+  background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-xs);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-user-select: text; user-select: text;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.idle-num:hover:not(:disabled) { border-color: var(--accent); }
+.idle-num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.idle-num:disabled { cursor: not-allowed; }
+
+/* Idle Screensaver: Clock Position + Clock Scale rows (added alongside the existing
+   Timeout / Custom Message rows). Position reuses the shared .select component;
+   Scale reuses .bg-editor-row's label+range+readout layout from the Display editor. */
+.idle-position-row { justify-content: space-between; }
+.idle-position-row .select { flex: 0 1 10rem; width: auto; min-width: 8rem; }
+.idle-scale-row { margin-top: 0; }
+.idle-scale-row label { flex: 0 0 auto; font-size: var(--fs-label-sm); font-weight: 600; text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); }
+
+.idle-message-row { flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
+.idle-message-input {
+  flex: 1 1 10rem; min-width: 0; padding: 0.3rem 0.55rem;
+  font: inherit; font-size: var(--fs-value); color: var(--text);
+  background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-xs);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-user-select: text; user-select: text;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.idle-message-input:hover { border-color: var(--accent); }
+.idle-message-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+
+/* ---------- Easy Layer options (Auto Parent switch) ---------- */
+.el-options { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-3); }
+.el-flip { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
+
+/* ---------- Animation Presets tab ---------- */
+/* Categorized/Ungrouped preset groups (host.jsx PRE_list -> {categorized, uncategorized}). preset-area
+   replaces the single flat preset-list as the click/pointer delegation root in main.js - .preset-item,
+   .preset-del etc. below are unchanged and nest the same way whether they're directly inside preset-area
+   (ungrouped) or one level down inside a .preset-folder-body (categorized). */
+.preset-area { display: flex; flex-direction: column; gap: var(--space-2); }
+.preset-group-heading {
+  font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-dim); margin: var(--space-2) 0 0;
+}
+.preset-group-heading:first-child { margin-top: 0; }
+.preset-group-empty { padding: 0.2rem 0; }
+
+.preset-folder { display: flex; flex-direction: column; }
+.preset-folder-header {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%;
+  padding: 0.4rem 0.6rem; border: 0; border-radius: calc(var(--radius-s) + 0.15rem);
+  background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-align: left;
+  transition: background var(--dur-fast) ease;
+}
+.preset-folder-header:hover { background: var(--surface-hover); }
+.preset-folder-icon { display: grid; place-items: center; flex: 0 0 auto; color: var(--accent-strong); }
+.preset-folder-icon svg, .preset-folder-chevron svg { width: 0.85rem; height: 0.85rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.preset-folder-name { flex: 1 1 auto; min-width: 0; font-size: 0.74rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preset-folder-count { flex: 0 0 auto; font-size: 0.66rem; color: var(--text-dim); }
+.preset-folder-chevron { flex: 0 0 auto; display: grid; place-items: center; color: var(--text-dim); transition: transform var(--dur-fast) ease; }
+.preset-folder.is-open .preset-folder-chevron { transform: rotate(180deg); }
+/* Collapsed: unmounting the body (rather than height:0) is fine here - unlike an animated accordion,
+   there's nothing to transition and this keeps a folder with hundreds of presets from costing anything
+   while closed. */
+.preset-folder-body { display: none; padding: var(--space-2) 0 0 0.5rem; }
+.preset-folder.is-open .preset-folder-body { display: block; }
+.preset-folder .preset-list { margin-top: 0; }
+
+/* Folder-header variant of the saber glow (see saber-wrap / saber-wrap--code above): always on, no
+   toggle state, sized for a header pill instead of a switch row or a full code editor. Padding matches
+   the header's own radius the same way saber-wrap--code matches the code editor's. */
+.saber-wrap--folder { padding: 2px; border-radius: calc(var(--radius-s) + 0.15rem + 2px); margin-bottom: var(--space-1); }
+.saber-wrap--folder > .preset-folder-header { position: relative; z-index: 1; flex: 1 1 auto; }
+
+.preset-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.btn:disabled { opacity: 0.4; pointer-events: none; }
+.btn.is-loading, .preset-apply.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+.preset-path { word-break: break-all; }
+.preset-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.preset-item {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  padding: var(--space-2); background: var(--surface); border-radius: var(--radius-s);
+  box-shadow: var(--shadow-card); transition: box-shadow var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+.preset-item:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* Press-and-hold feedback + favorited state (long-press anywhere on the card to toggle) */
+.preset-item.is-pressing {
+  box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-soft);
+  transform: scale(0.985);
+}
+.preset-item.is-favorite {
+  box-shadow: inset 0 0 0 1px #ffffff, 0 0 8px rgba(255, 255, 255, 0.22);
+}
+/* Last applied preset: tinted card + small pill; a dot on the folder header when the folder holds it. */
+.preset-item.is-last-used { background: var(--accent-soft); }
+.preset-last-badge {
+  flex: 0 0 auto; padding: 0.05rem 0.4rem; border-radius: 999px; font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.03em; color: #ffffff; background: var(--accent-strong); white-space: nowrap;
+}
+.preset-folder-lastdot {
+  flex: 0 0 auto; width: 0.45rem; height: 0.45rem; border-radius: 50%;
+  background: var(--accent-strong); box-shadow: 0 0 6px var(--accent-strong);
+}
+/* Favorite toggle on each preset row: outline star, filled when on. */
+.icon-btn.preset-fav-btn.is-on { color: #ffffff; }
+.icon-btn.preset-fav-btn.is-on svg { fill: currentColor; }
+.preset-item-fav-badge { display: grid; place-items: center; flex: 0 0 auto; color: #ffffff; }
+.preset-item-fav-badge svg { width: 0.8rem; height: 0.8rem; }
+.preset-name { flex: 1 1 auto; min-width: 0; font-size: 0.74rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preset-actions { display: flex; align-items: center; gap: 0.25rem; flex: 0 0 auto; }
+.preset-apply {
+  padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.68rem; font-weight: 600;
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%); color: var(--on-accent);
+  transition: transform var(--dur) var(--bounce), filter var(--dur-micro) ease;
+}
+.preset-apply:hover { transform: scale(1.07); filter: brightness(1.1); }
+.preset-apply:active { transform: scale(0.92); filter: brightness(0.95); }
+.preset-del { transition: color var(--dur-fast) ease, background var(--dur-fast) ease; }
+.preset-del.is-confirm { width: auto; padding: 0 0.5rem; font-size: 0.66rem; font-weight: 600; color: var(--danger); background: rgba(255, 107, 122, 0.16); }
+
+/* ---------- Text Animation Presets ("TextMulti") ---------- */
+.preset-row { display: flex; align-items: center; gap: var(--space-2); }
+.preset-row .select { flex: 1 1 auto; min-width: 0; }
+.btn-round-add {
+  flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%); color: var(--on-accent);
+  font-size: 1.1rem; font-weight: 700; line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: transform var(--dur) var(--bounce), filter var(--dur-micro) ease;
+}
+.btn-round-add:hover { filter: brightness(1.12); }
+.btn-round-add:active { transform: scale(0.9); filter: brightness(0.95); }
+.btn-round-add.is-loading { opacity: 0.6; pointer-events: none; }
+
+/* ---------- TextMulti kit: Copy / Paste buttons + saved animators ---------- */
+.btn-round-add svg { width: 1rem; height: 1rem; }
+.btn-round-alt { background: var(--surface-hover); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.btn-round-alt:hover { background: var(--accent-strong); color: var(--on-accent); box-shadow: none; }
+.btn-round-add:disabled { opacity: 0.4; pointer-events: none; }
+.preset-row .text-input { flex: 1 1 auto; min-width: 0; }
+.preset-meta { display: block; margin-top: 0.1rem; font-size: 0.6rem; font-weight: 400; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Segmented control (pill-row) ----------
+   Ready-to-use replacement for a native <select>/radio group wherever the
+   options are few and short - e.g. a direction/mode picker or ratio presets.
+   Usage:
+     <div class="segmented" role="tablist">
+       <button class="segmented-opt is-active" type="button">1:1</button>
+       <button class="segmented-opt" type="button">16:9</button>
+     </div>
+   Toggle ".is-active" in JS on click; only one option should carry it at a time. */
+.segmented {
+  display: flex; background: var(--surface-sunken); border-radius: var(--radius-round);
+  padding: 2px; gap: 2px; box-shadow: var(--shadow-card);
+}
+.segmented-opt {
+  flex: 1; padding: 0.3rem 0.6rem; border-radius: var(--radius-round);
+  font-size: var(--fs-label-sm); font-weight: 600; color: var(--text-dim);
+  text-align: center; white-space: nowrap;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.segmented-opt:hover { color: var(--text); }
+.segmented-opt.is-active {
+  background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: var(--on-accent);
+  box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.35);
+}
+
+/* ==========================================================
+   AE 2021 (CSXS 10 / Chromium 74) compatibility fallbacks
+   ----------------------------------------------------------
+   Chromium 74 (bundled with CEP 10 / After Effects 2021) predates:
+     - CSS gap on flex containers      (Chrome 84, 2020) -> handled at runtime
+       by js/ae2021-compat.js (and neucurve/ae2021-compat.js), NOT here.
+     - CSS aspect-ratio                (Chrome 88, 2021) -> also handled at
+       runtime by the same script (ResizeObserver-based square enforcement).
+     - CSS clamp()/min()/max()         (Chrome 79, 2019) -> the 3 rules below
+       use them for fluid sizing; on Chromium 74 the WHOLE declaration is
+       invalid and silently dropped, so these @supports blocks supply a
+       plain static value instead. On any host that understands clamp()
+       (AE 2022+ and every other current app), this block is skipped
+       entirely and nothing changes.
+   None of this touches the normal (supported) declarations above, so
+   AE 2024/2025 rendering is byte-for-byte the same as before. */
+@supports not (width: clamp(1px, 1px, 1px)) {
+  .tabs { gap: 0.5rem; }
+  .idle-date { font-size: calc(var(--idle-scale) * 0.85rem); }
+  .idle-time { font-size: calc(var(--idle-scale) * 2.5rem); }
+  .idle-session { font-size: calc(var(--idle-scale) * 0.85rem); }
+  .idle-message { max-width: 85%; font-size: calc(var(--idle-scale) * 0.95rem); }
+}
+
+/* ---------- Shortcutz tab ("Speed Dial" hub) ---------- */
+/* Tighter section rhythm just for this tab: compact micro-label headers sitting close to their
+   list, without touching every other tab that also reuses the shared .ta/.ta-section/.ta-title
+   layout (scoped via the "shortcutz-tab" class added alongside "ta" in Shortcutz.render). */
+.shortcutz-tab.ta { gap: var(--space-3); }
+.shortcutz-tab .ta-section { gap: 0.375rem; /* 6px */ }
+.shortcutz-tab .ta-title {
+  font-size: 0.625rem; font-weight: 700; letter-spacing: 0.0625em; /* ~1px at 10px */
+  color: var(--text-dim);
+}
+/* "My Shortcuts" now renders first, right under "+ Add Custom Shortcut" (Shortcutz.render puts
+   the built-in Expression/Effect/Utility sections after it). These two explicit margins carve out
+   its own breathing room on top of the tab's regular flex gap above. */
+.shortcutz-tab .shortcutz-add-btn { margin-top: 12px; margin-bottom: 16px; }
+.shortcutz-tab .shortcutz-my-section { margin-bottom: 16px; }
+
+/* Rows, not square tiles: one rounded card per section holding every shortcut as a full-width
+   row (icon left, name next to it), stacked and hairline-divided - the reference layout the user
+   asked to match, rather than the earlier auto-fill grid of squares. */
+.shortcut-list {
+  display: flex; flex-direction: column;
+  border-radius: var(--radius-l);
+  overflow: hidden; /* clips corners + the last row's divider */
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.shortcut-tile {
+  position: relative;
+  width: 100%; min-height: var(--shortcut-card-min-h); max-height: var(--shortcut-card-max-h);
+  display: flex; flex-direction: row; align-items: center;
+  gap: 0.625rem; /* 10px */ text-align: left;
+  padding: 0.625rem 0.875rem; /* 10px 14px */
+  /* Opaque + matching the wrapper's own corner radius (border-radius: inherit) is what masks the
+     saber-wrap's conic-gradient pseudo-elements down to a thin ring in its 2px padding gap - see
+     the .saber-wrap comment above. A transparent or square-cornered content layer here is exactly
+     what leaks the raw gradient as a wedge/cone through the row's corners (the bug fixed here). */
+  background: var(--surface); /* same token as .shortcut-list, so plain rows blend in seamlessly */
+  border-radius: inherit;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden; /* belt-and-suspenders: also clips a too-long name, see .shortcut-tile-name */
+  transition: background-color var(--dur-fast) linear;
+}
+/* Last row in each section shouldn't show a trailing divider. Both grid types close a section:
+   the fixed built-in lists always end on a real tile; "My Shortcuts" can instead end on the empty
+   state paragraph, which already isn't a .saber-wrap so this selector never doubles up. */
+.shortcut-list > .saber-wrap--tile:last-child .shortcut-tile { border-bottom: none; }
+.shortcut-tile:hover { background: var(--surface-hover); }
+.shortcut-tile:active { background: var(--surface-sunken); transition: background-color var(--dur-micro) ease; }
+.shortcut-tile.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
+
+/* Icon sits in its own soft accent-tinted badge on the left, matching the reference sketch's
+   left-icon list rows and giving each row a clearer hover/click target than a lone stroke icon.
+   Bugfix: background-size/position/repeat are locked here as permanent, unconditional properties
+   (not left to .has-custom-icon alone) and every state rule below uses the background-color
+   LONGHAND instead of the `background` shorthand. The shorthand was the actual bug - a rule like
+   `.shortcut-tile:hover .shortcut-tile-icon { background: rgba(...) }` implicitly resets
+   background-image/-size/-position/-repeat to their initial values wherever it wins the cascade,
+   and at 3 combined classes (.shortcut-tile:hover .shortcut-tile-icon) it out-specifies
+   .shortcut-tile-icon.has-custom-icon's own background-size: cover (only 2 classes). So the instant
+   you hovered (or - see .has-bg below - whenever a tile also had a custom background) the custom
+   icon silently dropped from a centered "cover" fit to size:auto/position:0 0, i.e. the image's
+   raw pixel size anchored top-left - which reads exactly as a sudden zoom/crop past the badge's
+   edge. Locking the sizing here and never touching it again from a shorthand fixes it for good. */
+.shortcut-tile-icon {
+  order: 1;
+  width: 1.9rem; height: 1.9rem; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  overflow: hidden; /* extra guard: clips the custom icon image to the circular badge regardless */
+  background-color: var(--accent-soft);
+  background-repeat: no-repeat; background-position: center; background-size: cover;
+  color: var(--tile-accent, var(--accent));
+  transition: background-color var(--dur-fast) linear;
+}
+.shortcut-tile:hover .shortcut-tile-icon { background-color: rgba(var(--accent-rgb), 0.28); }
+.shortcut-tile-icon svg { width: 55%; height: 55%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Single line, hard-truncated with an ellipsis instead of wrapping - a wrapped second line would
+   either overflow the row or get clipped mid-glyph at this row height (full name is still
+   available via the row's own title="" tooltip). order:2 + min-width:0 is what lets a long name
+   actually shrink/truncate next to the fixed-width icon (order:1) and remove button (order:3)
+   instead of pushing them off the row. */
+.shortcut-tile-name {
+  order: 2;
+  flex: 1 1 auto; min-width: 0;
+  font-size: var(--fs-value); font-weight: 600; line-height: 1.25; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Custom/pinned tiles only: small round remove ("x") button, pinned to the row's trailing edge
+   (order:3, so it sits after the name regardless of DOM position) and revealed on hover/focus so
+   the row doesn't look cluttered at rest. Its own click is caught first by wireMyGrid's
+   delegation (checked before data-sc-run). */
+.shortcut-tile-remove {
+  order: 3;
+  flex: 0 0 auto;
+  width: 1.1rem; height: 1.1rem; display: grid; place-items: center;
+  border-radius: 50%; background: var(--surface-sunken); color: var(--text-dim);
+  opacity: 0; transition: opacity 0.2s ease, background-color var(--dur-fast) linear, color var(--dur-fast) linear;
+}
+.shortcut-tile-remove svg { width: 0.6rem; height: 0.6rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.saber-wrap--tile:hover .shortcut-tile-remove,
+.shortcut-tile-remove:focus-visible { opacity: 1; }
+.shortcut-tile-remove:hover { background: var(--danger); color: #fff; }
+
+/* A pinned/custom tile with its own Color Accent (from the Add Custom Shortcut modal) tints just
+   its own icon and glow via --tile-accent, read by .shortcut-tile-icon above and the glow ring
+   below - everything else on the row stays neutral so it still reads as part of the same list. */
+.saber-wrap--tile.has-custom-accent { --accent: var(--tile-accent); --accent-strong: var(--tile-accent); }
+
+/* Saber glow wrapper for Shortcutz rows: unlike .saber-wrap--code (always on), this variant is
+   hover/focus-only - a long idle list all spinning at once would be a lot of visual noise, so the
+   ring only lights up on the row you're actually paying attention to. Built-in rows (no drag
+   handle) and custom/pinned rows (draggable) share the same look. Its own overflow:hidden (see
+   the shared .saber-wrap rule) is what keeps the ring's glow from ever bleeding past this row's
+   own footprint into a neighbor row or the panel edge. Radius is small/flat (not the tile's old
+   rounded-square radius) since a mid-list row has no corners of its own to trace other than
+   the whole list's outer ones. */
+/* Concentric corners: the ring lives in the wrapper's 2px padding gap, so the tile's radius must be the
+   wrapper's radius minus that 2px. Before, list rows inherited the wrapper's full radius and grid tiles used
+   a larger one (--radius-s vs the wrapper's --radius-xs), which made the ring fat at the corners and
+   look shifted off the tile's real edge. --tile-r drives both, so they can never drift apart again. */
+.saber-wrap--tile { --tile-r: var(--radius-xs); box-sizing: border-box; padding: 2px; border-radius: var(--tile-r); }
+.saber-wrap--tile > .shortcut-tile { position: relative; z-index: 1; flex: 1 1 auto; box-sizing: border-box; border-radius: calc(var(--tile-r) - 2px); }
+.saber-wrap--tile:hover::before, .saber-wrap--tile:hover::after,
+.saber-wrap--tile:focus-within::before, .saber-wrap--tile:focus-within::after { opacity: 1; }
+
+/* Drag-and-drop reordering (custom/pinned tiles only - built-in tiles aren't draggable). Dragged
+   row fades; the row it would land before/after gets a thin accent edge on that side - top/bottom
+   now that this is a stacked list, not the old wrapping grid's left/right split. */
+.saber-wrap--tile.is-dragging { opacity: 0.4; }
+.saber-wrap--tile.drag-over-before { box-shadow: 0 -2px 0 0 var(--accent-strong); }
+.saber-wrap--tile.drag-over-after { box-shadow: 0 2px 0 0 var(--accent-strong); }
+
+.shortcutz-empty {
+  margin: 0; grid-column: 1 / -1; /* full width even inside #shortcutz-my-grid's grid */
+  font-size: 11px; color: #666666; font-style: italic; padding: 8px 0;
+}
+
+/* "My Shortcuts" only: an auto-fill grid of individual tiles instead of the shared single-card
+   row list the built-in sections below still use (id beats the shared .shortcut-list class, so
+   Expression/Effect/Utility Shortcuts keep their original row layout untouched). Each tile gets
+   its own small radius + shadow instead of inheriting the old list's single big-card radius and
+   row divider, which is what would have made a grid of them look broken/disconnected. */
+#shortcutz-my-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  background: none; box-shadow: none; border-radius: 0; overflow: visible;
+}
+#shortcutz-my-grid .saber-wrap--tile { --tile-r: var(--radius-s); height: 100%; }
+#shortcutz-my-grid .shortcut-tile {
+  border-radius: calc(var(--tile-r) - 2px);   /* concentric with the wrapper (see .saber-wrap--tile) */
+  border-bottom: none;
+  box-shadow: var(--shadow-card);
+}
+/* Label fix: these tiles are ~90-110px wide, but .shortcut-tile is a horizontal row (icon + name + hidden
+   remove button, plus 14px side padding). That left the name ~0px of width, so it truncated to nothing and
+   only the icon showed. In this grid the tile stacks instead: icon on top, name under it (up to 2 lines,
+   ellipsis after that), and the remove "x" floats in the corner so it takes no layout space. */
+#shortcutz-my-grid .shortcut-tile {
+  flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  gap: 0.35rem; padding: 0.5rem 0.4rem; min-height: 4.5rem; max-height: none;
+}
+#shortcutz-my-grid .shortcut-tile-icon { order: 1; }
+#shortcutz-my-grid .shortcut-tile-name {
+  order: 2; flex: 0 0 auto; width: 100%; box-sizing: border-box;
+  white-space: normal; word-break: break-word; overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  color: var(--text); opacity: 1;
+}
+#shortcutz-my-grid .shortcut-tile-remove { position: absolute; top: 0.25rem; right: 0.25rem; z-index: 2; }
+
+/* Right-click "Restore hidden shortcuts" link, shown under My Shortcuts only when a built-in tile
+   has been hidden via the Shortcutz context menu (see TileCustom / Shortcutz.deleteTile). */
+#shortcutz-restore-hidden { margin-top: var(--space-2); }
+
+/* Per-tile custom background (GIF or still image), set via the Shortcutz right-click menu. Applied
+   as an inline background-image directly on .shortcut-tile by applyTileCustomizations(); this just
+   supplies the sizing and the readability overlay so bright/busy media never swallows the label. */
+.shortcut-tile.has-bg {
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+.shortcut-tile.has-bg::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 0; pointer-events: none;
+}
+.shortcut-tile.has-bg .shortcut-tile-icon,
+.shortcut-tile.has-bg .shortcut-tile-name,
+.shortcut-tile.has-bg .shortcut-tile-remove {
+  position: relative; z-index: 1;
+}
+.shortcut-tile.has-bg .shortcut-tile-name { color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
+.shortcut-tile.has-bg .shortcut-tile-icon { background-color: rgba(0, 0, 0, 0.35); } /* longhand: same shorthand bug as the hover rule above, and this one wasn't even hover-gated - it broke the icon any time a tile also had a custom background */
+.shortcut-tile.has-bg:hover { background-color: transparent; } /* let the ::after overlay do the hover dimming, not the plain hover fill under it */
+
+/* Custom tile icon image (replaces the default stroke-SVG glyph), set the same way as .has-bg.
+   Sizing/position/repeat now live unconditionally on .shortcut-tile-icon itself (see above) so
+   they can't be knocked out by a same-or-higher-specificity `background` shorthand elsewhere;
+   this class is just the marker JS toggles, nothing left to override here. */
+.shortcut-tile-icon.has-custom-icon {}
+
+/* Shortcutz right-click menu - reuses the .ctx-menu / .ctx-item look from the tool-tile context
+   menu elsewhere in the panel, just with a thin divider and a "danger" row for Delete/Hide. */
+.ctx-menu--shortcutz { min-width: 12rem; }
+.ctx-menu-sep { height: 1px; background: var(--border-soft); margin: var(--space-1) 0.2rem; }
+.ctx-menu--shortcutz .ctx-item.is-danger:hover { background: var(--danger); color: #fff; }
+
+/* ".ta-group" accent-color context menu (Feature F, panel-refinements.js) - same .ctx-menu /
+   .ctx-item shell as the two menus above, plus a row of round swatches and a "custom color"
+   swatch that opens the hidden native <input type="color"> the script creates alongside it. */
+.ctx-menu--accent { min-width: 11rem; }
+.ctx-menu-label {
+  padding: 0.3rem 0.6rem 0.4rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: var(--tracking-label); color: var(--text-dim);
+}
+.accent-swatch-row { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 0.5rem 0.5rem; }
+.accent-swatch {
+  width: 1.5rem; height: 1.5rem; border-radius: 50%; flex: 0 0 auto; padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0 2px transparent;
+  transition: transform var(--dur-fast) var(--bounce), box-shadow var(--dur-fast) linear;
+}
+.accent-swatch:hover { transform: scale(1.15); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0 2px var(--border); }
+.accent-swatch--custom {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-sunken); color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.accent-swatch--custom svg { width: 0.8rem; height: 0.8rem; stroke: currentColor; stroke-width: 2; fill: none; }
+.accent-swatch--custom:hover { color: var(--text); background: var(--surface-hover); transform: scale(1.15); }
+
+/* Presets search box: full-width pill with a clear button tucked inside on the right. */
+.preset-search { position: relative; margin: 0 0 var(--space-3, 0.75rem); }
+.preset-search .preset-search-input { width: 100%; box-sizing: border-box; padding-right: 2.2rem; }
+.preset-search .preset-search-clear {
+  position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
+  width: 1.5rem; height: 1.5rem;
+}
+.preset-search .preset-search-clear[hidden] { display: none; }
+
+/* Search filtering (rows are hidden in place, never rebuilt). While a search is active every folder that
+   still has hits is shown open, whatever its remembered state; the header can fold it for the search. */
+.preset-item.is-filtered, .preset-folder.is-filtered, .preset-group-heading.is-filtered,
+.preset-list.is-filtered, .preset-group-empty.is-filtered { display: none !important; }
+.preset-no-match[hidden] { display: none; }
+.preset-area.is-searching .preset-folder:not(.is-search-collapsed) .preset-folder-body { display: block; }
+.preset-area.is-searching .preset-folder:not(.is-search-collapsed) .preset-folder-chevron { transform: rotate(180deg); }
+.preset-area.is-searching .preset-folder.is-search-collapsed .preset-folder-body { display: none; }
+.preset-area.is-searching .preset-folder.is-search-collapsed .preset-folder-chevron { transform: none; }
+
+/* ---------- TextFlex tab ---------- */
+.preset-bar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.preset-bar .select { flex: 1 1 8rem; min-width: 0; }
+.preset-bar .btn { flex: 0 0 auto; padding: 0.5rem 0.75rem; font-size: 0.72rem; }
+.preset-bar .icon-btn { flex: 0 0 auto; }
+
+.prop-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.prop-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  flex-wrap: wrap; padding: 0.4rem 0.5rem; border-radius: var(--radius-s);
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+}
+.prop-chip { max-width: none; width: auto; flex: 0 0 auto; }
+.prop-chip span { padding: 0.4rem 0.7rem; white-space: nowrap; }
+.prop-coords { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.coord { display: flex; align-items: center; gap: 0.3rem; font-size: var(--fs-label-sm); color: var(--text-dim); }
+.coord span { text-transform: uppercase; letter-spacing: var(--tracking-label); font-weight: 600; }
+.coord .num { width: 3.4rem; }
+
+/* ---------- Number fields outside ".param" (TextFlex property rows: Position / Anchor / Rotation / ...) ----------
+   These used to fall through to the browser's default WHITE input. Now they use the same themed well as
+   ".param .num": sunken surface, theme text color, accent border on hover/focus. */
+.coord .num, .prop-coords .num {
+  box-sizing: border-box; padding: 0.25rem 0.4rem; text-align: right; font-family: inherit; font-size: var(--fs-value);
+  font-variant-numeric: tabular-nums;
+  color: var(--text); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-xs);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-user-select: text; user-select: text;
+  transition: border-color var(--dur-micro) ease, box-shadow var(--dur-micro) ease, background-color var(--dur-fast) linear;
+}
+.coord .num:hover, .prop-coords .num:hover { border-color: var(--accent); }
+.coord .num:focus, .prop-coords .num:focus {
+  outline: none; border-color: var(--accent); background: var(--surface);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px var(--accent-soft);
+}
+.coord .num::selection, .param .num::selection { background: var(--accent-soft); color: var(--text); }
+.coord .num::-webkit-inner-spin-button, .coord .num::-webkit-outer-spin-button { opacity: 0.35; }
+.coord .num:hover::-webkit-inner-spin-button, .coord .num:focus::-webkit-inner-spin-button { opacity: 0.8; }
+
+
+/* ---------- Scale UI (Settings > Scale UI) ----------
+   Zooms the whole panel UI (text, boxes, buttons, icons) through the CSS `zoom` property on .app, driven by the
+   --ui-scale custom property (0.7 - 1.5) that Settings.applyUiScale() in js/main.js writes on :root. `zoom`
+   multiplies every length inside .app but not percentages, so .app (height:100%, flex) still fills the panel
+   exactly; the content simply gets fewer/more CSS pixels to lay out in, like browser zoom. The Settings modal,
+   toast, context menu and background layers live OUTSIDE .app on purpose and are not scaled (the Settings window
+   must not grow under the slider you are dragging).
+   While the slider is held, body.is-scale-edit fades the Settings window out (it stays in the DOM and keeps its
+   pointer events, so the drag continues) and the real UI behind it can be judged live. */
+.app { zoom: var(--ui-scale, 1); }
+body.is-scale-edit .modal-backdrop.is-open {
+  opacity: 0; background: transparent;
+  transition: opacity 0.12s linear;
+}
+
+/* Scale UI: the floating value bubble (panel-refinements.js) is anchored to the slider inside the faded-out
+   Settings window, so it would float over the real UI while the slider is held - hide it in that mode. */
+body.is-scale-edit .range-value-bubble { display: none !important; }

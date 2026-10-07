@@ -1,0 +1,116 @@
+/* NeuCurve - nc-gsize.js (v18)  FREE GRAPH SIZE
+   Drag the small grip at the bottom-right corner of the graph to make the plot bigger / smaller with NO fixed aspect
+   (wide, tall, 1:1 ... anything). Hold Shift while dragging to keep the current proportions. Double-click the grip = back to auto.
+   Works in portrait, landscape and auto mode: the size is remembered separately for portrait and landscape (auto just
+   uses whichever one is showing). Also adjustable with sliders in NeuCurve Settings > Graph Size.
+   localStorage (prefix neucurve_): gWp gHp (portrait) gWl gHl (landscape), percent 25-100 of the free space; empty = auto.
+   The compiled bundle (assets/index.js) calls window.__ncGS(isLandscape) when it computes the plot size, and exposes
+   window.__ncGBump() (recompute) + window.__ncGPlot() (plot rectangle) - see the README note. Plain ES5 for old CEP hosts. */
+(function () {
+  "use strict";
+  var IS_SETTINGS = /[?&]ext=settings/.test(location.search);
+  var MIN = 25, MAX = 100;
+  function rd(k) { try { var v = localStorage.getItem("neucurve_" + k); return v === null ? "" : v; } catch (e) { return ""; } }
+  function wr(k, v) { try { if (v === "" || v === null) { localStorage.removeItem("neucurve_" + k); } else { localStorage.setItem("neucurve_" + k, String(v)); } } catch (e) { } }
+  function pct(v) { v = parseFloat(v); return isFinite(v) ? Math.max(MIN, Math.min(MAX, v)) : null; }
+  function broadcast(k, v) {
+    try {
+      var CE = window.CSEvent || (typeof CSEvent !== "undefined" ? CSEvent : null);
+      if (!CE || !window.CSInterface) { return; }
+      var ev = new CE("com.neucurve.sync", "APPLICATION");
+      ev.data = JSON.stringify({ key: k, val: String(v), appId: "nc-gsize" });
+      new window.CSInterface().dispatchEvent(ev);
+    } catch (e) { }
+  }
+
+  /* called by the bundle every time it computes the plot size; null = keep NeuCurve's own automatic size */
+  window.__ncGS = function (land) {
+    var s = land ? "l" : "p", w = pct(rd("gW" + s)), h = pct(rd("gH" + s));
+    if (w === null && h === null) { return null; }
+    return { w: (w === null ? 100 : w) / 100, h: (h === null ? 100 : h) / 100 };
+  };
+  function bump() { try { if (window.__ncGBump) { window.__ncGBump(); } } catch (e) { } }
+  function setSize(land, w, h) {
+    var s = land ? "l" : "p";
+    wr("gW" + s, w === null ? "" : Math.round(w)); wr("gH" + s, h === null ? "" : Math.round(h));
+    broadcast("gW" + s, w === null ? "" : Math.round(w)); broadcast("gH" + s, h === null ? "" : Math.round(h));
+    bump();
+  }
+
+  if (IS_SETTINGS) { return; }
+
+  var grip = null, dragging = false;
+  function q(sel) { return document.querySelector(sel); }
+
+  function place() {
+    var area = q(".canvas-area"), svg = q("svg.curve-svg"), P = window.__ncGPlot && window.__ncGPlot();
+    if (!area || !svg || !P) { if (grip) { grip.style.display = "none"; } return; }
+    if (!grip) {
+      grip = document.createElement("div"); grip.id = "nc-gsize"; grip.title = "Drag to resize the graph (Shift = keep proportions, double-click = auto)";
+      grip.innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M10 3 3 10M10 7 7 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+      grip.addEventListener("pointerdown", down);
+      grip.addEventListener("dblclick", function () { setSize(!!(window.__ncGPlot && window.__ncGPlot().land), null, null); });
+    }
+    if (grip.parentNode !== area) { area.appendChild(grip); }
+    var ar = area.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    grip.style.display = "flex";
+    grip.style.left = Math.round(sr.left - ar.left + P.x + P.w - 11) + "px";
+    grip.style.top = Math.round(sr.top - ar.top + P.y + P.h - 11) + "px";
+  }
+  window.__ncGPC = function () { if (!dragging) { place(); } };
+
+  function down(e) {
+    var P = window.__ncGPlot && window.__ncGPlot(); if (!P) { return; }
+    e.preventDefault(); e.stopPropagation();
+    var land = !!P.land, s = land ? "l" : "p";
+    var curW = pct(rd("gW" + s)) || 100, curH = pct(rd("gH" + s)) || 100;
+    /* free space in px = current plot / current percent (the bundle scales the free space, so this stays exact) */
+    var AV = window.__ncGAv;   /* free space the bundle scales (before the aspect cap) - exact in auto AND custom mode */
+    var availW = AV ? AV.w : P.w / (curW / 100), availH = AV ? AV.h : P.h / (curH / 100);
+    var x0 = e.clientX, y0 = e.clientY, w0 = P.w, h0 = P.h, ratio = w0 / h0;
+    dragging = true; document.documentElement.classList.add("nc-gsize-drag");
+    try { grip.setPointerCapture(e.pointerId); } catch (er) { }
+    var busy = false, last = null;
+    function move(ev) {
+      var nw = w0 + (ev.clientX - x0) * 2, nh = h0 + (ev.clientY - y0) * 2;      /* centred plot: corner follows the pointer */
+      if (ev.shiftKey) { nh = nw / ratio; }
+      var pw = Math.max(MIN, Math.min(MAX, nw / availW * 100)), ph = Math.max(MIN, Math.min(MAX, nh / availH * 100));
+      last = [pw, ph];
+      if (busy) { return; } busy = true;
+      requestAnimationFrame(function () { busy = false; if (last) { wr("gW" + s, Math.round(last[0])); wr("gH" + s, Math.round(last[1])); bump(); place(); } });
+    }
+    function up() {
+      grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", up); grip.removeEventListener("pointercancel", up);
+      dragging = false; document.documentElement.classList.remove("nc-gsize-drag");
+      if (last) { setSize(land, last[0], last[1]); }
+      setTimeout(place, 30);
+    }
+    grip.addEventListener("pointermove", move); grip.addEventListener("pointerup", up); grip.addEventListener("pointercancel", up);
+  }
+
+  /* follow changes made elsewhere (Settings sliders, the other NeuCurve window) */
+  function onSync(ev) {
+    try {
+      var d = ev && ev.data; if (typeof d === "string") { d = JSON.parse(d); }
+      if (d && /^g[WH][pl]$/.test(d.key) && d.appId !== "nc-gsize") { wr(d.key, d.val); bump(); }
+    } catch (e) { }
+  }
+  window.addEventListener("storage", function (e) { if (!e.key || /neucurve_g[WH][pl]$/.test(e.key)) { bump(); } });
+  try { if (window.CSInterface) { new window.CSInterface().addEventListener("com.neucurve.sync", onSync); } } catch (e) { }
+  window.addEventListener("resize", function () { setTimeout(place, 60); });
+  /* layout can change without the bundle recomputing (tab bar moves, panel divider drag): re-place the grip, cheap and rAF-throttled */
+  var pend = false;
+  function sch() { if (pend || dragging) { return; } pend = true; requestAnimationFrame(function () { pend = false; place(); }); }
+  function start() {
+    /* the APPLY button glow rewrites its SVG style ~60x per second: never re-measure the graph for that */
+    new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        var t = list[i].target;
+        if (t && t.closest && t.closest(".apply-btn")) { continue; }
+        sch(); return;
+      }
+    }).observe(document.getElementById("app") || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "width", "height"] });
+    sch();
+  }
+  if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", start); } else { start(); }
+})();

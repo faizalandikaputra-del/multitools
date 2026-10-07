@@ -1,0 +1,6 @@
+/* Multi Tool - mt-scrub.css : cursors for js/mt-scrub.js (drag a label or an idle number field left / right). */
+.coord > span, .param > label { cursor: ew-resize; }
+input.num[type="number"]:not(:focus) { cursor: ew-resize; }
+
+/* While dragging: one cursor everywhere, no text selection */
+html.mt-scrubbing, html.mt-scrubbing * { cursor: ew-resize !important; user-select: none !important; -webkit-user-select: none !important; }

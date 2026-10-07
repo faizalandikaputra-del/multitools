@@ -1,0 +1,64 @@
+/* ==========================================================
+   Multi Tool - hover-polish.css (v17)
+   LAST stylesheet (after glass-theme.css). Purely additive: nicer hover / press / focus feedback for every tab
+   (sidebar tabs, tool tiles, buttons, icon buttons, cards, preset / snippet tiles, inputs, dropdowns, chips,
+   swatches, Settings rows). Uses the panel's own accent (--accent / --accent-rgb, i.e. Settings > Theme color).
+   Motion = transform + opacity + box-shadow only, ease-out, <= .2s. Delete the file (and its <link>) to undo.
+   ========================================================== */
+:root {
+  --hp-ease: cubic-bezier(.25, 1, .5, 1);
+  --hp-ring: rgba(var(--accent-rgb, 127, 0, 255), .55);
+  --hp-tint: rgba(var(--accent-rgb, 127, 0, 255), .12);
+  --hp-lift: 0 8px 20px -8px rgba(0, 0, 0, .6), 0 0 0 1px rgba(var(--accent-rgb, 127, 0, 255), .45);
+}
+
+/* ---- every clickable thing gets a pointer + smooth transitions ---- */
+.tab, .tool, .btn, .btn-primary, .btn-ghost, .icon-btn, .social-btn, .chip, .cat-tab, .cat-tab-add, .anchor-btn, .flip-btn,
+.segmented-opt, .accent-swatch, .swatch, .label-swatch, .btn-round-add, .btn-round-alt, .preset-apply, .accordion-toggle,
+.preset-folder-header, .ta-group-head, .ctx-item, .shortcut-tile, .preset-item, .expr-item, .qce-res-tile, .snippet-card {
+  cursor: pointer;
+  transition: transform .18s var(--hp-ease), background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .2s ease, opacity .18s ease;
+}
+
+/* ---- sidebar tabs: accent tint + soft icon plate ---- */
+.tab:hover:not(.is-active):not([aria-selected="true"]) { background-color: var(--hp-tint); color: var(--text, #fff); transform: translateX(1px) scale(1.04); }
+.tab:active { transform: scale(.94); }
+
+/* ---- tool tiles / shortcut tiles / cards: lift + accent ring ---- */
+.tool:hover, .shortcut-tile:hover, .qce-res-tile:hover, .anchor-btn:hover, .label-swatch:hover {
+  box-shadow: var(--hp-lift); border-color: var(--hp-ring);
+}
+.tool:active, .shortcut-tile:active, .qce-res-tile:active, .anchor-btn:active { transform: translateY(0) scale(.96); box-shadow: none; }
+.preset-item:hover, .expr-item:hover, .snippet-card:hover, .preset-folder-header:hover, .ta-group-head:hover {
+  transform: translateY(-2px); border-color: var(--hp-ring); box-shadow: var(--hp-lift);
+}
+.preset-item:active, .expr-item:active, .snippet-card:active { transform: translateY(0) scale(.985); box-shadow: none; }
+
+/* ---- buttons ---- */
+.btn:hover, .btn-ghost:hover { transform: translateY(-1px); border-color: var(--hp-ring); background-color: var(--hp-tint); box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .6); }
+.btn-primary:hover, .btn-apply:hover { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 8px 22px -8px rgba(var(--accent-rgb, 127, 0, 255), .8); }
+.btn:active, .btn-ghost:active, .btn-primary:active, .btn-apply:active { transform: translateY(0) scale(.97); filter: none; box-shadow: none; }
+.icon-btn:hover, .social-btn:hover, .btn-round-add:hover, .btn-round-alt:hover, .flip-btn:hover, .cat-tab-add:hover {
+  background-color: var(--hp-tint); color: var(--text, #fff); transform: translateY(-1px) scale(1.06); box-shadow: 0 0 0 1px var(--hp-ring);
+}
+.icon-btn:active, .social-btn:active, .flip-btn:active { transform: scale(.92); box-shadow: none; }
+.chip:hover span, .cat-tab:hover, .segmented-opt:hover { background-color: var(--hp-tint); color: var(--text, #fff); }
+.swatch:hover, .accent-swatch:hover { transform: scale(1.12); box-shadow: 0 0 0 2px var(--hp-ring); }
+
+/* ---- inputs / dropdowns / number fields ---- */
+.text-input:hover, .select:hover, select:hover, .code-area:hover, .num:hover, .coord .num:hover, .param .num:hover {
+  border-color: var(--hp-ring); background-color: rgba(var(--accent-rgb, 127, 0, 255), .07);
+}
+.text-input:focus, .select:focus, select:focus, .code-area:focus, .num:focus { border-color: var(--hp-ring); box-shadow: 0 0 0 3px var(--hp-tint); outline: none; }
+.ctx-item:hover { background-color: var(--hp-tint); padding-left: calc(var(--ctx-pad, 12px) + 2px); }
+input[type="range"]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--hp-tint); }
+
+/* ---- keyboard focus ring everywhere ---- */
+.tab:focus-visible, .tool:focus-visible, .btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .cat-tab:focus-visible,
+.shortcut-tile:focus-visible, .preset-item:focus-visible, .expr-item:focus-visible { outline: 2px solid var(--hp-ring); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tab:hover, .tool:hover, .btn:hover, .icon-btn:hover, .preset-item:hover, .expr-item:hover, .snippet-card:hover, .shortcut-tile:hover { transform: none; }
+}
+:root[data-reduce-motion="true"] .tab:hover, :root[data-reduce-motion="true"] .tool:hover, :root[data-reduce-motion="true"] .btn:hover,
+:root[data-reduce-motion="true"] .icon-btn:hover, :root[data-reduce-motion="true"] .preset-item:hover { transform: none; }

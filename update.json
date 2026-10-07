@@ -1,0 +1,342 @@
+{
+    "latest_version":  "1.8.3",
+    "changelog":  "- Perbaikan updater: kini memakai fetch() seperti RE-Faster\r\n- Perbaikan kedipan hitam di tab Curve",
+    "files":  [
+                  {
+                      "path":  "css/ambient-orbs.css",
+                      "sha256":  "d22496018d4eea5c0240109bf2ea9bea411688e6133c8047c707acd6e8c1eb78"
+                  },
+                  {
+                      "path":  "css/cursor-fix.css",
+                      "sha256":  "5aac5b87691fe2c9bfa44b5f811764b3be53d3f93e28578ffdecdc50b49a96b5"
+                  },
+                  {
+                      "path":  "css/fluid-polish.css",
+                      "sha256":  "73d5b84013214c193c4de5fc4e4f564d8ca446d71762f0ded46f1d9772cd1d46"
+                  },
+                  {
+                      "path":  "css/glass-theme.css",
+                      "sha256":  "2e5b0ec34f696c1bd1d5ec81774a003c61d683364e577175cda74bde9a7b747d"
+                  },
+                  {
+                      "path":  "css/hover-polish.css",
+                      "sha256":  "92b7afb4e05edbe8f13c74097136da42c1ced6009b312b09ece991b05abc8196"
+                  },
+                  {
+                      "path":  "css/material-theme.css",
+                      "sha256":  "5ede6406eed97a5936ef5734169a992479abd15bf7c153280d22c289cbdc61c1"
+                  },
+                  {
+                      "path":  "css/mt-colorpicker.css",
+                      "sha256":  "2ca3effbca39559ee8ba77f3f175d2eee98f0ef29ba07c00e162f474685583ab"
+                  },
+                  {
+                      "path":  "css/mt-gif-export.css",
+                      "sha256":  "29a60bb2f3c0a2cb8bbdfa4145ef652433f620205ae2e7d331dc8a3a8e01dec9"
+                  },
+                  {
+                      "path":  "css/mt-scrub.css",
+                      "sha256":  "4c2dd0690184974e0686639f26bdf72f005aa13bcd3958e8b2fc89f431fbe51a"
+                  },
+                  {
+                      "path":  "css/mt-select.css",
+                      "sha256":  "b09e78b70d0e8570b1db6e050b5a21f097b95d6f76c372318fb52e17ad31f921"
+                  },
+                  {
+                      "path":  "css/mt-spinbox.css",
+                      "sha256":  "c128fc050ff597f1e5618deb36b1d4065ebf713bb3174205b0e1ea221c3ca695"
+                  },
+                  {
+                      "path":  "css/mt-tidy.css",
+                      "sha256":  "f6e78386dad1890453f8776a40762d0bfefb35d696494a67a8ccaa1fd2d12975"
+                  },
+                  {
+                      "path":  "css/mt-tooltip.css",
+                      "sha256":  "5e0e54e69bf3f9379341e7c7d6164816bd7139336806cf9d9df375df381855a4"
+                  },
+                  {
+                      "path":  "css/mt-uitheme.css",
+                      "sha256":  "443dbb276ec5af6554986cbd89993d7d8f9269f2f9b143b290c0b06ab6d03a0a"
+                  },
+                  {
+                      "path":  "css/mt-updater.css",
+                      "sha256":  "d5dda33adbbcfe587dd2a19e7ac6e8ebf774c4ba66fcdf5553e1e34cb5405079"
+                  },
+                  {
+                      "path":  "css/panel-refinements.css",
+                      "sha256":  "fd1dbd19268b657b9c87f6bb0615bf5ddc2075d5d2d773be95dfb33498a15f2c"
+                  },
+                  {
+                      "path":  "css/panel-refresh.css",
+                      "sha256":  "4a8a8dab7a033bac2623ed8f03df6e300bc243d45afe409912690ee8c5eea114"
+                  },
+                  {
+                      "path":  "css/premium-ornaments.css",
+                      "sha256":  "8ac7a8ad167b28c530b76c45c5da96b073dd68b4dd026946770702275da056c3"
+                  },
+                  {
+                      "path":  "css/sidebar-center.css",
+                      "sha256":  "13738440559035e55b45929c72ee5d63f61ea836996aa0de89b52fe7947d51f0"
+                  },
+                  {
+                      "path":  "css/sidebar-expand.css",
+                      "sha256":  "7b10f650eb99816305f1a06ba7f86e487563221a4f8e54055ed11717ee6f1965"
+                  },
+                  {
+                      "path":  "css/splash.css",
+                      "sha256":  "3ba1efb38c40c58f94932fb7726b72d412ea69eadfecc5d5758e51002c97c264"
+                  },
+                  {
+                      "path":  "css/style.css",
+                      "sha256":  "865c59dd3907c81fd5725de076816e516d84112f181051e785fd2b8f1bff7e8a"
+                  },
+                  {
+                      "path":  "css/tab-motion.css",
+                      "sha256":  "7e3f1e5d07d9591656bc901a221f5de2506941e90af10d7558e78e22801feb1d"
+                  },
+                  {
+                      "path":  "CSXS/manifest.xml",
+                      "sha256":  "6232bd68df0e13870bc5a6e7864115e050e9ef229ae73d06c71bea3f510be27a"
+                  },
+                  {
+                      "path":  "html/assets/profile.jpg",
+                      "sha256":  "42079cb851d2afe2065ff03488ba70702ebe81491d265472827b0e6a207ae3b1"
+                  },
+                  {
+                      "path":  "html/index.html",
+                      "sha256":  "2ebc9fd49e9dbbd7605c574900fd87453623fd5a766f3f68d6514a13e973e676"
+                  },
+                  {
+                      "path":  "js/ae2021-compat.js",
+                      "sha256":  "b3b29c42bc15777737f7c5534263c144af75121127d21b721ca33c85081de023"
+                  },
+                  {
+                      "path":  "js/ambient-orbs.js",
+                      "sha256":  "b63cfa93db13b89a9a1a83906de925b1ebd121e4db5b8148eaf82a2d65db9a28"
+                  },
+                  {
+                      "path":  "js/CSInterface.js",
+                      "sha256":  "d6c8e4210e99e7c1fbe34e0e888c87926c51e8a2df8d6c0ef49bef33f632507f"
+                  },
+                  {
+                      "path":  "js/main.js",
+                      "sha256":  "c240dd2346342168f993074647923d805b3ee065826e02056fd936817d7e4166"
+                  },
+                  {
+                      "path":  "js/mt-colorpicker.js",
+                      "sha256":  "8cd013cf087260c723d52782a1b378a7a69f9ec0ac3b8c1a29b3c9fd05fa8033"
+                  },
+                  {
+                      "path":  "js/mt-gif.js",
+                      "sha256":  "e8ef3560b7751a8e93b4c564f04c498a7d9f8850ae580962b506c2a7a72e88a0"
+                  },
+                  {
+                      "path":  "js/mt-material.js",
+                      "sha256":  "95feeed3d81e0405df18aff6d083c33bebf670fb85501f895aecbc926521b4bf"
+                  },
+                  {
+                      "path":  "js/mt-scrub.js",
+                      "sha256":  "18e851b504e4a46d389206be5e9bffcbe229d0adcfaa6a14a1ffef4afb8ee927"
+                  },
+                  {
+                      "path":  "js/mt-select.js",
+                      "sha256":  "9e7fd130a6ddf0bc6750dfac0e4642e0162df35a5f73bfe48b9573623ce92ac7"
+                  },
+                  {
+                      "path":  "js/mt-spinbox.js",
+                      "sha256":  "20b325a3f3a1b763558148e827cb4d7300527a79d73fddd9fd614b0aa56e550d"
+                  },
+                  {
+                      "path":  "js/mt-tooltip.js",
+                      "sha256":  "cad2355f85f24018e79fc582a518cd8cc82d959f80e079877376e96e01231a1e"
+                  },
+                  {
+                      "path":  "js/mt-uitheme.js",
+                      "sha256":  "e1c90bf87c8ce08348325de1c9019193421d0f6ae098353cfa72910fb5b49a45"
+                  },
+                  {
+                      "path":  "js/mt-updater.js",
+                      "sha256":  "3ec2a27e7f95349ad00f1db7a3179f02aebd140b83cf9a94ff5802938e2b3ebf"
+                  },
+                  {
+                      "path":  "js/panel-refinements.js",
+                      "sha256":  "9b52ff838b0707a90fa3a7a3a0d3645cb1d3c98bd60b0bf98a3c967055184eef"
+                  },
+                  {
+                      "path":  "js/panel-refresh.js",
+                      "sha256":  "5229a0f64a3c63ed43b63573dd5ffb4f11c8e65d352571e5f60ee39432d46789"
+                  },
+                  {
+                      "path":  "js/sidebar-expand.js",
+                      "sha256":  "1a2106ba5246d9268dd5abc40f40b2f93b93502755769f1df94d85fae56a859b"
+                  },
+                  {
+                      "path":  "js/smooth-scroll.js",
+                      "sha256":  "0888f924019499e1f0f9ef21c4f7f90bf2014ce08d7ee826370983bd3b50df57"
+                  },
+                  {
+                      "path":  "js/splash.js",
+                      "sha256":  "38056bc832df7fe704a5474f54d9ff79164be5bcbf953c427246023f069c715c"
+                  },
+                  {
+                      "path":  "js/tab-wheel.js",
+                      "sha256":  "edf06dd8d425b63eebae1bfd1962a43fa0c285f09e554c21ebd6b9ab3af6b411"
+                  },
+                  {
+                      "path":  "jsx/host.jsx",
+                      "sha256":  "89b04d95916938d9e0e234a5d8565150c96ba7b7bf532d1f095aa662455f5811"
+                  },
+                  {
+                      "path":  "neucurve/assets/index.js",
+                      "sha256":  "1020611508f02729c6e275ac15f6b59aa4ef2ee181b794cd8c7d5d732401bbc0"
+                  },
+                  {
+                      "path":  "neucurve/CSInterface.js",
+                      "sha256":  "8871b657ca7cd87f67780df538fd1c2b0a2ab35cc050f0cea573602075d6e38d"
+                  },
+                  {
+                      "path":  "neucurve/index.html",
+                      "sha256":  "f4647e285654c29b36f2769bdd591dc8d5e9edc7c47e891772551ea3eed56cad"
+                  },
+                  {
+                      "path":  "neucurve/nc-apply-glow.css",
+                      "sha256":  "c3c78ff61fc06b53fc7a1804831862344c5bd1e5c2002f248ca5fa7e86c64e75"
+                  },
+                  {
+                      "path":  "neucurve/nc-apply-glow.js",
+                      "sha256":  "d5ad609c052a2bd0b95b290eccb680fe9e9a2b5e43c8eb403b3e91177e5a7155"
+                  },
+                  {
+                      "path":  "neucurve/nc-away.css",
+                      "sha256":  "b2c50a3a2fd2473b4d279f706df5a859e868b7c950f2747a0a3e94c434161df0"
+                  },
+                  {
+                      "path":  "neucurve/nc-away.js",
+                      "sha256":  "9dbcd1862a753cabd67a8c6085534d8183249deaeb42129f0b3710680d36e72a"
+                  },
+                  {
+                      "path":  "neucurve/nc-bg.css",
+                      "sha256":  "136a23cff76c9ac5ede82eec4c5cc282a25c0e5dd4b4e53dcae79dd018c079a2"
+                  },
+                  {
+                      "path":  "neucurve/nc-bg.js",
+                      "sha256":  "446f5fffcceef657a7f4249c2f8350ad058e9084d0ce59e2c543600d9ba6715c"
+                  },
+                  {
+                      "path":  "neucurve/nc-extras.css",
+                      "sha256":  "5e9e70dbd73afe397742ffe7f0314b91cff62c3bde48656050fe18b3b1ad5cf1"
+                  },
+                  {
+                      "path":  "neucurve/nc-extras.js",
+                      "sha256":  "6cbce4ee0500c77abd86f420fb1df29314e3bd467378ca8793533b4729303a99"
+                  },
+                  {
+                      "path":  "neucurve/nc-fix16.css",
+                      "sha256":  "24cecaf23edf81d1d3d38147e68587d523fe8cd57ae3722a1ec05476251a0606"
+                  },
+                  {
+                      "path":  "neucurve/nc-fix17.css",
+                      "sha256":  "c8137ccbadb0a53eb3fb3f37451fd73d73249dd3855c9740add0617c735d2168"
+                  },
+                  {
+                      "path":  "neucurve/nc-fix18.css",
+                      "sha256":  "6acb9e5361229bd9994aec3ed9e8b07f1b80533fe357cd748750a08fd6ee882d"
+                  },
+                  {
+                      "path":  "neucurve/nc-fix19.css",
+                      "sha256":  "1f1ed3a26f68ed13d514aa3d9bfa127588d142cdad411e30e4ac5deae20283a5"
+                  },
+                  {
+                      "path":  "neucurve/nc-flow.css",
+                      "sha256":  "c20ec51543548f770158c808078e7510237c0ee909bfa46f9fee1814027ec366"
+                  },
+                  {
+                      "path":  "neucurve/nc-flow.js",
+                      "sha256":  "dbac0d89dd1d3ed2987a8f31b233e83193f2bcb7c87de097ec680cd03ecc02e6"
+                  },
+                  {
+                      "path":  "neucurve/nc-fluid-polish.css",
+                      "sha256":  "f7c7265ac91c51680e72d2686fb88265c2e8268d9a77af0849297b02b6de7313"
+                  },
+                  {
+                      "path":  "neucurve/nc-glass.css",
+                      "sha256":  "e578e98d2d9b64c0e4d1a38905331febb5fb9c8a88da5bdcf903c353fd7cda85"
+                  },
+                  {
+                      "path":  "neucurve/nc-glow.css",
+                      "sha256":  "3581107e2a5b1ccca76d91527a30c39d1827b6c84a893d0edb6717a9323e8d5b"
+                  },
+                  {
+                      "path":  "neucurve/nc-glow.js",
+                      "sha256":  "f3dec160dcdf158f13c0e9bc72fded7518405393a36609d8fbd5067697f37c49"
+                  },
+                  {
+                      "path":  "neucurve/nc-grad.css",
+                      "sha256":  "afd3087d3fe23b34a48c205a08067fde461726fe7a990f4dfe3bad8edf927dc0"
+                  },
+                  {
+                      "path":  "neucurve/nc-gsize.js",
+                      "sha256":  "8ef0696f96c04e5cea047b8eb771f6b53b1bbb1b08620a30b4ba847bd73b3bc3"
+                  },
+                  {
+                      "path":  "neucurve/nc-icons.css",
+                      "sha256":  "d3eb08d113b3974d12b437ad3caa9c0bb53ddf486992455b5cf0000a2917c6bc"
+                  },
+                  {
+                      "path":  "neucurve/nc-icons-pro.css",
+                      "sha256":  "b1c08842be07c4e7c4efd9c70c8053b5fe03f92121195aa813ed0608a1379103"
+                  },
+                  {
+                      "path":  "neucurve/nc-icons-pro.js",
+                      "sha256":  "c3f9fadbb9ad426f8233d7d4cff2f5fd89794eea310c7adb6be922da8aa4a33b"
+                  },
+                  {
+                      "path":  "neucurve/nc-light.css",
+                      "sha256":  "782f9ecfa9e80a322d23d71141cbbccd9542c27db81b8b07362b79021122c8ab"
+                  },
+                  {
+                      "path":  "neucurve/nc-light.js",
+                      "sha256":  "964581d662cfd3c514457bbcac0caeeca80e22759a1e7b9408103855e3f8ba40"
+                  },
+                  {
+                      "path":  "neucurve/nc-live.css",
+                      "sha256":  "504acc6a6f7396b0d5b614f4d6cb21a5f4876314d39e91857911bd3d8b6f5857"
+                  },
+                  {
+                      "path":  "neucurve/nc-live.js",
+                      "sha256":  "28a704444c548f653ffc9498686da1955be839fc69ca410d8f812d9cd35c4b01"
+                  },
+                  {
+                      "path":  "neucurve/nc-morph.css",
+                      "sha256":  "fc84a9d77d03c5e936b7081a980d0ba057ae4acc441a484fefe6e4cd7f97df19"
+                  },
+                  {
+                      "path":  "neucurve/nc-morph.js",
+                      "sha256":  "20a1d32b07e4160319828d6c4c1b5f979189adb1b4e01c08d6e25ec97e5d13da"
+                  },
+                  {
+                      "path":  "neucurve/nc-particles.js",
+                      "sha256":  "8e4b5c6f73c6d199fb21f75eadbecf5b002d79c305fc16f9282ba6dd307cac90"
+                  },
+                  {
+                      "path":  "neucurve/nc-polish.css",
+                      "sha256":  "f5236e92817357a4ce2f3ec92beccc1620f84781af05200ae22e14b05e1be425"
+                  },
+                  {
+                      "path":  "neucurve/nc-spinbox.css",
+                      "sha256":  "fe207f1a942ed75cc6aa460b63c284073238096bfcdfaa112de09b7f94a163b9"
+                  },
+                  {
+                      "path":  "neucurve/nc-theme-sync.css",
+                      "sha256":  "99aa240ffcbb4bfcf8a558439fb7c57e21ea9981f8cb28270889006e8dbdc63e"
+                  },
+                  {
+                      "path":  "neucurve/nc-theme-sync.js",
+                      "sha256":  "5c4feb6b3e043f9b43cb9a8ed3823747ef76888cef94d62b437777c1c71fbce9"
+                  },
+                  {
+                      "path":  "README.txt",
+                      "sha256":  "52b390cb23740b3cad4efde5523096bd2e5d6c0cf3b441afa7fe59e2214d6552"
+                  }
+              ]
+}

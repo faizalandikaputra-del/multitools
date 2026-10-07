@@ -1,0 +1,54 @@
+/* ==========================================================
+   Multi Tool - cursor-fix.css  (v2 - NO effects are paused or hidden)
+   Fixes the mouse cursor flickering between the arrow and the I-beam over text fields (e.g. the
+   expression box) while keeping every animation / glow / blur exactly as it is.
+
+   Suspected cause: the text box sits inside layers that repaint every frame - the rotating saber
+   ring behind it (.saber-wrap--code) and the frosted .snippet-card (backdrop-filter re-blurs the
+   drifting / blinking orbs behind it every frame). In CEF each repaint of the layer under the
+   pointer can reset the cursor to the arrow before the I-beam is applied again.
+   Fix: give the text box its own compositor layer and fence the animated ring, so those frames
+   never repaint (or re-hit-test) the layer the pointer is on. Purely additive CSS, loaded BEFORE
+   glass-theme.css. Nothing here changes how anything looks.
+   ========================================================== */
+
+/* 1. Explicit I-beam: never depend on "auto" cursor resolution */
+textarea,
+.code-area,
+.text-input,
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="password"],
+[contenteditable="true"] {
+  cursor: text !important;
+  -webkit-user-select: text; user-select: text;   /* html/body are user-select:none */
+}
+
+/* 2. The code editor (header + textarea) lives on its own GPU layer, above the spinning ring.
+      The ring keeps rotating underneath; the layer the pointer is on stays still. */
+.saber-wrap--code > .code-editor {
+  -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+}
+
+/* 3. Fence the rotating ring: its repaints stay inside the wrapper (it is already clipped there) */
+.saber-wrap--code {
+  contain: layout paint;
+}
+
+/* 4. Same treatment for the other single-line field in that card (snippet name) */
+.snippet-card .text-input,
+.snippet-card .code-area {
+  -webkit-transform: translateZ(0); transform: translateZ(0);
+}
+
+/* 5. Settings > Animations OFF must really stop the saber ring.
+      style.css only shrinks every duration to 0.01ms, but the saber ring is `infinite`, so it kept
+      "spinning" (and repainting) on every frame even with Animations switched off. Only applies
+      when the Animations toggle is OFF; with it ON nothing changes. */
+:root[data-reduce-motion="true"] .saber-wrap::before,
+:root[data-reduce-motion="true"] .saber-wrap::after {
+  animation: none !important;
+}

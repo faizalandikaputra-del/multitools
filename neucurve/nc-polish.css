@@ -1,0 +1,79 @@
+/* NeuCurve - nc-polish.css (v17)  -- loaded LAST in index.html
+   1) Landscape right column: the preset dropdown gets its own FULL-WIDTH row and the tool icons sit in a row BELOW it
+      (before, 10 controls were squeezed into one row and the last ones were clipped on the right edge).
+   2) Stroked icons for Ease Out / Ease / Ease In and the bookmark "save preset" button (see ICON in nc-flow.js).
+   3) Nicer hover / press / focus feedback for every NeuCurve control.
+   Remove this <link> to get the previous look back. */
+
+/* ---------- 1) right column: dropdown row + icon row ---------- */
+html body .shell.shell .fl-side .library-header {
+  display: flex; flex-wrap: wrap; align-items: center; overflow: visible; min-width: 0; max-width: 100%;
+  padding: 0 2px 6px; box-sizing: border-box;
+}
+html body .shell.shell .fl-side .library-header > * { min-width: 0; margin-left: 0; }
+html body .shell.shell .fl-side .library-header .lib-toggle-btn {
+  order: 0; flex: 0 0 22px; width: 22px; height: 32px; margin: 0 4px 6px 0; opacity: .7;
+}
+html body .shell.shell .fl-side .library-header .lib-toggle-btn svg { width: 12px; height: 12px; }
+html body .shell.shell .fl-side .library-header .lib-select {
+  order: 1; flex: 1 1 calc(100% - 30px); width: auto; max-width: none; min-width: 0; height: 32px; margin: 0 0 6px 0;
+  padding: 0 28px 0 12px; font-size: 12px; font-weight: 600; border-radius: 10px; background-position: right 10px center;
+  box-sizing: border-box;
+}
+/* icon row: every icon gets an equal share of the width, so nothing can fall off the edge */
+html body .shell.shell .library-header .fl-toolrow { display: contents; }
+html body .shell.shell .fl-side .library-header .fl-toolrow { order: 2; flex: 1 1 100%; display: flex; align-items: center; min-width: 0; }
+html body .shell.shell .fl-side .library-header .fl-toolrow > .fl-tool,
+html body .shell.shell .fl-side .library-header .fl-toolrow > .options-menu-container {
+  order: 0; flex: 1 1 0; width: auto; min-width: 0; height: 30px; margin: 0 1px; display: flex; align-items: center; justify-content: center;
+}
+html body .shell.shell .fl-side .library-header .fl-tool { border-radius: 8px; }
+html body .shell.shell .fl-side .library-header .fl-tool svg { width: 16px; height: 16px; }
+html body .shell.shell .fl-side .library-header .fl-toolrow .options-menu-container .lib-icon-btn { width: 100%; height: 30px; border-radius: 8px; }
+html body .shell.shell .fl-side .library-header .fl-toolrow .options-menu-container .lib-icon-btn svg { width: 14px; height: 14px; }
+
+/* ---------- 2) stroked ease icons + bookmark ---------- */
+html body .shell.shell .fl-eout svg, html body .shell.shell .fl-ease svg, html body .shell.shell .fl-ein svg {
+  width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2;
+}
+html body .shell.shell .fl-star svg { fill: none; stroke: var(--fl-accent); stroke-width: 2; width: 18px; height: 18px; }
+html body .shell.shell .fl-star:hover svg { fill: var(--fl-accent); fill-opacity: .22; }
+
+/* ---------- 3) hover / press / focus ---------- */
+html body .shell.shell .fl-ico, html body .shell.shell .fl-tool, html body .shell.shell .fl-sq,
+html body .shell.shell .fl-modes .nav-tab, html body .shell.shell .lib-icon-btn, html body .shell.shell .fl-expand,
+html body .shell.shell .lib-toggle-btn, html body .shell.shell .fl-pill {
+  transition: color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .16s cubic-bezier(.25, 1, .5, 1), border-color .18s ease;
+}
+html body .shell.shell .fl-ico:hover, html body .shell.shell .fl-tool:hover:not(.disabled), html body .shell.shell .fl-sq:hover,
+html body .shell.shell .lib-icon-btn:hover, html body .shell.shell .fl-expand:hover {
+  color: var(--fl-accent); background-color: rgba(255, 255, 255, .07);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset, 0 4px 12px -4px rgba(0, 0, 0, .55);
+  transform: translateY(-1px);
+}
+html body .shell.shell .fl-ico:active, html body .shell.shell .fl-tool:active, html body .shell.shell .fl-sq:active,
+html body .shell.shell .lib-icon-btn:active { transform: translateY(0) scale(.94); box-shadow: none; }
+html body .shell.shell .fl-ico:focus-visible, html body .shell.shell .fl-tool:focus-visible, html body .shell.shell .fl-sq:focus-visible,
+html body .shell.shell .nav-tab:focus-visible, html body .shell.shell .lib-select:focus-visible {
+  outline: none; box-shadow: 0 0 0 2px var(--fl-accent);
+}
+html body .shell.shell .fl-modes .nav-tab:hover:not(.active) { color: var(--fl-accent); background-color: rgba(255, 255, 255, .07); transform: translateY(-1px); }
+html body .shell.shell .fl-pill:hover { border-color: var(--fl-accent); color: #fff; box-shadow: 0 0 0 1px var(--fl-accent) inset; }
+html body .shell.shell .lib-select { transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease; cursor: pointer; }
+html body .shell.shell .lib-select:hover { border-color: var(--fl-accent); background-color: rgba(255, 255, 255, .06); }
+html body .shell.shell .apply-btn { transition: transform .16s cubic-bezier(.25, 1, .5, 1), filter .18s ease, box-shadow .2s ease; }
+html body .shell.shell .apply-btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+html body .shell.shell .apply-btn:active { transform: translateY(0) scale(.98); filter: brightness(.96); }
+/* preset tiles: accent border + soft lift, instead of just a slightly lighter grey */
+html body .shell.shell .preset-item { transition: transform .18s cubic-bezier(.25, 1, .5, 1); }
+html body .shell.shell .preset-item:hover { transform: translateY(-2px); }
+html body .shell.shell .preset-item .preset-thumbnail { transition: border-color .18s ease, background-color .18s ease, box-shadow .2s ease; }
+html body .shell.shell .preset-item:hover .preset-thumbnail {
+  border-color: var(--fl-accent); background-color: rgba(255, 255, 255, .05);
+  box-shadow: 0 0 0 1px var(--fl-accent) inset, 0 8px 18px -8px var(--fl-accent);
+}
+html body .shell.shell .preset-item:hover .preset-name { color: #fff; }
+html body .shell.shell .preset-item:active { transform: translateY(0) scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  html body .shell.shell .preset-item:hover, html body .shell.shell .fl-ico:hover, html body .shell.shell .fl-tool:hover { transform: none; }
+}

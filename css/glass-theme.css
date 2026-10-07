@@ -1,0 +1,525 @@
+/* ==========================================================
+   Multi Tool - glass-theme.css
+   FINAL pass, loaded AFTER every other stylesheet (see html/index.html).
+   "Clean Dark Glassmorphism Minimalist": quiet translucent surfaces,
+   hairline borders, one accent, soft depth. No neon, no scanlines,
+   no glitch. Every rule here is an override - delete this file and
+   the panel falls back to the previous look.
+
+   HOW IT WORKS
+   1. The design tokens below are the single source of truth.
+   2. The legacy tokens the rest of the CSS already reads (--bg, --surface,
+      --surface-hover, --border, --shadow-card*, --radius-*) are remapped to
+      them, so every tab re-themes at once instead of rule by rule.
+   3. A few components get explicit treatment (sidebar, buttons, inputs,
+      modal, menus) where the old look was hard-coded.
+
+   CEF / AE 2021 (Chromium 74) SAFE
+   - no `inset` shorthand, no aspect-ratio, no gap-on-flex reliance
+   - backdrop-filter only inside @supports (opaque fallback otherwise)
+   - motion is transform/opacity only; the panel's own opt-in
+     [data-reduce-motion] policy is respected at the bottom.
+   ========================================================== */
+
+/* ---------- 1. Design tokens ---------- */
+:root {
+  --panel-bg: #16161a;
+  --surface-card: rgba(30, 30, 36, 0.75);
+  --surface-hover: rgba(45, 45, 55, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --accent-glow: rgba(var(--accent-rgb, 127, 0, 255), 0.4);   /* follows Settings > Theme color */
+  --radius-card: 10px;
+  --radius-btn: 6px;
+
+  /* Derived helpers (not part of the core set) */
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --highlight-top: rgba(255, 255, 255, 0.05);                 /* 1px light edge on the top of glass */
+  --surface-solid: #1e1e24;                                   /* OPAQUE twin of --surface-card (saber masks, <option>) */
+  --surface-hover-solid: #272730;                             /* OPAQUE twin of --surface-hover */
+  --field-bg: rgba(0, 0, 0, 0.28);                            /* inputs / wells sit slightly below the card */
+  --glass-blur-card: 14px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-ui: 0.18s;
+}
+:root[data-theme="light"] {
+  --panel-bg: #e9e9ee;
+  --surface-card: rgba(255, 255, 255, 0.72);
+  --surface-hover: rgba(255, 255, 255, 0.92);
+  --border-subtle: rgba(0, 0, 0, 0.09);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --highlight-top: rgba(255, 255, 255, 0.7);
+  --surface-solid: #f6f6f9;
+  --surface-hover-solid: #ffffff;
+  --field-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* ---------- 2. Legacy token remap (everything else reads these) ---------- */
+:root {
+  --bg: var(--panel-bg);
+  --surface: var(--surface-card);
+  /* --surface-hover is the shared name: the value above is used as-is. */
+  --surface-sunken: #121216;                 /* opaque on purpose: gradients/masks sit on top of it */
+  --border: var(--border-subtle);
+  --border-soft: rgba(255, 255, 255, 0.05);
+  --text: #f2f2f5;
+  --text-dim: #a1a1ab;
+  --text-faint: #6b6b76;
+  --overlay: rgba(12, 12, 15, 0.55);
+
+  --radius-s: 0.5rem;                        /* unchanged: saber-wrap nesting math depends on it */
+  --radius-m: var(--radius-card);
+  --radius-l: var(--radius-card);
+  --ornament-radius: var(--radius-card);
+
+  --shadow-card:
+    inset 0 0 0 1px var(--border-subtle),
+    inset 0 1px 0 var(--highlight-top),
+    0 4px 16px rgba(0, 0, 0, 0.28);
+  --shadow-card-hover:
+    inset 0 0 0 1px var(--border-strong),
+    inset 0 1px 0 var(--highlight-top),
+    0 6px 20px rgba(0, 0, 0, 0.34);
+  --shadow-card-active:
+    inset 0 0 0 1px rgba(var(--accent-rgb), 0.6),
+    0 0 18px var(--accent-glow);
+
+  --glass-surface: var(--surface-card);
+  --glass-border: var(--border-subtle);
+  --sidebar-glass-bg: rgba(22, 22, 26, 0.34);   /* was 0.6 - more see-through, stronger glass feel */
+  --sidebar-glass-edge: var(--border-subtle);
+  --sidebar-glass-blur: 20px;                    /* a touch more blur to compensate for the lower fill */
+  --ornament-glow: var(--accent-glow);
+
+  /* Typography: sentence case, calmer weights */
+  --tracking-label: 0.01em;
+}
+:root[data-theme="light"] {
+  --surface-sunken: #e2e2e8;
+  --text: #1f1f26;
+  --text-dim: #63636f;
+  --sidebar-glass-bg: rgba(255, 255, 255, 0.32);   /* was 0.55 - matches the dark-theme transparency bump */
+  --border-soft: rgba(0, 0, 0, 0.06);
+  --overlay: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- 3. Base ---------- */
+html, body { background: var(--panel-bg); }
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
+/* Every micro-label was UPPERCASE + tracked; one calm sentence-case voice instead. */
+.tool-name, .field label, .field-label, .ta-group-head, .ta-group-label, .ta-title,
+.preset-group-heading, .cat-toolbar-name, .code-editor-lang, .ctx-menu-label {
+  text-transform: none;
+  letter-spacing: var(--tracking-label);
+}
+.field label, .field-label, .tool-name, .ta-group-head { font-weight: 500; }
+
+/* Unified keyboard focus. One rule per selector on purpose: an unknown :focus-visible (Chromium < 86, i.e. AE 2021)
+   would invalidate a whole comma-separated group. */
+button:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.9); outline-offset: 2px; }
+input:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.9); outline-offset: 2px; }
+select:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.9); outline-offset: 2px; }
+textarea:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.9); outline-offset: 2px; }
+.chip input:focus-visible + span { outline: 2px solid rgba(var(--accent-rgb), 0.9); outline-offset: 2px; }
+.switch-row input:focus-visible ~ .switch-track { outline: 2px solid rgba(var(--accent-rgb), 0.9); outline-offset: 2px; }
+
+/* ---------- 4. Ambient decoration: calmer ---------- */
+.app::before { opacity: 0.06; }                         /* the two colour pools behind the UI */
+.panel-head h1::before { display: none; }               /* removes the green "LED" dot */
+.panel-head h1 { padding-left: 0; }
+.ta-title::before, .preset-group-heading::before, .cat-toolbar-name::before {
+  animation: none; opacity: 0.9;
+  width: 4px; height: 4px; box-shadow: none;
+}
+.ta-title, .preset-group-heading, .cat-toolbar-name { border-bottom-color: var(--border-subtle); }
+
+/* ---------- 5. Sidebar ---------- */
+.sidebar {
+  background-color: var(--sidebar-glass-bg);
+  border-right: 1px solid var(--border-subtle);
+  box-shadow: inset -1px 0 0 var(--highlight-top);
+}
+/* Rounded-square keys instead of circles: reads like a native app rail. */
+.tab, .tab-indicator, .tab::before { border-radius: var(--radius-card); }
+.tab::before { background: var(--surface-hover); opacity: 0; }
+.tab:hover::before { opacity: 0.9; }
+.tab { transition: color var(--dur-ui) ease; }
+.tab-indicator {
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 4px 14px var(--accent-glow);
+}
+.tab:hover svg, .tab.is-active svg, .icon-btn:hover svg, .social-btn:hover svg { box-shadow: none; }
+.tab.drag-over-before { box-shadow: 0 -2px 0 0 var(--accent-strong); }
+.tab.drag-over-after { box-shadow: 0 2px 0 0 var(--accent-strong); }
+
+/* ---------- 6. Panel head ---------- */
+.panel-head {
+  background: var(--surface-card);
+  border: 0;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.panel-head h1 { font-weight: 600; letter-spacing: 0; }
+
+/* ---------- 7. Cards (one recipe for every card-like surface) ---------- */
+.tool, .beat-card, .snippet-card, .info, .empty, .expr-item, .preset-item, .qce-res-tile,
+.ta-group, .switch-row {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border-color: transparent;
+}
+.snippet-card { background: var(--surface-sunken); }
+.expr-item:hover, .preset-item:hover, .qce-res-tile:hover, .ta-group:hover {
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  /* .expr-item and .preset-item are DELIBERATELY left out of this list. Both repeat in an
+     un-virtualized, potentially long list (a single preset folder can hold 70+ rows, all
+     rendered at once - see js/main.js's showList()/folderCardHtml()), and giving every row its
+     own backdrop-filter layer is a well-known Chromium GPU-compositor trap: with dozens of
+     separate blur layers stacked in one scroll container, the compositor starts dropping/
+     skipping the paint of some of them each frame, which reads as cards randomly going blank
+     and flickering while scrolling - the exact bug this exclusion fixes. .tool/.beat-card/.info/
+     .ta-group/.panel-head are all short, bounded lists (a handful of items at most) so they keep
+     the real frosted-blur look safely. .preset-item/.expr-item stay visually translucent anyway
+     via their own `background: var(--surface-card)` above (already an rgba() with alpha baked
+     into the token) - they just skip the expensive "blur whatever is behind me" sampling. */
+  .tool, .beat-card, .info, .qce-res-tile, .ta-group, .panel-head {
+    -webkit-backdrop-filter: blur(var(--glass-blur-card));
+    backdrop-filter: blur(var(--glass-blur-card));
+  }
+  /* premium-ornaments.css re-tinted these with color-mix(); use the token directly. */
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .tool, .beat-card, .info, .expr-item-code, .panel-head { background: var(--surface-card); }
+    .snippet-card { background: var(--surface-sunken); }
+  }
+}
+
+/* Tool tiles: hairline at rest, accent only on hover (was a permanent neon ring). */
+.tool {
+  --tool-border-color: var(--border-subtle);
+  --tool-glow: 0 0 0 0 transparent;
+  --tool-glow-hover: 0 0 0 1px rgba(var(--accent-rgb), 0.7), 0 0 18px var(--accent-glow);
+  transition: transform 0.28s var(--ease-out), opacity var(--dur-fast) linear;
+}
+.tool::before { background: rgba(var(--accent-rgb), 0.08); }
+.tool:hover { transform: translateY(-2px); }
+.tool:active { transform: scale(0.97); }
+.tool-code { letter-spacing: 0.02em; font-weight: 600; }
+.tool-name { font-weight: 500; }
+
+/* Grouped capsule cards: one accent, not a four-colour rotation. */
+.ta-group:nth-of-type(n) { border-left-color: transparent; }
+.ta-group-head { color: var(--text-dim); }
+.ta-group.is-open > .ta-group-head, .ta-group-head:hover { color: var(--text); }
+
+/* ---------- 8. Cards that sit under a rotating "saber" ring must stay OPAQUE ----------
+   The ring only works because the content layer masks the conic gradient; the now-translucent
+   --surface would let it bleed through the whole card. Explicit solid twins fix that. */
+.code-editor, .preset-folder-header, .shortcut-tile, .saber-wrap > .switch-row {
+  background: var(--surface-solid);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.preset-folder-header:hover, .shortcut-tile:hover { background: var(--surface-hover-solid); }
+.code-editor:focus-within {
+  background-image:
+    linear-gradient(var(--surface-sunken), var(--surface-sunken)),
+    linear-gradient(135deg, rgba(var(--accent-rgb), 0.7), rgba(var(--accent-rgb), 0.25));
+}
+.shortcut-list { background: var(--surface-solid); }
+.select option, select option { background: var(--surface-solid); color: var(--text); }
+
+/* ---------- 9. Buttons ---------- */
+.btn, .btn-apply, .btn-round-add, .btn-round-alt, .split-btn, .align-btn, .anchor-btn, .fit-btn, .flip-btn,
+.cat-tab, .cat-tab-add, .shortcutz-add-btn {
+  border-radius: var(--radius-btn);
+}
+.btn {
+  background: var(--surface-card);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--border-subtle), inset 0 1px 0 var(--highlight-top);
+  font-weight: 500;
+  transition: transform var(--dur-ui) var(--ease-out), background-color var(--dur-ui) ease,
+              box-shadow var(--dur-ui) ease, filter var(--dur-ui) ease;
+}
+.btn:hover { transform: translateY(-1px); background: var(--surface-hover); box-shadow: inset 0 0 0 1px var(--border-strong), inset 0 1px 0 var(--highlight-top); }
+.btn:active { transform: translateY(0) scale(0.98); }
+.btn-ghost { background: transparent; box-shadow: none; color: var(--text-dim); }
+.btn-ghost:hover { background: var(--surface-card); color: var(--text); }
+.btn-primary {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 10px var(--accent-glow);
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+  background: var(--accent-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 16px var(--accent-glow);
+}
+.btn-primary:active { filter: brightness(0.94); }
+
+/* Segmented controls, category tabs and chips share the button radius. */
+.segmented { border-radius: calc(var(--radius-btn) + 2px); background: var(--field-bg); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+.segmented-opt { border-radius: var(--radius-btn); font-weight: 500; }
+.segmented-opt.is-active {
+  background: var(--accent-strong); color: var(--on-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 8px var(--accent-glow);
+}
+.cat-tab { background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border-subtle); font-weight: 500; }
+.cat-tab.is-active { background: var(--accent-strong); box-shadow: 0 2px 10px var(--accent-glow); }
+.chip span { border-radius: var(--radius-btn); background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+.chip:hover span { transform: none; background: var(--surface-hover); }
+.chip input:checked + span { background: rgba(var(--accent-rgb), 0.18); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.8); }
+
+/* ---------- 10. Inputs ---------- */
+.text-input, .select, select, .code-area, textarea {
+  background: var(--field-bg);
+  border-radius: var(--radius-btn);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  color: var(--text);
+}
+.text-input:hover, .select:hover, select:hover { background: rgba(0, 0, 0, 0.36); box-shadow: inset 0 0 0 1px var(--border-strong); }
+:root[data-theme="light"] .text-input:hover, :root[data-theme="light"] .select:hover { background: rgba(0, 0, 0, 0.08); }
+.text-input:focus, .select:focus, select:focus, .code-area:focus, textarea:focus {
+  outline: none;
+  background: var(--field-bg);
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.9), 0 0 0 3px var(--accent-glow);
+}
+input[type="range"]::-webkit-slider-runnable-track { background: var(--field-bg); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+input[type="range"]::-webkit-slider-thumb {
+  background: #fff; border: 0; width: 0.9rem; height: 0.9rem; margin-top: -0.31rem;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 4px rgba(var(--accent-rgb), 0.25);
+}
+input[type="color"] { border: 0; border-radius: var(--radius-btn); box-shadow: inset 0 0 0 1px var(--border-subtle); background: var(--field-bg); }
+
+/* Switches */
+.switch-track { background: var(--field-bg); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+.switch-row input:checked ~ .switch-track {
+  background: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 12px var(--accent-glow);
+}
+
+/* ---------- 11. Overlays: modal, context menus, toast ---------- */
+.modal-backdrop { background: rgba(8, 8, 10, 0.55); }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .modal-backdrop { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .modal, .ctx-menu, .toast {
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+.modal, .ctx-menu, .toast {
+  background: var(--surface-hover);
+  border: 0;
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-strong), inset 0 1px 0 var(--highlight-top), 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.toast { border-radius: var(--radius-card); }
+.toast.is-error { box-shadow: inset 0 0 0 1px var(--danger), 0 16px 40px rgba(0, 0, 0, 0.5); }
+.modal h2 { font-size: 0.95rem; font-weight: 600; letter-spacing: 0; }
+.field { border-top-color: var(--border-subtle); }
+.modal-footer, .info-divider { border-top-color: var(--border-subtle); }
+.ctx-item { border-radius: calc(var(--radius-btn) - 1px); transition: background-color var(--dur-fast) linear; }
+.ctx-item:hover { background: rgba(var(--accent-rgb), 0.18); transform: none; }
+
+/* ---------- 12. Small details ---------- */
+.swatch.is-selected { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 0 0 2px var(--panel-bg), 0 0 0 4px var(--accent-strong); }
+.social-btn, .icon-btn { border-radius: var(--radius-btn); }
+.social-btn { background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+.social-btn:hover { background: var(--surface-hover); box-shadow: inset 0 0 0 1px var(--border-strong); }
+*::-webkit-scrollbar-thumb { background-color: var(--sb-thumb); }
+
+/* ---------- 13. Motion policy ---------- */
+[data-reduce-motion] .tool, [data-reduce-motion] .btn { transition: none; }
+
+/* ---------- 14. Make the glass actually visible ----------
+   backdrop-filter only shows up when there is something colourful BEHIND the card to blur. On the plain
+   #16161a panel there was nothing, so the cards read as flat grey. Two fixes:
+   (a) ambient colour pools behind the whole UI (all derived from --accent-rgb so they follow the theme) - strong enough for the blur to
+       show through the translucent cards, still soft and slow-moving-free (static, no animation);
+   (b) a faint diagonal sheen on each glass surface so the "pane of glass" reads even on a flat background.
+   With a custom background image/GIF/video set, that media becomes the thing being blurred instead. */
+.app::before {
+  background:
+    radial-gradient(ellipse 55% 38% at 10% 8%, rgba(var(--accent-rgb), 1), transparent 70%),
+    radial-gradient(ellipse 50% 36% at 92% 42%, rgba(var(--accent-rgb), 0.85), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 30% 100%, rgba(var(--accent-rgb), 0.9), transparent 70%);
+  filter: blur(36px);
+  opacity: 0.34;
+}
+:root[data-reduce-motion="true"] .app::before { opacity: 0.3; }
+
+.tool, .beat-card, .info, .empty, .expr-item, .preset-item, .qce-res-tile, .ta-group, .panel-head,
+.modal, .ctx-menu, .toast, .btn:not(.btn-primary):not(.btn-ghost) {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0) 100%);
+}
+:root[data-theme="light"] .tool, :root[data-theme="light"] .beat-card, :root[data-theme="light"] .info,
+:root[data-theme="light"] .expr-item, :root[data-theme="light"] .preset-item, :root[data-theme="light"] .panel-head {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+}
+/* Sidebar rail: a touch more tint so its blur is visible against the ambient glow. */
+.sidebar { background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)); }
+
+/* ---------- 15. Saber outline - REBUILT ----------
+   Goal: one thin ring that travels around the tile's edge, nothing else.
+
+   Why the old one looked broken (AE 2021 / Chromium 74):
+   - `:focus-visible` does not exist before Chromium 86, and ONE unknown selector voids a whole comma group,
+     so the earlier "outline: none" rules never applied and the browser's square (radius-ignoring) focus
+     ring stayed on top of the rotating ring.
+   - The rotating layers are GPU-composited and escaped the rounded overflow:hidden clip. clip-path clips
+     composited children correctly, so the wrapper is now clipped with clip-path.
+   - A blurred duplicate (::after) leaked a halo past the edge. It is removed; the ring is a single crisp layer.
+
+   How it works: .saber-wrap = 2px padding + rounded clip. Its ::before is a big conic "comet" that rotates
+   about the wrapper's centre. The opaque tile/card inside covers everything except the 2px gap, so only the
+   edge is ever lit. --sw-r drives border-radius AND clip-path, so they can never disagree. */
+.saber-wrap { --sw-r: calc(var(--radius-s) + 0.15rem); }
+.saber-wrap--code { --sw-r: 10px; }
+.saber-wrap--folder { --sw-r: calc(var(--radius-s) + 0.15rem + 2px); }
+.saber-wrap--tile { --sw-r: var(--tile-r); }
+
+.saber-wrap, .saber-wrap--code, .saber-wrap--folder, .saber-wrap--tile {
+  border-radius: var(--sw-r);
+  -webkit-clip-path: inset(0 round var(--sw-r));
+  clip-path: inset(0 round var(--sw-r));
+  overflow: hidden;
+  isolation: isolate;
+  -webkit-mask-image: none; mask-image: none;
+  background-color: transparent;
+}
+.saber-wrap::after { display: none; animation: none; }          /* no blurred halo */
+.saber-wrap::before {
+  width: 900px; height: 900px; z-index: 0;
+  background: conic-gradient(from 0deg,
+    transparent 0%, transparent 52%,
+    rgba(var(--accent-rgb), 0.35) 70%,
+    var(--accent) 90%,
+    var(--accent-strong) 100%);
+  animation: saberSpin 2.6s linear infinite;
+}
+/* Faint static rail so the edge itself reads as an outline while the comet travels along it. */
+.saber-wrap.is-active {
+  background-color: rgba(var(--accent-rgb), 0.16);
+}
+
+/* Native focus rings off on tiles (square + detached in old Chromium). Separate rules: see note above.
+   Keyboard focus is still visible - :focus-within lights the wrapper ring. */
+.shortcut-tile:focus { outline: none !important; }
+.shortcut-tile:active { outline: none !important; }
+.shortcut-tile-remove:focus { outline: none !important; }
+.shortcut-tile, .shortcut-tile-remove { -webkit-tap-highlight-color: transparent; }
+.saber-wrap--tile > .shortcut-tile { box-sizing: border-box; overflow: hidden; }
+.saber-wrap--tile > .shortcut-tile:focus, .saber-wrap--tile > .shortcut-tile:active {
+  box-shadow: inset 0 0 0 1px var(--border-subtle) !important;   /* neutral; the ring is the only accent */
+}
+.shortcut-tile-remove:focus { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.9); opacity: 1; }
+.saber-wrap--tile:hover .shortcut-tile-remove, .saber-wrap--tile:focus-within .shortcut-tile-remove { opacity: 1; }  /* style.css pairs this with :focus-visible in one group, which old Chromium drops whole */
+
+/* ---------- 16. Shortcutz tiles = the Easy Layer "ADJ" box ----------
+   Not the rotating ring: the BOX itself. An Easy Layer tile (.tool) is a rounded glass card with a 1px
+   hairline outline, a light top edge and a soft drop shadow; on hover the outline turns accent with a soft
+   glow. Shortcutz tiles now use exactly that recipe (same tokens: --surface-card, --shadow-card,
+   --radius-card, --border-subtle, --accent-glow). The saber ring is off for tiles, the wrapper keeps its
+   2px padding (so spacing does not change) and no longer clips, so the hover glow is not cut off.
+   No pressed / focus / shimmer effect: clicking looks the same as hovering. */
+.saber-wrap--tile::before, .saber-wrap--tile::after { display: none; animation: none; }
+.saber-wrap--tile,
+.saber-wrap--tile:hover, .saber-wrap--tile:focus-within {
+  -webkit-clip-path: none; clip-path: none; overflow: visible;
+  background: transparent;
+}
+.saber-wrap--tile > .shortcut-tile {
+  background-color: var(--surface-card);
+  border: 0 !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--shadow-card) !important;      /* 1px hairline (inset) + top light edge + soft drop shadow */
+  outline: none !important;
+  transition: background-color var(--dur-ui) ease, box-shadow var(--dur-ui) ease;
+}
+.saber-wrap--tile > .shortcut-tile:not(.has-bg) {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0) 100%);
+}
+:root[data-theme="light"] .saber-wrap--tile > .shortcut-tile:not(.has-bg) {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+}
+/* Hover = ADJ hover: accent outline + soft glow. :active / :focus intentionally identical (no extra effect). */
+.saber-wrap--tile > .shortcut-tile:hover,
+.saber-wrap--tile > .shortcut-tile:focus,
+.saber-wrap--tile > .shortcut-tile:active {
+  background-color: var(--surface-hover);
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.7), 0 0 14px var(--accent-glow) !important;
+}
+.saber-wrap--tile > .shortcut-tile.has-bg:hover,
+.saber-wrap--tile > .shortcut-tile.has-bg:active { background-color: transparent; }
+.shortcut-tile-remove:focus { box-shadow: none; }
+/* Built-in lists were one solid slab with dividers; now each row is its own card, so the slab goes. */
+.shortcut-list { background: transparent; box-shadow: none; }
+.saber-wrap--tile > .shortcut-tile { border-bottom: 0 !important; }
+/* Drag-to-reorder insertion line (box-shadow on the wrapper) is visible because the wrapper no longer clips. */
+
+/* ---------- 17. Custom tile background must never zoom / drift ----------
+   fluid-polish.css gives every .shortcut-tile a hover "shimmer" (background-size: 250%, and it slides
+   background-position on :hover). That was meant for the gradient sheen, but a tile with a custom
+   background image/GIF (.has-bg, image set inline) inherits the same size + position, so the picture
+   blew up 2.5x and slid around whenever the cursor was over the tile. Pin it: always cover + centred,
+   in every state, with no transition. */
+.saber-wrap--tile > .shortcut-tile.has-bg,
+.saber-wrap--tile > .shortcut-tile.has-bg:hover,
+.saber-wrap--tile > .shortcut-tile.has-bg:focus,
+.saber-wrap--tile > .shortcut-tile.has-bg:active {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  transition: box-shadow var(--dur-ui) ease !important;
+}
+
+/* ---------- Animation Presets list: no outlines on the boxes ----------
+   Removes the 1px inset ring every card gets from --shadow-card, the accent ring on hover, and the
+   rotating "saber" glow ring around each folder header. The soft drop shadow stays so the boxes still
+   lift off the background. The favorite ring (.is-favorite) is a deliberate marker and is untouched. */
+#preset-area .preset-item:not(.is-favorite),
+#preset-area .preset-item:not(.is-favorite):hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+}
+#preset-area .saber-wrap--folder,
+#preset-area .saber-wrap--folder.is-active {
+  padding: 0;
+  background-color: transparent;
+  -webkit-clip-path: none; clip-path: none;
+  overflow: visible;
+}
+#preset-area .saber-wrap--folder::before,
+#preset-area .saber-wrap--folder::after { display: none; animation: none; }
+#preset-area .saber-wrap--folder > .preset-folder-header {
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+}
+
+/* ---------- Sidebar rail follows the theme colour ----------
+   The blurred rail was a fixed neutral grey. It now carries a tint of the accent (--accent-rgb, which the
+   theme picker updates live) laid over the same dark/light glass base, so it changes with the theme while
+   the blur of the background image/GIF behind it stays visible. */
+.sidebar {
+  /* Tint lowered 0.24 -> 0.1 to match the more transparent --sidebar-glass-bg above - a strong
+     tint here would just re-opaque the rail and cancel out that change. */
+  background-image:
+    linear-gradient(rgba(var(--accent-rgb), 0.1), rgba(var(--accent-rgb), 0.1)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  border-right-color: rgba(var(--accent-rgb), 0.32);
+}
+:root[data-theme="light"] .sidebar {
+  background-image:
+    linear-gradient(rgba(var(--accent-rgb), 0.07), rgba(var(--accent-rgb), 0.07)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+}
+
+
+/* ---------- Ambient circles: now real, moving + blinking elements (css/ambient-orbs.css, js/ambient-orbs.js) ----------
+   The old static pools were drawn by .app::before; hide them so they are not drawn twice. */
+.app::before { display: none !important; }

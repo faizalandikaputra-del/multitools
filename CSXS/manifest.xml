@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.ogatt.multitool" ExtensionBundleVersion="1.1.0"
+  ExtensionBundleName="Multi Tool" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ExtensionList>
+    <Extension Id="com.ogatt.multitool.panel" Version="1.1.0" />
+    <!-- Curve tab (NeuCurve): its Settings popup and Graph Editor open as their own windows -->
+    <Extension Id="com.ogatt.multitool.curve.settings" Version="1.1.0" />
+    <Extension Id="com.ogatt.multitool.curve.graph" Version="1.1.0" />
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="AEFT" Version="[13.0,99.9]" />
+    </HostList>
+    <LocaleList>
+      <Locale Code="All" />
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="7.0" />
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <!-- Main panel: Multi Tool (hosts the Curve tab in an iframe) -->
+    <Extension Id="com.ogatt.multitool.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./html/index.html</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <!-- Same flags NeuCurve used: local file access between the panel and the embedded Curve
+               frame, and Node.js for NeuCurve's preset file storage. -->
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+          <Persistent>true</Persistent>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>Multi Tool</Menu>
+          <Geometry>
+            <Size><Width>340</Width><Height>520</Height></Size>
+            <MinSize><Width>240</Width><Height>320</Height></MinSize>
+            <MaxSize><Width>900</Width><Height>1400</Height></MaxSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+
+    <!-- NeuCurve: Settings popup -->
+    <Extension Id="com.ogatt.multitool.curve.settings">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./neucurve/index.html?ext=settings</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Modeless</Type>
+          <Geometry>
+            <Size><Width>320</Width><Height>580</Height></Size>
+            <MinSize><Width>280</Width><Height>450</Height></MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+
+    <!-- NeuCurve: expanded Graph Editor -->
+    <Extension Id="com.ogatt.multitool.curve.graph">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./neucurve/index.html?ext=graph</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>NeuCurve Graph Editor</Menu>
+          <Geometry>
+            <Size><Width>1120</Width><Height>780</Height></Size>
+            <MinSize><Width>420</Width><Height>360</Height></MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

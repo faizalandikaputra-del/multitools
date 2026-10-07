@@ -1,0 +1,30 @@
+/* mt-tidy.css - layout clean-up for the main panel (everything except the Curve tab).
+   Loaded after mt-uitheme.css and before material-theme.css, so it only evens out sizes/alignment
+   and never changes colours (both Glass and Material You keep working). */
+
+/* Anchor Point: 3x3 grid fills the card instead of stopping at 11rem */
+.anchor-grid { max-width: 15rem; width: 100%; margin-inline: auto; }
+
+/* Flip / Align / Fit: buttons share the full row evenly */
+.flip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-items: stretch; }
+.align-grid, .fit-grid { justify-items: stretch; }
+.align-btn, .fit-btn, .flip-btn { max-width: none; width: 100%; }
+.el-flip { align-self: stretch; }
+
+/* Easy Layer: Auto Parent row lines up with the tool grid below it */
+.el-options { width: 100%; box-sizing: border-box; }
+.el-options .saber-wrap, .el-options .switch-row { width: 100%; box-sizing: border-box; }
+
+/* Text that used to be clipped now wraps */
+.field-note.save-dir, .save-dir { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.shortcut-tile-name {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  white-space: normal; overflow: hidden; overflow-wrap: anywhere; line-height: 1.2;
+}
+
+/* Small helper text: slightly larger and with consistent line height */
+.field-note { font-size: 0.7rem; line-height: 1.45; }
+
+/* Wide buttons: a 6% scale-up on hover now makes them spill past the card, so lift only */
+.flip-btn:hover { transform: translateY(-1px); }
+.flip-btn:active { transform: scale(0.97); }

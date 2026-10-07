@@ -1,0 +1,60 @@
+/* =============================================================================================
+   tab-motion.css - animasi kotak/kartu per tab (masuk berurutan + keluar singkat)
+   ---------------------------------------------------------------------------------------------
+   Companion script: showTab() di js/main.js.
+   - MASUK : tiap kotak/kartu (.tool, .ta-group, .beat-card, .info, .preset-item, dst.) muncul
+             bergantian: fade + naik tipis + scale kecil. Delay = --mt-i * 26ms (maks 14 item,
+             jadi total stagger <= ~0.36s). Index --mt-i diisi oleh JS.
+   - KELUAR: saat pindah tab, isi panel lama fade + turun tipis ~0.11s (.panel.is-leaving),
+             baru panel baru dirender.
+   Ringan: HANYA opacity + transform (compositor), tidak ada blur/box-shadow/filter yang dianimasikan.
+   animation-fill-mode "backwards": setelah selesai tidak ada transform permanen, jadi
+   hover/press (.tool:hover dst.) tetap jalan normal.
+   Dimuat SETELAH fluid-polish.css dan SEBELUM glass-theme.css (glass-theme tetap harus terakhir).
+   Mati hanya bila data-reduce-motion="true" (opt-in, lihat style.css); setting OS diabaikan.
+   ============================================================================================= */
+
+:root {
+  --mt-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --mt-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --mt-card-dur: 0.34s;
+  --mt-leave-dur: 0.11s;
+}
+
+/* Panel sendiri cukup fade tipis - gerakannya dibawa oleh kartu-kartu di dalamnya, supaya
+   tidak ada gerak ganda (panel naik + kartu naik) yang terasa berat. Menimpa @keyframes
+   panel-in dari fluid-polish.css (lebih akhir di cascade). */
+@keyframes panel-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.panel.is-entering,
+.ta-pane.is-entering { animation-duration: 0.2s; animation-timing-function: ease-out; }
+
+@keyframes mt-card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.panel.is-entering .mt-stagger {
+  animation: mt-card-in var(--mt-card-dur) var(--mt-ease-out) backwards;
+  animation-delay: calc(var(--mt-i, 0) * 26ms);
+}
+
+/* Keluar: pointer-events mati supaya klik di tengah transisi tidak kena kartu lama */
+.panel.is-leaving {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity var(--mt-leave-dur) var(--mt-ease-in), transform var(--mt-leave-dur) var(--mt-ease-in);
+}
+.panel-head.is-leaving {
+  opacity: 0;
+  transition: opacity var(--mt-leave-dur) var(--mt-ease-in);
+}
+
+/* Sengaja TIDAK memakai @media (prefers-reduced-motion): style.css menjadikan reduced-motion OPT-IN
+   (data-reduce-motion="true") supaya setting Windows "Show animations" tidak mematikan animasi panel. */
+:root[data-reduce-motion="true"] .panel.is-entering .mt-stagger { animation: none; }
+:root[data-reduce-motion="true"] .panel.is-leaving,
+:root[data-reduce-motion="true"] .panel-head.is-leaving { transition: none; }

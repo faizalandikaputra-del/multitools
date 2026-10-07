@@ -1,0 +1,4 @@
+/* NeuCurve - nc-away.css : see nc-away.js. While the pointer is outside the page, nothing animates (no repaint = no black flash). */
+html.nc-away *, html.nc-away *::before, html.nc-away *::after {
+  animation-play-state: paused !important;
+}

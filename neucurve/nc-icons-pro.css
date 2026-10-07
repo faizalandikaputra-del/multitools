@@ -1,0 +1,24 @@
+/* NeuCurve refined icons (see nc-icons-pro.js). Colours follow currentColor, so every theme/light mode keeps working. */
+svg.ncp { stroke-width: 1.7; overflow: visible; transition: transform .16s cubic-bezier(.3,.9,.4,1.2), filter .2s ease; }
+svg.ncp .ncp-t { fill: currentColor; fill-opacity: .3; stroke: none; }
+svg.ncp .ncp-f { fill: currentColor; stroke: none; }
+svg.ncp .ncp-guide { stroke-opacity: .32; stroke-width: 1.3; stroke-dasharray: 1.5 3; }
+
+/* hover: slight lift. active (toggled on): accent glow */
+button:hover > svg.ncp { transform: translateY(-.5px) scale(1.06); }
+button:active > svg.ncp { transform: scale(.92); }
+button.active > svg.ncp, .mtab.active > svg.ncp { filter: drop-shadow(0 0 3px currentColor); }
+svg.ncp .ncp-t { transition: fill-opacity .2s ease; }
+button:hover > svg.ncp .ncp-t, button.active > svg.ncp .ncp-t { fill-opacity: .55; }
+button.disabled > svg.ncp, button:disabled > svg.ncp { filter: none; transform: none; }
+
+/* sizes that suited the old 13px strokes */
+.mtab > svg.ncp { width: 19px; height: 19px; }
+.fl-expand > svg.ncp { width: 15px; height: 15px; }
+.utility-btn > svg.ncp, .fl-ico > svg.ncp { width: 18px; height: 18px; }
+.fl-tool > svg.ncp { width: 17px; height: 17px; }
+.fl-sq > svg.ncp { width: 20px; height: 20px; }
+@media (prefers-reduced-motion: reduce) { svg.ncp { transition: none; } button:hover > svg.ncp { transform: none; } }
+
+/* keep the ease buttons as strokes (an older rule filled their svg solid) */
+html body .shell.shell .fl-sq svg.ncp { fill: none; stroke: currentColor; }

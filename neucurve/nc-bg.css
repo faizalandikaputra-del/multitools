@@ -1,0 +1,35 @@
+/* NeuCurve - nc-bg.css   (v10)
+   Styles for the "Adjust Background" editor in NeuCurve's Settings window (see nc-bg.js).
+   The background itself is NeuCurve's own <image> inside the graph SVG - no extra layer, no extra CSS needed. */
+/* ---------- Adjust Background editor (Settings > Graph Background > Adjust Background) ---------- */
+body.nc-bg-edit #app { opacity: 0; visibility: hidden; pointer-events: none; }
+body.nc-bg-edit { cursor: grab; }
+body.nc-bg-edit.nc-bg-dragging, body.nc-bg-edit.nc-bg-dragging * { cursor: grabbing; user-select: none; }
+#nc-bg-editor {
+  position: fixed; left: 50%; bottom: 12px; z-index: 50; transform: translate(-50%, 14px);
+  width: min(94vw, 300px); box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; background: rgba(22, 22, 26, 0.94); border: 1px solid #2a2a30; border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5); color: #ddd; font: 11px Inter, sans-serif; cursor: default;
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s, transform .3s, visibility 0s linear .3s;
+}
+body.nc-bg-edit #nc-bg-editor { opacity: 1; visibility: visible; pointer-events: auto; transform: translate(-50%, 0); transition: opacity .25s, transform .3s; }
+.nc-bge-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.nc-bge-head strong { font-size: 13px; font-weight: 600; }
+.nc-bge-head span { font-size: 9px; color: #777; }
+.nc-bge-row { display: flex; align-items: center; gap: 8px; }
+.nc-bge-row label { flex: 0 0 62px; font-size: 10px; color: #888; }
+.nc-bge-row input[type="range"] { flex: 1; min-width: 0; -webkit-appearance: none; height: 3px; background: #2a2a30; border-radius: 4px; outline: none; }
+.nc-bge-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; cursor: pointer; border: 2px solid var(--ui-color, #3366ff); }
+.nc-bge-row output { flex: 0 0 34px; text-align: right; font: 10px "JetBrains Mono", monospace; color: #999; }
+.nc-bge-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+.nc-bge-actions button { background: #1a1a1f; border: 1px solid #2a2a30; color: #bbb; font-size: 10px; padding: 5px 14px; border-radius: 6px; cursor: pointer; }
+.nc-bge-actions button:hover { background: #24242b; color: #fff; }
+.nc-bge-actions button.primary { background: var(--ui-color, #3366ff); border-color: var(--ui-color, #3366ff); color: #fff; }
+
+/* FULL-window preview: image over the whole Settings window; the frame is what the graph really shows. */
+#nc-bg-prev { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #08080a; z-index: 5; }
+#nc-bg-prev img { position: absolute; max-width: none; user-select: none; pointer-events: none; }
+#nc-bg-frame { position: absolute; box-sizing: border-box; pointer-events: none; border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 200vmax rgba(6, 6, 10, 0.62), inset 0 0 0 1px rgba(0, 0, 0, 0.5); }
+body.nc-bg-edit #nc-bg-prev { cursor: grab; }
+body.nc-bg-dragging #nc-bg-prev { cursor: grabbing; }

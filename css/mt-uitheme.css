@@ -1,0 +1,54 @@
+/* Multi Tool - mt-uitheme.css : the "Style" picker in Settings (Glass / Material You). Companion: js/mt-uitheme.js.
+   Always loaded, and written to look right in BOTH styles. The Material You look itself lives in css/material-theme.css.
+   Chromium-74 safe: no flex gap, no inset, no aspect-ratio. */
+.ui-theme-cards { display: flex; width: 100%; margin: 0 -4px; }
+.ui-theme-card {
+  flex: 1 1 0; min-width: 0; margin: 0 4px; padding: 6px 6px 7px; text-align: center;
+  border-radius: 14px; background: var(--surface-card); color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  font-size: 0.68rem; font-weight: 500; line-height: 1.2;
+  transition: box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+.ui-theme-card:hover { color: var(--text); transform: translateY(-1px); }
+.ui-theme-card:active { transform: scale(0.97); }
+.ui-theme-card[aria-checked="true"] { color: var(--text); box-shadow: inset 0 0 0 2px var(--accent-strong, #8b6cf7); background: rgba(var(--accent-rgb, 139, 108, 247), 0.10); }
+.ui-theme-card:focus-visible { outline: 2px solid rgba(var(--accent-rgb, 139, 108, 247), 0.9); outline-offset: 2px; }
+.ui-theme-card > span { display: block; margin-top: 6px; }
+
+/* mini previews. Glass = fixed colours (it always looks like this). Material You = a miniature of the REAL style (nav rail with a
+   pill indicator, flat tonal card, filled primary pill + tonal pill, no shadows) painted with the live --md-* palette that
+   js/mt-uitheme.js paintPreview() copies onto this element, so it follows Theme color + Light/Dark + Background color.
+   The var() fallbacks below are the default purple / light palette (first paint, before the script runs). */
+.ui-theme-swatch { position: relative; display: block; height: 48px; border-radius: 10px; overflow: hidden; }
+.ui-theme-swatch::before, .ui-theme-swatch::after { content: ""; position: absolute; border-radius: 999px; }
+.ui-theme-swatch--glass { background: linear-gradient(135deg, rgba(var(--gp-rgb, 139, 108, 247), 0.06) 0%, rgba(var(--gp-rgb, 139, 108, 247), 0.30) 100%), var(--gp-bg, #1b1b22); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10); }
+.ui-theme-swatch--glass::before { left: 8px; top: 9px; width: 58%; height: 11px; background: rgba(255, 255, 255, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); border-radius: 5px; }
+.ui-theme-swatch--glass::after { left: 8px; top: 25px; width: 36%; height: 11px; background: var(--gp-accent, #8b6cf7); border-radius: 5px; }
+/* Glass preview in Light: same glass look as the real Light scheme (frosted white card, dark hairlines) */
+.ui-theme-swatch--glass[data-gp-scheme="light"] { background: linear-gradient(135deg, rgba(var(--gp-rgb, 139, 108, 247), 0.08) 0%, rgba(var(--gp-rgb, 139, 108, 247), 0.28) 100%), var(--gp-bg, #e9e9ee); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+.ui-theme-swatch--glass[data-gp-scheme="light"]::before { background: rgba(255, 255, 255, 0.78); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10); }
+
+.ui-theme-swatch--material { background: var(--md-bg, #f9f9ff); box-shadow: inset 0 0 0 1px rgba(var(--md-outline-rgb, 119, 117, 137), 0.28); border-radius: 14px; }
+.ui-theme-swatch--material > b { position: absolute; display: block; font-weight: 400; }
+/* navigation rail: pill indicator (secondary container) + a second, quiet destination */
+.ui-theme-swatch--material::before { left: 4px; top: 8px; width: 12px; height: 16px; border-radius: 8px; background: var(--md-secondary-container, #e2dfff); }
+.ui-theme-swatch--material::after { left: 7px; top: 30px; width: 6px; height: 6px; background: var(--md-on-surface-variant, #474557); opacity: 0.55; }
+.mu-pv-rail { left: 7px; top: 14px; width: 6px; height: 4px; border-radius: 999px; background: var(--md-on-secondary-container, #1d1734); }
+/* flat tonal card (no border, no shadow, big radius) with two text lines */
+.mu-pv-card { left: 22px; top: 7px; right: 7px; height: 21px; border-radius: 10px; background: var(--md-surface, #eeedf9); }
+.mu-pv-card::before, .mu-pv-card::after { content: ""; position: absolute; left: 8px; height: 3px; border-radius: 2px; background: var(--md-on-surface, #1b1b23); }
+.mu-pv-card::before { top: 6px; width: 46%; opacity: 0.8; }
+.mu-pv-card::after { top: 12px; width: 28%; background: var(--md-on-surface-variant, #474557); opacity: 0.55; }
+/* filled primary pill + filled-tonal pill */
+.mu-pv-btn { left: 22px; top: 33px; width: 38%; height: 9px; border-radius: 999px; background: var(--md-primary, #6843cb); }
+.mu-pv-btn::after { content: ""; position: absolute; left: calc(100% + 5px); top: 0; width: 62%; height: 9px; border-radius: 999px; background: var(--md-secondary-container, #e2dfff); }
+
+/* Palette / Light-Dark / background Default now exist on BOTH styles; .mu-only (none left in the markup) hides on Glass, .glass-only hides on Material You */
+:root:not([data-ui-theme="material"]) .mu-only { display: none !important; }
+.mu-swatches { display: flex; flex-wrap: wrap; width: 100%; margin: -4px; }
+.mu-swatch { flex: 0 0 auto; width: 26px; height: 26px; margin: 4px 5px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.4); transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease; }
+.mu-swatch:hover { transform: scale(1.12); }
+.mu-swatch:active { transform: scale(0.94); }
+.mu-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--md-bg, var(--panel-bg, #fff)), 0 0 0 4px var(--md-primary, var(--accent, #8b6cf7)); }
+.mu-swatch:focus-visible { outline: 2px solid var(--md-primary, var(--accent, #8b6cf7)); outline-offset: 3px; }

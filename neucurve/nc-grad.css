@@ -1,0 +1,42 @@
+/* NeuCurve - nc-grad.css : renders the Background Gradient set in NeuCurve Settings (see nc-extras.js).
+   Two areas:
+   - html.nc-grad-panel : #nc-grad is a fixed layer behind the whole Curve tab; the big dark surfaces turn translucent.
+   - html.nc-grad-graph : #nc-grad lives inside .canvas-area (the graph floor) only.
+   Loaded LAST in index.html. Off = no class on <html> = nothing in this file applies. */
+#nc-grad { pointer-events: none; }
+#nc-grad.nc-grad-in-panel { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; }
+#nc-grad.nc-grad-in-graph { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; border-radius: inherit; }
+html.nc-grad-panel #app { position: relative; z-index: 1; }
+html.nc-grad-graph .canvas-area { position: relative; }
+html.nc-grad-graph .canvas-area > svg, html.nc-grad-graph .canvas-area > .canvas-container { position: relative; z-index: 1; }
+
+/* Whole panel: make the big opaque surfaces see-through (specific + !important so nc-theme-sync / nc-glass rules lose) */
+html.nc-grad-on body .shell.shell .extension-wrapper.extension-wrapper,
+html.nc-grad-panel body .extension-wrapper.extension-wrapper,
+html.nc-grad-panel body .main-container.main-container,
+html.nc-grad-panel body .content-wrapper.content-wrapper,
+html.nc-grad-panel body .fixed-section.fixed-section,
+html.nc-grad-panel body .variable-section.variable-section,
+html.nc-grad-panel body .library-area.library-area,
+html.nc-grad-panel body .preset-container.preset-container,
+html.nc-grad-panel body .action-container.action-container { background: transparent !important; }
+html.nc-grad-panel body .canvas-area.canvas-area { background: rgba(0, 0, 0, 0.30) !important; }
+html.nc-grad-panel body svg.curve-svg.curve-svg, html.nc-grad-graph body svg.curve-svg.curve-svg { background: transparent !important; }
+html.nc-grad-panel body .model-nav-strip.model-nav-strip { background: rgba(255, 255, 255, 0.045) !important; }
+html.nc-grad-panel body .section-divider-vertical.section-divider-vertical { background: rgba(255, 255, 255, 0.06) !important; }
+
+/* Graph only */
+html.nc-grad-graph body .canvas-area.canvas-area { background: rgba(0, 0, 0, 0.18) !important; overflow: hidden; }
+
+/* the graph floor itself is an SVG <rect> (fill #0e0e0e): let the gradient through, the dark veil comes from .canvas-area above */
+html.nc-grad-on body svg.curve-svg > rect:first-of-type { fill: rgba(0, 0, 0, 0) !important; }
+
+/* ---------- free graph size grip (nc-gsize.js) ---------- */
+#nc-gsize {
+  position: absolute; z-index: 6; width: 22px; height: 22px; display: none; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, .55); background: rgba(20, 20, 20, .72); border: 1px solid rgba(255, 255, 255, .16); border-radius: 7px;
+  cursor: nwse-resize; touch-action: none; user-select: none;
+  transition: color .15s ease, background-color .15s ease, border-color .15s ease, transform .15s cubic-bezier(.25, 1, .5, 1);
+}
+#nc-gsize:hover, html.nc-gsize-drag #nc-gsize { color: #fff; background: rgba(40, 40, 40, .9); border-color: var(--ui-color, #FFD21F); transform: scale(1.12); }
+html.nc-gsize-drag, html.nc-gsize-drag * { cursor: nwse-resize !important; user-select: none !important; }

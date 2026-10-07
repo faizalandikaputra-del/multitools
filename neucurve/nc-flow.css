@@ -1,0 +1,332 @@
+/* NeuCurve - nc-flow.css
+   "Flow" look for the Curve tab (reference: the Flow extension screenshot).
+   Loaded LAST in index.html, together with nc-flow.js (which re-arranges the control rows).
+   Everything is scoped under html body .shell.shell so it outranks the compiled (hash-suffixed) rules without
+   fighting nc-theme-sync.css (the panel Background color still re-tints the panel base).
+   Accent = NeuCurve Settings > UI Color (--ui-color, written by the bundle); NOT the panel Theme color. Falls back to Flow yellow.
+   Tune the look from the variables below. */
+:root {
+  --fl-accent: var(--ui-color, #FFD21F);
+  --fl-accent-ink: #151515;
+  --fl-bg: #1a1a1a;
+  --fl-btn: #262626;
+  --fl-btn-hover: #303030;
+  --fl-line: #2f2f2f;
+  --fl-icon: #a8a8a8;
+  --fl-radius: 12px;
+}
+/* (removed: forcing --ui-color from --fl-accent was circular once --fl-accent follows --ui-color) */
+
+/* ------------------------------------------------------------------ base surfaces */
+html body .shell.shell .extension-wrapper { background: var(--fl-bg); border: 0; box-shadow: none; }
+html body .shell.shell .main-container,
+html body .shell.shell .content-wrapper,
+html body .shell.shell .fixed-section,
+html body .shell.shell .action-container,
+html body .shell.shell .variable-section,
+html body .shell.shell .library-area,
+html body .shell.shell .preset-container,
+html body .shell.shell .grid-scroll {
+  background: transparent !important;
+  border: 0 !important;
+}
+html body .shell.shell .action-container { padding: 0 !important; }
+
+/* ------------------------------------------------------------------ model tabs */
+html body .shell.shell .model-tabs-horizontal {
+  background: #202020 !important; border: 1px solid #2c2c2c !important; border-radius: 12px;
+  gap: 4px; padding: 4px; margin: 8px 8px 8px; overflow: visible;
+}
+html body .shell.shell .mtab {
+  flex: 1 1 0; min-width: 0; height: 30px; padding: 0;
+  background: transparent; border: 1px solid transparent !important; border-radius: 9px;
+  color: #6f6f6f;
+}
+html body .shell.shell .mtab:hover:not(.active) { color: #cfcfcf; background: rgba(255,255,255,.04); }
+html body .shell.shell .mtab.active.active {
+  background: #262626; border: 1px solid #3c3c3c !important; color: #fff;
+  box-shadow: inset 0 -2px 0 var(--fl-accent);
+}
+html body .shell.shell .mtab svg { width: 17px; height: 17px; }
+
+/* ------------------------------------------------------------------ graph */
+html body .shell.shell .canvas-area {
+  margin: 0 8px; border-radius: var(--fl-radius); overflow: hidden;
+  border: 1px solid #2c2c2c !important; background: #0e0e0e;
+}
+html body .shell.shell .canvas-container { background: transparent; }
+html body .shell.shell svg.curve-svg > text,
+html body .shell.shell svg.curve-svg text { display: none; }
+html body .shell.shell svg.curve-svg line[stroke="#555"] { stroke: rgba(255,255,255,.38); stroke-width: .8; }
+html body .shell.shell svg.curve-svg line[stroke="#333"] { stroke: rgba(255,255,255,.10); stroke-width: .5; }
+html body .shell.shell svg.curve-svg line[stroke="#aaa"] { stroke: rgba(255,244,214,.9); stroke-width: 1.2; }
+html body .shell.shell svg.curve-svg > path[stroke-width="2.5"] { stroke-width: 3; stroke-linecap: round; }
+html body .shell.shell svg.curve-svg g.nc-glow { opacity: 1; }
+html body .shell.shell svg.curve-svg g.handles > line { stroke-opacity: .9; }
+
+/* large-graph-editor button moves onto the graph corner (nc-flow.js) */
+html body .shell.shell .fl-expand {
+  position: absolute; right: 6px; bottom: 6px; z-index: 6;
+  width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: rgba(255,255,255,.75);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+html body .shell.shell .fl-expand:hover { color: #fff; background: rgba(0,0,0,.35); }
+html body .shell.shell .fl-expand svg { width: 14px; height: 14px; }
+/* LIVE badge (nc-live.js) goes to the opposite corner so it never sits under the expand icon */
+html body .shell.shell .canvas-area .nc-live-badge,
+html body .shell.shell .canvas-area .nc-live { right: auto !important; left: 8px !important; }
+
+/* ------------------------------------------------------------------ control bar (built by nc-flow.js) */
+html body .shell.shell .fl-bar { display: flex; flex-direction: column; padding: 10px 8px 4px; }
+html body .shell.shell .fl-row { display: flex; align-items: center; }
+html body .shell.shell .fl-row + .fl-row { margin-top: 8px; }
+html body .shell.shell .fl-row > * + * { margin-left: 6px; }
+
+/* plain icon buttons (row 1: reset / import / speed, settings gear) */
+html body .shell.shell .fl-ico {
+  width: 30px; height: 30px; flex: 0 0 auto; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--fl-icon);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: color .15s, background .15s, transform .1s;
+}
+html body .shell.shell .fl-ico:hover { color: #fff; background: rgba(255,255,255,.06); }
+html body .shell.shell .fl-ico:active { transform: scale(.94); }
+html body .shell.shell .fl-ico.active { color: var(--fl-accent); background: rgba(255,255,255,.07); }
+html body .shell.shell .fl-ico svg { width: 17px; height: 17px; }
+
+/* value pill */
+html body .shell.shell .fl-pill {
+  flex: 1 1 auto; min-width: 0; height: 30px; padding: 0 8px; margin-left: 4px;
+  background: #202020; border: 1px solid var(--fl-line); border-radius: 9px;
+  color: #f2f2f2; font: 600 11.5px/1 "Inter", "Segoe UI", sans-serif; letter-spacing: .1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+html body .shell.shell .fl-pill:hover { border-color: #444; }
+html body .shell.shell .fl-pill.is-copied { border-color: var(--fl-accent); color: var(--fl-accent); }
+
+/* star (save as preset) */
+html body .shell.shell .fl-star { color: var(--fl-accent); }
+html body .shell.shell .fl-star svg { fill: var(--fl-accent); width: 18px; height: 18px; }
+
+/* row 2: « hourglass »  APPLY  gear */
+html body .shell.shell .fl-sq {
+  width: 38px; height: 30px; flex: 0 0 auto; padding: 0; border: 0; border-radius: 9px;
+  background: var(--fl-btn); color: #e9e9e9;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+html body .shell.shell .fl-sq:hover { background: var(--fl-btn-hover); }
+html body .shell.shell .fl-sq:active { transform: scale(.95); }
+html body .shell.shell .fl-sq.active { color: var(--fl-accent); }
+html body .shell.shell .fl-sq svg { width: 16px; height: 16px; }
+html body .shell.shell .fl-row2 { margin-top: 10px; }
+html body .shell.shell .fl-row2 .apply-btn {
+  flex: 1 1 auto; min-width: 0; height: 32px; margin-left: 8px; margin-right: 2px;
+  background: var(--fl-accent); color: var(--fl-accent-ink);
+  font: 800 12px/1 "Inter", "Segoe UI", sans-serif; letter-spacing: .6px;
+  border-radius: 10px; border: 0; animation: none; box-shadow: none;
+}
+html body .shell.shell .fl-row2 .apply-btn::before { display: none; }
+html body .shell.shell .fl-row2 .apply-btn:hover { filter: brightness(1.06); }
+html body .shell.shell .fl-row2 .apply-btn:active { transform: scale(.97); filter: brightness(.96); }
+html body .shell.shell .fl-row2 .apply-btn .nc-apply-glow-svg { display: none; }
+
+/* divider (draggable) becomes the small accent bar */
+html body .shell.shell .fl-bar .section-divider {
+  height: 16px; background: transparent; border: 0; margin-top: 4px;
+}
+html body .shell.shell .fl-bar .section-divider:hover { background: transparent; }
+html body .shell.shell .fl-bar .divider-line { width: 34px; height: 2px; background: var(--fl-accent); border-radius: 2px; opacity: .9; }
+
+/* scrub slider */
+html body .shell.shell .fl-bar .preview-strip-container { padding: 2px 2px 8px; background: transparent; }
+html body .shell.shell .fl-bar .preview-track-wrapper {
+  height: 14px; background: transparent; border: 0; border-radius: 7px; overflow: visible;
+}
+html body .shell.shell .fl-bar .hash-marks { display: none; }
+html body .shell.shell .fl-bar .track { height: 100%; }
+html body .shell.shell .fl-bar .track::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px;
+  background: #343434; border-radius: 3px;
+}
+html body .shell.shell .fl-bar .progress { background: rgba(255,255,255,.10); height: 4px; top: 50%; margin-top: -2px; border-radius: 3px; }
+html body .shell.shell .ball {
+  width: 10px; height: 10px; background: #fff !important; box-shadow: 0 0 0 2px rgba(0,0,0,.35) !important;
+}
+html body .shell.shell .trail { height: 4px; background: rgba(255,255,255,.28) !important; }
+
+/* ------------------------------------------------------------------ library toolbar (row 3) */
+html body .shell.shell .fl-bar .library-header {
+  display: flex; align-items: center; height: auto; padding: 0; margin-top: 0;
+  background: transparent !important; border: 0 !important;
+}
+html body .shell.shell .fl-bar .library-header > * + * { margin-left: 2px; }
+html body .shell.shell .fl-bar .lib-actions { display: contents; }
+html body .shell.shell .fl-bar .lib-toggle-btn { order: 0; width: 16px; height: 28px; justify-content: center; opacity: .55; margin-right: 2px; }
+html body .shell.shell .fl-bar .lib-label { display: none; }
+html body .shell.shell .fl-bar .lib-toggle-btn svg { width: 11px; height: 11px; }
+html body .shell.shell .fl-bar .lib-select {
+  order: 1; height: 28px; width: 58px; flex: 0 0 auto; margin: 0 6px 0 0; padding: 0 16px 0 8px;
+  background-color: var(--fl-btn); color: #e6e6e6; border: 1px solid #343434; border-radius: 8px;
+  font: 600 11px/1 "Inter", "Segoe UI", sans-serif; text-transform: none; letter-spacing: 0;
+  -webkit-appearance: none; appearance: none; outline: none; cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23bdbdbd' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 5px center;
+}
+html body .shell.shell .fl-bar .lib-select:focus { border-color: var(--fl-accent); }
+html body .shell.shell .fl-bar .fl-tool {
+  order: 2; width: 26px; height: 28px; flex: 0 0 auto; padding: 0; border: 0; border-radius: 7px;
+  background: transparent; color: var(--fl-icon);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: color .15s, background .15s;
+}
+html body .shell.shell .fl-bar .fl-tool:hover { color: #fff; background: rgba(255,255,255,.06); }
+html body .shell.shell .fl-bar .fl-tool.active { color: var(--fl-accent); background: rgba(255,255,255,.07); }
+html body .shell.shell .fl-bar .fl-tool.disabled { opacity: .25; cursor: not-allowed; }
+html body .shell.shell .fl-bar .fl-tool svg { width: 16px; height: 16px; }
+html body .shell.shell .fl-bar .options-menu-container { order: 3; margin-left: auto; }
+html body .shell.shell .fl-bar .lib-icon-btn { width: 24px; height: 28px; padding: 0; justify-content: center; color: var(--fl-icon); }
+html body .shell.shell .fl-bar .lib-icon-btn:hover { color: #fff; }
+
+/* ------------------------------------------------------------------ preset tiles */
+html body .shell.shell .grid-scroll { padding: 4px 8px 12px; }
+html body .shell.shell .preset-grid { row-gap: 8px; column-gap: 7px; }
+html body .shell.shell .preset-item { background: transparent; }
+html body .shell.shell .preset-thumbnail {
+  background: transparent; border: 1px solid transparent; border-radius: 10px;
+}
+html body .shell.shell .preset-item:hover .preset-thumbnail { border-color: #3a3a3a; background: #232323; }
+html body .shell.shell .preset-item.selected .preset-thumbnail,
+html body .shell.shell .preset-item.ctx-target .preset-thumbnail {
+  border: 1.5px solid var(--fl-accent) !important; background: #262626;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04);
+}
+html body .shell.shell .preset-item { --accent: var(--fl-accent) !important; }
+html body .shell.shell .preset-name {
+  display: block; margin-top: 5px; font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: none;
+  color: #a1a1aa; opacity: 1; max-width: 100%;
+}
+html body .shell.shell .preset-item.selected .preset-name,
+html body .shell.shell .preset-item.ctx-target .preset-name { color: var(--fl-accent); }
+html body .shell.shell .add-preset-btn { border-radius: 10px; border-color: #353535; }
+
+/* ------------------------------------------------------------------ landscape: keep the bar from using the old 40px rail padding */
+html body .shell.shell .action-container.is-landscape { padding-left: 0 !important; }
+/* FIX (landscape, left side looked cut off): the bundle draws a 32px dark strip (.sidebar-extension-bg, absolute,
+   left:0, full height) behind the action area so the vertical model rail seems to continue downward - it expects the
+   40px left padding removed just above. In the Flow layout the rows start at x=0, so that strip sat on top of the
+   reset / "<<" buttons and the library select and chopped their left edge off. The rail lives inside the rounded graph
+   now, so the strip is not needed. */
+html body .shell.shell .sidebar-extension-bg { display: none !important; }
+
+/* ------------------------------------------------------------------ very narrow panels */
+@media (max-width: 270px) {
+  html body .shell.shell .fl-pill { font-size: 10px; padding: 0 4px; }
+  html body .shell.shell .fl-ico { width: 26px; }
+  html body .shell.shell .fl-sq { width: 32px; }
+}
+
+/* ------------------------------------------------------------------ Auto Apply ON: gray "AUTO APPLY" button */
+html.nc-auto-on body .shell.shell .fl-row2 .apply-btn {
+  background: #3a3a3a; color: #b5b5b5; font-size: 0; box-shadow: inset 0 0 0 1px #4a4a4a; filter: none;
+}
+html.nc-auto-on body .shell.shell .fl-row2 .apply-btn::after {
+  content: "AUTO APPLY"; font: 800 12px/1 "Inter", "Segoe UI", sans-serif; letter-spacing: .6px;
+}
+html.nc-auto-on body .shell.shell .fl-row2 .apply-btn:hover { background: #444; filter: none; }
+
+/* ------------------------------------------------------------------ GLOW (Flow reference)
+   Curve + handle halos are drawn by nc-glow.js (LAYERS / HALO_R / HALO_A at the top of that file).
+   Below: soft accent glow on the selected preset tile and under the active model tab. These use a blurred
+   pseudo-element (filter: blur on HTML boxes works in CEF) so they follow any Theme color. */
+html body .shell.shell .preset-item { position: relative; isolation: isolate; }
+html body .shell.shell .preset-item.selected::before,
+html body .shell.shell .preset-item.ctx-target::before {
+  content: ""; position: absolute; z-index: -1; left: 2px; right: 2px; top: 2px; aspect-ratio: auto;
+  height: calc(100% - 4px); border-radius: 12px; background: var(--fl-accent);
+  filter: blur(7px); opacity: .22; pointer-events: none;
+}
+html body .shell.shell .mtab { position: relative; }
+html body .shell.shell .mtab.active.active::after {
+  content: ""; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 3px; border-radius: 3px;
+  background: var(--fl-accent); filter: blur(3px); opacity: .5; pointer-events: none;
+}
+html body .shell.shell .fl-bar .divider-line { box-shadow: 0 0 4px 0 var(--fl-accent); }
+html body .shell.shell .fl-star svg { filter: drop-shadow(0 0 2px var(--fl-accent)); }
+html body .shell.shell .fl-row2 .apply-btn { box-shadow: 0 0 6px -4px var(--fl-accent); }
+html.nc-auto-on body .shell.shell .fl-row2 .apply-btn { box-shadow: inset 0 0 0 1px #4a4a4a; }
+
+
+/* ------------------------------------------------------------------ LANDSCAPE (Flow reference)
+   nc-flow.js moves .model-nav-strip (the old vertical rail) to the top of .fixed-section and turns it into the same
+   pill tab bar the portrait layout uses. The scrub slider + library toolbar sit at the top of the right column
+   (.fl-side, built by nc-flow.js, reuses the .fl-bar rules above). The graph no longer reserves a 32px strip
+   (navStripWidth patched to 0 in assets/index.js). */
+html body .shell.shell .fixed-section > .model-nav-strip.fl-modes {
+  position: static; top: auto; left: auto; bottom: auto; width: auto; height: auto; z-index: auto;
+  flex: 0 0 auto; flex-direction: row; align-items: stretch; justify-content: flex-start;
+  gap: 4px; padding: 4px; margin: 8px 8px 8px;
+  background: #202020; border: 1px solid #2c2c2c; border-radius: 12px;
+}
+html body .shell.shell .fl-modes .nav-tab {
+  position: relative; flex: 1 1 0; min-width: 0; width: auto; height: 30px; padding: 0;
+  background: transparent; border: 1px solid transparent; border-radius: 9px; color: #6f6f6f;
+}
+html body .shell.shell .fl-modes .nav-tab:hover:not(.active) { color: #cfcfcf; background: rgba(255,255,255,.04); }
+html body .shell.shell .fl-modes .nav-tab.active {
+  background: #262626; border: 1px solid #3c3c3c; color: #fff; box-shadow: inset 0 -2px 0 var(--fl-accent);
+}
+html body .shell.shell .fl-modes .nav-tab.active::after {
+  content: ""; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 3px; border-radius: 3px;
+  background: var(--fl-accent); filter: blur(3px); opacity: .5; pointer-events: none;
+}
+html body .shell.shell .fl-modes .nav-tab svg { width: 17px; height: 17px; }
+
+html body .shell.shell .variable-section > .fl-side { flex: 0 0 auto; padding: 10px 8px 2px; }
+html body .shell.shell .fl-side .preview-strip-container { padding: 4px 4px 12px; }
+html body .shell.shell .fl-side .library-header { padding: 0 2px 4px; }
+
+
+/* Ease Out / Ease / Ease In: keyframe icons (from the Flow reference) - filled, 12px, muted until hover */
+html body .shell.shell .fl-eout svg,
+html body .shell.shell .fl-ease svg,
+html body .shell.shell .fl-ein svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
+html body .shell.shell .fl-eout, html body .shell.shell .fl-ease, html body .shell.shell .fl-ein { color: #bdbdbd; }
+html body .shell.shell .fl-eout:hover, html body .shell.shell .fl-ease:hover, html body .shell.shell .fl-ein:hover { color: #fff; }
+
+
+/* ------------------------------------------------------------------ LANDSCAPE: right side cut off (v15)
+   The right column (.variable-section) holds the scrub slider + library toolbar (.fl-side) above the preset grid.
+   The toolbar has ~10 controls (collapse, library select, templates, expression, preview, bake, live, invert, options)
+   in ONE non-wrapping row; in a narrow right column the last icons were pushed past the edge and clipped by the
+   overflow:hidden of the content wrapper. Fix: let the column shrink (min-width:0), let the toolbar WRAP instead of
+   overflowing, and keep the preset grid scrollable inside the column. */
+html body .shell.shell .content-wrapper.is-landscape .variable-section,
+html body .shell.shell .content-wrapper.is-landscape .library-area,
+html body .shell.shell .content-wrapper.is-landscape .preset-container {
+  min-width: 0; min-height: 0; box-sizing: border-box; max-width: 100%;
+}
+html body .shell.shell .variable-section > .fl-side { min-width: 0; box-sizing: border-box; max-width: 100%; }
+/* v16: right-column toolbar = ONE row of SMALL icons (no wrapping to a second row). Icons are compact so all fit;
+   if the column gets extremely narrow only the library select shrinks, the icons never drop to a new line. */
+html body .shell.shell .fl-side .library-header { flex-wrap: nowrap; min-width: 0; max-width: 100%; overflow: hidden; padding-left: 0; padding-right: 0; }
+html body .shell.shell .fl-side .library-header > * { flex: 0 0 auto; min-width: 0; }
+html body .shell.shell .fl-side .library-header > * + * { margin-left: 1px; }
+html body .shell.shell .fl-side .library-header .lib-toggle-btn { width: 12px; height: 22px; margin-right: 0; }
+html body .shell.shell .fl-side .library-header .lib-toggle-btn svg { width: 9px; height: 9px; }
+html body .shell.shell .fl-side .library-header .lib-select {
+  flex: 0 1 46px; width: 46px; min-width: 24px; max-width: 100%; height: 22px; margin-right: 3px;
+  padding: 0 12px 0 5px; font-size: 10px; border-radius: 6px; background-position: right 3px center;
+}
+html body .shell.shell .fl-side .library-header .fl-tool { width: 20px; height: 22px; border-radius: 5px; }
+html body .shell.shell .fl-side .library-header .fl-tool svg { width: 12px; height: 12px; }
+html body .shell.shell .fl-side .library-header .lib-icon-btn { width: 20px; height: 22px; }
+html body .shell.shell .fl-side .library-header .lib-icon-btn svg { width: 12px; height: 12px; }
+html body .shell.shell .fl-side .preview-strip-container { min-width: 0; max-width: 100%; box-sizing: border-box; }
+/* preset grid: vertical scroll only (wheel works), never a sideways overflow */
+html body .shell.shell .content-wrapper.is-landscape .grid-scroll {
+  flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box;
+}
+html body .shell.shell .content-wrapper.is-landscape .preset-grid { max-width: 100%; box-sizing: border-box; }

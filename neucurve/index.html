@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuCurve</title>
+
+  <!-- Polyfill for older CEF (AE 2019 uses Chromium ~61, globalThis needs Chrome 71+) -->
+  <script>
+    if (typeof globalThis === 'undefined') { window.globalThis = window; }
+  </script>
+
+  <!-- Global error handler for debugging (catches JS errors in older CEF) -->
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      var el = document.getElementById('app');
+      if (el) {
+        el.innerHTML = '<div style="color:#ff5555;font-family:monospace;font-size:11px;padding:16px;word-break:break-all;">' +
+          '<b>JS Error:</b><br>' + msg + '<br><br>' +
+          '<b>File:</b> ' + (url || 'unknown') + '<br>' +
+          '<b>Line:</b> ' + (line || '?') + ':' + (col || '?') + '<br>' +
+          (error ? '<b>Stack:</b><br><pre style="white-space:pre-wrap;color:#aaa;font-size:9px;">' + error.stack + '</pre>' : '') +
+          '</div>';
+      }
+      return false;
+    };
+  </script>
+
+  <!--
+    Multitool integration: Curve tab background.
+    NeuCurve used to turn transparent while embedded in the Multitool "Curve" tab, so the panel's own background
+    image/GIF/video (and its Settings > Background opacity slider) showed through behind it, like every other tab.
+    That's still turned off on purpose: the Curve tab keeps its own native solid look regardless of any
+    background image/GIF/video or opacity setting elsewhere in the panel. The old mechanism (a "mt-embed-bg"
+    veil style block + a stricter "mt-embed-transparent" style block + a JS backstop that hunted down and faded
+    every big opaque backdrop, inline, with !important) is intentionally removed rather than just disabled, so
+    there's nothing left fighting NeuCurve's own compiled styles.
+    What DOES sync now: Settings > Background COLOR (the picker, not the opacity slider or any image/GIF/video).
+    NeuCurve's native dark tones (the #0a0a0a / #161616 / #1a1a1a tones the standalone NeuCurve window and its
+    graph canvas already use) are re-tinted to follow whatever base color is picked, so the Curve tab doesn't
+    look like the one static-colored tab left behind when the rest of the panel changes - see
+    nc-theme-sync.js/.css, which listen for their own postMessage independently of this and only override
+    when the panel actually has a custom color set (never NeuCurve's own light-theme-less defaults).
+    Theme-color sync (accent for buttons/active states/preset borders, the curve/handles, and the preview-strip
+    dot) is untouched and still works the same way - also see nc-theme-sync.js/.css.
+  -->
+
+  <script>
+    (function () {
+      // Kept only so anything that still checks for this class (e.g. future CSS) knows the page is embedded;
+      // no background/transparency behavior is attached to it anymore.
+      if (window.parent !== window) { document.documentElement.classList.add("mt-embedded"); }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!--
+    Multitool integration: when this page is embedded in the Multitool "Curve" tab (iframe),
+    borrow the CEP bridge objects from the parent panel if this frame has none of its own.
+    Does nothing when the page runs as a top-level panel/popup.
+  -->
+  <script>
+    (function () {
+      try {
+        if (window.parent && window.parent !== window) {
+          var p = window.parent;
+          if (!window.__adobe_cep__ && p.__adobe_cep__) { window.__adobe_cep__ = p.__adobe_cep__; }
+          if (!window.cep && p.cep) { window.cep = p.cep; }
+          if (!window.require && p.require) { window.require = p.require; }
+        }
+      } catch (e) { /* cross-origin parent: leave as is */ }
+    })();
+  </script>
+
+  <!--
+    CSInterface.js HARUS di-load sebelum bundle Svelte.
+    Download dari: https://github.com/Adobe-CEP/CEP-Resources
+    Letakkan di public/CSInterface.js — Vite akan menyalinnya ke dist/ tanpa modifikasi.
+  -->
+  <link rel="stylesheet" href="./nc-away.css?v=1">
+  <link rel="stylesheet" href="./nc-icons.css">
+  <link rel="stylesheet" href="./nc-theme-sync.css">
+  <!-- Shared two-part spin box for <input type="number"> (same files as the main panel) + NeuCurve colour -->
+  <link rel="stylesheet" href="../css/mt-spinbox.css?v=1">
+  <link rel="stylesheet" href="./nc-spinbox.css?v=1">
+  <link rel="stylesheet" href="./nc-glow.css">
+  <link rel="stylesheet" href="./nc-apply-glow.css">
+  <link rel="stylesheet" href="./nc-fluid-polish.css">
+  <link rel="stylesheet" href="./nc-glass.css">
+  <link rel="stylesheet" href="./nc-bg.css">
+  <link rel="stylesheet" href="./nc-extras.css">
+  <link rel="stylesheet" href="./nc-live.css">
+  <link rel="stylesheet" href="./nc-flow.css?v=17">
+  <link rel="stylesheet" href="./nc-morph.css?v=15">
+  <link rel="stylesheet" href="./nc-grad.css?v=2">
+  <link rel="stylesheet" href="./nc-polish.css?v=1">
+  <link rel="stylesheet" href="./nc-fix16.css?v=1">
+  <link rel="stylesheet" href="./nc-fix17.css?v=2">
+  <link rel="stylesheet" href="./nc-fix18.css?v=1">
+  <link rel="stylesheet" href="./nc-fix19.css?v=1">
+  <link rel="stylesheet" href="./nc-light.css?v=2">
+  <link rel="stylesheet" href="./nc-icons-pro.css?v=1">
+  <!-- Same custom tooltip as the main panel (shared files, replaces the native title tooltip) -->
+  <link rel="stylesheet" href="../css/mt-tooltip.css?v=3">
+  <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
+       Feature-detects and does nothing at all on newer hosts (AE 2022+). Also
+       re-scans for styles the Svelte bundle below injects at runtime. -->
+  <script src="./nc-away.js?v=1"></script>
+  <script src="../js/ae2021-compat.js?v=10"></script>
+  <script src="../js/mt-tooltip.js?v=3"></script>
+  <script src="./CSInterface.js"></script>
+  <script src="./nc-light.js?v=2"></script>
+  <script src="./nc-theme-sync.js?v=2"></script>
+  <script src="./nc-bg.js"></script>
+  <script src="./nc-extras.js?v=2"></script>
+  <script src="./nc-live.js"></script>
+  <script src="./nc-glow.js"></script>
+  <script src="./nc-particles.js"></script>
+  <script src="./nc-apply-glow.js"></script>
+  <script src="./nc-gsize.js?v=3"></script>
+  <script src="./nc-flow.js?v=17"></script>
+  <script src="./nc-morph.js?v=15"></script>
+  <script src="../js/mt-spinbox.js?v=1"></script>
+  <script defer src="./assets/index.js?v=4"></script>
+  <script defer src="./nc-icons-pro.js?v=1"></script>
+</head>
+<body>
+  <div id="app"></div>
+
+</body>
+</html>

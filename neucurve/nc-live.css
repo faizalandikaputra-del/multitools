@@ -1,0 +1,2 @@
+/* NeuCurve - nc-live.css : cursor lock while dragging on the graph (see nc-live.js). The LIVE status badge UI was removed. */
+html.nc-graph-drag, html.nc-graph-drag * { cursor: crosshair !important; }

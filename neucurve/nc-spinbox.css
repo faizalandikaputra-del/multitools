@@ -1,0 +1,5 @@
+/* NeuCurve - spin box colours. The shared stepper (../css/mt-spinbox.css + ../js/mt-spinbox.js, used by the main panel)
+   is also loaded here so number fields in the Curve tab get the same big, clickable two-part stepper instead of the
+   tiny native arrows. Only job of this file: tint it with NeuCurve's own UI colour (tracked in --nc-ui-rgb by
+   nc-theme-sync.js) instead of the Multi Tool purple. */
+:root { --accent-rgb: var(--nc-ui-rgb, 255, 210, 30); }

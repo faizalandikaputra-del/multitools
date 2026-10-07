@@ -1,0 +1,76 @@
+/* Multi Tool - mt-colorpicker.css : look of js/mt-colorpicker.js and of the colour swatch inputs.
+   Reads the panel tokens, so it follows Settings > Theme color and light/dark. Does not touch .cw (colour wheel). */
+
+/* the swatch input itself: inset rounded swatch instead of the thick OS frame */
+input[type="color"] { -webkit-appearance: none; appearance: none; padding: 3px; overflow: hidden; cursor: pointer; transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 1px 2px rgba(0,0,0,.35); }
+input[type="color"].mt-cp-open { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb, 139,108,247), .9), 0 0 0 3px var(--accent-glow, rgba(139,108,247,.4)); }
+
+.mt-cp {
+  position: fixed; z-index: 100001; left: 0; top: 0; box-sizing: border-box; width: 232px; padding: 10px;
+  display: flex; flex-direction: column; gap: 10px; border-radius: var(--radius-card, 10px);
+  background: var(--surface-hover, #2d2d2d); color: var(--text, #f0f0f0); font-size: var(--fs-value, .75rem);
+  box-shadow: inset 0 0 0 1px var(--border-strong, rgba(255,255,255,.14)), inset 0 1px 0 var(--highlight-top, rgba(255,255,255,.05)), 0 18px 44px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.28);
+  opacity: 0; transform: translateY(-8px) scale(.94); transition: opacity .16s ease, transform .26s cubic-bezier(.2,.9,.25,1.08);
+  pointer-events: none; user-select: none; will-change: transform, opacity;
+}
+.mt-cp.is-up { transform: translateY(8px) scale(.94); }
+.mt-cp.is-open { opacity: 1; transform: none; pointer-events: auto; }
+.mt-cp.is-closing { opacity: 0; transform: translateY(-4px) scale(.97); transition: opacity .13s ease, transform .15s ease; pointer-events: none; }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .mt-cp { -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); }
+}
+
+.mt-cp-sv {
+  --hue: #f00; position: relative; height: 124px; border-radius: 8px; cursor: crosshair; outline: none;
+  background: linear-gradient(to top, #000, rgba(0,0,0,0)), linear-gradient(to right, #fff, rgba(255,255,255,0)), var(--hue);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.mt-cp-sv:focus-visible, .mt-cp-hue:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 139,108,247), .8); }
+.mt-cp-knob, .mt-cp-hknob {
+  position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; box-sizing: border-box;
+  border: 2.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.5); pointer-events: none;
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1);
+}
+.mt-cp.is-dragging .mt-cp-knob, .mt-cp.is-dragging .mt-cp-hknob { transform: scale(1.18); }
+.mt-cp-hue {
+  position: relative; height: 12px; border-radius: 6px; cursor: pointer; outline: none;
+  background: linear-gradient(to right, #f00 0%, #ff0 16.66%, #0f0 33.33%, #0ff 50%, #00f 66.66%, #f0f 83.33%, #f00 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.mt-cp-hknob { top: 50%; }
+
+.mt-cp-row { display: flex; align-items: center; gap: 8px; }
+.mt-cp-prev { display: flex; flex: 0 0 auto; width: 44px; height: 28px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+.mt-cp-old, .mt-cp-new { flex: 1 1 50%; }
+.mt-cp-hex, .mt-cp-rgb input {
+  box-sizing: border-box; min-width: 0; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; outline: none;
+  background: var(--field-bg, rgba(0,0,0,.28)); color: var(--text, #f0f0f0); font: inherit; font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px var(--border-subtle, rgba(255,255,255,.08)); user-select: text; transition: box-shadow .15s ease;
+}
+.mt-cp-hex { flex: 1 1 auto; text-transform: uppercase; letter-spacing: .04em; }
+.mt-cp-hex:focus, .mt-cp-rgb input:focus { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb, 139,108,247), .9), 0 0 0 3px var(--accent-glow, rgba(139,108,247,.4)); }
+.mt-cp-eye { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; cursor: pointer; background: var(--field-bg, rgba(0,0,0,.28)); color: var(--text-dim, #a0a0a0); transition: color .15s, background-color .15s; }
+.mt-cp-eye:hover { color: var(--text, #f0f0f0); background: rgba(var(--accent-rgb, 139,108,247), .22); }
+.mt-cp-eye svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.mt-cp-rgb { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mt-cp-rgb label { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.mt-cp-rgb label span { font-size: var(--fs-label-sm, .625rem); font-weight: 600; color: var(--text-dim, #a0a0a0); }
+.mt-cp-rgb input { width: 100%; padding: 0 4px; text-align: center; }
+
+.mt-cp-label { margin: -2px 0 -4px; font-size: var(--fs-label-sm, .625rem); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim, #a0a0a0); }
+.mt-cp-sws { display: flex; flex-wrap: wrap; gap: 5px; }
+.mt-cp-sw {
+  width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--c);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 1px 3px rgba(0,0,0,.4); transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease;
+}
+.mt-cp-sw:hover { transform: scale(1.18); box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), 0 0 0 2px rgba(var(--accent-rgb, 139,108,247), .6); }
+.mt-cp-sw:active { transform: scale(.92); }
+.mt-cp.is-open > * { animation: mtOptIn .28s cubic-bezier(.22,1,.36,1) backwards; }
+.mt-cp.is-open > *:nth-child(2) { animation-delay: 30ms; } .mt-cp.is-open > *:nth-child(3) { animation-delay: 60ms; }
+.mt-cp.is-open > *:nth-child(4) { animation-delay: 90ms; } .mt-cp.is-open > *:nth-child(n+5) { animation-delay: 120ms; }
+@keyframes mtOptIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+:root[data-reduce-motion="true"] .mt-cp, :root[data-reduce-motion="true"] .mt-cp.is-closing { transition: opacity .1s linear; transform: none; }
+:root[data-reduce-motion="true"] .mt-cp.is-open > * { animation: none; }

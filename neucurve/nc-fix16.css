@@ -1,0 +1,42 @@
+/* NeuCurve - nc-fix16.css (loaded LAST)
+   1) Preset tiles (right column): the dark "blocks" are gone. Only the square thumbnail (the preset graph) gets a box,
+      and only on hover / selected / context-target - exactly like the reference. The name label stays outside the box.
+      Cause of the blocks: nc-theme-sync.js paints .preset-thumbnail / .preset-grid / .grid-scroll / .preset-container
+      with !important gray when a panel Background color is set, and the selected-glow (::before) covered the whole
+      cell (thumbnail + name) instead of the thumbnail only.
+   2) Preview circle (scrub ball): no black box behind it - the track wrapper / strip container are transparent and the
+      dark ring around the ball is removed. */
+
+/* ---------- preset tiles ---------- */
+html body .shell.shell .preset-item,
+html.mt-bg-themed body .shell.shell .preset-item { background: transparent !important; box-shadow: none !important; }
+
+html body .shell.shell .preset-item .preset-thumbnail {
+  background: transparent !important; border: 1.5px solid transparent !important; box-shadow: none !important;
+  border-radius: 10px;
+}
+html body .shell.shell .preset-item:hover .preset-thumbnail {
+  background: rgba(255, 255, 255, .05) !important; border: 1.5px solid #3a3a3a !important; box-shadow: none !important;
+}
+html body .shell.shell .preset-item.selected .preset-thumbnail,
+html body .shell.shell .preset-item.ctx-target .preset-thumbnail {
+  background: rgba(0, 0, 0, .35) !important; border: 1.5px solid var(--fl-accent, var(--ui-color, #FFD21F)) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .04) !important;
+}
+
+/* glow: fit the thumbnail box only (was the whole cell incl. the name = the "blocked" look) */
+html body .shell.shell .preset-item.selected::before,
+html body .shell.shell .preset-item.ctx-target::before {
+  left: 0 !important; right: 0 !important; top: 0 !important; bottom: auto !important;
+  width: auto !important; height: auto !important; aspect-ratio: 1 / 1 !important; border-radius: 10px !important;
+}
+
+/* ---------- preview circle ---------- */
+html body .shell.shell .preview-strip-container,
+html.mt-bg-themed body .shell.shell .preview-strip-container,
+html body .shell.shell .preview-track-wrapper,
+html.mt-bg-themed body .shell.shell .preview-track-wrapper {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+}
+html body .shell.shell .preview-track-wrapper { overflow: visible !important; }
+html body .shell.shell .ball { box-shadow: none !important; }

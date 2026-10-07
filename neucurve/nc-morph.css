@@ -1,0 +1,23 @@
+/* NeuCurve - nc-morph.css (companion of nc-morph.js)
+   While the graph morphs between modes the handles glide (JS, via transform) and the thin handle / guide LINES are
+   hidden, then fade back in when the morph is done. opacity only (GPU friendly). Off with Settings > Animations = off. */
+.curve-svg > g.handles > line {
+  transition: opacity .28s ease .1s;
+}
+.curve-svg.nc-morphing > g.handles > line {
+  opacity: 0;
+  transition: opacity .08s ease;
+}
+.curve-svg.nc-morphing > g.handles > g {
+  pointer-events: none;
+}
+html[data-reduce-motion="true"] .curve-svg > g.handles > line {
+  transition: none;
+}
+/* mouse wheel over the mode tabs switches the mode */
+.mtab, .nav-tab { user-select: none; }
+
+/* The Speed Graph's filled area appears with the morph instead of popping in (from-only keyframe = fades up to its own opacity) */
+@keyframes nc-area-in { from { opacity: 0; } }
+.curve-svg > path[fill]:not([fill="none"]):not([stroke]) { animation: nc-area-in .38s ease-out both; }
+html[data-reduce-motion="true"] .curve-svg > path[fill]:not([fill="none"]):not([stroke]) { animation: none; }

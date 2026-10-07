@@ -1,0 +1,13 @@
+/* NeuCurve - nc-glass.css
+   Aligns the Curve tab with the panel's "Clean Dark Glassmorphism" palette (css/glass-theme.css in the
+   parent panel): same #16161a base, same hairline border, same tiering. The Curve tab stays SOLID on
+   purpose (see README "CURVE TAB BACKGROUND") - so this only swaps NeuCurve's own hard-coded greys for
+   the panel's, it adds no transparency or blur.
+
+   Scoped to html:not(.mt-bg-themed): as soon as the user picks a custom Background color, nc-theme-sync.css
+   takes over with tiers derived from THAT color, and these defaults step aside. */
+html:not(.mt-bg-themed) .graph-shell   { background: #16161a !important; }
+html:not(.mt-bg-themed) .side-column   { background: #1b1b20 !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+html:not(.mt-bg-themed) .model-rail,
+html:not(.mt-bg-themed) .hint          { background: #131317 !important; box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06); }
+html:not(.mt-bg-themed) .canvas-column { background: #0f0f13 !important; }

@@ -19,3 +19,4 @@
 - Animasi dekoratif (orb, saber, titik) berhenti saat kursor di luar panel; titik judul statis; saber nonaktif dibekukan
 - Perbaikan updater: kini memakai fetch() seperti RE-Faster
 - Perbaikan kedipan hitam di tab Curve
+- Perbaikan Bug Update

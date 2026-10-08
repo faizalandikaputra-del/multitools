@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.13",
-    "changelog":  "- Add Animation",
+    "latest_version":  "1.8.14",
+    "changelog":  "- Add Animation\r\n- Fix Neucurve",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -224,7 +224,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "699a1bdf5c28bb991440cdc6535caa0283077fa1ae891e62358a4950033f0c84"
+                      "sha256":  "c2f6c4e178e52dd91ae04839eed46549f2d09e8c26155316719f5451e5aeb1c6"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "neucurve/nc-away.js",
-                      "sha256":  "468b942f360d6a76fe101e82bda1032a19c15e2611e48089c6460b1ee386530c"
+                      "sha256":  "6a94f3beedde055d02d96ee80e3f6738c1db3ed187a01691963ba3f9a44ce5c8"
                   },
                   {
                       "path":  "neucurve/nc-bg.css",
@@ -352,7 +352,7 @@
                   },
                   {
                       "path":  "neucurve/nc-particles.js",
-                      "sha256":  "8e4b5c6f73c6d199fb21f75eadbecf5b002d79c305fc16f9282ba6dd307cac90"
+                      "sha256":  "dcb8085fe2331cbb5c411733be9f92ed333ee4565f38437caa9c0c387cb961fa"
                   },
                   {
                       "path":  "neucurve/nc-polish.css",

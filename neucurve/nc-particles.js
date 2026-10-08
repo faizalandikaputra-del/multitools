@@ -144,33 +144,54 @@
     sets.length = zones.length;
   }
 
-  function resize() {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
-    vw = window.innerWidth; vh = window.innerHeight;
-    canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
-    canvas.style.width = vw + "px"; canvas.style.height = vh + "px";
+  // v4: the canvas is only as big as the Library zone (not the whole viewport) and is drawn at 30 fps (20 fps while the
+  // user is idle). A full-viewport canvas redrawn at 60 fps was a big part of the flicker on a still panel; the drift is
+  // only 14-40 px/s, so 30 fps looks identical. v5: never paused - while the pointer rests or is outside the panel the
+  // loop just drops to FPS_IDLE (motion is time-based, so speed looks the same); only a hidden page stops it.
+  var box = { l: -1, t: -1, w: 0, h: 0 }, lastDraw = 0;
+  var FPS_ACTIVE = 30, FPS_IDLE = 20;
+
+  function fitCanvas(z) {
+    var l = Math.round(z.l), t = Math.round(z.t), w = Math.max(1, Math.round(z.r - z.l)), h = Math.max(1, Math.round(z.b - z.t));
+    var d = Math.min(2, window.devicePixelRatio || 1);
+    if (l === box.l && t === box.t && w === box.w && h === box.h && d === dpr) { return; }
+    var resized = w !== box.w || h !== box.h || d !== dpr;
+    box.l = l; box.t = t; box.w = w; box.h = h; dpr = d;
+    canvas.style.left = l + "px"; canvas.style.top = t + "px";
+    if (resized) {
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+  function resize() { box.l = -1; }   // force re-fit on the next measure
+
+  function pointerOut() { return window.__ncPointerOut ? window.__ncPointerOut() : (window.__ncAway && window.__ncAway()); }
+  function calm() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
 
   function frame(now) {
     if (!running) { return; }
-    if (window.__ncAway && window.__ncAway()) { raf = 0; return; }   // paused while the pointer is away (nc-away.js)
     raf = requestAnimationFrame(frame);
-    var dt = Math.min(0.034, (now - last) / 1000 || 0.016);   // v3: tighter clamp = no big position jumps after a hitch
-    last = now;
-    if (tick++ % 8 === 0) {                                          // re-measure ~7x per second
+    var iv = 1000 / ((window.__ncAway && window.__ncAway()) ? FPS_IDLE : FPS_ACTIVE);
+    if (now - lastDraw < iv - 2) { return; }                    // frame cap
+    var dt = Math.min(0.08, (now - lastDraw) / 1000 || 0.033);
+    lastDraw = now;
+    if (tick++ % 8 === 0) {                                          // re-measure ~4x per second at 30 fps
       if (loadSettings() || spriteKey !== CONFIG.color) { sprite = makeSprite(); spriteKey = CONFIG.color; }
       zones = computeZones(); syncSets();
+      if (zones.length) {
+        var u = { l: zones[0].l, t: zones[0].t, r: zones[0].r, b: zones[0].b };
+        for (var q = 1; q < zones.length; q++) { u.l = Math.min(u.l, zones[q].l); u.t = Math.min(u.t, zones[q].t); u.r = Math.max(u.r, zones[q].r); u.b = Math.max(u.b, zones[q].b); }
+        fitCanvas(u);
+      }
     }
-    ctx.clearRect(0, 0, vw, vh);
-    if (effect === "off" || opacity <= 0) { return; }
-    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    ctx.clearRect(0, 0, box.w, box.h);
+    if (effect === "off" || opacity <= 0 || !zones.length || calm()) { return; }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "low";
     var rain = effect === "rain";
     if (rain) { ctx.strokeStyle = "rgb(" + CONFIG.color + ")"; ctx.lineWidth = CONFIG.rain.width; ctx.lineCap = "round"; }
     for (var i = 0; i < zones.length; i++) {
-      var z = zones[i], set = sets[i], w = z.r - z.l;
-      ctx.save();
-      ctx.beginPath(); ctx.rect(z.l, z.t, w, z.b - z.t); ctx.clip();
+      var z = zones[i], set = sets[i], w = z.r - z.l, ox = z.l - box.l, oy = z.t - box.t;
       for (var k = 0; k < set.length; k++) {
         var p = set[k];
         if (p.wait > 0) { p.wait -= dt; continue; }
@@ -182,40 +203,38 @@
           if (f < 0.06) { a *= Math.max(0, f) / 0.06; }
           if (f > 0.8) { a *= 1 - (f - 0.8) / 0.2; }
           if (a <= 0.01) { continue; }
-          var rx = z.l + p.x * w + p.y * CONFIG.rain.slant, ry = z.t + p.y;
+          var rx = ox + p.x * w + p.y * CONFIG.rain.slant, ry = oy + p.y;
           ctx.globalAlpha = a;
           ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx + p.len * CONFIG.rain.slant, ry + p.len); ctx.stroke();
           continue;
         }
         a *= ease(f / CONFIG.fadeIn) * ease((1 - f) / (1 - CONFIG.fadeOutFrom));
         if (a <= 0.01) { continue; }
-        var px = z.l + p.x * w + Math.sin(p.ph + now * 0.00055 * p.sf) * CONFIG.sway;
-        var py = z.t + p.y, d = p.rad * 4.2;
+        var px = ox + p.x * w + Math.sin(p.ph + now * 0.00055 * p.sf) * CONFIG.sway;
+        var py = oy + p.y, d = p.rad * 4.2;
         ctx.globalAlpha = a;
         ctx.drawImage(sprite, px - d / 2, py - d / 2, d, d);
       }
-      ctx.restore();
     }
     ctx.globalAlpha = 1;
   }
 
   function start() {
     if (running) { return; }
-    running = true; last = performance.now(); raf = requestAnimationFrame(frame);
+    running = true; last = performance.now(); lastDraw = 0; raf = requestAnimationFrame(frame);
   }
   function stop() {
     running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    if (ctx) { ctx.clearRect(0, 0, vw, vh); }
+    if (ctx) { ctx.clearRect(0, 0, box.w, box.h); }
   }
 
   function init() {
     canvas = document.createElement("canvas");
     canvas.setAttribute("aria-hidden", "true");
-    canvas.style.cssText = "position:fixed;left:0;top:0;pointer-events:none;z-index:50;background:transparent;";
+    canvas.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:50;background:transparent;";
     document.body.appendChild(canvas);
     ctx = canvas.getContext("2d");
     loadSettings(); sprite = makeSprite(); spriteKey = CONFIG.color;
-    resize();
     window.addEventListener("resize", resize);
     window.addEventListener("storage", function (e) { if (!e.key || /^neucurve_p(Effect|Color|Alpha)$/.test(e.key)) { tick = 0; } });
     try {
@@ -229,7 +248,7 @@
       }
     } catch (e) { }
     document.addEventListener("visibilitychange", function () { if (document.hidden) { stop(); } else { start(); } });
-    window.addEventListener("nc-away", function () { if (running && !raf && !(window.__ncAway && window.__ncAway())) { last = performance.now(); raf = requestAnimationFrame(frame); } });
+    window.addEventListener("nc-away", function () { if (running && !raf) { last = performance.now(); raf = requestAnimationFrame(frame); } });
     window.__ncParticles = { start: start, stop: stop, config: CONFIG };
     start();
   }

@@ -50,14 +50,14 @@ if "%NEWVER%"=="%CURVER%" (
     if errorlevel 2 goto cancel
 )
 
-echo [1/4] Membuat update.json versi %NEWVER% ...
+echo [1/5] Membuat update.json versi %NEWVER% ...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-update.ps1" -Version "%NEWVER%"
 if errorlevel 1 goto fail
 
 set "VER=%NEWVER%"
 
 echo.
-echo [2/4] Commit versi %VER% ...
+echo [2/5] Commit versi %VER% ...
 git add -A
 git diff --cached --quiet
 if errorlevel 1 (
@@ -68,7 +68,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Sinkron dengan GitHub ...
+echo [3/5] Sinkron dengan GitHub ...
 git pull --rebase --autostash
 if errorlevel 1 (
     echo [ERROR] Pull gagal atau ada konflik. Jalankan "git status" untuk detailnya.
@@ -76,9 +76,27 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/4] Push ke GitHub ...
+echo [4/5] Push ke GitHub ...
 git push
 if errorlevel 1 goto fail
+
+echo.
+echo [5/5] Verifikasi di GitHub ...
+for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set "BRANCH=%%b"
+for /f "delims=" %%h in ('git rev-parse HEAD') do set "LOCALH=%%h"
+for /f "tokens=1" %%h in ('git ls-remote origin refs/heads/%BRANCH%') do set "REMOTEH=%%h"
+for /f "usebackq delims=" %%r in (`powershell -NoProfile -Command "(ConvertFrom-Json ([IO.File]::ReadAllText('version.json').TrimStart([char]0xFEFF))).repo"`) do set "REPO=%%r"
+if /i "%LOCALH%"=="%REMOTEH%" (
+    echo Push terverifikasi: GitHub sudah menerima commit terbaru.
+) else (
+    echo [GAGAL] Commit di GitHub tidak sama dengan di komputer. Push belum berhasil.
+    goto fail
+)
+echo.
+echo Isi update.json di GitHub saat ini:
+curl -s "https://raw.githubusercontent.com/%REPO%/%BRANCH%/update.json?t=%RANDOM%" | findstr /c:"latest_version"
+echo Seharusnya versi %VER%.
+echo Kalau masih versi lama, itu cache GitHub. Tunggu 2-5 menit.
 
 color 0A
 echo.

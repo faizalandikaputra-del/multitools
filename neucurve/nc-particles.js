@@ -148,23 +148,26 @@
   // user is idle). A full-viewport canvas redrawn at 60 fps was a big part of the flicker on a still panel; the drift is
   // only 14-40 px/s, so 30 fps looks identical. v5: never paused - while the pointer rests or is outside the panel the
   // loop just drops to FPS_IDLE (motion is time-based, so speed looks the same); only a hidden page stops it.
-  var box = { l: -1, t: -1, w: 0, h: 0 }, lastDraw = 0;
+  var box = { l: -1, t: -1, w: 0, h: 0 }, aw = 0, ah = 0, lastDraw = 0;   // aw/ah: allocated canvas size (css px)
   var FPS_ACTIVE = 30, FPS_IDLE = 20;
 
+  // v6: follows the zone EVERY frame (dragging the preset divider no longer leaves the particles behind). The bitmap is
+  // only re-allocated when the zone outgrows it (or is much smaller), with a small margin, so a drag does not
+  // re-allocate each frame; the drawing is clipped to the exact zone rectangle.
   function fitCanvas(z) {
     var l = Math.round(z.l), t = Math.round(z.t), w = Math.max(1, Math.round(z.r - z.l)), h = Math.max(1, Math.round(z.b - z.t));
     var d = Math.min(2, window.devicePixelRatio || 1);
-    if (l === box.l && t === box.t && w === box.w && h === box.h && d === dpr) { return; }
-    var resized = w !== box.w || h !== box.h || d !== dpr;
-    box.l = l; box.t = t; box.w = w; box.h = h; dpr = d;
-    canvas.style.left = l + "px"; canvas.style.top = t + "px";
-    if (resized) {
-      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+    if (l !== box.l) { canvas.style.left = l + "px"; }
+    if (t !== box.t) { canvas.style.top = t + "px"; }
+    box.l = l; box.t = t; box.w = w; box.h = h;
+    if (w > aw || h > ah || d !== dpr || aw > w * 1.6 + 96 || ah > h * 1.6 + 96) {
+      aw = w + 48; ah = h + 48; dpr = d;
+      canvas.width = Math.round(aw * dpr); canvas.height = Math.round(ah * dpr);
+      canvas.style.width = aw + "px"; canvas.style.height = ah + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  function resize() { box.l = -1; }   // force re-fit on the next measure
+  function resize() { aw = 0; ah = 0; }   // force re-allocation on the next frame
 
   function pointerOut() { return window.__ncPointerOut ? window.__ncPointerOut() : (window.__ncAway && window.__ncAway()); }
   function calm() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
@@ -176,22 +179,24 @@
     if (now - lastDraw < iv - 2) { return; }                    // frame cap
     var dt = Math.min(0.08, (now - lastDraw) / 1000 || 0.033);
     lastDraw = now;
-    if (tick++ % 8 === 0) {                                          // re-measure ~4x per second at 30 fps
-      if (loadSettings() || spriteKey !== CONFIG.color) { sprite = makeSprite(); spriteKey = CONFIG.color; }
-      zones = computeZones(); syncSets();
-      if (zones.length) {
-        var u = { l: zones[0].l, t: zones[0].t, r: zones[0].r, b: zones[0].b };
-        for (var q = 1; q < zones.length; q++) { u.l = Math.min(u.l, zones[q].l); u.t = Math.min(u.t, zones[q].t); u.r = Math.max(u.r, zones[q].r); u.b = Math.max(u.b, zones[q].b); }
-        fitCanvas(u);
-      }
+    var slow = (tick++ % 8 === 0);
+    if (slow && (loadSettings() || spriteKey !== CONFIG.color)) { sprite = makeSprite(); spriteKey = CONFIG.color; }
+    zones = computeZones();                                        // cheap (1 rect) - every frame so drags track exactly
+    if (slow) { syncSets(); }
+    if (zones.length) {
+      var u = { l: zones[0].l, t: zones[0].t, r: zones[0].r, b: zones[0].b };
+      for (var q = 1; q < zones.length; q++) { u.l = Math.min(u.l, zones[q].l); u.t = Math.min(u.t, zones[q].t); u.r = Math.max(u.r, zones[q].r); u.b = Math.max(u.b, zones[q].b); }
+      fitCanvas(u);
     }
-    ctx.clearRect(0, 0, box.w, box.h);
+    ctx.clearRect(0, 0, aw, ah);
     if (effect === "off" || opacity <= 0 || !zones.length || calm()) { return; }
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "low";
     var rain = effect === "rain";
     if (rain) { ctx.strokeStyle = "rgb(" + CONFIG.color + ")"; ctx.lineWidth = CONFIG.rain.width; ctx.lineCap = "round"; }
     for (var i = 0; i < zones.length; i++) {
       var z = zones[i], set = sets[i], w = z.r - z.l, ox = z.l - box.l, oy = z.t - box.t;
+      if (!set) { continue; }
+      ctx.save(); ctx.beginPath(); ctx.rect(ox, oy, w, z.b - z.t); ctx.clip();
       for (var k = 0; k < set.length; k++) {
         var p = set[k];
         if (p.wait > 0) { p.wait -= dt; continue; }
@@ -215,6 +220,7 @@
         ctx.globalAlpha = a;
         ctx.drawImage(sprite, px - d / 2, py - d / 2, d, d);
       }
+      ctx.restore();
     }
     ctx.globalAlpha = 1;
   }
@@ -225,7 +231,7 @@
   }
   function stop() {
     running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    if (ctx) { ctx.clearRect(0, 0, box.w, box.h); }
+    if (ctx) { ctx.clearRect(0, 0, aw, ah); }
   }
 
   function init() {

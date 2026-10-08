@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.14",
+    "latest_version":  "1.8.15",
     "changelog":  "- Add Animation\r\n- Fix Neucurve",
     "files":  [
                   {
@@ -224,7 +224,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "c2f6c4e178e52dd91ae04839eed46549f2d09e8c26155316719f5451e5aeb1c6"
+                      "sha256":  "fffee27b31f1b175c630f642ad51365b1f0938595715403669ba027f5341e795"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -352,7 +352,7 @@
                   },
                   {
                       "path":  "neucurve/nc-particles.js",
-                      "sha256":  "dcb8085fe2331cbb5c411733be9f92ed333ee4565f38437caa9c0c387cb961fa"
+                      "sha256":  "e4fdaa83998a9326f402a6ceac863977a0a955518cc3d35855dfcfad09229a26"
                   },
                   {
                       "path":  "neucurve/nc-polish.css",

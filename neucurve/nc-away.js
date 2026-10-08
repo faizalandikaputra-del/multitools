@@ -17,12 +17,18 @@
     try { window.dispatchEvent(new Event("nc-away")); } catch (e) { }
   }
   root.classList.add("nc-away");
+  // IDLE gate: a pointer that rests INSIDE the page never fires mouseleave, so the perpetual loops (APPLY glow rAF,
+  // particle canvas, infinite CSS) kept repainting a still panel and CEF dropped a frame now and then -> quick flicker.
+  // No pointer / wheel / key input for IDLE_MS = treated as away. First input resumes everything.
+  var IDLE_MS = 4000, lastAct = Date.now();
+  function act() { lastAct = Date.now(); set(false); }
+  setInterval(function () { if (!away && Date.now() - lastAct > IDLE_MS) { set(true); } }, 1000);
   var opts = true;
-  document.addEventListener("mousemove", function () { set(false); }, opts);
-  document.addEventListener("mouseenter", function () { set(false); }, opts);
-  document.addEventListener("mousedown", function () { set(false); }, opts);
-  document.addEventListener("wheel", function () { set(false); }, opts);
-  document.addEventListener("keydown", function () { set(false); }, opts);
+  document.addEventListener("mousemove", act, opts);
+  document.addEventListener("mouseenter", act, opts);
+  document.addEventListener("mousedown", act, opts);
+  document.addEventListener("wheel", act, opts);
+  document.addEventListener("keydown", act, opts);
   // Leaving the page. While a button is held (dragging a handle outside the graph) we stay "active".
   document.addEventListener("mouseleave", function (e) { if (!e.buttons) { set(true); } });
   document.addEventListener("mouseout", function (e) { if (!e.relatedTarget && !e.buttons) { set(true); } }, opts);

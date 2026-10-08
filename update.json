@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.12",
+    "latest_version":  "1.8.13",
     "changelog":  "- Add Animation",
     "files":  [
                   {
@@ -224,7 +224,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "b349494f08de8167288c61d3e61bbaf2a1d0458ccc00214f3169113115655bb8"
+                      "sha256":  "699a1bdf5c28bb991440cdc6535caa0283077fa1ae891e62358a4950033f0c84"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "neucurve/nc-away.js",
-                      "sha256":  "9dbcd1862a753cabd67a8c6085534d8183249deaeb42129f0b3710680d36e72a"
+                      "sha256":  "468b942f360d6a76fe101e82bda1032a19c15e2611e48089c6460b1ee386530c"
                   },
                   {
                       "path":  "neucurve/nc-bg.css",

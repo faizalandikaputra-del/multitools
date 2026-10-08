@@ -1,0 +1,72 @@
+/* ==========================================================
+   Multi Tool - mt-smooth.css
+   Smoother motion: sidebar highlight, tab-switch cards, Settings modal, "finished" flash on action buttons.
+   Companion: js/mt-smooth.js. Loaded after mt-motion-fix.css, before material-theme.css (which stays LAST).
+   Purely additive: delete this file + mt-smooth.js and everything is back to the previous behaviour.
+   Only transform / opacity are animated. "Animations OFF" (data-reduce-motion="true") is honoured by the
+   global 0.01ms rule in style.css plus the explicit rules at the bottom.
+   ========================================================== */
+
+:root {
+  --mt-ind-dur: 0.3s;                          /* sidebar highlight; mt-smooth.js scales it with the distance */
+  --mt-modal-in: 0.24s;
+  --mt-modal-out: 0.14s;
+}
+
+/* 1. Sidebar highlight: symmetric ease-in-out, NO bounce, duration follows the distance travelled
+      (set by mt-smooth.js). Keeps the width transition of the expanding rail from sidebar-expand.css. */
+.tab-indicator {
+  transition: transform var(--mt-ind-dur) cubic-bezier(0.65, 0, 0.35, 1), width var(--sbx-dur) var(--sbx-ease);
+}
+
+/* 2. Tab switch: cards settle sooner (tab-motion.css / mt-motion-fix.css: 0.44s + 22ms per card, up to 14 cards
+      = ~0.75s before the last card is still). Now 0.38s + 18ms = ~0.63s. The leave time (--mt-leave-dur) is NOT
+      touched: showTab() in main.js waits for exactly that long. */
+:root { --mt-card-dur: 0.38s; }
+.panel.is-entering .mt-stagger { animation-delay: calc(var(--mt-i, 0) * 18ms); }
+
+/* 3. Settings modal: opens with a short ease-out (no elastic overshoot any more) and closes faster than it opens.
+      The backdrop keeps its visibility until the card is gone. The old rule used the 0.45s bounce curve both ways. */
+.modal-backdrop { transition: opacity 0.2s ease, visibility 0s linear 0.2s; }
+.modal-backdrop.is-open { transition-delay: 0s; }
+.modal {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+  transition: transform var(--mt-modal-out) cubic-bezier(0.4, 0, 1, 1), opacity var(--mt-modal-out) linear;
+}
+.modal-backdrop.is-open .modal {
+  opacity: 1;
+  transform: none;
+  transition: transform var(--mt-modal-in) cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease-out;
+}
+
+/* 4. "Finished" flash: a soft accent veil on the button/tile whose host call just ended (js/mt-smooth.js adds the
+      span). Child element on purpose - .tool already uses ::before and ::after. Skipped when the call failed. */
+.mt-done-fx {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 4;
+  border-radius: inherit;
+  background: rgba(var(--accent-rgb, 127, 0, 255), 0.34);
+  opacity: 0;
+  pointer-events: none;
+  animation: mt-done-flash 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes mt-done-flash {
+  0%   { opacity: 0;   transform: scale(0.92); }
+  25%  { opacity: 1;   transform: scale(1); }
+  100% { opacity: 0;   transform: scale(1.03); }
+}
+
+/* 5. Grid tiles (.tool): elastic spring again. hover-polish.css gives every clickable thing "transform .18s ease-out",
+      which silently replaced the intended "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" of style.css for
+      hover AND press (no spring-back on release). Only the transform timing is restored; colour / shadow / opacity
+      keep the hover-polish timing. */
+.tool {
+  transition: transform var(--dur, 0.4s) var(--bounce, cubic-bezier(0.34, 1.56, 0.64, 1)),
+              background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+              box-shadow 0.2s ease, opacity 0.18s ease;
+}
+
+:root[data-reduce-motion="true"] .modal,
+:root[data-reduce-motion="true"] .modal-backdrop,
+:root[data-reduce-motion="true"] .tab-indicator { transition: none; }
+:root[data-reduce-motion="true"] .mt-done-fx { display: none; }

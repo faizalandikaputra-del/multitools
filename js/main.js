@@ -3906,7 +3906,7 @@
   // content (~110ms), then renderTab() swaps the content and plays the staggered card entrance.
   var MT_LEAVE_MS = 110;
   var MT_STAGGER_SEL = ".tool, .ta-group, .beat-card, .snippet-card, .info, .empty, .expr-item, " +
-    ".preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row";
+    ".preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group
   var MT_STAGGER_MAX = 14;
   var leaveTimer = null;
   var staggerTimer = null;
@@ -3937,7 +3937,7 @@
       staggerTimer = null;
       var done = panel.querySelectorAll(".mt-stagger");
       Array.prototype.forEach.call(done, function (el) { el.classList.remove("mt-stagger"); });
-    }, 900);
+    }, (window.MTAnim && window.MTAnim.cleanupMs) ? window.MTAnim.cleanupMs() : 900);   // Settings > Tab animation: slower speed / Cascade need longer than 900 ms
     var nodes = panel.querySelectorAll(MT_STAGGER_SEL);
     var n = Math.min(nodes.length, MT_STAGGER_MAX * 3);
     for (var i = 0; i < n; i++) {
@@ -5122,6 +5122,7 @@
         if (Node) { Node.clearSlot("bg-image"); Node.clearSlot("bg-motion-video"); }
         Idle.reset();
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass
+        if (window.MTAnim) { window.MTAnim.reset(); }            // Settings > Tab animation back to Smooth / 100% / Soft
         Motion.set(true);
         if ($("anim-enabled")) { $("anim-enabled").checked = true; }
         Store.remove("autoParent"); Store.remove("presetFolder");

@@ -60,6 +60,10 @@
   <link rel="stylesheet" href="../css/mt-ae-icons.css?v=1">
   <!-- Motion/focus fixes (Animations OFF really off, tile focus ring, fewer endless loops). Needs js/mt-away.js. -->
   <link rel="stylesheet" href="../css/mt-motion-fix.css?v=3">
+  <!-- Smoother motion: sidebar highlight, tab-switch cards, Settings modal, finished flash. Needs js/mt-smooth.js. -->
+  <link rel="stylesheet" href="../css/mt-smooth.css?v=2">
+  <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
+  <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -307,6 +311,39 @@
         <p class="field-note">Turns all panel animations and transitions on or off. This ignores your operating system's animation setting.</p>
       </div>
 
+      <!-- Tab animation: how cards enter when you switch tabs. Glide follows the sidebar direction. Greyed out while Enable Animations is OFF.
+           Logic: js/mt-anim.js (localStorage mtx.animStyle / mtx.animSpeed / mtx.animEase), look: css/mt-anim-styles.css. -->
+      <div class="field field-column mtx-anim" id="mtx-anim">
+        <span class="field-label">Tab animation</span>
+        <p class="field-note mtx-anim-off-note">Turn on Enable Animations to change these.</p>
+        <div class="mtx-anim-body">
+          <div class="mtx-anim-grid" role="radiogroup" aria-label="Tab animation style">
+          <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="true" data-anim-style-opt="smooth"><i class="mtx-pv mtx-pv--smooth" aria-hidden="true"><b></b><b></b><b></b></i><span>Smooth</span></button>
+          <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="glide"><i class="mtx-pv mtx-pv--glide" aria-hidden="true"><b></b><b></b><b></b></i><span>Glide</span></button>
+          <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="pop"><i class="mtx-pv mtx-pv--pop" aria-hidden="true"><b></b><b></b><b></b></i><span>Pop</span></button>
+          <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="fade"><i class="mtx-pv mtx-pv--fade" aria-hidden="true"><b></b><b></b><b></b></i><span>Fade</span></button>
+          <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="cascade"><i class="mtx-pv mtx-pv--cascade" aria-hidden="true"><b></b><b></b><b></b></i><span>Cascade</span></button>
+          <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="none"><i class="mtx-pv mtx-pv--none" aria-hidden="true"><b></b><b></b><b></b></i><span>None</span></button>
+          </div>
+          <p class="field-note">How cards enter when you switch tabs. Glide follows the sidebar: moving down brings cards up from below, moving up brings them in from above.</p>
+          <div class="bg-editor-row idle-scale-row ui-scale-row">
+            <label for="anim-speed">Speed</label>
+            <input type="range" id="anim-speed" min="50" max="200" step="10" value="100" aria-label="Tab animation speed">
+            <output class="field-row-value" id="anim-speed-val" for="anim-speed">100%</output>
+          </div>
+          <span class="mtx-anim-sub">Easing</span>
+          <div class="mtx-anim-grid mtx-ease-grid" role="radiogroup" aria-label="Tab animation easing">
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="true" data-anim-ease-opt="soft"><svg class="mtx-curve" viewBox="0 -4 40 34" aria-hidden="true"><line x1="0" y1="26" x2="40" y2="26"/><line x1="0" y1="8" x2="40" y2="8"/><path d="M0 26 C8.8 8 14.4 8 40 8"/></svg><span>Soft</span></button>
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-anim-ease-opt="even"><svg class="mtx-curve" viewBox="0 -4 40 34" aria-hidden="true"><line x1="0" y1="26" x2="40" y2="26"/><line x1="0" y1="8" x2="40" y2="8"/><path d="M0 26 C26 26 14 8 40 8"/></svg><span>Even</span></button>
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-anim-ease-opt="spring"><svg class="mtx-curve" viewBox="0 -4 40 34" aria-hidden="true"><line x1="0" y1="26" x2="40" y2="26"/><line x1="0" y1="8" x2="40" y2="8"/><path d="M0 26 C13.6 -2.1 25.6 8 40 8"/></svg><span>Spring</span></button>
+          </div>
+          <p class="field-note">Soft eases out, Even speeds up and slows down, Spring overshoots a little. Also sets how this window opens.</p>
+          <div class="field-actions mtx-anim-reset-row">
+            <button class="btn btn-ghost" id="anim-reset" type="button">Reset animation</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Idle Screensaver: after the timeout the UI hides and a clock shows over the (still playing) background.
            Logic: Idle module in main.js. Stored in localStorage: mtx.idleEnabled / mtx.idleTimeout. -->
       <div class="field field-column">
@@ -449,7 +486,9 @@
   <script src="../js/mt-material.js?v=3"></script>
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
-  <script src="../js/main.js?v=20"></script>
+  <script src="../js/mt-anim.js?v=1"></script>
+  <script src="../js/main.js?v=22"></script>
+  <script src="../js/mt-smooth.js?v=1"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
   <script src="../js/smooth-scroll.js?v=9"></script>

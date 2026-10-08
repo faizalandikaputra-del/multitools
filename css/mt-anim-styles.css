@@ -1,0 +1,125 @@
+/* ==========================================================
+   Multi Tool - mt-anim-styles.css
+   Settings > Tab animation: pick how cards enter when you switch tabs (Smooth / Glide / Pop / Fade / Cascade / None),
+   plus Speed and Easing. Companion: js/mt-anim.js (sets the attributes + variables below, saves the choice).
+   Loaded after mt-smooth.css and before material-theme.css (which stays LAST).
+   Purely additive: with the default choice (Smooth, 100%, Soft) js/mt-anim.js sets NOTHING and the panel behaves
+   exactly as before. Delete this file + mt-anim.js and everything is back to the previous behaviour.
+
+   Hooks set by js/mt-anim.js on <html> (only when something differs from the default):
+     data-anim-style="smooth|glide|pop|fade|cascade|none"
+     data-anim-ease="even|spring"                (Soft = nothing set)
+     data-anim-dir="down|up"                     direction of the last sidebar move (Glide uses it)
+     --mtx-k      time multiplier = 100 / speed%  (50% speed -> 2, 200% speed -> 0.5)
+     --mtx-dur    base card duration of the chosen style
+     --mtx-step   delay between cards (--mt-i * step), also scaled by --mtx-k
+     --mt-ease-out  easing of the entrance (existing variable from tab-motion.css)
+   Only opacity + transform are animated, same as tab-motion.css. The leave time (--mt-leave-dur, 110 ms) is NOT
+   touched because showTab() in main.js waits for exactly that long.
+   ========================================================== */
+
+/* ---------- 1. Timing: every style shares this, only the numbers differ ---------- */
+:root[data-anim-style] .panel.is-entering .mt-stagger {
+  animation-duration: calc(var(--mtx-dur, 0.38s) * var(--mtx-k, 1));
+  animation-delay: calc(var(--mt-i, 0) * var(--mtx-step, 18ms) * var(--mtx-k, 1));
+}
+
+/* ---------- 2. Settings window follows the chosen easing (tab-motion keeps its own curve when nothing is set) ---------- */
+:root[data-anim-ease] .modal-backdrop.is-open .modal {
+  transition: transform var(--mt-modal-in) var(--mt-ease-out), opacity 0.2s ease-out;
+}
+
+/* ---------- 3. Styles ---------- */
+
+/* Glide: cards travel the way the sidebar highlight moved. Down the list -> they rise from below; up -> they drop from above. */
+@keyframes mtx-glide-down { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes mtx-glide-up   { from { opacity: 0; transform: translateY(-26px); } to { opacity: 1; transform: translateY(0); } }
+:root[data-anim-style="glide"] .panel.is-entering .mt-stagger { animation-name: mtx-glide-down; }
+:root[data-anim-style="glide"][data-anim-dir="up"] .panel.is-entering .mt-stagger { animation-name: mtx-glide-up; }
+:root[data-anim-style="glide"] .panel.is-leaving { transform: translateY(-10px); }
+:root[data-anim-style="glide"][data-anim-dir="up"] .panel.is-leaving { transform: translateY(10px); }
+
+/* Pop: cards scale up from small. Springy by default; any Easing the user picks wins. */
+@keyframes mtx-pop { from { opacity: 0; transform: translateY(8px) scale(0.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
+:root[data-anim-style="pop"] .panel.is-entering .mt-stagger { animation-name: mtx-pop; }
+:root[data-anim-style="pop"]:not([data-anim-ease]) .panel.is-entering .mt-stagger { animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Fade: opacity only. The calmest one. */
+@keyframes mtx-fade { from { opacity: 0; } to { opacity: 1; } }
+:root[data-anim-style="fade"] .panel.is-entering .mt-stagger { animation-name: mtx-fade; }
+:root[data-anim-style="fade"] .panel.is-leaving { transform: none; }
+
+/* Cascade: a slow wave from the left; the long delay between cards is the point. */
+@keyframes mtx-cascade { from { opacity: 0; transform: translateX(-20px) scale(0.97); } to { opacity: 1; transform: translateX(0) scale(1); } }
+:root[data-anim-style="cascade"] .panel.is-entering .mt-stagger { animation-name: mtx-cascade; }
+
+/* None: cards and the panel appear at once. Hover and press still animate (Enable Animations is a separate, global switch). */
+:root[data-anim-style="none"] .panel.is-entering .mt-stagger { animation: none; }
+:root[data-anim-style="none"] .panel.is-entering,
+:root[data-anim-style="none"] .panel-head.is-entering { animation: none; }
+:root[data-anim-style="none"] .panel.is-leaving,
+:root[data-anim-style="none"] .panel-head.is-leaving { opacity: 1; transform: none; transition: none; }
+
+/* Enable Animations OFF wins over every style (same specificity as the rules above, so it is repeated after them) */
+:root[data-reduce-motion="true"][data-anim-style] .panel.is-entering .mt-stagger { animation: none; }
+:root[data-reduce-motion="true"][data-anim-style] .panel.is-leaving,
+:root[data-reduce-motion="true"][data-anim-style] .panel-head.is-leaving { transition: none; }
+:root[data-reduce-motion="true"][data-anim-ease] .modal-backdrop.is-open .modal { transition: none; }
+
+/* ---------- 4. Settings menu ---------- */
+.mtx-anim-body { width: 100%; transition: opacity 0.2s ease; }
+.mtx-anim.is-disabled .mtx-anim-body { opacity: 0.4; pointer-events: none; }
+.mtx-anim-off-note { display: none; margin: 0 0 8px; }
+.mtx-anim.is-disabled .mtx-anim-off-note { display: block; }
+.mtx-anim-sub { display: block; margin: 12px 0 6px; font-size: 0.72rem; font-weight: 600; color: var(--text); }
+.mtx-anim-sub:first-child { margin-top: 0; }
+
+/* grids: 3 columns (CSS grid, not flex-gap: old CEP Chromium) */
+.mtx-anim-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 8px; width: 100%; }
+.mtx-anim-grid .ui-theme-card { margin: 0; }
+
+/* mini preview of the real animation: three bars enter the way the cards will. Plays on hover, on pick and when Speed changes. */
+.mtx-pv {
+  position: relative; display: block; height: 48px; border-radius: 10px; overflow: hidden;
+  background: rgba(var(--accent-rgb, 139, 108, 247), 0.09);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+.mtx-pv b { position: absolute; left: 9px; height: 8px; border-radius: 4px; background: rgba(var(--accent-rgb, 139, 108, 247), 0.55); }
+.mtx-pv b:nth-child(1) { top: 9px;  width: 62%; --i: 0; }
+.mtx-pv b:nth-child(2) { top: 21px; width: 44%; --i: 1; }
+.mtx-pv b:nth-child(3) { top: 33px; width: 54%; --i: 2; }
+.mtx-pv--smooth  { --d: 60ms; }
+.mtx-pv--glide   { --d: 70ms; }
+.mtx-pv--pop     { --d: 70ms; }
+.mtx-pv--fade    { --d: 40ms; }
+.mtx-pv--cascade { --d: 130ms; }
+
+@keyframes mtx-pv-smooth  { from { opacity: 0; transform: translateY(5px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes mtx-pv-glide   { from { opacity: 0; transform: translateY(11px); } to { opacity: 1; transform: none; } }
+@keyframes mtx-pv-pop     { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+@keyframes mtx-pv-fade    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mtx-pv-cascade { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+
+.mtx-anim-card.is-play .mtx-pv b {
+  animation-duration: calc(0.5s * var(--mtx-k, 1));
+  animation-delay: calc(var(--i) * var(--d) * var(--mtx-k, 1));
+  animation-timing-function: var(--mt-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  animation-fill-mode: both;
+}
+.mtx-anim-card.is-play .mtx-pv--smooth b  { animation-name: mtx-pv-smooth; }
+.mtx-anim-card.is-play .mtx-pv--glide b   { animation-name: mtx-pv-glide; }
+.mtx-anim-card.is-play .mtx-pv--pop b     { animation-name: mtx-pv-pop; }
+.mtx-anim-card.is-play .mtx-pv--fade b    { animation-name: mtx-pv-fade; }
+.mtx-anim-card.is-play .mtx-pv--cascade b { animation-name: mtx-pv-cascade; }
+:root:not([data-anim-ease]) .mtx-anim-card.is-play .mtx-pv--pop b { animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
+/* None: bars sit flush, nothing moves */
+.mtx-pv--none b { opacity: 0.5; }
+:root[data-reduce-motion="true"] .mtx-anim-card.is-play .mtx-pv b { animation: none; }
+
+/* easing cards: the curve itself is the preview */
+.mtx-curve { display: block; margin: 0 auto; width: 40px; height: 34px; overflow: visible; }
+.mtx-curve path { fill: none; stroke: rgba(var(--accent-rgb, 139, 108, 247), 0.95); stroke-width: 2; stroke-linecap: round; }
+.mtx-curve line { stroke: var(--border-subtle); stroke-width: 1; stroke-dasharray: 2 3; }
+.mtx-ease-grid .ui-theme-card { padding-top: 9px; }
+
+.mtx-anim-reset-row { margin-top: 12px; }

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.11",
-    "changelog":  "- Info / About menampilkan versi terpasang dari version.json (sebelumnya tertulis v1.0.0)\n- Teks \"Propert(ies)\" diperbaiki jadi \"Properties\" (tombol Apply to Selected Properties dan hint)\n- Progress bar Export GIF kini juga tampil di After Effects 2021 (inset diganti top/right/bottom/left)\n- NeuCurve: ikon Ease In / Ease Out digambar ulang, tidak lagi mirip tombol rewind / fast-forward\n- NeuCurve: ikon Ease Out / Ease / Ease In diganti bentuk keyframe After Effects (jam pasir untuk Ease, panah kiri/kanan untuk Out/In)\n- NeuCurve: ikon Speed Graph tidak lagi terlihat menyala setelah dimatikan (hover/sentuhan tidak lagi tampil seperti ON; hover di layar sentuh tidak menempel)\n- NeuCurve: ikon Speed Graph tidak lagi menyala saat posisinya off / nonaktif (di luar mode Bezier); hanya menyala kalau benar-benar aktif\n- NeuCurve: tombol favorit (bookmark simpan preset) kini mati/abu-abu secara default, menyala hanya saat hover atau fokus keyboard\n- NeuCurve: ikon Speed Graph digambar ulang (kurva lonceng lebih besar, garis dasar jelas, tanpa titik ujung yang menggumpal)\n- Tools: fitur baru Auto Morph (dua shape layer; layer atas berubah bentuk jadi layer bawah, jumlah vertex disamakan otomatis, warna fill/stroke ikut dianimasikan)\n- Anchor Point \u0026 Align: ikon Align to Composition dibuat seperti panel Align After Effects\n- Orb ambient berhenti saat kursor/roda/keyboard aktif dan lanjut ~1,5 dtk setelah diam (kartu kaca tidak di-blur ulang tiap frame)\n- Bayangan hover kartu lebar (preset/expr/snippet/qce) lebih ringan\n- Splash dipersingkat (~3,1 dtk jadi ~1,75 dtk), urutan animasi sama\n- Animasi masuk kartu antar tab lebih halus (gerak lebih pendek, ekor ease-out lebih panjang)\n- Teks kecil di tab Curve dinaikkan ke 10px dan kontrasnya diperbaiki; transition: all diganti properti spesifik\n- Animations OFF kini benar-benar mematikan animasi tanpa akhir (tidak lagi berkedip)\n- Tile Shortcutz kini punya cincin fokus keyboard\n- Animasi dekoratif (orb, saber, titik) berhenti saat kursor di luar panel; titik judul statis; saber nonaktif dibekukan\n- Perbaikan updater: kini memakai fetch() seperti RE-Faster\n- Perbaikan kedipan hitam di tab Curve\n- Perbaikan Bug Update",
+    "latest_version":  "1.8.12",
+    "changelog":  "- Add Animation",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -31,6 +31,10 @@
                       "sha256":  "7fccec5379b65774e3f3c15bf1b2cf7ef01523f1438b92da103684bf4fd30009"
                   },
                   {
+                      "path":  "css/mt-anim-styles.css",
+                      "sha256":  "82f8430c7aea28f0fb27c0774573263cd3d1559395ed7518d7347451c857bc19"
+                  },
+                  {
                       "path":  "css/mt-colorpicker.css",
                       "sha256":  "2ca3effbca39559ee8ba77f3f175d2eee98f0ef29ba07c00e162f474685583ab"
                   },
@@ -49,6 +53,10 @@
                   {
                       "path":  "css/mt-select.css",
                       "sha256":  "b09e78b70d0e8570b1db6e050b5a21f097b95d6f76c372318fb52e17ad31f921"
+                  },
+                  {
+                      "path":  "css/mt-smooth.css",
+                      "sha256":  "d9d56a4e83fe89e233219caef677d64af043a74823baa420a569531ca4d6afea"
                   },
                   {
                       "path":  "css/mt-spinbox.css",
@@ -112,7 +120,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "16de355a3d83e4fb7b3f8434f4f462834c2895efc47109cd78108c746989a588"
+                      "sha256":  "eeccf3d6f8bf00709bb131bfd2c9e887a099f5fc258034f4c521c8d51bcb4fb2"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -128,7 +136,11 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "ee61be04273593faf3905281958dc72c98fbefb717d268fa4ee17fd7cfc01087"
+                      "sha256":  "303e05f57f69a6c17aedb6c79cb1fa52282bae749506b7d16e8c7aef7b38730f"
+                  },
+                  {
+                      "path":  "js/mt-anim.js",
+                      "sha256":  "d5872ca135720ea1a438470195f033c8318ddf2d3f8bd11234422035c668b24a"
                   },
                   {
                       "path":  "js/mt-away.js",
@@ -153,6 +165,10 @@
                   {
                       "path":  "js/mt-select.js",
                       "sha256":  "9e7fd130a6ddf0bc6750dfac0e4642e0162df35a5f73bfe48b9573623ce92ac7"
+                  },
+                  {
+                      "path":  "js/mt-smooth.js",
+                      "sha256":  "10639ade2ae4d7b20e46b7fc45a3243880617208d445a032f09a6564181ccf0c"
                   },
                   {
                       "path":  "js/mt-spinbox.js",
@@ -200,7 +216,7 @@
                   },
                   {
                       "path":  "neucurve/assets/index.js",
-                      "sha256":  "1020611508f02729c6e275ac15f6b59aa4ef2ee181b794cd8c7d5d732401bbc0"
+                      "sha256":  "dc103feff3ae077a2228f0f191cf9140cdf13bcf1778482d67bf31309bab2c49"
                   },
                   {
                       "path":  "neucurve/CSInterface.js",
@@ -208,7 +224,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "716ac969303fe77930ba6b66766ebacf06331a4e2d2f48c6ef5564a945d12241"
+                      "sha256":  "b349494f08de8167288c61d3e61bbaf2a1d0458ccc00214f3169113115655bb8"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -356,7 +372,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "50c0a4e75a6c2147b3c92b4c16adece9ee89dfb9db5833a9700f6364ad32f3b5"
+                      "sha256":  "934a89eb155b7b357e2f7712bdd3261d3b52c7e02ee4c76878193b793efe263e"
                   }
               ]
 }

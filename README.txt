@@ -964,3 +964,43 @@ BATCH FIXES AFTER THE UI REVIEW (build fixed17)
   Fallback constant VERSION in main.js = "1.8.1". Note: CSXS/manifest.xml still says 1.1.0 - harmless, the updater never touches it.
 - Expression Code: "Propert(ies)" -> "Properties" (button, tab hint, Shortcutz hint).
 - css/mt-gif-export.css: the GIF progress fill used "inset: 0" (not supported by Chromium 74 / AE 2021); now top/right/bottom/left: 0.
+
+NEUCURVE: INVERT SPAM FIX (v1.8.12, bundle index.js?v=5)
+--------------------------------------------------------
+Spamming Invert in the Curve tab slowly deformed the graph (e.g. 0.8,0.1,0.9,0.4 drifted toward 0.45,0.35,0.55,0.65). Cause: Invert
+animates the params over 300 ms, and each extra click inverted the in-between value of the running animation instead of its final value.
+Fix (neucurve/assets/index.js, no UI change): si() remembers the final target of the running animation (NcInvTgt) and writes the exact
+target when it ends; ni() (Invert) inverts that target while an animation is running. An odd number of clicks now always ends as the
+exact inverse, an even number as the original. Custom / Steps were never affected (they are not animated).
+
+SMOOTHER MOTION (v1.8.13: css/mt-smooth.css + js/mt-smooth.js)
+---------------------------------------------------------------
+Additive layer, loaded after mt-motion-fix.css (material-theme.css is still the last stylesheet). Only transform / opacity animate.
+- Sidebar highlight: cubic-bezier(0.65, 0, 0.35, 1), no bounce; duration 240-440 ms grows with the distance (mt-smooth.js sets --mt-ind-dur).
+- Tab switch: cards 0.38 s + 18 ms stagger (was 0.44 s + 22 ms). --mt-leave-dur is left alone: showTab() in main.js waits for it.
+- Settings modal: opens 240 ms ease-out (no elastic overshoot), closes 140 ms; the backdrop waits until the card is gone.
+- Finished flash: when an action button / tile loses .is-loading, a soft accent veil plays for 0.5 s (skipped if an error toast is showing).
+  Which elements: DONE_SEL at the top of js/mt-smooth.js.
+- Animations OFF (data-reduce-motion="true") disables all of it.
+Off switch: delete css/mt-smooth.css + js/mt-smooth.js and their two tags in html/index.html.
+
+GRID TILES: ELASTIC SPRING RESTORED (v1.8.14, css/mt-smooth.css section 5)
+---------------------------------------------------------------------------
+hover-polish.css sets "transform .18s ease-out" on every clickable element, which replaced the intended
+"transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" of .tool (style.css) for hover and press - so the Easy Layer grid
+tiles stopped springing back on release. mt-smooth.css now restores the elastic transform timing on .tool only
+(colour / shadow / opacity keep the hover-polish timing). Verified by reading the computed transition in Chromium with the
+real stylesheet order.
+
+
+TAB ANIMATION MENU (Settings > Tab animation)
+---------------------------------------------
+Pick how cards enter when you switch tabs: Smooth (default, unchanged), Glide (follows the sidebar: down = cards rise from
+below, up = they drop from above), Pop, Fade, Cascade, None. Speed 50-200% and Easing (Soft / Even / Spring) apply to every
+style and to the way the Settings window opens. Each card previews its own motion on hover. Greyed out while
+Enable Animations is OFF; "Reset animation" and "Reset everything" return to Smooth / 100% / Soft.
+Files: css/mt-anim-styles.css, js/mt-anim.js (stored in localStorage mtx.animStyle / mtx.animSpeed / mtx.animEase).
+With the default choice nothing is set on <html>, so the panel behaves exactly as before. Two small hooks in js/main.js:
+staggerCards() keeps .mt-stagger as long as MTAnim.cleanupMs() says (slow speeds / Cascade need more than 900 ms), and the
+settings-reset handler calls MTAnim.reset(). Not scaled by Speed: the sidebar highlight (mt-smooth.js sets its own duration)
+and the 110 ms leave fade (showTab() waits for exactly that long).

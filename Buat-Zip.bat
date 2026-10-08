@@ -19,7 +19,7 @@ echo Hasil : %OUT%
 echo.
 
 mkdir "%TMPD%\MultiTool" >nul 2>nul
-robocopy "%~dp0." "%TMPD%\MultiTool" /E /XD .git /XF update.json changelog.txt Make-Update.bat make-update.ps1 Release-Update.bat Buat-Zip.bat Buat-Zip-Teman.bat Auto-Install.bat .gitignore .gitattributes *.zip *.mtold /NFL /NDL /NJH /NJS /NP >nul
+robocopy "%~dp0." "%TMPD%\MultiTool" /E /XD .git /XF update.json changelog.txt Make-Update.bat make-update.ps1 Release-Update.bat Buat-Zip.bat Buat-Zip-Teman.bat Downgrade.bat Auto-Install.bat .gitignore .gitattributes *.zip *.mtold /NFL /NDL /NJH /NJS /NP >nul
 if errorlevel 8 (
     echo [ERROR] Gagal menyalin file.
     goto fail

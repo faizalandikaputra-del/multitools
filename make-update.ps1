@@ -21,7 +21,7 @@ $changelog = ""
 $cl = Join-Path $root "changelog.txt"
 if (Test-Path -LiteralPath $cl) { $changelog = ([IO.File]::ReadAllText($cl, $utf8)).Trim() }
 
-$skip = @("update.json", "version.json", "Auto-Install.bat", "Make-Update.bat", "make-update.ps1", "changelog.txt", ".gitignore", ".gitattributes", "Release-Update.bat", "Buat-Zip-Teman.bat")
+$skip = @("update.json", "version.json", "Auto-Install.bat", "Make-Update.bat", "make-update.ps1", "changelog.txt", ".gitignore", ".gitattributes", "Release-Update.bat", "Buat-Zip-Teman.bat", "Buat-Zip.bat")
 $prefix = $root.TrimEnd('\') + '\'
 $list = New-Object System.Collections.ArrayList
 Get-ChildItem -LiteralPath $root -Recurse -File -Force | Sort-Object FullName | ForEach-Object {

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.7",
-    "changelog":  "- Perbaikan updater: kini memakai fetch() seperti RE-Faster\r\n- Perbaikan kedipan hitam di tab Curve\r\n- Upd FItur-Fitur\r\n- Fix Bug",
+    "latest_version":  "1.8.2",
+    "changelog":  "- Info / About menampilkan versi terpasang dari version.json (sebelumnya tertulis v1.0.0)\n- Teks \"Propert(ies)\" diperbaiki jadi \"Properties\" (tombol Apply to Selected Properties dan hint)\n- Progress bar Export GIF kini juga tampil di After Effects 2021 (inset diganti top/right/bottom/left)\n- NeuCurve: ikon Ease In / Ease Out digambar ulang, tidak lagi mirip tombol rewind / fast-forward\n- NeuCurve: ikon Ease Out / Ease / Ease In diganti bentuk keyframe After Effects (jam pasir untuk Ease, panah kiri/kanan untuk Out/In)\n- NeuCurve: ikon Speed Graph tidak lagi terlihat menyala setelah dimatikan (hover/sentuhan tidak lagi tampil seperti ON; hover di layar sentuh tidak menempel)\n- NeuCurve: ikon Speed Graph tidak lagi menyala saat posisinya off / nonaktif (di luar mode Bezier); hanya menyala kalau benar-benar aktif\n- NeuCurve: tombol favorit (bookmark simpan preset) kini mati/abu-abu secara default, menyala hanya saat hover atau fokus keyboard\n- NeuCurve: ikon Speed Graph digambar ulang (kurva lonceng lebih besar, garis dasar jelas, tanpa titik ujung yang menggumpal)\n- Tools: fitur baru Auto Morph (dua shape layer; layer atas berubah bentuk jadi layer bawah, jumlah vertex disamakan otomatis, warna fill/stroke ikut dianimasikan)\n- Anchor Point \u0026 Align: ikon Align to Composition dibuat seperti panel Align After Effects\n- Orb ambient berhenti saat kursor/roda/keyboard aktif dan lanjut ~1,5 dtk setelah diam (kartu kaca tidak di-blur ulang tiap frame)\n- Bayangan hover kartu lebar (preset/expr/snippet/qce) lebih ringan\n- Splash dipersingkat (~3,1 dtk jadi ~1,75 dtk), urutan animasi sama\n- Animasi masuk kartu antar tab lebih halus (gerak lebih pendek, ekor ease-out lebih panjang)\n- Teks kecil di tab Curve dinaikkan ke 10px dan kontrasnya diperbaiki; transition: all diganti properti spesifik\n- Animations OFF kini benar-benar mematikan animasi tanpa akhir (tidak lagi berkedip)\n- Tile Shortcutz kini punya cincin fokus keyboard\n- Animasi dekoratif (orb, saber, titik) berhenti saat kursor di luar panel; titik judul statis; saber nonaktif dibekukan\n- Perbaikan updater: kini memakai fetch() seperti RE-Faster\n- Perbaikan kedipan hitam di tab Curve",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -27,12 +27,20 @@
                       "sha256":  "5ede6406eed97a5936ef5734169a992479abd15bf7c153280d22c289cbdc61c1"
                   },
                   {
+                      "path":  "css/mt-ae-icons.css",
+                      "sha256":  "7fccec5379b65774e3f3c15bf1b2cf7ef01523f1438b92da103684bf4fd30009"
+                  },
+                  {
                       "path":  "css/mt-colorpicker.css",
                       "sha256":  "2ca3effbca39559ee8ba77f3f175d2eee98f0ef29ba07c00e162f474685583ab"
                   },
                   {
                       "path":  "css/mt-gif-export.css",
-                      "sha256":  "29a60bb2f3c0a2cb8bbdfa4145ef652433f620205ae2e7d331dc8a3a8e01dec9"
+                      "sha256":  "6290753c0ea1d47364c9f6dcbd0e3fb7119df5faef71b7354d2a06da7e5b2857"
+                  },
+                  {
+                      "path":  "css/mt-motion-fix.css",
+                      "sha256":  "af7ad0ef1354033e725a0df1a2670cb6308087676edd5aea43af693244eb1cbf"
                   },
                   {
                       "path":  "css/mt-scrub.css",
@@ -84,11 +92,11 @@
                   },
                   {
                       "path":  "css/splash.css",
-                      "sha256":  "3ba1efb38c40c58f94932fb7726b72d412ea69eadfecc5d5758e51002c97c264"
+                      "sha256":  "1875499f1cc85a9e393fe1f660938d86474c980146175f4066016a26cda09c81"
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "865c59dd3907c81fd5725de076816e516d84112f181051e785fd2b8f1bff7e8a"
+                      "sha256":  "b6c0862e04e8bad226a17fb527533dff51077a9bd76fdb1c0206d08eeb034fd7"
                   },
                   {
                       "path":  "css/tab-motion.css",
@@ -104,7 +112,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "2ebc9fd49e9dbbd7605c574900fd87453623fd5a766f3f68d6514a13e973e676"
+                      "sha256":  "16de355a3d83e4fb7b3f8434f4f462834c2895efc47109cd78108c746989a588"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -112,7 +120,7 @@
                   },
                   {
                       "path":  "js/ambient-orbs.js",
-                      "sha256":  "b63cfa93db13b89a9a1a83906de925b1ebd121e4db5b8148eaf82a2d65db9a28"
+                      "sha256":  "5c4805d760aff34230e5dfffbd83e95090cc3c3af688f6a8af9765b586c19d29"
                   },
                   {
                       "path":  "js/CSInterface.js",
@@ -120,7 +128,11 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "c240dd2346342168f993074647923d805b3ee065826e02056fd936817d7e4166"
+                      "sha256":  "ee61be04273593faf3905281958dc72c98fbefb717d268fa4ee17fd7cfc01087"
+                  },
+                  {
+                      "path":  "js/mt-away.js",
+                      "sha256":  "d27fc53ede5fc979b1fb8a79b6a6d3aea6165a26634cad1998c23e915024e218"
                   },
                   {
                       "path":  "js/mt-colorpicker.js",
@@ -156,7 +168,7 @@
                   },
                   {
                       "path":  "js/mt-updater.js",
-                      "sha256":  "3ec2a27e7f95349ad00f1db7a3179f02aebd140b83cf9a94ff5802938e2b3ebf"
+                      "sha256":  "0656053f2e5f0681ac3565c394e1c4ba124e767dd6ce7767666495f6796efce5"
                   },
                   {
                       "path":  "js/panel-refinements.js",
@@ -176,7 +188,7 @@
                   },
                   {
                       "path":  "js/splash.js",
-                      "sha256":  "38056bc832df7fe704a5474f54d9ff79164be5bcbf953c427246023f069c715c"
+                      "sha256":  "5c102b09b125110959c98c066092db6e1c68323ddb1cccc8f5de50079303c2f5"
                   },
                   {
                       "path":  "js/tab-wheel.js",
@@ -184,7 +196,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "89b04d95916938d9e0e234a5d8565150c96ba7b7bf532d1f095aa662455f5811"
+                      "sha256":  "4943a4bd4362bd91e75dbaf5ab07a56755b2aa62f7e22d0af0205d5af4fd80a6"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -196,7 +208,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "f4647e285654c29b36f2769bdd591dc8d5e9edc7c47e891772551ea3eed56cad"
+                      "sha256":  "716ac969303fe77930ba6b66766ebacf06331a4e2d2f48c6ef5564a945d12241"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -216,7 +228,7 @@
                   },
                   {
                       "path":  "neucurve/nc-bg.css",
-                      "sha256":  "136a23cff76c9ac5ede82eec4c5cc282a25c0e5dd4b4e53dcae79dd018c079a2"
+                      "sha256":  "26a3562446331ac78aaba2153347b5da09ffcd247b05c7365c43b7abdd9f60e8"
                   },
                   {
                       "path":  "neucurve/nc-bg.js",
@@ -224,7 +236,7 @@
                   },
                   {
                       "path":  "neucurve/nc-extras.css",
-                      "sha256":  "5e9e70dbd73afe397742ffe7f0314b91cff62c3bde48656050fe18b3b1ad5cf1"
+                      "sha256":  "68a240bb2c79eecf8fd30888dd949aee83b5cce012b71510405b940521d3f58c"
                   },
                   {
                       "path":  "neucurve/nc-extras.js",
@@ -247,12 +259,20 @@
                       "sha256":  "1f1ed3a26f68ed13d514aa3d9bfa127588d142cdad411e30e4ac5deae20283a5"
                   },
                   {
+                      "path":  "neucurve/nc-fix20.css",
+                      "sha256":  "8aac84e55935c826c431e4c34265002ed382f76d79587e956fdd4bca454e090e"
+                  },
+                  {
+                      "path":  "neucurve/nc-fix21.css",
+                      "sha256":  "896ea8422ad062f189b32857ab3590542595c993e540a16d26435504867917c4"
+                  },
+                  {
                       "path":  "neucurve/nc-flow.css",
                       "sha256":  "c20ec51543548f770158c808078e7510237c0ee909bfa46f9fee1814027ec366"
                   },
                   {
                       "path":  "neucurve/nc-flow.js",
-                      "sha256":  "dbac0d89dd1d3ed2987a8f31b233e83193f2bcb7c87de097ec680cd03ecc02e6"
+                      "sha256":  "74f94e00d6bd0c4637b14c66b8d2a4e80795fa2504ba614f3c58fb247b85661e"
                   },
                   {
                       "path":  "neucurve/nc-fluid-polish.css",
@@ -284,11 +304,11 @@
                   },
                   {
                       "path":  "neucurve/nc-icons-pro.css",
-                      "sha256":  "b1c08842be07c4e7c4efd9c70c8053b5fe03f92121195aa813ed0608a1379103"
+                      "sha256":  "dbc61716c89a59635bfdcde0502b02c9a510d68794747ce72e01a5b1b1d0aa2c"
                   },
                   {
                       "path":  "neucurve/nc-icons-pro.js",
-                      "sha256":  "c3f9fadbb9ad426f8233d7d4cff2f5fd89794eea310c7adb6be922da8aa4a33b"
+                      "sha256":  "35734c5f5c5f2e923c05fc4a191310df4785a909a97be63b9bcaf60748c861b6"
                   },
                   {
                       "path":  "neucurve/nc-light.css",
@@ -336,7 +356,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "52b390cb23740b3cad4efde5523096bd2e5d6c0cf3b441afa7fe59e2214d6552"
+                      "sha256":  "50c0a4e75a6c2147b3c92b4c16adece9ee89dfb9db5833a9700f6364ad32f3b5"
                   }
               ]
 }

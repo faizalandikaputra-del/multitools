@@ -23,7 +23,10 @@ rem jangan biarkan Git mengubah akhir baris file (penyebab checksum mismatch)
 git config core.autocrlf false
 
 for /f "usebackq delims=" %%v in (`powershell -NoProfile -Command "(ConvertFrom-Json ([IO.File]::ReadAllText('version.json').TrimStart([char]0xFEFF))).version"`) do set "CURVER=%%v"
-echo Versi saat ini: %CURVER%
+for /f "usebackq delims=" %%v in (`powershell -NoProfile -Command "$p='%CURVER%'.Split('.'); $p[$p.Length-1]=[int]$p[$p.Length-1]+1; $p -join '.'"`) do set "SUGVER=%%v"
+
+echo Versi saat ini : %CURVER%
+echo Saran versi baru: %SUGVER%
 echo.
 echo Notepad akan terbuka untuk mengisi changelog, satu perubahan per baris.
 echo Simpan, lalu tutup Notepad untuk melanjutkan.
@@ -32,18 +35,26 @@ start /wait notepad "%~dp0changelog.txt"
 
 echo.
 set "NEWVER="
-set /p NEWVER=Versi baru, contoh 1.8.2 (Enter = tetap %CURVER%): 
+echo ------------------------------------------
+echo  Versi saat ini  : %CURVER%
+echo  Saran versi baru: %SUGVER%
+echo ------------------------------------------
+set /p NEWVER=Versi baru (Enter = %SUGVER%): 
+if "%NEWVER%"=="" set "NEWVER=%SUGVER%"
 echo.
 
-echo [1/4] Membuat update.json ...
-if "%NEWVER%"=="" (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-update.ps1"
-) else (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-update.ps1" -Version "%NEWVER%"
+if "%NEWVER%"=="%CURVER%" (
+    echo [PERHATIAN] Versi sama dengan sebelumnya. Panel tidak akan menampilkan
+    echo notifikasi update kalau versinya tidak naik.
+    choice /c yn /m "Tetap lanjut dengan versi yang sama"
+    if errorlevel 2 goto cancel
 )
+
+echo [1/4] Membuat update.json versi %NEWVER% ...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-update.ps1" -Version "%NEWVER%"
 if errorlevel 1 goto fail
 
-for /f "usebackq delims=" %%v in (`powershell -NoProfile -Command "(ConvertFrom-Json ([IO.File]::ReadAllText('version.json').TrimStart([char]0xFEFF))).version"`) do set "VER=%%v"
+set "VER=%NEWVER%"
 
 echo.
 echo [2/4] Commit versi %VER% ...
@@ -75,6 +86,14 @@ echo ==========================================
 echo  SELESAI - versi %VER% sudah di GitHub
 echo ==========================================
 echo Tunggu 2-5 menit (cache GitHub), lalu cek di panel.
+echo.
+pause
+endlocal
+exit /b 0
+
+:cancel
+echo.
+echo Dibatalkan. Tidak ada yang diubah.
 echo.
 pause
 endlocal

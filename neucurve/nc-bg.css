@@ -15,7 +15,7 @@ body.nc-bg-edit.nc-bg-dragging, body.nc-bg-edit.nc-bg-dragging * { cursor: grabb
 body.nc-bg-edit #nc-bg-editor { opacity: 1; visibility: visible; pointer-events: auto; transform: translate(-50%, 0); transition: opacity .25s, transform .3s; }
 .nc-bge-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .nc-bge-head strong { font-size: 13px; font-weight: 600; }
-.nc-bge-head span { font-size: 9px; color: #777; }
+.nc-bge-head span { font-size: 10px; color: #8a8a8a; }
 .nc-bge-row { display: flex; align-items: center; gap: 8px; }
 .nc-bge-row label { flex: 0 0 62px; font-size: 10px; color: #888; }
 .nc-bge-row input[type="range"] { flex: 1; min-width: 0; -webkit-appearance: none; height: 3px; background: #2a2a30; border-radius: 4px; outline: none; }

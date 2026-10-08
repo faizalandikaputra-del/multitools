@@ -24,5 +24,5 @@
   s.addEventListener("animationend", function (e) { if (e.target === s && e.animationName === "mts-out") { done(); } });
   s.addEventListener("mousedown", skip);
   document.addEventListener("keydown", skip);
-  t = setTimeout(done, 3300);                       // safety net if animationend never fires
+  t = setTimeout(done, 2200);                       // safety net if animationend never fires
 })();

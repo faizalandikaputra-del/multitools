@@ -9,7 +9,11 @@
   "use strict";
 
   var FOLLOW_HOST_THEME = true;   // set false to always stay dark
-  var VERSION = "1.0.0";
+  var VERSION = "1.8.1";   // fallback only: Info / About shows the real installed version from version.json (see infoVersion)
+  function infoVersion() {
+    try { var v = window.MTUpdater && window.MTUpdater.version && window.MTUpdater.version(); if (v && v !== "0.0.0") { return v; } } catch (e) { }
+    return VERSION;
+  }
 
   // ---------------------------------------------------------
   // Tool definitions - add/rename tools here.
@@ -39,7 +43,7 @@
     },
     "expr-code": {
       title: "Expression Code",
-      hint: "Write or save an expression snippet, then apply it to the selected propert(ies).",
+      hint: "Write or save an expression snippet, then apply it to the selected properties.",
       tools: [],
       custom: "exprCode"
     },
@@ -500,7 +504,7 @@
       '</div>' +
       '<div class="info-socials">' + socialBtns + '</div>' +
       '<div class="info-divider"></div>' +
-      '<p><strong>Multi Tool</strong> v' + VERSION + '</p>' +
+      '<p><strong>Multi Tool</strong> v' + infoVersion() + '</p>' +
       '<p class="info-caps">Includes Quick Comp Edit, Anchor Point &amp; Align, Color Palette Pro, and other layer utilities.</p>' +
       '<p>Left-click a tool to run it in After Effects. Right-click a tool square to set its own image.</p>' +
       '<p>Use the gear icon to change the panel background.</p>';
@@ -563,13 +567,16 @@
     { code: "br", row: 2, col: 2, label: "Bottom Right" }
   ];
 
+  // Icons follow After Effects' own Align panel: a solid reference edge (or centre line) and two bars of
+  // different length lined up on it. Bars are <rect> (filled with the accent by css/mt-ae-icons.css), the
+  // reference line is a <path class="align-edge">.
   var ALIGN_BUTTONS = [
-    { code: "left",    label: "Align Left",           icon: '<rect x="4" y="9" width="7" height="6" rx="1"/>' },
-    { code: "hcenter", label: "Align Horizontal Center", icon: '<rect x="8.5" y="9" width="7" height="6" rx="1"/>' },
-    { code: "right",   label: "Align Right",          icon: '<rect x="13" y="9" width="7" height="6" rx="1"/>' },
-    { code: "top",     label: "Align Top",            icon: '<rect x="9" y="4" width="6" height="7" rx="1"/>' },
-    { code: "vcenter", label: "Align Vertical Center", icon: '<rect x="9" y="8.5" width="6" height="7" rx="1"/>' },
-    { code: "bottom",  label: "Align Bottom",         icon: '<rect x="9" y="13" width="6" height="7" rx="1"/>' }
+    { code: "left",    label: "Align Left",           icon: '<path class="align-edge" d="M4 3v18"/><rect x="7" y="6" width="13" height="4.5" rx="0.8"/><rect x="7" y="13.5" width="8" height="4.5" rx="0.8"/>' },
+    { code: "hcenter", label: "Align Horizontal Center", icon: '<path class="align-edge" d="M12 3v18"/><rect x="4" y="6" width="16" height="4.5" rx="0.8"/><rect x="7" y="13.5" width="10" height="4.5" rx="0.8"/>' },
+    { code: "right",   label: "Align Right",          icon: '<path class="align-edge" d="M20 3v18"/><rect x="4" y="6" width="13" height="4.5" rx="0.8"/><rect x="9" y="13.5" width="8" height="4.5" rx="0.8"/>' },
+    { code: "top",     label: "Align Top",            icon: '<path class="align-edge" d="M3 4h18"/><rect x="6" y="7" width="4.5" height="13" rx="0.8"/><rect x="13.5" y="7" width="4.5" height="8" rx="0.8"/>' },
+    { code: "vcenter", label: "Align Vertical Center", icon: '<path class="align-edge" d="M3 12h18"/><rect x="6" y="4" width="4.5" height="16" rx="0.8"/><rect x="13.5" y="7" width="4.5" height="10" rx="0.8"/>' },
+    { code: "bottom",  label: "Align Bottom",         icon: '<path class="align-edge" d="M3 20h18"/><rect x="6" y="4" width="4.5" height="13" rx="0.8"/><rect x="13.5" y="9" width="4.5" height="8" rx="0.8"/>' }
   ];
 
   var FIT_BUTTONS = [
@@ -625,8 +632,7 @@
 
       var alignBtns = ALIGN_BUTTONS.map(function (a) {
         return '<button class="align-btn" data-align="' + a.code + '" title="' + a.label + '">' +
-          '<span class="align-icon"><svg viewBox="0 0 24 24" aria-hidden="true">' +
-            '<rect x="2" y="2" width="20" height="20" rx="2" class="align-bounds"/>' + a.icon +
+          '<span class="align-icon"><svg viewBox="0 0 24 24" aria-hidden="true">' + a.icon +
           '</svg></span>' +
           '<span class="align-text">' + a.label.replace("Align ", "") + '</span>' +
           '</button>';
@@ -1910,7 +1916,7 @@
             "</div>" +
           "</div>" +
           '<div class="field-actions">' +
-            '<button class="btn" id="expr-apply-current">Apply to Selected Propert(ies)</button>' +
+            '<button class="btn" id="expr-apply-current">Apply to Selected Properties</button>' +
             '<button class="btn btn-ghost" id="expr-clear-form" type="button">Clear</button>' +
           "</div>" +
           '<button class="btn-apply" id="expr-save">Save Snippet</button>' +
@@ -2329,6 +2335,18 @@
         '</div>' +
 
         '<div class="ta-section">' +
+          '<h2 class="ta-title">Auto Morph</h2>' +
+          '<p class="field-note">Select two shape layers. The upper one morphs into the lower one: its path (and fill / stroke colors) are keyframed from the playhead. Paths with different vertex counts are matched automatically. Rectangle, Ellipse and Star shapes need Convert to Bezier Path first.</p>' +
+          '<div class="param">' +
+            '<label for="morph-frames">Duration (frames)</label>' +
+            '<input class="num" type="number" id="morph-frames" min="1" max="600" step="1" value="20">' +
+          '</div>' +
+          '<label class="switch-row" for="morph-ease"><span>Easy Ease</span><input type="checkbox" id="morph-ease" checked><span class="switch-track"></span></label>' +
+          '<label class="switch-row" for="morph-hide"><span>Hide the lower layer afterward</span><input type="checkbox" id="morph-hide" checked><span class="switch-track"></span></label>' +
+          '<button class="btn-apply" data-tool-action="automorph">Auto Morph</button>' +
+        '</div>' +
+
+        '<div class="ta-section">' +
           '<h2 class="ta-title">Pre-compose</h2>' +
           '<p class="field-note">Wraps each selected layer into its own new composition, one by one. Each new comp is trimmed to the time span of its layer, like the native "Adjust composition duration" option.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="precomp-move-attrs" checked><span>Move all attributes</span></label>' +
@@ -2421,6 +2439,10 @@
             if (!isFinite(offset) || offset < 0) { offset = 0; }
             var order = wrap.querySelector('input[name="stagger-order"]:checked').value;
             call = Bridge.call("TOOLS_stagger", [offset, order]);
+          } else if (action === "automorph") {
+            var morphFrames = parseInt(wrap.querySelector("#morph-frames").value, 10);
+            if (!isFinite(morphFrames) || morphFrames < 1) { morphFrames = 20; }
+            call = Bridge.call("TOOLS_autoMorph", [morphFrames, wrap.querySelector("#morph-ease").checked, wrap.querySelector("#morph-hide").checked]);
           } else if (action === "precompose") {
             var moveAttrs = wrap.querySelector("#precomp-move-attrs").checked;
             call = Bridge.call("TOOLS_precomposeEach", [moveAttrs]);
@@ -3671,7 +3693,7 @@
           this.myGridHtml() +
           restoreHtml +
         "</div>" +
-        builtinSection("Expression Shortcuts", "Select the target propert(ies) on your selected layer(s), then click a card to inject that expression.", "expr", this.EXPR_PRESETS) +
+        builtinSection("Expression Shortcuts", "Select the target properties on your selected layer(s), then click a card to inject that expression.", "expr", this.EXPR_PRESETS) +
         builtinSection("Quick Effect Shortcuts", "Adds the native effect to every selected layer's Effect Parade.", "effect", this.EFFECT_PRESETS) +
         builtinSection("Utility Shortcuts", "Instant one-click workflow commands.", "util", this.UTIL_PRESETS);
 

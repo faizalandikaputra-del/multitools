@@ -7448,3 +7448,249 @@ function NC_liveRun(fnName, jsonParams) {
     }
 }
 
+
+
+// ======================================================================================================
+// Auto Morph  (Tools tab)
+// ------------------------------------------------------------------------------------------------------
+// Select TWO shape layers. The upper one morphs into the lower one: its first Path is keyframed from its own
+// shape (at the playhead) to the lower layer's shape (after <frames> frames). Different vertex counts are
+// matched by splitting the longest curve segments of the shorter path (shape stays identical), the start vertex
+// and direction are chosen to minimise travel, and the lower layer's shape is converted into the upper layer's
+// space so it lands where the lower layer sits. Fill color, stroke color and stroke width are keyframed too
+// when both layers have them. Limits: 2D layers, the FIRST Path in each layer, group transforms and parents
+// are ignored; Rectangle / Ellipse / Star must be "Convert to Bezier Path" first.
+// ======================================================================================================
+
+function _amFind(group, matchName) {
+  var i, p, r;
+  for (i = 1; i <= group.numProperties; i++) {
+    p = group.property(i);
+    if (p.matchName === matchName) { return p; }
+    if (p.propertyType === PropertyType.INDEXED_GROUP || p.propertyType === PropertyType.NAMED_GROUP) {
+      r = _amFind(p, matchName);
+      if (r) { return r; }
+    }
+  }
+  return null;
+}
+
+function _amDist(a, b) { var dx = a[0] - b[0], dy = a[1] - b[1]; return Math.sqrt(dx * dx + dy * dy); }
+function _amMid(a, b) { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
+
+// Plain-array copy of an AE Shape: v = vertices, i / o = in / out tangents (relative to the vertex).
+function _amRead(shape) {
+  var o = { v: [], i: [], o: [], closed: shape.closed }, k;
+  for (k = 0; k < shape.vertices.length; k++) {
+    o.v.push([shape.vertices[k][0], shape.vertices[k][1]]);
+    o.i.push([shape.inTangents[k][0], shape.inTangents[k][1]]);
+    o.o.push([shape.outTangents[k][0], shape.outTangents[k][1]]);
+  }
+  return o;
+}
+
+function _amToShape(o) {
+  var s = new Shape();
+  s.vertices = o.v; s.inTangents = o.i; s.outTangents = o.o; s.closed = o.closed;
+  return s;
+}
+
+function _amSegPoints(o, idx) {
+  var n = o.v.length, j = (idx + 1) % n, p0 = o.v[idx], p3 = o.v[j];
+  return [p0, [p0[0] + o.o[idx][0], p0[1] + o.o[idx][1]], [p3[0] + o.i[j][0], p3[1] + o.i[j][1]], p3];
+}
+
+// Splits segment idx -> idx+1 at t = 0.5 (de Casteljau). The curve keeps exactly the same shape.
+function _amSplit(o, idx) {
+  var n = o.v.length, j = (idx + 1) % n, P = _amSegPoints(o, idx);
+  var q0 = _amMid(P[0], P[1]), q1 = _amMid(P[1], P[2]), q2 = _amMid(P[2], P[3]);
+  var r0 = _amMid(q0, q1), r1 = _amMid(q1, q2), m = _amMid(r0, r1);
+  o.o[idx] = [q0[0] - P[0][0], q0[1] - P[0][1]];
+  o.i[j] = [q2[0] - P[3][0], q2[1] - P[3][1]];
+  o.v.splice(idx + 1, 0, m);
+  o.i.splice(idx + 1, 0, [r0[0] - m[0], r0[1] - m[1]]);
+  o.o.splice(idx + 1, 0, [r1[0] - m[0], r1[1] - m[1]]);
+}
+
+function _amGrow(o, target) {
+  var n, segs, k, best, bestLen, P, len;
+  while (o.v.length < target) {
+    n = o.v.length;
+    segs = o.closed ? n : n - 1;
+    if (segs < 1) { throw new Error("A path needs at least two vertices to morph."); }
+    best = 0; bestLen = -1;
+    for (k = 0; k < segs; k++) {
+      P = _amSegPoints(o, k);
+      len = _amDist(P[0], P[1]) + _amDist(P[1], P[2]) + _amDist(P[2], P[3]);
+      if (len > bestLen) { bestLen = len; best = k; }
+    }
+    _amSplit(o, best);
+  }
+}
+
+// Same path, other start vertex and / or direction.
+function _amReorder(o, shift, rev) {
+  var n = o.v.length, r = { v: [], i: [], o: [], closed: o.closed }, k, src;
+  for (k = 0; k < n; k++) {
+    src = rev ? (n - 1 - k) : k;
+    r.v.push(o.v[src]);
+    r.i.push(rev ? o.o[src] : o.i[src]);
+    r.o.push(rev ? o.i[src] : o.o[src]);
+  }
+  if (!shift) { return r; }
+  var s = { v: [], i: [], o: [], closed: o.closed };
+  for (k = 0; k < n; k++) {
+    src = (k + shift) % n;
+    s.v.push(r.v[src]); s.i.push(r.i[src]); s.o.push(r.o[src]);
+  }
+  return s;
+}
+
+function _amCost(a, b) {
+  var c = 0, k, dx, dy;
+  for (k = 0; k < a.v.length; k++) { dx = a.v[k][0] - b.v[k][0]; dy = a.v[k][1] - b.v[k][1]; c += dx * dx + dy * dy; }
+  return c;
+}
+
+// Picks the start vertex / direction of b that sits closest to a, so the morph does not twist.
+function _amAlign(a, b) {
+  var n = b.v.length, best = b, bestCost = _amCost(a, b), rev, shift, cand, cost, maxShift;
+  for (rev = 0; rev < 2; rev++) {
+    maxShift = b.closed ? n : 1;
+    for (shift = 0; shift < maxShift; shift++) {
+      if (!rev && !shift) { continue; }
+      cand = _amReorder(b, shift, rev === 1);
+      cost = _amCost(a, cand);
+      if (cost < bestCost) { bestCost = cost; best = cand; }
+    }
+  }
+  return best;
+}
+
+function _amPos(layer, t) {
+  var tg = layer.property("ADBE Transform Group"), p = tg.property("ADBE Position");
+  if (p.dimensionsSeparated) {
+    return [tg.property("ADBE Position_0").valueAtTime(t, false), tg.property("ADBE Position_1").valueAtTime(t, false)];
+  }
+  var v = p.valueAtTime(t, false);
+  return [v[0], v[1]];
+}
+
+// 2x2 linear part of a layer transform (rotation * scale): [m00, m01, m10, m11]
+function _amLinear(layer, t) {
+  var tg = layer.property("ADBE Transform Group");
+  var sc = tg.property("ADBE Scale").valueAtTime(t, false);
+  var rad = tg.property("ADBE Rotate Z").valueAtTime(t, false) * Math.PI / 180;
+  var c = Math.cos(rad), s = Math.sin(rad), sx = sc[0] / 100, sy = sc[1] / 100;
+  return [c * sx, -s * sy, s * sx, c * sy];
+}
+
+function _amAnchor(layer, t) {
+  var a = layer.property("ADBE Transform Group").property("ADBE Anchor Point").valueAtTime(t, false);
+  return [a[0], a[1]];
+}
+
+// Shape b (in layer B space) -> layer A space.
+function _amMap(b, layerA, layerB, t) {
+  var LA = _amLinear(layerA, t), LB = _amLinear(layerB, t);
+  var det = LA[0] * LA[3] - LA[1] * LA[2];
+  if (Math.abs(det) < 1e-9) { throw new Error("The upper layer has a zero scale, so its shape cannot be matched."); }
+  var inv = [LA[3] / det, -LA[1] / det, -LA[2] / det, LA[0] / det];
+  var M = [inv[0] * LB[0] + inv[1] * LB[2], inv[0] * LB[1] + inv[1] * LB[3],
+           inv[2] * LB[0] + inv[3] * LB[2], inv[2] * LB[1] + inv[3] * LB[3]];
+  var pa = _amPos(layerA, t), pb = _amPos(layerB, t), aa = _amAnchor(layerA, t), ab = _amAnchor(layerB, t);
+  var dx = pb[0] - pa[0], dy = pb[1] - pa[1];
+  var out = { v: [], i: [], o: [], closed: b.closed }, k, v, x, y;
+  for (k = 0; k < b.v.length; k++) {
+    v = b.v[k];
+    x = v[0] - ab[0]; y = v[1] - ab[1];                        // layer B local, relative to its anchor
+    out.v.push([aa[0] + inv[0] * (dx + LB[0] * x + LB[1] * y) + inv[1] * (dy + LB[2] * x + LB[3] * y),
+                aa[1] + inv[2] * (dx + LB[0] * x + LB[1] * y) + inv[3] * (dy + LB[2] * x + LB[3] * y)]);
+    out.i.push([M[0] * b.i[k][0] + M[1] * b.i[k][1], M[2] * b.i[k][0] + M[3] * b.i[k][1]]);
+    out.o.push([M[0] * b.o[k][0] + M[1] * b.o[k][1], M[2] * b.o[k][0] + M[3] * b.o[k][1]]);
+  }
+  return out;
+}
+
+function _amEase(prop, t0, t1, dims) {
+  try {
+    var k0 = prop.nearestKeyIndex(t0), k1 = prop.nearestKeyIndex(t1), e = [], d, ks = [k0, k1], q;
+    for (d = 0; d < dims; d++) { e.push(new KeyframeEase(0, 33.33)); }
+    for (q = 0; q < ks.length; q++) { prop.setTemporalEaseAtKey(ks[q], e, e); }
+  } catch (err) { /* easing is a nicety - keep the keyframes if it is refused */ }
+}
+
+// Keyframes pa (top layer) from its own value to pb's value. Returns true when something was keyed.
+function _amKeyPair(pa, pb, t0, t1, easy) {
+  if (!pa || !pb) { return false; }
+  try {
+    if (pa.expressionEnabled || pa.numKeys > 0) { return false; }
+    var va = pa.valueAtTime(t0, false), vb = pb.valueAtTime(t0, false), dims = (va instanceof Array) ? 1 : 1;
+    pa.setValueAtTime(t0, va);
+    pa.setValueAtTime(t1, vb);
+    if (easy) { _amEase(pa, t0, t1, dims); }
+    return true;
+  } catch (err) { return false; }
+}
+
+function TOOLS_autoMorph(frames, easy, hideLower) {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers, layers = [], i;
+    if (!sel || sel.length !== 2) { throw new Error("Select exactly two shape layers. The upper one morphs into the lower one."); }
+    for (i = 0; i < sel.length; i++) { layers.push(sel[i]); }
+    layers.sort(function (a, b) { return a.index - b.index; });
+    var A = layers[0], B = layers[1];
+    for (i = 0; i < 2; i++) {
+      if (layers[i].matchName !== "ADBE Vector Layer") { throw new Error("\"" + layers[i].name + "\" is not a shape layer."); }
+      if (layers[i].locked) { throw new Error("\"" + layers[i].name + "\" is locked."); }
+    }
+    frames = Math.round(Number(frames));
+    if (!isFinite(frames) || frames < 1) { frames = 20; }
+
+    var pathA = _amFind(A.property("ADBE Root Vectors Group"), "ADBE Vector Shape");
+    var pathB = _amFind(B.property("ADBE Root Vectors Group"), "ADBE Vector Shape");
+    if (!pathA || !pathB) {
+      throw new Error("Each layer needs a Path. Rectangle, Ellipse and Star shapes must be converted first (right-click the shape > Convert to Bezier Path).");
+    }
+    if (pathA.expressionEnabled) { throw new Error("The upper layer's Path has an expression. Remove it first."); }
+    if (pathA.numKeys > 0) { throw new Error("The upper layer's Path already has keyframes. Delete them, or use a fresh shape layer."); }
+
+    var t0 = comp.time, t1 = comp.time + frames * comp.frameDuration;
+    var a = _amRead(pathA.valueAtTime(t0, false));
+    var b = _amMap(_amRead(pathB.valueAtTime(t0, false)), A, B, t0);
+    if (a.v.length < 2 || b.v.length < 2) { throw new Error("A path needs at least two vertices to morph."); }
+
+    var target = Math.max(a.v.length, b.v.length);
+    if (target > 1500) { throw new Error("These paths are too detailed to morph (over 1500 vertices)."); }
+    _amGrow(a, target);
+    _amGrow(b, target);
+    b = _amAlign(a, b);
+
+    app.beginUndoGroup("Auto Morph");
+    var extras = 0;
+    try {
+      pathA.setValueAtTime(t0, _amToShape(a));
+      pathA.setValueAtTime(t1, _amToShape(b));
+      if (easy) { _amEase(pathA, t0, t1, 1); }
+
+      var fa = _amFind(A.property("ADBE Root Vectors Group"), "ADBE Vector Graphic - Fill");
+      var fb = _amFind(B.property("ADBE Root Vectors Group"), "ADBE Vector Graphic - Fill");
+      if (fa && fb && _amKeyPair(fa.property("ADBE Vector Fill Color"), fb.property("ADBE Vector Fill Color"), t0, t1, easy)) { extras++; }
+      var sa = _amFind(A.property("ADBE Root Vectors Group"), "ADBE Vector Graphic - Stroke");
+      var sb = _amFind(B.property("ADBE Root Vectors Group"), "ADBE Vector Graphic - Stroke");
+      if (sa && sb) {
+        if (_amKeyPair(sa.property("ADBE Vector Stroke Color"), sb.property("ADBE Vector Stroke Color"), t0, t1, easy)) { extras++; }
+        if (_amKeyPair(sa.property("ADBE Vector Stroke Width"), sb.property("ADBE Vector Stroke Width"), t0, t1, easy)) { extras++; }
+      }
+      if (hideLower) { B.enabled = false; }
+    } finally {
+      app.endUndoGroup();
+    }
+
+    return _ok("Morphed \"" + A.name + "\" into \"" + B.name + "\" over " + frames + " frames (" + target + " vertices" +
+      (extras ? ", plus color/stroke" : "") + ").");
+  } catch (e) {
+    return _err(e);
+  }
+}

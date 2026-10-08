@@ -1,0 +1,16 @@
+/* NeuCurve - nc-fix20.css
+   Save-as-preset (bookmark "favorite") button: it was ALWAYS lit - yellow colour, glow and tinted fill - even when
+   never clicked. Now it is OFF like every other tool icon (same idle colour), lights up on hover / keyboard focus,
+   and presses down on click (the name prompt then opens).
+   Loaded after nc-icons-pro.css. Selectors are spelled out in full so they beat nc-flow.css / nc-polish.css. */
+html body .shell.shell .fl-star { color: var(--fl-icon, #a8a8a8); }
+html body .shell.shell .fl-star svg,
+html body .shell.shell .fl-star svg.ncp { fill: none; stroke: currentColor; stroke-width: 1.7; filter: none; }
+html body .shell.shell .fl-star svg.ncp .ncp-t { fill-opacity: 0; }
+
+html body .shell.shell .fl-star:hover,
+html body .shell.shell .fl-star:focus-visible { color: var(--fl-accent, #ffd21f); }
+html body .shell.shell .fl-star:hover svg.ncp .ncp-t,
+html body .shell.shell .fl-star:focus-visible svg.ncp .ncp-t { fill-opacity: .25; }
+
+html body .shell.shell .fl-star svg.ncp { transition: filter .25s ease, transform .16s cubic-bezier(.3,.9,.4,1.2); }

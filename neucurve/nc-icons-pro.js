@@ -25,7 +25,7 @@
     "Remove Expressions": svg(T(ERASER) + P(ERASER) + P("M22 21H7") + P("m5 11 9 9")),
     "Invert": svg(P("m21 16-4 4-4-4") + P("M17 20V4") + P("m3 8 4-4 4 4") + P("M7 4v16")),
     "Read from AE": svg(T("M3 15h18v3a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z") + P("M21 15v3a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-3") + P("m7.5 9.5 4.5 4.5 4.5-4.5") + P("M12 14V3")),
-    "Speed Graph": svg(T("M3 19C7.2 19 8.6 5 12 5s4.8 14 9 14Z") + P("M3 19C7.2 19 8.6 5 12 5s4.8 14 9 14") + P("M3 19h18", ' stroke-opacity=".45" stroke-width="1.3"') + C(3, 19, 1.6, 1) + C(21, 19, 1.6, 1)),   /* After Effects speed graph: bell-shaped velocity curve over its baseline */
+    "Speed Graph": svg(T("M2.5 20C7 20 8.4 4 12 4s5 16 9.5 16Z") + P("M2.5 20C7 20 8.4 4 12 4s5 16 9.5 16") + P("M2.5 20h19", ' stroke-opacity=".5" stroke-width="1.4"')),   /* After Effects speed graph: bell-shaped velocity curve over its baseline */
     "Save current curve as preset": svg(T("m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z") + P("m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z") + P("M12 7.5v6") + P("M9 10.5h6")),
     "Expression Templates": svg(T("M5 3h14a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z") + '<rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="9" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/>'),
     "Expression Mode": svg(T("M5.5 3h13A2.5 2.5 0 0 1 21 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5v-13A2.5 2.5 0 0 1 5.5 3Z") + '<rect x="3" y="3" width="18" height="18" rx="2.5"/>' + P("M9.5 17c2 0 2.6-1 2.6-3v-4c0-2 .8-3 3-3") + P("M9 11.5h6")),
@@ -36,10 +36,13 @@
     "Settings": svg(T(GEAR) + P(GEAR) + C(12, 12, 3))
   };
   /* Ease buttons are matched by class (their title can be translated) */
+  /* After Effects keyframe shapes: Ease = hourglass, Ease In = hourglass half on the left narrowing into a point on the right,
+     Ease Out = the mirror (point on the left, hourglass half on the right); no centre step, so they do not read as rewind / fast-forward. Filled, soft corners (class ncp-k in nc-icons-pro.css). */
+  var K = function (d) { return '<path class="ncp-k" d="' + d + '"/>'; };
   var BY_CLASS = {
-    "fl-eout": svg(P("M4 20C5 9 11 5 20 5") + C(4, 20, 1.9, 1) + C(20, 5, 1.9, 1)),
-    "fl-ease": svg(P("M4 19C12 19 12 5 20 5") + C(4, 19, 1.9, 1) + C(20, 5, 1.9, 1)),
-    "fl-ein":  svg(P("M4 19C13 19 19 15 20 4") + C(4, 19, 1.9, 1) + C(20, 4, 1.9, 1))
+    "fl-eout": svg(K("M19.5 4.5Q14.5 9.4 10.5 10.1L4.5 12L10.5 13.9Q14.5 14.6 19.5 19.5Z")),
+    "fl-ease": svg(K("M4.5 4.5Q10 9 12 9Q14 9 19.5 4.5V19.5Q14 15 12 15Q10 15 4.5 19.5Z")),
+    "fl-ein":  svg(K("M4.5 4.5Q9.5 9.4 13.5 10.1L19.5 12L13.5 13.9Q9.5 14.6 4.5 19.5Z"))
   };
 
   function titleKey(b) {

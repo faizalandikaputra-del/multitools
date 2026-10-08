@@ -8,7 +8,7 @@
        Material You sets data-theme to its palette scheme (light or dark; js/mt-material.js). Logic + picker: js/mt-uitheme.js -->
   <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
-  <link rel="stylesheet" href="../css/splash.css?v=1">
+  <link rel="stylesheet" href="../css/splash.css?v=2">
   <link rel="stylesheet" href="../css/style.css?v=12">
   <!-- Additive UI polish pass (shimmer sweep, refined easing, GPU hints) - loaded after
        style.css on purpose, see the file's own header comment for what it does and doesn't
@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="../css/mt-colorpicker.css?v=1">
   <!-- Smooth two-part stepper for every <input type="number">. Companion: js/mt-spinbox.js -->
   <link rel="stylesheet" href="../css/mt-spinbox.css?v=1">
-  <link rel="stylesheet" href="../css/mt-gif-export.css?v=1">
+  <link rel="stylesheet" href="../css/mt-gif-export.css?v=2">
   <link rel="stylesheet" href="../css/mt-scrub.css?v=1">
   <!-- Auto update banner + Settings > Updates (js/mt-updater.js) -->
   <link rel="stylesheet" href="../css/mt-updater.css?v=1">
@@ -57,6 +57,9 @@
   <link rel="stylesheet" href="../css/mt-uitheme.css?v=7">
   <!-- Layout clean-up (anchor/flip grids, wrapping text). Keep after mt-uitheme and before material-theme. -->
   <link rel="stylesheet" href="../css/mt-tidy.css?v=1">
+  <link rel="stylesheet" href="../css/mt-ae-icons.css?v=1">
+  <!-- Motion/focus fixes (Animations OFF really off, tile focus ring, fewer endless loops). Needs js/mt-away.js. -->
+  <link rel="stylesheet" href="../css/mt-motion-fix.css?v=3">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -79,7 +82,7 @@
       <div class="mts-author">author <b>zalfndk</b></div>
     </div>
   </div>
-  <script src="../js/splash.js?v=1"></script>
+  <script src="../js/splash.js?v=2"></script>
   <div id="bg-layer" class="bg-layer" aria-hidden="true"></div>
   <div id="bg-motion-layer" class="bg-motion-layer" aria-hidden="true">
     <video id="bg-motion-video" class="bg-motion-media" muted loop autoplay playsinline></video>
@@ -433,6 +436,7 @@
   <script src="../js/CSInterface.js?v=9"></script>
   <!-- Wheel over the left tab bar switches tabs. Loaded BEFORE main.js / smooth-scroll.js on purpose. -->
   <script src="../js/tab-wheel.js?v=1"></script>
+  <script src="../js/mt-away.js?v=2"></script>
   <script src="../js/mt-tooltip.js?v=3"></script>
   <script src="../js/mt-select.js?v=1"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
@@ -445,14 +449,14 @@
   <script src="../js/mt-material.js?v=3"></script>
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
-  <script src="../js/main.js?v=18"></script>
+  <script src="../js/main.js?v=20"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
   <script src="../js/smooth-scroll.js?v=9"></script>
-  <script src="../js/ambient-orbs.js?v=9"></script>
+  <script src="../js/ambient-orbs.js?v=11"></script>
   <script src="../js/panel-refresh.js?v=1"></script>
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
-  <script src="../js/mt-updater.js?v=16"></script>
+  <script src="../js/mt-updater.js?v=17"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->

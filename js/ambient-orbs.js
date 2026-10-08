@@ -28,6 +28,7 @@
 
   function rand(a, b) { return a + Math.random() * (b - a); }
   function reduced() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
+  function away() { return /(^|\s)mt-away(\s|$)/.test(document.documentElement.className); }   // js/mt-away.js
 
   function place(o, animateSeconds) {
     var x = o.fx * W - D / 2, y = o.fy * H - D / 2;
@@ -60,7 +61,8 @@
   }
 
   function step(o) {
-    if (reduced() || !W || !H) { schedule(o, 4000); return; }   // wait until the panel has a size / motion is allowed
+    if (window.__mtMoving) { schedule(o, 1500); return; }                    // user is working: rest
+    if (reduced() || away() || !W || !H) { schedule(o, 4000); return; }   // wait until the panel has a size / motion is allowed
     var secs = rand(MOVE_MIN_S, MOVE_MAX_S);
     pickTarget(o);
     place(o, secs);
@@ -75,6 +77,25 @@
       schedule(o, 400 + i * 900);             // staggered first moves so the orbs never move in sync
     });
   }
+
+  // Freeze every orb exactly where it currently is (no jump): copy the in-flight transform into the inline
+  // style with a 0s transition. Resume with fresh glides once the user has been calm for a moment.
+  function freeze() {
+    state.forEach(function (o) {
+      clearTimeout(o.timer);
+      var t = getComputedStyle(o.el).transform, m = /matrix(3d)?\(([^)]+)\)/.exec(t || "");
+      if (!m || !W || !H) { return; }
+      var v = m[2].split(","), x = parseFloat(m[1] ? v[12] : v[4]), y = parseFloat(m[1] ? v[13] : v[5]);
+      if (isNaN(x) || isNaN(y)) { return; }
+      o.fx = (x + D / 2) / W; o.fy = (y + D / 2) / H;
+      o.el.style.transitionDuration = "0s";
+      o.el.style.transform = "translate3d(" + Math.round(x) + "px," + Math.round(y) + "px,0)";
+    });
+  }
+  window.addEventListener("mt-motion-state", function () {
+    if (window.__mtMoving) { freeze(); }
+    else { state.forEach(function (o, i) { schedule(o, 300 + i * 700); }); }
+  });
 
   var resizeTimer = 0;
   window.addEventListener("resize", function () {

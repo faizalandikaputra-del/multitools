@@ -443,5 +443,5 @@
   setInterval(function () { autoCheck(PERIODIC_MIN - 1); }, PERIODIC_MIN * 60000);
   window.addEventListener("focus", function () { autoCheck(FOCUS_MIN); });
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { autoCheck(FOCUS_MIN); } });
-  window.MTUpdater = { check: check, install: install };
+  window.MTUpdater = { check: check, install: install, version: function () { try { return local().version; } catch (e) { return ""; } } };
 })();

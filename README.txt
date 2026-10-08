@@ -935,3 +935,32 @@ js/mt-updater.js now updates with plain fetch() + cep.fs.writeFile, exactly like
 - Install / manual update on a PC: Auto-Install.bat (copies the folder into %APPDATA%\Adobe\CEP\extensions\MultiTool).
 - Safety: HTTPS only; paths in the feed must be plain relative paths (no "..", no drive letters); hashes are checked; no token is
   needed or stored. Whoever controls the repo controls what runs in the panel, so keep the GitHub account protected (2FA).
+
+SPEED GRAPH ICON STAYS LIT WHILE OFF (fix21)
+--------------------------------------------
+The Speed Graph button only works in Bezier mode. In other modes the app marks it .disabled but keeps the old .active flag, and
+the Flow layout (.fl-ico) had no .disabled style, so the icon stayed lit (accent colour, tinted square, filled bell) although its
+position was OFF. neucurve/nc-fix21.css (loaded after nc-fix20.css) makes a disabled Speed Graph look OFF: dimmed, idle colour,
+no tinted square, no filled bell, no hover lift (light theme included). It lights up only when .active and NOT .disabled.
+No bundle (assets/index.js) change. Tune the dimming with "opacity: .3" at the top of nc-fix21.css.
+
+Part 2 (nc-fix21.css v2): the graph had left speed mode (button state OFF) but the icon still looked lit. Cause: hover looked exactly
+like ON - nc-polish.css gave .fl-ico:hover the accent colour + tinted square + lift, and nc-icons-pro.css filled the bell on hover just
+like on .active - and after a click the pointer (or, on touch screens, a sticky :hover) is still on the button. Now only .active is
+accent + filled; hover on an OFF icon is a faint white lift with no accent / fill, and @media (hover: none) removes hover looks entirely.
+
+EASE / EASE IN / EASE OUT ICONS = AFTER EFFECTS KEYFRAMES (fix22)
+-----------------------------------------------------------------
+The three buttons under the graph (Ease Out | Ease | Ease In) now use the keyframe shapes After Effects shows in the timeline instead of
+little curves: Ease = hourglass; Ease In = hourglass half on the left narrowing into a point on the right; Ease Out = the mirror. Filled, softly rounded corners, same
+colour / hover / active behaviour as before. Edit the paths in BY_CLASS (neucurve/nc-icons-pro.js; the same shapes are kept in ICON of
+neucurve/nc-flow.js as fallback); stroke width / corner softness = ".ncp-k" in neucurve/nc-icons-pro.css (stroke-width 1.4).
+
+BATCH FIXES AFTER THE UI REVIEW (build fixed17)
+-----------------------------------------------
+- Ease In / Ease Out icons redrawn (neucurve/nc-icons-pro.js BY_CLASS + nc-flow.js ICON): no centre step any more, so they no longer
+  read as rewind / fast-forward buttons; deeper concave sides so they read as the two halves of the Ease hourglass.
+- Info / About now shows the installed version from version.json (js/mt-updater.js exposes MTUpdater.version(); js/main.js infoVersion()).
+  Fallback constant VERSION in main.js = "1.8.1". Note: CSXS/manifest.xml still says 1.1.0 - harmless, the updater never touches it.
+- Expression Code: "Propert(ies)" -> "Properties" (button, tab hint, Shortcutz hint).
+- css/mt-gif-export.css: the GIF progress fill used "inset: 0" (not supported by Chromium 74 / AE 2021); now top/right/bottom/left: 0.

@@ -1,0 +1,6 @@
+/* Align icons drawn like After Effects' Align panel: solid reference edge + two accent bars.
+   Replaces the old dashed comp frame (style.css .align-bounds is no longer rendered). */
+.align-btn .align-icon svg { width: 1.5rem; height: 1.5rem; }
+.align-icon .align-edge { fill: none; stroke: var(--text, #f2f2f5); stroke-width: 1.8; stroke-linecap: round; }
+.align-btn:hover .align-edge { stroke: var(--accent-strong, var(--text)); }
+.align-btn .align-icon svg rect { transition: fill var(--dur-fast, 0.16s) ease; }

@@ -1,0 +1,61 @@
+/* NeuCurve - nc-fix21.css
+   Speed Graph button: it could stay LIT (accent colour, tinted square, filled bell) while its position was OFF.
+   The button only works in Bezier mode; in every other mode the app marks it .disabled but keeps the old .active
+   flag, and the Flow layout (.fl-ico) had no .disabled style, so the icon kept glowing as if it were on.
+   Now a disabled Speed Graph always looks OFF: idle colour, no tinted square, no filled bell, no hover lift.
+   It lights up only when it is really ON (.active and NOT .disabled).
+   Loaded after nc-fix20.css. Selectors are spelled out in full so they beat nc-flow.css / nc-polish.css / nc-light.css. */
+
+/* disabled = dimmed, same idea as .fl-tool.disabled */
+html body .shell.shell .fl-ico.disabled {
+  opacity: .3; cursor: not-allowed;
+  color: var(--fl-icon, #a8a8a8); background: transparent; box-shadow: none;
+}
+
+/* disabled never looks lit, even with a stale .active flag */
+html body .shell.shell .fl-ico.disabled.active,
+html body .shell.shell .fl-ico.disabled:hover,
+html body .shell.shell .fl-ico.disabled:focus {
+  color: var(--fl-icon, #a8a8a8); background: transparent; box-shadow: none; transform: none; filter: none;
+}
+html body .shell.shell .fl-ico.disabled svg,
+html body .shell.shell .fl-ico.disabled svg.ncp { filter: none; transform: none; }
+
+/* the translucent fill under the bell (and any other .ncp-t fill) goes back to its idle level */
+html body .shell.shell .fl-ico.disabled svg.ncp .ncp-t,
+html body .shell.shell .fl-ico.disabled.active svg.ncp .ncp-t,
+html body .shell.shell .fl-ico.disabled:hover svg.ncp .ncp-t { fill-opacity: .3; }
+
+/* light theme (nc-light.css forces its own hover / active backgrounds with !important) */
+html.mt-light body .shell.shell .fl-ico.disabled,
+html.mt-light body .shell.shell .fl-ico.disabled:hover,
+html.mt-light body .shell.shell .fl-ico.disabled.active {
+  background-color: transparent !important; box-shadow: none !important;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Part 2 - HOVER MUST NOT LOOK LIKE "ON".
+   The graph had already left speed mode (button state OFF) but the icon still looked lit: nc-polish.css gave
+   .fl-ico:hover the SAME accent colour + tinted square + lift as .active, and nc-icons-pro.css filled the bell (.55)
+   on hover exactly like on .active. After a click the pointer is still over the button - and on touch screens :hover
+   even STICKS after a tap - so an OFF button looked ON.
+   Now: ON  = accent colour + filled bell (only .active).
+        OFF = idle grey; hover is just a faint white lift, no accent, no fill.
+   Touch screens (hover: none) get no hover look at all, so nothing can stick. */
+html body .shell.shell .fl-ico:hover:not(.active):not(.disabled) {
+  color: #fff; background-color: rgba(255,255,255,.06); box-shadow: none; transform: none;
+}
+html body .shell.shell .fl-ico:hover:not(.active) svg.ncp .ncp-t { fill-opacity: .3; }
+
+@media (hover: none) {
+  html body .shell.shell .fl-ico:hover:not(.active) {
+    color: var(--fl-icon, #a8a8a8); background-color: transparent; box-shadow: none; transform: none;
+  }
+}
+
+/* light theme: nc-light.css forces its own hover background with !important */
+html.mt-light body .shell.shell .fl-ico:hover:not(.active) { box-shadow: none !important; }
+@media (hover: none) {
+  html.mt-light body .shell.shell .fl-ico:hover:not(.active) { background-color: transparent !important; }
+}

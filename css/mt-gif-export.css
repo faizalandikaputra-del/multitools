@@ -22,7 +22,7 @@
   background: var(--surface-sunken);
 }
 .gif-progress-fill {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;   /* longhand: "inset" is not in Chromium 74 (AE 2021) */
   border-radius: inherit;
   background: var(--accent);
   transform: scaleX(0);

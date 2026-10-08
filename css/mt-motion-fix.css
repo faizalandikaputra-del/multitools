@@ -1,0 +1,68 @@
+/* ==========================================================
+   Multi Tool - mt-motion-fix.css
+   Motion / focus fixes from the UI audit. Loaded after mt-tidy.css, before material-theme.css.
+   Companion: js/mt-away.js (adds html.mt-away while the pointer is outside the panel).
+   Purely additive: delete this file + mt-away.js and everything is back to the previous behaviour.
+   ========================================================== */
+
+/* 1. "Animations OFF" must really stop endless animations.
+      style.css only shrinks durations to 0.01ms; an `infinite` animation then restarts every frame (strobing).
+      Loaders keep a calm, readable motion instead of nothing. */
+:root[data-reduce-motion="true"] .is-loading,
+:root[data-reduce-motion="true"] .mt-update-dot,
+:root[data-reduce-motion="true"] .idle-session::before,
+:root[data-reduce-motion="true"] .saber-wrap::before,
+:root[data-reduce-motion="true"] .saber-wrap::after,
+:root[data-reduce-motion="true"] .ambient-orb { animation: none !important; }
+:root[data-reduce-motion="true"] .is-loading { opacity: 0.7; }
+:root[data-reduce-motion="true"] .curve-spinner { animation-duration: 1.6s !important; }
+
+/* 2. Keyboard focus on Shortcutz tiles.
+      glass-theme.css kills :focus outlines with !important and the saber ring is off for tiles, so tabbing
+      showed nothing. Same look as hover, but a stronger 2px ring. Own rule: an unknown :focus-visible must not
+      void a comma group in old Chromium. */
+.saber-wrap--tile > .shortcut-tile:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb), 0.95), 0 0 14px var(--accent-glow) !important;
+}
+.shortcut-tile-remove:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.95); opacity: 1; }
+
+/* 3. Fewer perpetual animations.
+   3a. Section dots: static glow instead of one pulsing layer per heading. (The single green dot by the
+       panel title keeps its pulse.) */
+.ta-title::before,
+.preset-group-heading::before,
+.cat-toolbar-name::before { animation: none; opacity: 0.9; will-change: auto; }
+
+/* 3b. Saber ring: an inactive ring is invisible, so freeze it. Paused (not removed) keeps its angle, so
+       turning it on never snaps back to 0deg (the old "glitch on click" bug). */
+.saber-wrap:not(.is-active)::before,
+.saber-wrap:not(.is-active)::after { animation-play-state: paused; }
+
+/* 3c. Pointer away from the panel: freeze purely decorative loops (orbs, saber, status dots).
+       Loaders / spinners / update dot keep running because they are feedback. */
+html.mt-away .ambient-orb,
+html.mt-away .saber-wrap::before,
+html.mt-away .saber-wrap::after,
+html.mt-away .idle-session::before,
+html.mt-away .panel-head h1::before { animation-play-state: paused !important; }
+
+/* 4. Smoother tab-switch entrance: shorter travel, longer ease-out tail, tighter stagger.
+      (tab-motion.css: 14px / scale .94 / .34s / 26ms.) No will-change on purpose: .mt-stagger can be dozens
+      of elements and the browser promotes animating ones by itself. */
+:root { --mt-card-dur: 0.44s; }
+@keyframes mt-card-in {
+  from { opacity: 0; transform: translateY(9px) scale(0.975); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.panel.is-entering .mt-stagger { animation-delay: calc(var(--mt-i, 0) * 22ms); }
+
+/* 5. Calm while working: the orbs' blink rests while the pointer / wheel / keys are active (js/mt-away.js sets
+      html.mt-moving; ambient-orbs.js freezes their drift). The frosted cards are no longer re-blurred each frame
+      during hover / scroll / drag; the glow resumes ~1.5 s after the last input. */
+html.mt-moving .ambient-orb { animation-play-state: paused !important; }
+
+/* 6. Lighter hover shadow on the wide cards (blur 20px -> 14px: less to rasterise every frame of the transition).
+      Small controls (buttons, tabs, tiles) keep the original look. */
+.preset-item:hover, .expr-item:hover, .snippet-card:hover, .qce-res-tile:hover {
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, .6), 0 0 0 1px rgba(var(--accent-rgb, 127, 0, 255), .45);
+}

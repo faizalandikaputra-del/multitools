@@ -37,11 +37,11 @@
     /* v17: every icon now says what the button does (hover tooltips are unchanged) */
     reset: svg('<path d="m7 21-4.3-4.3a2 2 0 0 1 0-2.8l9.6-9.6a2 2 0 0 1 2.8 0l5.6 5.6a2 2 0 0 1 0 2.8L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>'),            /* Remove Expressions = eraser */
     imp: svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>'),                                                             /* Read from AE = download into panel */
-    speed: svg('<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>'),                                                                                                   /* Speed Graph = gauge */
+    speed: svg('<path d="M2.5 20C7 20 8.4 4 12 4s5 16 9.5 16"/><path d="M2.5 20h19" stroke-opacity=".5"/>'),                                                                                                   /* Speed Graph = gauge */
     star: svg('<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/><path d="M12 7.5v6"/><path d="M9 10.5h6"/>'),                                                          /* Save as preset = bookmark + */
-    easeOut: svg('<path d="M4 20C5 9 11 5 20 5"/><circle cx="4" cy="20" r="1.6" fill="currentColor"/><circle cx="20" cy="5" r="1.6" fill="currentColor"/>'),                     /* fast start, soft landing */
-    ease: svg('<path d="M4 19C12 19 12 5 20 5"/><circle cx="4" cy="19" r="1.6" fill="currentColor"/><circle cx="20" cy="5" r="1.6" fill="currentColor"/>'),                      /* soft both ends */
-    easeIn: svg('<path d="M4 19C13 19 19 15 20 4"/><circle cx="4" cy="19" r="1.6" fill="currentColor"/><circle cx="20" cy="4" r="1.6" fill="currentColor"/>'),                    /* soft start, fast end */
+    easeOut: svg('<path d=\"M19.5 4.5Q14.5 9.4 10.5 10.1L4.5 12L10.5 13.9Q14.5 14.6 19.5 19.5Z\" fill=\"currentColor\" stroke-width=\"1.4\"/>'),   /* AE keyframe: point left, hourglass half right */
+    ease: svg('<path d=\"M4.5 4.5Q10 9 12 9Q14 9 19.5 4.5V19.5Q14 15 12 15Q10 15 4.5 19.5Z\" fill=\"currentColor\" stroke-width=\"1.4\"/>'),   /* AE keyframe: hourglass */
+    easeIn: svg('<path d=\"M4.5 4.5Q9.5 9.4 13.5 10.1L19.5 12L13.5 13.9Q9.5 14.6 4.5 19.5Z\" fill=\"currentColor\" stroke-width=\"1.4\"/>'),   /* AE keyframe: hourglass half left, point right */
     hourglass: svg('<path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>'),                                                                 /* Invert = up/down swap arrows */
     book: svg('<rect width="18" height="7" x="3" y="3" rx="1.5"/><rect width="9" height="7" x="3" y="14" rx="1.5"/><rect width="5" height="7" x="16" y="14" rx="1.5"/>'),         /* Expression Templates = template layout */
     code: svg('<rect width="18" height="18" x="3" y="3" rx="2.5"/><path d="M9 17c2 0 2.8-1 2.8-3V10c0-2 .8-3 3.2-3"/><path d="M9 11.5h6"/>'),                                    /* Expression Mode = f(x) box */

@@ -1,3 +1,4 @@
 - Add Animation
 - Adding Feature
 - Change Ui
+- Fix Bug Settings

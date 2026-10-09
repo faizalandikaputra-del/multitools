@@ -1127,3 +1127,11 @@ Idle screen: time in After Effects, timer, notes, daily list (js/mt-idle-focus.j
   (use a real anime voice clip here). If no voice exists on the computer the chime alone plays.
 - Daily list ticks clear at the start of a new day (tasks stay). "Reset everything" clears all of it.
 - The old one-line session chip (.idle-session) is hidden; the live segments replace it.
+
+[settingsfix] Settings window did nothing (Multi Tool) + NeuCurve Settings cut off.
+- js/mt-settings-bus.js: every message now travels over BOTH the CEP event AND a localStorage mailbox (+ storage event + 250 ms poll),
+  de-duplicated by sender id / counter. If CEP events are dropped, the settings still reach the panel and the panel state still reaches the window.
+  Old requests left in storage from an earlier session are never replayed. Cache-bust ?v=2.
+- neucurve/nc-settings-fit.css (new, loaded last in neucurve/settings.html): removes the hard-coded 583 x 620 / 559 x 596 / 383 px boxes.
+  The window now follows its real size; rows wrap; below 560 px wide the sidebar becomes icons only (scaled displays have a narrower CSS viewport than 585).
+- CSXS/manifest.xml: Curve settings window MinSize width 585 -> 380, MaxSize 585 -> 900 so it can be resized. Restart After Effects after installing.

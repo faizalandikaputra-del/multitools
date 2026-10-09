@@ -1,0 +1,40 @@
+/* NeuCurve - nc-settings-fit.css  (load LAST in neucurve/settings.html)
+   Fix: settings window was cut off on the right / bottom. The old CSS hard-coded html/body to 583 x 620 px, the window
+   box to 559 x 596 and the workspace to 383 px. On a display with scaling (125%+) the real CSS viewport is smaller than
+   585 px, so everything past the edge was clipped. Now every box follows the real window size. */
+html, body {
+  box-sizing: border-box !important;
+  height: 100% !important; max-height: none !important; min-height: 0 !important;
+  width: 100% !important; max-width: none !important; min-width: 0 !important;
+  margin: 0 !important; overflow: hidden !important;
+}
+body { display: block !important; padding: 10px !important; }
+.settings-window {
+  box-sizing: border-box !important;
+  height: 100% !important; max-height: none !important; min-height: 0 !important;
+  width: 100% !important; max-width: none !important; min-width: 0 !important;
+}
+.settings-workspace { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; }
+.settings-workspace-header, .settings-body, .settings-section, .settings-group { max-width: 100%; min-width: 0; }
+.settings-body { overflow-x: hidden !important; overflow-y: auto !important; }
+.settings-sidebar { flex: 0 0 176px !important; width: 176px !important; }
+
+/* rows wrap instead of pushing the control out of the window */
+.settings-row, .settings-toggle-row { flex-wrap: wrap; min-width: 0; row-gap: 8px; }
+.settings-row-copy { flex: 1 1 150px !important; min-width: 0 !important; }
+.settings-row-ctrl { flex: 0 1 auto !important; max-width: 100%; min-width: 0; }
+.settings-select, .settings-input, .settings-input-wide { max-width: 100%; }
+.settings-toggle-row { flex-wrap: nowrap; }
+.settings-toggle-row .settings-row-copy { flex: 1 1 0 !important; }
+
+/* narrow window / scaled display: icon-only sidebar, as the Multi Tool settings window does */
+@media (max-width: 560px) {
+  .settings-sidebar { flex-basis: 56px !important; width: 56px !important; }
+  .settings-navigation { padding: 12px 6px !important; }
+  .settings-navigation-item { justify-content: center !important; padding: 0 !important; }
+  .settings-navigation-item span, .settings-brand-copy { display: none !important; }
+  .settings-sidebar-footer { justify-content: center; margin: 0 6px 10px; }
+  .settings-workspace-header h1 { font-size: 26px; }
+  .settings-body { padding-left: 14px !important; padding-right: 14px !important; }
+  .settings-row-copy { flex-basis: 120px !important; }
+}

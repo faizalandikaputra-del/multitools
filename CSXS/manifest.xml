@@ -93,8 +93,8 @@
           <Type>Modeless</Type>
           <Geometry>
             <Size><Width>585</Width><Height>625</Height></Size>
-            <MaxSize><Width>585</Width><Height>1400</Height></MaxSize>
-            <MinSize><Width>585</Width><Height>420</Height></MinSize>
+            <MaxSize><Width>900</Width><Height>1400</Height></MaxSize>
+            <MinSize><Width>380</Width><Height>420</Height></MinSize>
           </Geometry>
         </UI>
       </DispatchInfo>

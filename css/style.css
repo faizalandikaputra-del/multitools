@@ -1016,6 +1016,11 @@ input[type="color"] {
 }
 .btn-apply:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.1); }
 .btn-apply:active { transform: scale(0.94); filter: brightness(0.95); }
+/* two apply buttons side by side (Tools > Pre-compose: Each Layer | Together). Stacks when the panel is very narrow. */
+.btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2, 0.5rem); }
+.btn-pair .btn-apply { width: 100%; min-width: 0; padding-left: 0.5rem; padding-right: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 320px) { .btn-pair { grid-template-columns: 1fr; } }
+
 .btn-apply.is-loading { opacity: 0.6; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
 
 /* "+ Add Custom Shortcut": lives in the Shortcutz tab's own top header now (see Shortcutz.render),

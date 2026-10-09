@@ -2129,6 +2129,50 @@ function TOOLS_precomposeEach(moveAllAttributes) {
   }
 }
 
+// ---------- Pre-compose Together: ALL selected layers into ONE comp ----------
+// Called from JS as: TOOLS_precomposeTogether(moveAllAttributes)
+// Same helper as "Each Layer", but the whole selection goes in one call: one new comp, trimmed to the combined
+// time span (earliest in point .. latest out point), inner layers re-timed, the new pre-comp layer placed back at
+// the original time. With several layers After Effects always moves all attributes (see _pcPrecompose), so the
+// checkbox only matters when a single layer is selected. Name: "Pre-comp (N layers)", made unique in the project.
+function TOOLS_precomposeTogether(moveAllAttributes) {
+  var undoOpen = false;
+  try {
+    var comp = app.project ? app.project.activeItem : null;
+    if (!(comp instanceof CompItem)) { return _notice("Open a composition first."); }
+    var sel = comp.selectedLayers;
+    if (!sel || sel.length < 1) { return _notice("Select one or more layers first."); }
+
+    var layers = [], i, j, taken, base, name, n;
+    for (i = 0; i < sel.length; i++) { layers.push(sel[i]); }
+
+    base = layers.length === 1 ? layers[0].name + " (precomp)" : "Pre-comp (" + layers.length + " layers)";
+    name = base; n = 1;
+    do {                                   // keep the name unique so the new comp is easy to find
+      taken = false;
+      for (j = 1; j <= app.project.numItems; j++) {
+        if (app.project.item(j) instanceof CompItem && app.project.item(j).name === name) { taken = true; break; }
+      }
+      if (taken) { n++; name = base + " " + n; }
+    } while (taken && n < 500);
+
+    app.beginUndoGroup("Pre-compose Together");
+    undoOpen = true;
+    var r = _pcPrecompose(comp, layers, name, !!moveAllAttributes);
+    try { for (i = 1; i <= comp.numLayers; i++) { comp.layer(i).selected = false; } r.precompLayer.selected = true; } catch (eSel) { }
+    app.endUndoGroup();
+    undoOpen = false;
+
+    var msg = layers.length + " layer" + (layers.length === 1 ? "" : "s") + " pre-composed together into \"" + name + "\"; comp trimmed to their time span.";
+    if (moveAllAttributes && layers.length === 1 && !r.moved) { msg += " After Effects refused to move attributes, so they were left on the layer."; }
+    return _ok(msg);
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eUndo) { /* nothing left to close */ } }
+  }
+}
+
 // Trims the In or Out point of every selected layer to the current time
 // indicator (comp.time).
 function TOOLS_trimToPlayhead(edge) {

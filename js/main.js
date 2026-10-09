@@ -2348,9 +2348,12 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title">Pre-compose</h2>' +
-          '<p class="field-note">Wraps each selected layer into its own new composition, one by one. Each new comp is trimmed to the time span of its layer, like the native "Adjust composition duration" option.</p>' +
+          '<p class="field-note"><strong>Each Layer:</strong> wraps every selected layer into its own new composition, one by one. <strong>Together:</strong> wraps all selected layers into ONE composition. Each new comp is trimmed to the time span of its layers, like the native "Adjust composition duration" option.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="precomp-move-attrs" checked><span>Move all attributes</span></label>' +
-          '<button class="btn-apply" data-tool-action="precompose">Pre-comp Each Layer</button>' +
+          '<div class="btn-pair">' +
+            '<button class="btn-apply" data-tool-action="precompose" title="Each selected layer becomes its own pre-comp">Each Layer</button>' +
+            '<button class="btn-apply" data-tool-action="precompose-together" title="All selected layers go into one pre-comp">Together</button>' +
+          '</div>' +
         '</div>' +
 
         '<div class="ta-section">' +
@@ -2446,6 +2449,8 @@
           } else if (action === "precompose") {
             var moveAttrs = wrap.querySelector("#precomp-move-attrs").checked;
             call = Bridge.call("TOOLS_precomposeEach", [moveAttrs]);
+          } else if (action === "precompose-together") {
+            call = Bridge.call("TOOLS_precomposeTogether", [wrap.querySelector("#precomp-move-attrs").checked]);
           } else if (action === "trim") {
             var edge = wrap.querySelector('input[name="trim-edge"]:checked').value;
             call = Bridge.call("TOOLS_trimToPlayhead", [edge]);
@@ -3906,7 +3911,7 @@
   // content (~110ms), then renderTab() swaps the content and plays the staggered card entrance.
   var MT_LEAVE_MS = 110;
   var MT_STAGGER_SEL = ".tool, .ta-group, .beat-card, .snippet-card, .info, .empty, .expr-item, " +
-    ".preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group
+    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group
   var MT_STAGGER_MAX = 14;
   var leaveTimer = null;
   var staggerTimer = null;
@@ -3927,8 +3932,8 @@
     });
   }
 
-  // Gives the first few cards of the freshly built panel an index for the CSS stagger delay.
-  // Items not in view still count, but only the first MT_STAGGER_MAX get a growing delay.
+  // Gives the first few visible cards of the freshly built panel an index for the CSS stagger delay
+  // (see staggerWithin below; only the first MT_STAGGER_MAX get a growing delay).
   function staggerCards() {
     if (staggerTimer) { clearTimeout(staggerTimer); }
     // Drop the helper class once the entrance is over, so later display toggles (search filters,
@@ -3938,19 +3943,43 @@
       var done = panel.querySelectorAll(".mt-stagger");
       Array.prototype.forEach.call(done, function (el) { el.classList.remove("mt-stagger"); });
     }, (window.MTAnim && window.MTAnim.cleanupMs) ? window.MTAnim.cleanupMs() : 900);   // Settings > Tab animation: slower speed / Cascade need longer than 900 ms
-    var nodes = panel.querySelectorAll(MT_STAGGER_SEL);
-    var n = Math.min(nodes.length, MT_STAGGER_MAX * 3);
-    for (var i = 0; i < n; i++) {
+    staggerWithin(panel, true);
+  }
+
+  // Gives each visible card under `root` an index for the CSS stagger delay. Only cards that are actually
+  // on screen count: rows inside a collapsed folder (display:none) or scrolled out of view (the restored
+  // scroll offset is already applied by then) used to eat the 42-slot cap, so the cards the person really
+  // saw did not animate, or animated late. `viaTimer` = the caller (staggerCards) already armed the cleanup.
+  function staggerWithin(root, viaTimer) {
+    var nodes = root.querySelectorAll(MT_STAGGER_SEL);
+    var main = $("main"), mr = main ? main.getBoundingClientRect() : null;
+    var useView = !!(mr && mr.height > 1);
+    var made = [], k = 0, i;
+    for (i = 0; i < nodes.length && k < MT_STAGGER_MAX * 3; i++) {
       var el = nodes[i];
+      if (!el.getClientRects().length) { continue; }              // display:none (collapsed folder, filtered row)
+      if (useView) {
+        var r = el.getBoundingClientRect();
+        if (r.top > mr.bottom + 40) { break; }                    // DOM order = top-to-bottom: nothing further is on screen
+        if (r.bottom < mr.top - 40) { continue; }                 // scrolled above the view
+      }
       // Skip nested matches (e.g. a .tool inside an already-animated .ta-group): one animation per block.
       var p = el.parentNode, nested = false;
-      while (p && p !== panel) {
+      while (p && p !== root) {
         if (p.classList && p.classList.contains("mt-stagger")) { nested = true; break; }
         p = p.parentNode;
       }
       if (nested) { continue; }
       el.classList.add("mt-stagger");
-      el.style.setProperty("--mt-i", String(Math.min(i, MT_STAGGER_MAX)));
+      el.style.setProperty("--mt-i", String(Math.min(k, MT_STAGGER_MAX)));
+      made.push(el);
+      k++;
+    }
+    if (!viaTimer && made.length) {
+      // Late reveal (list that finished loading after the tab entrance): drop the class again afterwards.
+      setTimeout(function () {
+        for (var j = 0; j < made.length; j++) { made[j].classList.remove("mt-stagger"); }
+      }, (window.MTAnim && window.MTAnim.cleanupMs) ? window.MTAnim.cleanupMs() : 900);
     }
   }
 
@@ -5262,6 +5291,11 @@
     // Search text typed in the Presets search box. Kept for the session (like the open folders) so
     // coming back to the tab shows the same filtered list; empty again after an AE restart.
     query: "",
+    // Last scan result, kept for the session ({ folder, sig, presets }). Coming back to the tab paints
+    // this at once - same frame as every other tab - so the saved scroll offset and the card entrance
+    // have real rows to work with. The folder is then re-scanned quietly in the background
+    // (see revalidate() in render()) and the list is only rebuilt if something actually changed.
+    cache: null,
     CONFIRM_MS: 3000,       // how long the delete button waits for its second click
 
     folder: function () { return Store.get(this.key) || ""; },
@@ -5401,6 +5435,7 @@
       function showMessage(text) {
         countEl.textContent = "";
         lastPresets = null;
+        listEl.classList.remove("is-loading");
         listEl.innerHTML = '<div class="empty">' + escapeHtml(text) + "</div>";
       }
 
@@ -5463,6 +5498,7 @@
           return;
         }
         lastPresets = { categorized: categorized, uncategorized: uncategorized };
+        Presets.cache = { folder: self.folder(), sig: JSON.stringify({ c: categorized, u: uncategorized }), presets: { categorized: categorized, uncategorized: uncategorized } };
         countEl.textContent = "(" + total + ")";
         var folder = self.folder();
         var html = "";
@@ -5474,9 +5510,22 @@
           ? '<div class="preset-list preset-list--loose">' + orderedPresets(uncategorized, folder).map(function (p) { return presetItemHtml(p, ""); }).join("") + "</div>"
           : '<p class="field-note preset-group-empty">No loose presets directly in the preset folder.</p>';
         html += '<div class="empty preset-no-match" hidden></div>';
+        var wasLoading = listEl.classList.contains("is-loading");
+        listEl.classList.remove("is-loading");
         listEl.innerHTML = html;
         applyFilter();   // re-applies the current search (if any) to the freshly built rows
         applyScrollRestore();   // only does anything while a tab-switch scroll restore is still pending
+        // First scan of the session: the rows arrive after the tab entrance already ran, so give them
+        // the same card entrance the other tabs get (after the saved scroll offset has been applied).
+        if (wasLoading && !motionOff()) { staggerWithin(listEl, false); }
+      }
+
+      // Cold open (nothing cached yet): placeholder rows instead of an empty box while the folder is scanned.
+      function showSkeleton() {
+        var rows = "";
+        for (var i = 0; i < 5; i++) { rows += '<div class="preset-skel" aria-hidden="true"></div>'; }
+        listEl.classList.add("is-loading");
+        listEl.innerHTML = rows;
       }
 
       // Moves the "Last used" pill/tint (and the folder-header dot) to `row` without re-rendering the list.
@@ -5529,9 +5578,29 @@
         var folder = self.folder();
         syncToolbar();
         if (!folder) { showMessage("Choose the folder that contains your .ffx animation presets."); return Promise.resolve(); }
+        if (!listEl.children.length) { showSkeleton(); }
         return Bridge.call("PRE_list", [folder]).then(function (res) {
           if (!res.ok) { showMessage(res.message || "Could not read the preset folder."); return; }
           showList(res.data && res.data.presets);       // no data in preview mode -> shows the empty state
+        });
+      }
+
+      // Quiet re-scan after the list is already on screen from the cache: files added or removed outside
+      // the panel still show up, but nothing flickers and the scroll offset is kept. Waits until the tab
+      // entrance is over because the ExtendScript call blocks After Effects' UI thread while it reads the folder.
+      function revalidate() {
+        var folder = self.folder();
+        if (!folder || !document.body.contains(wrap)) { return; }
+        Bridge.call("PRE_list", [folder]).then(function (res) {
+          if (!document.body.contains(wrap) || self.folder() !== folder) { return; }   // person left the tab meanwhile
+          if (!res.ok) { showMessage(res.message || "Could not read the preset folder."); return; }
+          var pr = res.data && res.data.presets;
+          if (!pr) { return; }
+          var sig = JSON.stringify({ c: pr.categorized || [], u: pr.uncategorized || [] });
+          if (Presets.cache && Presets.cache.folder === folder && Presets.cache.sig === sig) { return; }   // unchanged: leave the DOM alone
+          var m = $("main"), top = m ? m.scrollTop : 0;
+          showList(pr);
+          if (m) { m.scrollTop = top; }
         });
       }
 
@@ -5687,7 +5756,14 @@
         }
       }, true);
 
-      refresh();
+      var cached = (Presets.cache && Presets.cache.folder === self.folder()) ? Presets.cache : null;
+      if (cached) {
+        syncToolbar();
+        showList(cached.presets);   // instant paint, same frame as the tab itself
+        setTimeout(revalidate, motionOff() ? 0 : 450);
+      } else {
+        refresh();
+      }
       return wrap;
     }
   };

@@ -9,7 +9,7 @@
   <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=2">
-  <link rel="stylesheet" href="../css/style.css?v=12">
+  <link rel="stylesheet" href="../css/style.css?v=13">
   <!-- Additive UI polish pass (shimmer sweep, refined easing, GPU hints) - loaded after
        style.css on purpose, see the file's own header comment for what it does and doesn't
        touch. -->
@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="../css/ambient-orbs.css?v=10">
   <!-- Tab motion: staggered card entrance + quick panel leave on tab switch (opacity/transform only).
        Companion: showTab() in js/main.js. Must stay BEFORE glass-theme.css (which stays last). -->
-  <link rel="stylesheet" href="../css/tab-motion.css?v=9">
+  <link rel="stylesheet" href="../css/tab-motion.css?v=10">
   <!-- Cursor flicker fix: explicit I-beam + own compositor layer for text fields (no effects paused). Must stay BEFORE glass-theme.css. -->
   <link rel="stylesheet" href="../css/cursor-fix.css?v=3">
   <!-- FINAL pass: "Clean Dark Glassmorphism" design tokens + component overrides. Must stay the LAST
@@ -635,7 +635,7 @@
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-anim.js?v=1"></script>
-  <script src="../js/main.js?v=23"></script>
+  <script src="../js/main.js?v=25"></script>
   <script src="../js/mt-smooth.js?v=1"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->

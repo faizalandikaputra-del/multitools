@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.19",
+    "latest_version":  "1.8.20",
     "changelog":  "- Add Animation\r\n- Adding Feature\r\n- Change Ui\r\n- Fix Bug Settings\r\n- Update Besar",
     "files":  [
                   {
@@ -136,11 +136,11 @@
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "ca2f373c41069f9676bd4cb7cd143e0efb545122d7b65b60b9f207db95745a3e"
+                      "sha256":  "e0069140c7b1ef8ff3e7b3cfc3dccec04d5898a0a359bee46bcb33e24fc17db7"
                   },
                   {
                       "path":  "css/tab-motion.css",
-                      "sha256":  "7e3f1e5d07d9591656bc901a221f5de2506941e90af10d7558e78e22801feb1d"
+                      "sha256":  "71faed0d6f0ec66172d11d018d34287f37120e8a3b6223e0cc5746e55a41fd2f"
                   },
                   {
                       "path":  "CSXS/manifest.xml",
@@ -152,7 +152,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "e8842022379f85a35d917b879aa13a3637d5484d5caf0572a84fdf5bb0d72947"
+                      "sha256":  "7f34eb9878f491416a7ed00c0ef5a2ce791c50a4882b663553642d11b0673f49"
                   },
                   {
                       "path":  "html/settings.html",
@@ -172,7 +172,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "eb20654019a6d1c16dc88081ac654c71269f9bdc8a868cbdeac7cf2a9c1a47a1"
+                      "sha256":  "5921563abf9f8d11a1d24419881df390ff270ac834c4fbcf2dd05ef5114fae7c"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "4943a4bd4362bd91e75dbaf5ab07a56755b2aa62f7e22d0af0205d5af4fd80a6"
+                      "sha256":  "a062558d02a24d4dcd8bce3668a6cd2a3c66c6c83156dbf7e5e87b641180c37c"
                   },
                   {
                       "path":  "neucurve/assets/index.js",

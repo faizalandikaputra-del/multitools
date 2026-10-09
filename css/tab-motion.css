@@ -58,3 +58,28 @@
 :root[data-reduce-motion="true"] .panel.is-entering .mt-stagger { animation: none; }
 :root[data-reduce-motion="true"] .panel.is-leaving,
 :root[data-reduce-motion="true"] .panel-head.is-leaving { transition: none; }
+
+/* =============================================================================================
+   Animation Presets: placeholder rows while the folder is scanned for the first time
+   ---------------------------------------------------------------------------------------------
+   Companion: Presets.render() / showSkeleton() in js/main.js. Only shown on the first open of the
+   session (later opens paint the cached list in the same frame as the tab). Same height and radius
+   as a real .preset-item so nothing jumps when the list arrives. Opacity-only pulse (compositor).
+   ============================================================================================= */
+.preset-area.is-loading { pointer-events: none; }
+.preset-skel {
+  height: 2.6rem;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  animation: mt-skel 1.1s ease-in-out infinite alternate;
+}
+.preset-skel:nth-child(2) { animation-delay: 0.08s; }
+.preset-skel:nth-child(3) { animation-delay: 0.16s; }
+.preset-skel:nth-child(4) { animation-delay: 0.24s; }
+.preset-skel:nth-child(5) { animation-delay: 0.32s; }
+@keyframes mt-skel {
+  from { opacity: 0.35; }
+  to   { opacity: 0.8; }
+}
+:root[data-reduce-motion="true"] .preset-skel { animation: none; opacity: 0.55; }

@@ -66,7 +66,7 @@
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
   <link rel="stylesheet" href="../css/mt-idle-focus.css?v=13">
-  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=3">
+  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=6">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -190,10 +190,6 @@
     <div class="idle-time" id="idle-time"></div>
     <div class="idle-session" id="idle-session" aria-hidden="true"></div>
     <div class="idle-message" id="idle-message-el" aria-hidden="true"></div>
-    <!-- Show / hide switch for the cards below (time in AE + dashboard). Logic: js/mt-idle-focus.js (bindFold). Key: mtx.foldHidden -->
-    <button class="idle-fold-btn" id="idle-fold-btn" type="button" role="switch" aria-checked="false" aria-controls="idle-fold">
-      <span class="ifb-track" aria-hidden="true"><i></i></span><span class="ifb-text" id="idle-fold-text">Show panels</span>
-    </button>
     <!-- Status chips side by side: time in After Effects (live) + the countdown timer from Settings (js/mt-idle-focus.js) -->
     <div class="idle-chips">
       <div class="idle-elapsed" id="idle-elapsed" hidden>
@@ -285,7 +281,10 @@
   <!-- Adjust widgets (bottom right of the idle screen): resize + show / hide every idle widget without opening Settings.
        Logic: js/mt-idle-adjust.js. Keys: mtx.wLayout, mtx.showTimer (+ the show* switches of Settings > Idle screen cards). -->
   <div class="idle-adjust" id="idle-adjust">
-    <button class="ia-reset" id="ia-reset" type="button" tabindex="-1">Reset sizes</button>
+    <div class="ia-pills">
+      <button class="ia-pill" id="ia-auto" type="button" tabindex="-1" title="Hide the panels after a few seconds without movement, so the background shows">Auto-hide 6 s</button>
+      <button class="ia-pill" id="ia-reset" type="button" tabindex="-1">Reset layout</button>
+    </div>
     <button class="ia-btn" id="ia-btn" type="button" aria-pressed="false" aria-label="Adjust widgets" title="Adjust widgets">
       <svg class="ia-ico-grid" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M21 14l-7 7"/><path d="M21 18.5L18.5 21"/></svg>
       <svg class="ia-ico-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
@@ -729,8 +728,8 @@
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
-  <script src="../js/mt-idle-focus.js?v=12"></script>
-  <script src="../js/mt-idle-adjust.js?v=3"></script>
+  <script src="../js/mt-idle-focus.js?v=13"></script>
+  <script src="../js/mt-idle-adjust.js?v=7"></script>
   <script src="../js/mt-settings-bus.js?v=2"></script>
   <script src="../js/mt-settings-remote.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the

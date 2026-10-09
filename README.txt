@@ -1277,3 +1277,23 @@ Drag the grip under a widget to resize it (the width snaps to a 12-column grid w
 = defaults, button again or Esc = done. The Timer now always shows on the idle screen with play / pause / reset
 (js/mt-idle-focus.js renderTimerChip). Clicking a button that redraws its own icon (stopwatch / timer) no longer
 counts as an empty-spot click that leaves the idle screen (bindLeave in js/main.js uses event.composedPath()).
+
+Idle screen motion + auto-hide (css/mt-idle-adjust.css, js/mt-idle-adjust.js)
+After a few seconds without movement the Hide-panels switch, every box and the adjust button fade + slide away (staggered),
+so the wallpaper shows; mouse move / touch / key brings them back (the first tap on a hidden UI only reveals it).
+Not while adjusting, hovering a box, typing in one, or in "Mouse move" exit mode. Adjust mode > "Auto-hide" pill: off / 3 / 6 / 10 s
+(key mtx.autoHide, default 6). Changing a box width glides (FLIP, 280 ms); reduce-motion switches all of it off.
+
+Idle screen: move boxes, no more "Hide panels" (fix19)
+The "Hide panels" switch is removed; the cards are always open. Adjust button > drag any box anywhere (eased follow, lift, soft snap
+to the other boxes / its own place with guide lines; double-click = back; arrow keys nudge a focused box). Stored as an offset from the
+box's grid place in mtx.wLayout (x, y). "Reset layout" puts every box back (position + size). Show / hide per box: eye button.
+
+Idle screen: no stacking + self-hiding adjust button (fix20)
+A box dropped / resized / reset onto another one glides to the nearest free spot (red outline while dragging over another box);
+saved layouts are checked when the idle screen opens and when the panel is resized. The adjust button hides itself after ~2.5 s
+without mouse movement (not while adjusting) and returns on the next move.
+
+fix21: clicking the adjust button froze / crashed the panel. The body class observer in js/mt-idle-adjust.js re-wrote a body class on every
+callback while adjusting, which queued a new mutation record, forever. It now reacts only to the idle screen opening / closing, and body
+classes are written only when they really change (setClass).

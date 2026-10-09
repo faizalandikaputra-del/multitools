@@ -1,8 +1,20 @@
-/* Multi Tool - mt-idle-adjust.css (v2)
-   Idle screen widgets: tidy two-column layout, free sizes with text that scales with the box, show / hide on the
-   idle screen itself, and a small "Adjust widgets" button (bottom right).
-   Logic: js/mt-idle-adjust.js. Load AFTER css/mt-idle-focus.css.
-   Chromium-74 safe: no flex gap, no inset shorthand. */
+/* Multi Tool - mt-idle-adjust.css (v4)
+   Idle screen: tidy 12-column widget grid, text that follows the box, resize / show / hide on the idle screen itself,
+   a small "Adjust widgets" button (bottom right), smooth motion, and auto-hide of the whole panel UI so the wallpaper
+   shows. Logic: js/mt-idle-adjust.js. Load AFTER css/mt-idle-focus.css.
+   Chromium-74 safe: no flex gap, no inset shorthand.
+
+   MOTION (one personality for the whole idle UI: calm / premium, glass)
+     entrance  decelerate  --ia-in   cubic-bezier(0.05, 0.7, 0.1, 1)   480 ms  (staggered 45 ms per box, 5 boxes < 250 ms)
+     exit      accelerate  --ia-out  cubic-bezier(0.3, 0, 1, 1)        340 ms  (reverse stagger 25 ms)
+     on-screen standard    --ia-std  cubic-bezier(0.2, 0, 0, 1)        280 ms  (box resize / reflow, js FLIP)
+     Never opacity alone: every fade also moves (translate) and scales a little. prefers-reduced-motion / the app's
+     reduce-motion setting switch it all off. */
+:root {
+  --ia-in: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ia-out: cubic-bezier(0.3, 0, 1, 1);
+  --ia-std: cubic-bezier(0.2, 0, 0, 1);
+}
 
 /* ---------- layout ----------
    Both blocks (chips above the fold, dashboard inside it) are the same 12-column grid with ONE gap (0.7rem) for rows and
@@ -18,7 +30,8 @@
 .idle-chips { margin-top: var(--space-2); }
 .idle-fold .idle-dash { margin-top: 0.7rem; }
 .idle-chips > #idle-elapsed, .idle-chips > #idle-timer, .idle-dash > .idle-card {
-  box-sizing: border-box; min-width: 0; width: auto; max-width: none; margin: 0; text-align: left;
+  position: relative; box-sizing: border-box; min-width: 0; width: auto; max-width: none; margin: 0; text-align: left;
+  border-radius: 1.1rem; padding: 0.7rem 0.9rem 0.75rem;
 }
 .idle-chips > #idle-elapsed, .idle-chips > #idle-timer, .idle-dash > #idle-sw, .idle-dash > #idle-alarms { grid-column: span 6; }
 .idle-dash > #idle-tabs { grid-column: span 12; }
@@ -26,19 +39,30 @@
   .idle-chips > #idle-elapsed, .idle-chips > #idle-timer, .idle-dash > #idle-sw, .idle-dash > #idle-alarms { grid-column: span 12; }
 }
 
-/* Time in After Effects fills its box (its three segments share the width) */
-.idle-elapsed { display: flex; }
-.idle-elapsed .ie-segs { width: 100%; }
-.idle-elapsed .ie-seg { flex: 1 1 0; min-width: 0; }
+/* the "Hide panels" switch is gone: the wrapper never folds, and must not clip a box that was moved out of its column */
+.idle-fold { overflow: visible !important; max-height: none !important; opacity: 1 !important; transform: none !important; visibility: visible !important; }
+
+/* ---------- the boxes, tidied: same radius, same padding, label row on top, controls anchored to the bottom ---------- */
+.idle-elapsed { display: flex; flex-direction: column; gap: 0.5rem; }
+.idle-elapsed .ie-label { padding-left: 0; }
+.idle-elapsed .ie-segs { flex: 1 1 auto; width: 100%; gap: 0.4rem; }
+.idle-elapsed .ie-seg { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0.4rem 0.3rem 0.35rem; border-radius: 0.8rem; }
 .idle-elapsed .ie-unit { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.idle-timer { display: flex; flex-direction: column; }
 .idle-timer .it-top { min-width: 0; }
 .idle-timer .it-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.idle-timer .it-bar { margin-top: 0.6rem; }
+.idle-timer .it-actions { margin-top: auto; padding-top: 0.5rem; }
+
+.idle-dash > #idle-alarms, .idle-dash > #idle-tabs { display: flex; flex-direction: column; }
+.idle-dash .ic-head { margin-bottom: 0.45rem; }
 
 /* a first row that is empty (both chips off) must not leave a gap */
 .idle-chips:empty { display: none; }
 
 /* ---------- text follows the box ----------
-   js/mt-idle-adjust.js sets --wa-s on a resized widget (its width / the default width, kept between 0.68 and 1.3).
+   js/mt-idle-adjust.js sets --wa-s on a resized widget (span / default span, kept between 0.68 and 1.3).
    Every text size in the idle screen is  calc(var(--idle-scale) * ...), so the widget just gets a smaller / larger --idle-scale. */
 .idle-clock { --idle-clock-scale: var(--idle-scale, 1); }
 .wa-scaled { --idle-scale: calc(var(--idle-clock-scale, 1) * var(--wa-s, 1)); }
@@ -50,86 +74,123 @@
 /* hidden from the idle screen with the eye button (Timer only; the other four use Settings > Idle screen cards) */
 .idle-timer.wa-off { display: none !important; }
 
+/* ---------- motion: every box, and the adjust button share one entrance / exit ----------
+   --qi = order in the stagger (1 .. 5 = boxes). Normal state = entrance timings (used when the UI comes back);
+   body.is-quiet (auto-hide, js) = exit timings. Position is not touched (no layout shift): only transform + opacity. */
+#idle-elapsed { --qi: 1; } #idle-timer { --qi: 2; } #idle-sw { --qi: 3; } #idle-alarms { --qi: 4; } #idle-tabs { --qi: 5; }
+.idle-chips > *, .idle-dash > * {
+  transition:
+    opacity 0.48s var(--ia-in) calc(var(--qi, 0) * 45ms),
+    transform 0.48s var(--ia-in) calc(var(--qi, 0) * 45ms),
+    background-color 0.15s ease, outline-color 0.25s ease, border-color 0.2s ease;
+}
+body.is-quiet .idle-chips > *, body.is-quiet .idle-dash > * {
+  opacity: 0; transform: translate3d(0, 0.6rem, 0) scale(0.96); pointer-events: none;
+  transition:
+    opacity 0.34s var(--ia-out) calc((5 - var(--qi, 0)) * 25ms),
+    transform 0.34s var(--ia-out) calc((5 - var(--qi, 0)) * 25ms);
+}
+
 /* ---------- adjust button + toolbar, bottom right: small and quiet until it is used ---------- */
 .idle-adjust {
-  position: fixed; z-index: 42; right: var(--space-4); bottom: var(--space-4);
-  display: flex; align-items: center; height: 3rem;       /* same row as the unlock bar */
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+  position: fixed; z-index: 42; right: var(--space-4); bottom: calc(var(--space-4) + 0.5rem);   /* centred on the 3rem unlock row */
+  display: flex; flex-direction: column; align-items: flex-end;
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translate3d(0, 0.5rem, 0) scale(0.9); transform-origin: 100% 100%;
+  transition: opacity 0.25s var(--ia-out), transform 0.25s var(--ia-out), visibility 0s linear 0.25s;
 }
-body.is-idle .idle-adjust { opacity: 0.55; visibility: visible; pointer-events: auto; transition: opacity 0.6s var(--smooth, ease) 0.15s; }
-body.is-idle .idle-adjust:hover, body.is-idle .idle-adjust:focus-within, body.is-adjusting .idle-adjust { opacity: 1; }
+body.is-idle .idle-adjust {
+  opacity: 0.55; visibility: visible; pointer-events: auto; transform: none;
+  transition: opacity 0.48s var(--ia-in) 0.2s, transform 0.48s var(--ia-in) 0.2s;
+}
+body.is-idle .idle-adjust:hover, body.is-adjusting .idle-adjust { opacity: 1; }
+body.is-quiet .idle-adjust, body.is-ia-quiet:not(.is-adjusting) .idle-adjust {
+  opacity: 0; transform: translate3d(0, 0.5rem, 0) scale(0.9); pointer-events: none;
+  transition: opacity 0.34s var(--ia-out), transform 0.34s var(--ia-out), visibility 0s linear 0.34s; visibility: hidden;
+}
 .idle-unlock[data-mode="move"] ~ .idle-adjust { display: none; }   /* any mouse move leaves the idle screen in that mode */
 /* keep the unlock bar clear of the button on a narrow panel */
 .idle-unlock { width: min(calc(100vw - 7.5rem), 17rem); }
 
-.ia-btn, .ia-reset {
+.ia-btn, .ia-pill {
   box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0;
   font: inherit; color: #fff; cursor: pointer;
   background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.14);
   -webkit-user-select: none; user-select: none;
-  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s var(--smooth, ease), border-color 0.18s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s var(--ia-std), border-color 0.15s ease;
 }
-.ia-btn { width: 2rem; height: 2rem; border-radius: 50%; }
-.ia-btn svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.ia-btn .ia-ico-done { display: none; }
-.ia-btn:hover, .ia-reset:hover { background: rgba(255, 255, 255, 0.2); }
-.ia-btn:active, .ia-reset:active { transform: scale(0.94); }
-.ia-btn:focus-visible, .ia-reset:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.ia-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; }
+/* the two icons sit on top of each other and swap: grid turns away, check turns in */
+.ia-btn svg {
+  position: absolute; left: 50%; top: 50%; width: 0.95rem; height: 0.95rem; margin: -0.475rem 0 0 -0.475rem;
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  transition: opacity 0.2s var(--ia-std), transform 0.3s var(--ia-in);
+}
+.ia-btn .ia-ico-done { opacity: 0; transform: rotate(-70deg) scale(0.4); }
+.ia-btn[aria-pressed="true"] .ia-ico-grid { opacity: 0; transform: rotate(70deg) scale(0.4); }
+.ia-btn[aria-pressed="true"] .ia-ico-done { opacity: 1; transform: none; }
+.ia-btn:hover, .ia-pill:hover { background: rgba(255, 255, 255, 0.2); }
+.ia-btn:active, .ia-pill:active { transform: scale(0.94); }
+.ia-btn:focus-visible, .ia-pill:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
 .ia-btn[aria-pressed="true"] { background: var(--accent, #5b8cff); border-color: transparent; color: var(--on-accent, #fff); }
-.ia-btn[aria-pressed="true"] .ia-ico-grid { display: none; }
-.ia-btn[aria-pressed="true"] .ia-ico-done { display: block; }
 
-.ia-reset {
-  height: 1.7rem; padding: 0 0.7rem; margin-right: 0.4rem; border-radius: 999px; font-size: 0.7rem; font-weight: 500; white-space: nowrap;
-  opacity: 0; visibility: hidden; transform: translateX(0.5rem); pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.25s var(--smooth, ease), visibility 0s linear 0.25s, background-color 0.18s ease;
+/* the small options appear above the button while adjusting, one after the other */
+.ia-pills { position: absolute; right: 0; bottom: calc(100% + 0.5rem); display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
+.ia-pill {
+  height: 1.7rem; padding: 0 0.75rem; margin-top: 0.4rem; border-radius: 999px; font-size: 0.7rem; font-weight: 500; white-space: nowrap;
+  opacity: 0; visibility: hidden; transform: translate3d(0, 0.5rem, 0) scale(0.94); transform-origin: 100% 100%; pointer-events: none;
+  transition: opacity 0.2s var(--ia-out), transform 0.2s var(--ia-out), visibility 0s linear 0.2s, background-color 0.15s ease;
 }
-body.is-adjusting .ia-reset { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition: opacity 0.2s ease, transform 0.25s var(--smooth, ease), background-color 0.18s ease; }
+body.is-adjusting .ia-pill {
+  opacity: 1; visibility: visible; transform: none; pointer-events: auto;
+  transition: opacity 0.3s var(--ia-in), transform 0.3s var(--ia-in), background-color 0.15s ease;
+}
+body.is-adjusting #ia-reset { transition-delay: 0s, 0s, 0s, 0s; }
+body.is-adjusting #ia-auto { transition-delay: 0.05s, 0.05s, 0s, 0s; }
 
 html[data-theme="light"]:not(.has-bg-media) .ia-btn,
-html[data-theme="light"]:not(.has-bg-media) .ia-reset {
+html[data-theme="light"]:not(.has-bg-media) .ia-pill {
   color: var(--text, #1c1b20); background: rgba(255, 255, 255, 0.7); border-color: rgba(0, 0, 0, 0.1);
 }
 html[data-theme="light"]:not(.has-bg-media) .ia-btn[aria-pressed="true"] { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); border-color: transparent; }
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .ia-btn, .ia-reset { -webkit-backdrop-filter: blur(12px) saturate(140%); backdrop-filter: blur(12px) saturate(140%); }
+  .ia-btn, .ia-pill { -webkit-backdrop-filter: blur(12px) saturate(140%); backdrop-filter: blur(12px) saturate(140%); }
 }
 
 /* ---------- widget chrome (built by js/mt-idle-adjust.js): only while adjusting ----------
-   A thin strip that sits on the bottom edge of each widget, half outside it, so nothing inside the widget moves or is covered. */
-.wa-bar { display: none; }
-body.is-adjusting .idle-fold:not(.is-closed) { overflow: visible; }
-body.is-adjusting .idle-elapsed, body.is-adjusting .idle-timer, body.is-adjusting .idle-card {
-  position: relative;
-  outline: 1px dashed rgba(var(--accent-rgb, 91, 140, 255), 0.7); outline-offset: 2px;
-  transition: opacity 0.2s ease, outline-color 0.2s ease;
-}
-body.is-adjusting .idle-elapsed:hover, body.is-adjusting .idle-timer:hover, body.is-adjusting .idle-card:hover,
-body.is-adjusting .wa-drag { outline-color: var(--accent, #5b8cff); }
-body.is-adjusting .wa-drag { outline-style: solid; transition: none; }
-body.is-adjusting .wa-bar {
+   A thin strip on the bottom edge of each widget, half outside it, so nothing inside the widget moves or is covered.
+   It is always in the page (so it can fade / slide), but invisible and inert until body.is-adjusting. */
+.wa-bar {
   position: absolute; z-index: 3; left: 0.4rem; right: 0.4rem; bottom: -0.55rem; height: 1.1rem;
-  display: flex; align-items: center; justify-content: space-between; text-align: left; line-height: 1;
-  pointer-events: none;
+  display: flex; align-items: center; justify-content: space-between; text-align: left; line-height: 1; pointer-events: none;
+  opacity: 0; visibility: hidden; transform: translate3d(0, -0.3rem, 0) scale(0.96);
+  transition: opacity 0.18s var(--ia-out), transform 0.18s var(--ia-out), visibility 0s linear 0.18s;
+}
+body.is-adjusting .wa-bar {
+  opacity: 1; visibility: visible; transform: none;
+  transition: opacity 0.32s var(--ia-in) calc(var(--qi, 0) * 40ms), transform 0.32s var(--ia-in) calc(var(--qi, 0) * 40ms), visibility 0s;
 }
 body.is-adjusting .wa-bar > * { pointer-events: auto; }
+.idle-chips > *, .idle-dash > * { outline: 1px dashed transparent; outline-offset: 2px; }
+body.is-adjusting .idle-chips > *, body.is-adjusting .idle-dash > * { outline-color: rgba(var(--accent-rgb, 91, 140, 255), 0.7); }
+body.is-adjusting .idle-chips > *:hover, body.is-adjusting .idle-dash > *:hover, body.is-adjusting .wa-drag { outline-color: var(--accent, #5b8cff); }
+body.is-adjusting .wa-drag { outline-style: solid; z-index: 4; }
 
 /* a hidden widget stays in place as a dimmed ghost, so it can be switched back on */
 body.is-adjusting .idle-elapsed[hidden] { display: flex !important; }
-body.is-adjusting .idle-timer[hidden], body.is-adjusting .idle-timer.wa-off { display: block !important; }
-body.is-adjusting .idle-dash[hidden] { display: flex !important; }
+body.is-adjusting .idle-timer[hidden], body.is-adjusting .idle-timer.wa-off { display: flex !important; }
+body.is-adjusting .idle-dash[hidden] { display: grid !important; }
 body.is-adjusting .idle-dash.no-sw #idle-sw { display: flex !important; }
-body.is-adjusting .idle-dash.no-al #idle-alarms, body.is-adjusting .idle-dash.no-tabs #idle-tabs { display: block !important; }
+body.is-adjusting .idle-dash.no-al #idle-alarms, body.is-adjusting .idle-dash.no-tabs #idle-tabs { display: flex !important; }
 body.is-adjusting .idle-clock.is-folded .idle-elapsed { display: flex !important; }
-body.is-adjusting .wa-ghost { opacity: 0.4; }
-body.is-adjusting .wa-ghost:hover, body.is-adjusting .wa-ghost:focus-within { opacity: 0.75; }
+body.is-adjusting .idle-chips > .wa-ghost, body.is-adjusting .idle-dash > .wa-ghost { opacity: 0.4; }
+body.is-adjusting .idle-chips > .wa-ghost:hover, body.is-adjusting .idle-dash > .wa-ghost:hover,
+body.is-adjusting .idle-chips > .wa-ghost:focus-within, body.is-adjusting .idle-dash > .wa-ghost:focus-within { opacity: 0.75; }
 
 .wa-eye, .wa-grip {
   box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
   width: 1.1rem; height: 1.1rem; margin: 0; padding: 0; color: #fff; font: inherit; cursor: pointer;
   background: rgba(30, 30, 36, 0.72); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 50%;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s var(--ia-std);
 }
 .wa-grip { border-radius: 0.35rem; cursor: nwse-resize; touch-action: none; }
 .wa-eye svg, .wa-grip svg { width: 0.65rem; height: 0.65rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -137,6 +198,8 @@ body.is-adjusting .wa-ghost:hover, body.is-adjusting .wa-ghost:focus-within { op
 .wa-ghost .wa-eye .wa-ico-on { display: none; }
 .wa-ghost .wa-eye .wa-ico-off { display: block; }
 .wa-eye:hover, .wa-grip:hover, .wa-drag .wa-grip { background: var(--accent, #5b8cff); border-color: transparent; color: var(--on-accent, #fff); }
+.wa-grip:hover, .wa-drag .wa-grip { transform: scale(1.12); }
+.wa-eye:active { transform: scale(0.9); }
 .wa-eye:focus-visible, .wa-grip:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
 .wa-lbl { display: flex; align-items: center; min-width: 0; flex: 1 1 auto; }
 /* the name is only shown on hover, while dragging (then it is the size readout), and for a hidden widget */
@@ -144,10 +207,10 @@ body.is-adjusting .wa-ghost:hover, body.is-adjusting .wa-ghost:focus-within { op
   min-width: 0; margin: 0 0.4rem; padding: 0.18rem 0.45rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 0.62rem; font-weight: 500; color: #fff; background: rgba(30, 30, 36, 0.72); border-radius: 999px;
   font-variant-numeric: tabular-nums; pointer-events: none;
-  opacity: 0; transition: opacity 0.15s ease;
+  opacity: 0; transform: translate3d(-0.2rem, 0, 0); transition: opacity 0.16s var(--ia-out), transform 0.2s var(--ia-in);
 }
-body.is-adjusting .idle-elapsed:hover .wa-name, body.is-adjusting .idle-timer:hover .wa-name, body.is-adjusting .idle-card:hover .wa-name,
-body.is-adjusting .wa-ghost .wa-name, body.is-adjusting .wa-drag .wa-name, .wa-eye:focus-visible + .wa-name { opacity: 1; }
+body.is-adjusting .idle-chips > *:hover .wa-name, body.is-adjusting .idle-dash > *:hover .wa-name,
+body.is-adjusting .wa-ghost .wa-name, body.is-adjusting .wa-drag .wa-name, .wa-eye:focus-visible + .wa-name { opacity: 1; transform: none; }
 
 html[data-theme="light"]:not(.has-bg-media) .wa-eye,
 html[data-theme="light"]:not(.has-bg-media) .wa-grip,
@@ -157,6 +220,43 @@ html[data-theme="light"]:not(.has-bg-media) .wa-eye:hover,
 html[data-theme="light"]:not(.has-bg-media) .wa-grip:hover,
 html[data-theme="light"]:not(.has-bg-media) .wa-drag .wa-grip { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); border-color: transparent; }
 
-:root[data-reduce-motion="true"] .ia-btn, :root[data-reduce-motion="true"] .ia-reset,
-:root[data-reduce-motion="true"] .wa-eye, :root[data-reduce-motion="true"] .wa-grip, :root[data-reduce-motion="true"] .wa-name,
-:root[data-reduce-motion="true"] .idle-adjust, :root[data-reduce-motion="true"] body.is-adjusting .idle-card { transition: none; }
+/* ---------- reduced motion: no fades, slides, springs or reflow animation (js checks the same flag for the FLIP) ---------- */
+:root[data-reduce-motion="true"] .idle-chips > *, :root[data-reduce-motion="true"] .idle-dash > *,
+:root[data-reduce-motion="true"] .idle-adjust, :root[data-reduce-motion="true"] .ia-btn, :root[data-reduce-motion="true"] .ia-btn svg,
+:root[data-reduce-motion="true"] .ia-pill, :root[data-reduce-motion="true"] .wa-bar, :root[data-reduce-motion="true"] .wa-eye,
+:root[data-reduce-motion="true"] .wa-grip, :root[data-reduce-motion="true"] .wa-name { transition: none !important; }
+:root[data-reduce-motion="true"] body.is-quiet .idle-chips > *,
+:root[data-reduce-motion="true"] body.is-quiet .idle-dash > * { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .idle-chips > *, .idle-dash > *, .idle-adjust, .ia-btn, .ia-btn svg, .ia-pill, .wa-bar, .wa-eye, .wa-grip, .wa-name { transition: none !important; }
+  body.is-quiet .idle-chips > *, body.is-quiet .idle-dash > * { transform: none; }
+}
+
+/* ---------- moving a box (js/mt-idle-adjust.js: relative left / top, so the grid, FLIP and auto-hide transforms are untouched) ----------
+   While adjusting, a transparent layer covers each box: drag it anywhere (it follows the pointer with a little easing, picks up
+   with a lift, snaps softly to the other boxes and to its own place, guide lines show what it snapped to). Double-click = back. */
+.wa-move {
+  position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 2; border-radius: inherit; cursor: grab; touch-action: none;
+  visibility: hidden; pointer-events: none; outline: none;
+}
+body.is-adjusting .wa-move { visibility: visible; pointer-events: auto; }
+body.is-adjusting .wa-move:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 3px; }
+body.is-adjusting .wa-lift .wa-move { cursor: grabbing; }
+/* in adjust mode the boxes use short, un-staggered transitions (the stagger belongs to auto-hide) */
+body.is-adjusting .idle-chips > *, body.is-adjusting .idle-dash > * {
+  transition: opacity 0.25s var(--ia-std), transform 0.3s var(--ia-in), box-shadow 0.3s var(--ia-in), outline-color 0.25s ease, border-color 0.2s ease;
+}
+body.is-adjusting .wa-lift {
+  transform: scale(1.025); z-index: 5;
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.42), 0 6px 14px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+.wa-guide { position: fixed; z-index: 43; background: var(--accent, #5b8cff); opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
+.wa-guide.is-on { opacity: 0.85; }
+.wa-guide-v { top: 0; bottom: 0; width: 1px; margin-left: -0.5px; }
+.wa-guide-h { left: 0; right: 0; height: 1px; margin-top: -0.5px; }
+:root[data-reduce-motion="true"] body.is-adjusting .idle-chips > *, :root[data-reduce-motion="true"] body.is-adjusting .idle-dash > *,
+:root[data-reduce-motion="true"] .wa-guide { transition: none !important; }
+:root[data-reduce-motion="true"] body.is-adjusting .wa-lift { transform: none; }
+
+/* a box dragged over another one: red outline, it will glide to the nearest free spot when dropped */
+body.is-adjusting .idle-chips > .wa-clash, body.is-adjusting .idle-dash > .wa-clash { outline-style: solid; outline-color: rgba(255, 107, 107, 0.95); }

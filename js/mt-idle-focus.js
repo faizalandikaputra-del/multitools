@@ -801,7 +801,7 @@
     if (btn) { btn.hidden = !(sw || al || tb || el0); }
   }
   window.__mtApplyCards = function () { applyCards(); };
-  function folded() { return get("foldHidden") !== "0"; }
+  function folded() { return false; }   // the "Hide panels" switch is gone: the cards are always open (move / hide them with the adjust button instead)
   function applyFold(animate) {
     var box = $("idle-clock"), fold = $("idle-fold"), btn = $("idle-fold-btn"), txt = $("idle-fold-text"), shut = folded();
     if (!box || !fold || !btn) { return; }

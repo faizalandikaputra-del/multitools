@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.23",
+    "latest_version":  "1.8.24",
     "changelog":  "- Add Animation\r\n- Adding Feature\r\n- Change Ui\r\n- Fix Bug Settings\r\n- Update Besar",
     "files":  [
                   {
@@ -56,7 +56,7 @@
                   },
                   {
                       "path":  "css/mt-idle-adjust.css",
-                      "sha256":  "517bc14e0dfdd813f0c0300296d6f965aa44d31555fcf4da5b16a4dc9b99e458"
+                      "sha256":  "eff9b91dbc7db1c7e126d931719f28ed09be91efc9a5ab7baba4ee8dc4a40a99"
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
@@ -151,12 +151,16 @@
                       "sha256":  "1a2601f159af485a0a3064a888f8d6c69acffd1041e75a25c7bc4523b6918545"
                   },
                   {
+                      "path":  "desktop.ini",
+                      "sha256":  "d4db3e146caf953d151ad97b613cee73d4f571d8ad9edf76173c0644288fac89"
+                  },
+                  {
                       "path":  "html/assets/profile.jpg",
                       "sha256":  "42079cb851d2afe2065ff03488ba70702ebe81491d265472827b0e6a207ae3b1"
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "28310d98eebf04f30ee79a2b7794a2b0cec2aca9fdf9cdd74b5cb5e786f40aa1"
+                      "sha256":  "4291bcd45bba9869a03b53f1f2f48e8d7d228c9a82acaefbd5eed3fc61785714"
                   },
                   {
                       "path":  "html/settings.html",
@@ -200,11 +204,11 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "4972d41e98e4542d94123f852cfea0c4c8c4848c194d3c2aff5fa62fde14cb11"
+                      "sha256":  "430e7efa045801008c3b3b0c6574f6bc9e3f6f4fc72e4c56274f6f81cf10db2d"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
-                      "sha256":  "80b2f270e62ee72e8750c2fc45e8a9937f481057f8f193c4ebe8f71283527e16"
+                      "sha256":  "92588eaeda16c828600adecdf559bcd1b4a39aef87161d4f8b2de44660c8253f"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -524,7 +528,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "61ff476b6afcf31ec40b244ba890484b5be4596583b155ba46d68546e453f791"
+                      "sha256":  "d745983d2c09e336ef22595610e6fc71160037ba6d72cd8e4fcec558bd936daa"
                   }
               ]
 }

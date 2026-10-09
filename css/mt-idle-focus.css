@@ -144,19 +144,6 @@ body.is-idle .idle-card { pointer-events: auto; }
 :root[data-reduce-motion="true"] .iu-fill, :root[data-reduce-motion="true"] .iu-handle, :root[data-reduce-motion="true"] .iu-label { transition: none; }
 :root[data-reduce-motion="true"] .idle-unlock.is-hint .iu-handle { animation: none; }
 
-/* ---- dotted grid behind the idle screen (19px pitch, soft round dots) ---- */
-.idle-grid {
-  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 39; pointer-events: none; opacity: 0; visibility: hidden;
-  background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 0, rgba(255, 255, 255, 0.16) 1.1px, rgba(255, 255, 255, 0.05) 2px, transparent 2.6px);
-  background-size: 19px 19px; background-position: 6px 6px;
-  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
-}
-body.is-idle .idle-grid { opacity: 1; visibility: visible; transition: opacity 0.8s var(--smooth, ease) 0.1s; }
-html[data-theme="light"]:not(.has-bg-media) .idle-grid {
-  background-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0.2) 1.1px, rgba(0, 0, 0, 0.06) 2px, transparent 2.6px);
-}
-:root[data-reduce-motion="true"] .idle-grid { transition: none; }
-
 /* mouse-move mode: no bar, the cursor itself is the way out */
 .idle-unlock[data-mode="move"] { display: none; }
 

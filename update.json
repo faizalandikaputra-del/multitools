@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.21",
+    "latest_version":  "1.8.22",
     "changelog":  "- Add Animation\r\n- Adding Feature\r\n- Change Ui\r\n- Fix Bug Settings\r\n- Update Besar",
     "files":  [
                   {
@@ -56,7 +56,7 @@
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
-                      "sha256":  "902e5cbe3441c15cbc88ef385eee562a056df6384b22643b094fd4735c14c852"
+                      "sha256":  "789a6b882f160b6917c9c239d20b66a47ed06d7d3c90dd2d45b41850725e2f52"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -152,7 +152,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "a6f1f6c531540a73fdfbc44c935a22fc951b86a5b97e61e0fde8cc4ea5a44d4f"
+                      "sha256":  "21f60d6a811cfc88c760b10ebcaf9396445b26f7821cdde44615c6978005c437"
                   },
                   {
                       "path":  "html/settings.html",

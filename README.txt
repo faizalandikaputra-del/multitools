@@ -1265,3 +1265,7 @@ OFF = ball removed, strip comes back.
 Resize grip fix (neucurve/nc-gsize.js v24): the square box cap used to switch off on the first drag step, so the box jumped to the
 full panel width, the plot jumped, the grip left the cursor, and it flickered at 100%. The box now stays put while resizing; only the
 plot inside it changes (25-100% per axis). Make the whole box bigger with the divider under it. Double-click the grip = auto.
+
+Idle screen: slider and "About" removed
+The unlock slider/tap bar (#idle-unlock), the "Leave idle screen by" setting (mtx.idleExit) and the About info button/popover
+are gone. Leave the idle screen with Esc or by clicking an empty spot (Idle.bindLeave() in js/main.js). Mouse movement does not leave.

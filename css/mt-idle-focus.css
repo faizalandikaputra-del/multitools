@@ -3,11 +3,27 @@
    Today list (with unfinished history) and notes. They stack under the clock inside #idle-clock and use the same frosted-chip
    look as .idle-session / .idle-message (css/style.css > Idle Screensaver). The clock, time and timer chips are display-only;
    the Today list and Notes cards take clicks and typing (pointer-events: auto while body.is-idle). Mouse movement no longer
-   leaves the idle screen: the unlock bar (#idle-unlock, "slide" or "tap" mode, see Idle in js/main.js) or Esc does. */
+   leaves the idle screen: the unlock bar (#idle-unlock: slide, tap, or both, see Idle in js/main.js), Esc, or a click on an empty spot does. */
 
-/* the idle box scrolls when the cards are taller than the panel; bottom padding keeps content clear of the unlock bar */
-.idle-clock { max-height: 100vh; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; padding-bottom: calc(var(--space-4) + 4.25rem); }
-.idle-clock::-webkit-scrollbar { width: 0; height: 0; }
+/* ---- scrolling ----
+   The idle box is the scroll container. Three things used to stop it from scrolling:
+   1) pointer-events:none on the box itself (style.css), so the wheel only worked while the pointer sat exactly on a card;
+   2) justify-content:center / flex-end on a box that is shorter than its content: the overflow then spills out at the TOP,
+      where scrolling can never reach it. Every position now starts at the top and uses auto margins instead, which centre
+      or bottom-align the content only while it fits;
+   3) flex items shrinking instead of overflowing. The trailing spacer keeps the last card clear of the edge
+      (bottom padding is not reliably part of a flex box's scrollable area in Chromium 74). */
+.idle-clock { max-height: 100vh; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+body.is-idle .idle-clock { pointer-events: auto; }
+html body .idle-clock[data-position] { justify-content: flex-start; padding-bottom: var(--space-4); }
+.idle-clock > * { flex-shrink: 0; }
+.idle-clock::after { content: ""; display: block; flex: 0 0 4.5rem; }
+html body .idle-clock[data-position^="bottom"] > :first-child,
+html body .idle-clock[data-position="center"] > :first-child { margin-top: auto; }
+html body .idle-clock[data-position="center"]::after { margin-bottom: auto; }
+/* no visible scrollbar: the page still scrolls (wheel, touch, keys); smoothing lives in js/mt-idle-focus.js (bindSmoothScroll) */
+.idle-clock { scrollbar-width: none; -ms-overflow-style: none; }
+.idle-clock::-webkit-scrollbar { width: 0; height: 0; display: none; background: transparent; }
 body.is-idle .idle-card { pointer-events: auto; }
 
 /* the old one-line "You've been in After Effects for ..." chip is replaced by the live segments below */
@@ -124,7 +140,27 @@ body.is-idle .idle-card { pointer-events: auto; }
 .ic-textarea:hover { background: rgba(255, 255, 255, 0.09); }
 .ic-textarea:focus { border-color: var(--accent, #5b8cff); background: rgba(255, 255, 255, 0.1); }
 
-/* ---- unlock bar: the way out of the idle screen ---- */
+:root[data-reduce-motion="true"] .ic-row, :root[data-reduce-motion="true"] .ic-check, :root[data-reduce-motion="true"] .ic-missed-toggle svg,
+:root[data-reduce-motion="true"] .iu-fill, :root[data-reduce-motion="true"] .iu-handle, :root[data-reduce-motion="true"] .iu-label { transition: none; }
+:root[data-reduce-motion="true"] .idle-unlock.is-hint .iu-handle { animation: none; }
+
+/* ---- dotted grid behind the idle screen (19px pitch, soft round dots) ---- */
+.idle-grid {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 39; pointer-events: none; opacity: 0; visibility: hidden;
+  background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 0, rgba(255, 255, 255, 0.16) 1.1px, rgba(255, 255, 255, 0.05) 2px, transparent 2.6px);
+  background-size: 19px 19px; background-position: 6px 6px;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+body.is-idle .idle-grid { opacity: 1; visibility: visible; transition: opacity 0.8s var(--smooth, ease) 0.1s; }
+html[data-theme="light"]:not(.has-bg-media) .idle-grid {
+  background-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0.2) 1.1px, rgba(0, 0, 0, 0.06) 2px, transparent 2.6px);
+}
+:root[data-reduce-motion="true"] .idle-grid { transition: none; }
+
+/* mouse-move mode: no bar, the cursor itself is the way out */
+.idle-unlock[data-mode="move"] { display: none; }
+
+/* ---- unlock bar: the way out of the idle screen. Modes (data-mode): slide = drag the handle, tap = click, both = drag OR click ---- */
 .idle-unlock {
   position: fixed; z-index: 41; left: 50%; bottom: var(--space-4); width: min(78vw, 17rem); transform: translateX(-50%);
   opacity: 0; visibility: hidden; pointer-events: none;
@@ -204,6 +240,9 @@ html[data-theme="light"]:not(.has-bg-media) .idle-unlock[data-mode="tap"] .iu-la
 :root[data-reduce-motion="true"] .iu-fill, :root[data-reduce-motion="true"] .iu-handle, :root[data-reduce-motion="true"] .iu-label { transition: none; }
 :root[data-reduce-motion="true"] .idle-unlock.is-hint .iu-handle { animation: none; }
 
+.idle-unlock[data-mode="both"] .iu-track { cursor: pointer; }
+.iu-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.idle-unlock[data-mode="both"] .iu-handle { cursor: grab; }
 html[data-theme="light"]:not(.has-bg-media) .idle-elapsed,
 html[data-theme="light"]:not(.has-bg-media) .idle-timer,
 html[data-theme="light"]:not(.has-bg-media) .idle-card {
@@ -219,6 +258,7 @@ html[data-theme="light"]:not(.has-bg-media) .ic-missed { border-top-color: rgba(
 html[data-theme="light"]:not(.has-bg-media) .ic-textarea { background: rgba(0, 0, 0, 0.05); }
 html[data-theme="light"]:not(.has-bg-media) .ic-textarea:hover { background: rgba(0, 0, 0, 0.07); }
 html[data-theme="light"]:not(.has-bg-media) .ic-textarea:focus { background: rgba(0, 0, 0, 0.06); border-color: var(--accent, #5b8cff); }
+
 html[data-theme="light"]:not(.has-bg-media) .iu-track {
   color: var(--text, #1c1b20); background: rgba(255, 255, 255, 0.72); border-color: rgba(0, 0, 0, 0.10);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -230,10 +270,10 @@ html[data-theme="light"]:not(.has-bg-media) .iu-track {
 .idle-clock[data-position="center"] .idle-elapsed, .idle-clock[data-position="center"] .idle-card { text-align: left; }
 
 /* ---- panel Settings modal ---- */
-.idle-timer-row { flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
-.idle-todo-edit { display: flex; align-items: center; gap: var(--space-2); }
 .idle-exit-row { justify-content: space-between; }
 .idle-exit-row .select { flex: 0 1 10rem; width: auto; min-width: 8rem; }
+.idle-timer-row { flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
+.idle-todo-edit { display: flex; align-items: center; gap: var(--space-2); }
 .idle-missed-row { flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
 .idle-todo-edit .idle-message-input { flex: 1; min-width: 0; }
 .idle-notes-input { width: 100%; min-height: 4.2rem; resize: vertical; font-family: inherit; line-height: 1.4; }
@@ -245,3 +285,178 @@ html[data-theme="light"]:not(.has-bg-media) .iu-track {
 .settings-check { flex: 0 0 auto; width: 15px; height: 15px; margin: 0; accent-color: var(--accent, #fff); }
 .settings-row-copy small.settings-timer-readout { display: block; margin-top: 2px; font-size: 18px !important; font-weight: 600; letter-spacing: -0.01em; color: var(--mtp-text, #e5e5e5); font-variant-numeric: tabular-nums; }
 .wbtn-primary { background: var(--accent, #fff); border-color: var(--accent, #fff); color: var(--on-accent, #111); font-weight: 600; }
+
+
+/* =============================================================================================
+   Idle dashboard: stopwatch + alarms side by side, Notes / To-Do tabs below (markup in index.html #idle-dash)
+   Same frosted-glass chips as the rest of the idle screen. Buttons say what they do (Start, Pause, Set alarm),
+   and empty cards invite the next step instead of showing a blank box.
+   ============================================================================================= */
+.idle-chips { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); max-width: min(100%, 36rem); }
+.idle-clock[data-position$="right"] .idle-chips { justify-content: flex-end; }
+.idle-clock[data-position="center"] .idle-chips { justify-content: center; }
+.idle-chips .idle-timer { width: min(80vw, 19rem); }
+
+.idle-dash {
+  display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 0.7rem;
+  width: min(100%, 36rem); margin-top: var(--space-3); text-align: left;
+}
+.idle-dash .idle-card { width: auto; min-width: 0; max-width: none; margin-top: 0; }
+.idle-dash .idle-tabs { grid-column: 1 / -1; }
+@media (max-width: 34rem) { .idle-dash { grid-template-columns: minmax(0, 1fr); } }
+
+.idle-dash .ic-head { align-items: center; min-height: 1.75rem; margin-bottom: 0.25rem; }
+.ic-head .ic-head-end { display: inline-flex; align-items: center; gap: 0.5rem; opacity: 1; font-size: inherit; }
+.ic-empty { margin: 0; font-size: calc(var(--idle-scale) * 0.78rem); line-height: 1.4; opacity: 0.72; }
+.ic-empty[hidden] { display: none; }
+
+/* round buttons: + and play / pause */
+.ic-round {
+  flex: 0 0 auto; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; margin: 0; padding: 0; border: 0; border-radius: 50%;
+  color: inherit; background: rgba(255, 255, 255, 0.24); cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+.ic-round svg { width: 0.7rem; height: 0.7rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ic-round:hover:not(:disabled) { background: rgba(255, 255, 255, 0.36); }
+.ic-round:active:not(:disabled) { transform: scale(0.92); }
+.ic-round:disabled { opacity: 0.35; cursor: default; }
+.ic-round--lg { width: 2.7rem; height: 2.7rem; }
+.ic-round--lg svg { width: 1.15rem; height: 1.15rem; }
+.ic-link {
+  margin: 0; padding: 0.15rem 0.2rem; border: 0; font: inherit; font-size: calc(var(--idle-scale) * 0.76rem); color: inherit; background: transparent;
+  text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; opacity: 0.78; transition: opacity 0.15s ease;
+}
+.ic-link:hover { opacity: 1; }
+.ic-link[hidden] { display: none; }
+.ic-round:focus-visible, .ic-link:focus-visible, .ic-btn:focus-visible, .al-switch:focus-visible, .tb-tab:focus-visible,
+.ic-field:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+
+/* stopwatch */
+.idle-sw { display: flex; flex-direction: column; align-items: center; gap: 0.55rem; padding: 0.95rem 0.85rem 0.6rem; min-height: 9.75rem; }
+.sw-time {
+  margin-top: auto; font-size: calc(var(--idle-scale) * clamp(1.8rem, 7.2vw, 3.1rem)); font-weight: 700; line-height: 1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.25);
+}
+.idle-sw.is-hidden .sw-time { opacity: 0.5; letter-spacing: 0.04em; }
+.idle-sw.is-running .ic-round--lg { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }
+.sw-foot { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 1.4rem; margin-top: auto; }
+.sw-foot .ic-link:only-child { margin-left: auto; }
+.sw-foot .sw-hide { margin-left: auto; }
+
+/* alarms */
+.idle-alarms { padding-bottom: 0.7rem; }
+.al-list { gap: 0.15rem; margin-top: 0.2rem; max-height: 11rem; overflow-y: auto; }
+.al-list::-webkit-scrollbar { width: 0; }
+.al-row { display: flex; align-items: center; gap: 0.6rem; min-height: 2.3rem; padding: 0.1rem 0.15rem; border-radius: 0.55rem; transition: background-color 0.15s ease, opacity 0.2s ease; }
+.al-row:hover, .al-row:focus-within { background: rgba(255, 255, 255, 0.07); }
+.al-row.is-off { opacity: 0.6; }
+.al-row.is-rang { background: rgba(var(--accent-rgb, 91, 140, 255), 0.28); opacity: 1; }
+.al-row .ic-body { padding: 0.1rem 0; }
+.al-tm { font-size: calc(var(--idle-scale) * 1.05rem); font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.al-row:hover .ic-del, .al-row:focus-within .ic-del { opacity: 0.7; }
+.al-switch {
+  position: relative; flex: 0 0 auto; width: 2rem; height: 1.15rem; margin: 0; padding: 0; border: 0; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.26); cursor: pointer; transition: background-color 0.18s ease;
+}
+.al-switch i { position: absolute; top: 0.15rem; left: 0.15rem; width: 0.85rem; height: 0.85rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.18s var(--smooth, ease); }
+.al-switch[aria-checked="true"] { background: var(--accent, #5b8cff); }
+.al-switch[aria-checked="true"] i { transform: translateX(0.85rem); }
+
+.al-form { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0 0.5rem; padding: 0.55rem; border-radius: 0.7rem; background: rgba(255, 255, 255, 0.07); }
+.al-form[hidden] { display: none; }
+.al-form-row { display: flex; gap: 0.4rem; }
+.ic-field {
+  min-width: 0; margin: 0; padding: 0.35rem 0.5rem; box-sizing: border-box; font: inherit; font-size: calc(var(--idle-scale) * 0.82rem); color: inherit;
+  background: rgba(255, 255, 255, 0.1); border: 1px solid transparent; border-radius: 0.5rem; outline: none; transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.ic-field:focus { border-color: var(--accent, #5b8cff); background: rgba(255, 255, 255, 0.14); }
+.ic-field::placeholder { color: inherit; opacity: 0.5; }
+.al-time { flex: 0 0 auto; width: 6.2rem; font-variant-numeric: tabular-nums; }
+.al-label { flex: 1 1 auto; }
+.al-daily { display: flex; align-items: center; gap: 0.4rem; font-size: calc(var(--idle-scale) * 0.76rem); cursor: pointer; }
+.al-daily input { margin: 0; width: 0.9rem; height: 0.9rem; accent-color: var(--accent, #5b8cff); }
+.al-form-actions { display: flex; gap: 0.4rem; }
+.ic-btn {
+  margin: 0; padding: 0.32rem 0.8rem; border: 0; border-radius: 999px; font: inherit; font-size: calc(var(--idle-scale) * 0.76rem); font-weight: 600; color: inherit;
+  background: rgba(255, 255, 255, 0.16); cursor: pointer; transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.ic-btn:hover { background: rgba(255, 255, 255, 0.26); }
+.ic-btn:active { transform: scale(0.96); }
+.ic-btn--primary { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }
+.ic-btn--primary:hover { background: var(--accent, #5b8cff); filter: brightness(1.1); }
+
+/* Notes / To-Do tabs */
+.idle-dash .idle-tabs { padding: 0.65rem 0.65rem 0.7rem; }
+.tb-tabs { display: flex; gap: 0.25rem; padding-left: 0.6rem; position: relative; z-index: 1; }
+.tb-tab {
+  margin: 0; padding: 0.38rem 1rem 0.42rem; font: inherit; font-size: calc(var(--idle-scale) * 0.78rem); font-weight: 600; color: inherit;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); border-bottom: 0; border-radius: 0.65rem 0.65rem 0 0;
+  opacity: 0.7; cursor: pointer; transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+.tb-tab:hover { opacity: 0.95; }
+.tb-tab.is-active { opacity: 1; background: rgba(255, 255, 255, 0.16); }
+.tb-body { padding: 0.6rem 0.75rem 0.7rem; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 0.7rem; }
+.tb-tabs + .tb-body { border-top-left-radius: 0.2rem; }
+.tb-pane[hidden] { display: none; }
+.nt-list { gap: 0.45rem; }
+.nt-item { position: relative; }
+.nt-text { min-height: 2.6rem; padding-right: 2rem; overflow-y: auto; }
+.nt-del { position: absolute; top: 0.3rem; right: 0.3rem; }
+.nt-item:hover .ic-del, .nt-item:focus-within .ic-del { opacity: 0.7; }
+.idle-tabs .ic-missed { border-top-color: rgba(255, 255, 255, 0.2); }
+
+:root[data-reduce-motion="true"] .ic-round, :root[data-reduce-motion="true"] .al-row, :root[data-reduce-motion="true"] .al-switch,
+:root[data-reduce-motion="true"] .al-switch i, :root[data-reduce-motion="true"] .ic-btn, :root[data-reduce-motion="true"] .tb-tab { transition: none; }
+
+/* light style without a background image / GIF / video behind the idle screen */
+html[data-theme="light"]:not(.has-bg-media) .ic-round { background: rgba(0, 0, 0, 0.09); }
+html[data-theme="light"]:not(.has-bg-media) .ic-round:hover:not(:disabled) { background: rgba(0, 0, 0, 0.16); }
+html[data-theme="light"]:not(.has-bg-media) .idle-sw.is-running .ic-round--lg { background: var(--accent, #5b8cff); }
+html[data-theme="light"]:not(.has-bg-media) .sw-time { text-shadow: none; }
+html[data-theme="light"]:not(.has-bg-media) .al-row:hover, html[data-theme="light"]:not(.has-bg-media) .al-row:focus-within { background: rgba(0, 0, 0, 0.05); }
+html[data-theme="light"]:not(.has-bg-media) .al-switch { background: rgba(0, 0, 0, 0.22); }
+html[data-theme="light"]:not(.has-bg-media) .al-switch[aria-checked="true"] { background: var(--accent, #5b8cff); }
+html[data-theme="light"]:not(.has-bg-media) .al-form { background: rgba(0, 0, 0, 0.05); }
+html[data-theme="light"]:not(.has-bg-media) .ic-field { background: rgba(0, 0, 0, 0.06); }
+html[data-theme="light"]:not(.has-bg-media) .ic-field:focus { background: rgba(0, 0, 0, 0.04); }
+html[data-theme="light"]:not(.has-bg-media) .ic-btn { background: rgba(0, 0, 0, 0.08); }
+html[data-theme="light"]:not(.has-bg-media) .ic-btn:hover { background: rgba(0, 0, 0, 0.14); }
+html[data-theme="light"]:not(.has-bg-media) .ic-btn--primary { background: var(--accent, #5b8cff); }
+html[data-theme="light"]:not(.has-bg-media) .tb-tab { background: rgba(0, 0, 0, 0.04); border-color: rgba(0, 0, 0, 0.1); }
+html[data-theme="light"]:not(.has-bg-media) .tb-tab.is-active, html[data-theme="light"]:not(.has-bg-media) .tb-body { background: rgba(255, 255, 255, 0.7); }
+html[data-theme="light"]:not(.has-bg-media) .tb-body { border-color: rgba(0, 0, 0, 0.1); }
+html[data-theme="light"]:not(.has-bg-media) .idle-tabs .ic-missed { border-top-color: rgba(0, 0, 0, 0.12); }
+
+/* ---- To-Do progress bar ---- */
+.td-progress { height: 0.3rem; margin: 0.1rem 0 0.45rem; border-radius: 999px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+.td-progress[hidden] { display: none; }
+.td-progress i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent, #5b8cff); transition: width 0.45s var(--smooth, ease); }
+.td-progress.is-complete i { box-shadow: 0 0 10px rgba(var(--accent-rgb, 91, 140, 255), 0.7); }
+html[data-theme="light"]:not(.has-bg-media) .td-progress { background: rgba(0, 0, 0, 0.12); }
+:root[data-reduce-motion="true"] .td-progress i { transition: none; }
+
+/* ---- narrow panel: everything shrinks to the panel width instead of spilling out ---- */
+.idle-elapsed, .idle-timer, .idle-card, .idle-dash, .idle-chips { box-sizing: border-box; min-width: 0; }
+.idle-clock > * { max-width: 100%; }
+.sw-time { font-size: calc(var(--idle-scale) * clamp(1rem, 11vw, 2.2rem)); }
+@media (min-width: 34rem) { .sw-time { font-size: calc(var(--idle-scale) * clamp(1.8rem, 7.2vw, 3.1rem)); } }
+@media (max-width: 26rem) {
+  html body .idle-clock[data-position] { padding-left: var(--space-2); padding-right: var(--space-2); }
+  .idle-chips { width: 100%; max-width: 100%; }
+  .idle-elapsed, .idle-timer, .idle-chips .idle-timer, .idle-card { width: 100%; max-width: 100%; }
+  .idle-dash { width: 100%; }
+  .idle-elapsed { display: flex; padding: 0.5rem 0.5rem 0.55rem; }
+  .ie-segs { gap: 0.25rem; }
+  .ie-seg { flex: 1 1 0; min-width: 0; padding: 0.3rem 0.15rem 0.25rem; }
+  .ie-unit { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(var(--idle-scale) * 0.56rem); }
+  .ie-num { font-size: calc(var(--idle-scale) * clamp(0.95rem, 7vw, 1.4rem)); }
+  .idle-sw { padding: 0.7rem 0.5rem 0.5rem; }
+  .idle-dash .idle-tabs { padding: 0.5rem 0.4rem 0.55rem; }
+  .tb-tabs { padding-left: 0.3rem; gap: 0.2rem; }
+  .tb-tab { flex: 1 1 0; min-width: 0; padding: 0.35rem 0.2rem 0.4rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tb-body { padding: 0.5rem 0.5rem 0.55rem; }
+  .ic-head { flex-wrap: wrap; row-gap: 0.2rem; }
+  .al-form-row { flex-wrap: wrap; }
+  .al-time, .al-label { flex: 1 1 100%; width: 100%; }
+  .al-form-actions { flex-wrap: wrap; }
+}

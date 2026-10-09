@@ -7,9 +7,12 @@
        the day changed move to "Unfinished history" (mtx.missed): finish them later from the idle screen. Ticking today's
        task with the same text also clears its history entry.
      - the Today list and the Notes card on the idle screen are interactive (tick, edit, add, remove); the way out of the
-       idle screen is the unlock bar handled by the Idle module in js/main.js.
+       idle screen is Esc or a click on an empty spot, handled by the Idle module in js/main.js.
      - tasks + notes + history are also written to Documents/MyMultitoolExtension/DailyTasks.json (and kept in memory), so
        they survive a cleared or full localStorage (a big GIF background can fill it) and are restored on the next start.
+   - idle dashboard: stopwatch (start / pause / reset, Hide masks the digits), alarms (time, label, repeat every day; rings with the
+     timer sound), Notes / To-Do tabs (several notes; the first one is the note edited in Settings), and an info popover.
+     Keys: swState (idle|running|paused), swStart, swAcc, swHidden, alarms (JSON), noteList (JSON), idleTab (notes|todo).
    The other controls live in #settings-modal (mirrored into the Settings window by js/mt-settings-remote.js). Load AFTER
    js/main.js. ES5, Chromium-74 safe.
    Keys (all prefixed "mtx."): showElapsed, tH, tM, tState (idle|running|paused|done), tEnd, tRemain, tTotal,
@@ -203,14 +206,14 @@
   function snapshot() {
     var todos = [], i;
     for (i = 1; i <= TODOS; i++) { todos.push({ t: get("todo" + i) || "", d: get("todoDone" + i) === "1" }); }
-    return { v: 1, saved: num0(get("todoSaved")), day: get("todoDay") || "", notes: get("notes") || "", todos: todos, missed: readMissed() };
+    return { v: 1, saved: num0(get("todoSaved")), day: get("todoDay") || "", notes: get("notes") || "", noteList: readNotes(), alarms: readAlarms(), todos: todos, missed: readMissed() };
   }
   var saveTimer = 0;
   function flushFile() { clearTimeout(saveTimer); saveTimer = 0; if (dataFile) { dataFile.write(snapshot()); } }
   function persist() { set("todoSaved", Date.now()); clearTimeout(saveTimer); saveTimer = setTimeout(flushFile, 400); }
   function hasData() {
     var i; for (i = 1; i <= TODOS; i++) { if ((get("todo" + i) || "").trim()) { return true; } }
-    return !!(get("notes") || "").trim() || readMissed().length > 0;
+    return !!(get("notes") || "").trim() || readMissed().length > 0 || readNotes().length > 0 || readAlarms().length > 0;
   }
   // localStorage empty / older than the file (cleared, or it was full) -> take the file
   function restoreFromFile() {
@@ -223,6 +226,11 @@
       if (t && it.d) { set("todoDone" + i, "1"); } else { del("todoDone" + i); }
     }
     if (f.notes) { set("notes", String(f.notes).slice(0, 400)); } else { del("notes"); }
+    if (Array.isArray(f.noteList)) {
+      set("noteList", JSON.stringify(f.noteList.slice(0, NOTES_MAX)));
+      set("notes", f.noteList[0] ? String(f.noteList[0].t || "").slice(0, 400) : "");
+    }
+    if (Array.isArray(f.alarms)) { set("alarms", JSON.stringify(f.alarms.slice(0, AL_MAX))); }
     if (f.day) { set("todoDay", f.day); }
     writeMissed(Array.isArray(f.missed) ? f.missed : []);
     set("todoSaved", num0(f.saved));
@@ -325,15 +333,23 @@
       missedKey = key;
     }
   }
+  function setProgress(n, done) {                   // To-Do progress bar: share of today's tasks that are ticked
+    var bar = el.todoBar; if (!bar) { return; }
+    var pct = n ? Math.round(done / n * 100) : 0;
+    bar.hidden = !n;
+    bar.classList.toggle("is-complete", n > 0 && done === n);
+    bar.setAttribute("aria-valuenow", String(pct));
+    bar.firstChild.style.width = pct + "%";
+  }
   function renderLists() {
     var items = slots(), n = 0, done = 0, i;
     for (i = 0; i < items.length; i++) { if (items[i].t.trim()) { n++; if (items[i].d) { done++; } } }
     if (el.todoList) { renderRows(items); }
     setText(el.todoCount, n ? done + " of " + n + " done" : "");
+    setProgress(n, done);
     if (el.todoAdd) { el.todoAdd.disabled = items.length >= TODOS && !draft; }
-    if (el.notesEdit && document.activeElement !== el.notesEdit) {
-      var nv = get("notes") || ""; if (el.notesEdit.value !== nv) { el.notesEdit.value = nv; }
-    }
+    renderNotes();
+    renderAlarms();
     renderMissed();
   }
   // keep the panel's Settings controls (mirrored into the Settings window) in step with edits made on the idle screen
@@ -397,6 +413,7 @@
         persist(); syncModal();
         var n = 0, d = 0, i; for (i = 1; i <= TODOS; i++) { if ((get("todo" + i) || "").trim()) { n++; if (get("todoDone" + i) === "1") { d++; } } }
         setText(el.todoCount, n ? d + " of " + n + " done" : "");
+        setProgress(n, d);
       });
       el.todoList.addEventListener("keydown", function (e) {
         if (e.target.classList && e.target.classList.contains("ic-input") && (e.key === "Enter" || e.keyCode === 13)) { e.preventDefault(); e.target.blur(); }
@@ -421,18 +438,11 @@
         else if (e.target.closest(".ic-del")) { dismissMissed(id); }
       });
     }
-    if (el.notesEdit) {
-      el.notesEdit.value = get("notes") || "";
-      el.notesEdit.addEventListener("input", function () {
-        set("notes", el.notesEdit.value.slice(0, 400)); persist();
-        var nm = $("idle-notes"); if (nm && document.activeElement !== nm) { nm.value = get("notes") || ""; }
-      });
-    }
     var clr = $("idle-missed-clear");
     if (clr) { clr.addEventListener("click", function () { writeMissed([]); persist(); renderLists(); }); }
   }
 
-  function renderIdle() { if (!isIdle()) { return; } renderElapsed(); renderTimerChip(); }
+  function renderIdle() { if (!isIdle()) { return; } renderElapsed(); renderTimerChip(); renderStopwatch(); }
 
   // ================= settings controls =================
   function startLabel() { return state === "running" ? "Pause" : state === "paused" ? "Resume" : state === "done" ? "Start again" : "Start"; }
@@ -501,7 +511,7 @@
     }
 
     var notes = $("idle-notes");
-    if (notes) { notes.value = get("notes") || ""; notes.addEventListener("input", function () { set("notes", notes.value.slice(0, 400)); persist(); renderLists(); }); }
+    if (notes) { notes.value = get("notes") || ""; notes.addEventListener("input", function () { setFirstNote(notes.value.slice(0, 400)); renderLists(); }); }
     for (i = 1; i <= TODOS; i++) { bindTodo(i); }
   }
   function bindTodo(i) {
@@ -516,27 +526,326 @@
     }
   }
 
+  // ================= idle dashboard: icons + tabs + info =================
+  var ICON_PLUS = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6h8"/></svg>';
+  var ICON_PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.4 3.4v9.2L12.6 8z" fill="currentColor" stroke="none"/></svg>';
+  var ICON_PAUSE = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="3" width="3" height="10" rx="0.9" fill="currentColor" stroke="none"/><rect x="9" y="3" width="3" height="10" rx="0.9" fill="currentColor" stroke="none"/></svg>';
+
+  function setPane(name) {
+    name = name === "todo" ? "todo" : "notes";
+    set("idleTab", name);
+    var tabs = document.querySelectorAll(".tb-tab"), i;
+    for (i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute("data-pane") === name;
+      tabs[i].classList.toggle("is-active", on);
+      tabs[i].setAttribute("aria-selected", on ? "true" : "false");
+      tabs[i].tabIndex = on ? 0 : -1;
+    }
+    if (el.paneNotes) { el.paneNotes.hidden = name !== "notes"; }
+    if (el.paneTodo) { el.paneTodo.hidden = name !== "todo"; }
+    if (name === "notes") { fitAllNotes(); }
+  }
+  function bindTabs() {
+    var tabs = document.querySelectorAll(".tb-tab"), i;
+    for (i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener("click", function (e) { setPane(e.currentTarget.getAttribute("data-pane")); });
+      tabs[i].addEventListener("keydown", function (e) {
+        var k = e.key || "";
+        if (k !== "ArrowLeft" && k !== "ArrowRight") { return; }
+        e.preventDefault();
+        var next = e.currentTarget.getAttribute("data-pane") === "notes" ? "todo" : "notes";
+        setPane(next);
+        var t = $(next === "todo" ? "tb-tab-todo" : "tb-tab-notes"); if (t) { t.focus(); }
+      });
+    }
+    setPane(get("idleTab"));
+  }
+
+  // ================= stopwatch =================
+  var swIcon = "";
+  function swState() { var v = get("swState"); return v === "running" || v === "paused" ? v : "idle"; }
+  function swElapsed() {
+    var ms = Math.max(0, num0(get("swAcc")));
+    if (swState() === "running") { var st = num0(get("swStart")); if (st > 0) { ms += Math.max(0, Date.now() - st); } }
+    return ms;
+  }
+  function swToggle() {
+    if (swState() === "running") { set("swAcc", swElapsed()); del("swStart"); set("swState", "paused"); }
+    else { set("swStart", Date.now()); set("swState", "running"); }
+    renderStopwatch();
+  }
+  function swReset() { del("swAcc"); del("swStart"); set("swState", "idle"); renderStopwatch(); }
+  function renderStopwatch() {
+    if (!el.sw) { return; }
+    var st = swState(), hidden = get("swHidden") === "1", ico = st === "running" ? "pause" : "play";
+    setText(el.swTime, hidden ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()));
+    el.sw.classList.toggle("is-hidden", hidden);
+    el.sw.classList.toggle("is-running", st === "running");
+    if (ico !== swIcon) { el.swToggle.innerHTML = ico === "pause" ? ICON_PAUSE : ICON_PLAY; swIcon = ico; }
+    el.swToggle.setAttribute("aria-label", st === "running" ? "Pause stopwatch" : (st === "paused" ? "Resume stopwatch" : "Start stopwatch"));
+    el.swReset.hidden = st === "idle";
+    setText(el.swHide, hidden ? "Show" : "Hide");
+    el.swHide.setAttribute("aria-pressed", hidden ? "true" : "false");
+  }
+  function bindStopwatch() {
+    if (!el.sw) { return; }
+    el.swToggle.addEventListener("click", swToggle);
+    el.swReset.addEventListener("click", swReset);
+    el.swHide.addEventListener("click", function () { set("swHidden", get("swHidden") === "1" ? "0" : "1"); renderStopwatch(); });
+    renderStopwatch();
+  }
+
+  // ================= alarms =================
+  var AL_MAX = 12, alKey = "";
+  function readAlarms() {
+    var a; try { a = JSON.parse(get("alarms") || "[]"); } catch (e) { a = []; }
+    if (!Array.isArray(a)) { return []; }
+    return a.filter(function (x) { return x && typeof x.tm === "string" && /^\d{2}:\d{2}$/.test(x.tm) && x.id; });
+  }
+  function writeAlarms(a) { set("alarms", JSON.stringify(a.slice(0, AL_MAX))); persist(); tickerCheck(); }
+  function hasActiveAlarm() { return readAlarms().some(function (a) { return a.on; }); }
+  function nowHM() { var d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function hmToMin(t) { return parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.slice(3, 5), 10); }
+
+  // Fires an armed alarm from its time up to 2 minutes later, once per day (a.f = "date time" of the last firing).
+  function alarmCheck() {
+    var list = readAlarms(); if (!list.length) { return; }
+    var d = new Date(), nowM = d.getHours() * 60 + d.getMinutes(), td = today(), fired = [], i, a, diff;
+    for (i = 0; i < list.length; i++) {
+      a = list[i]; if (!a.on) { continue; }
+      diff = nowM - hmToMin(a.tm);
+      if (diff >= 0 && diff <= 2 && a.f !== td + " " + a.tm) {
+        a.f = td + " " + a.tm; a.rg = Date.now(); if (!a.dy) { a.on = false; }
+        fired.push(a);
+      }
+    }
+    if (!fired.length) { return; }
+    writeAlarms(list);
+    toast("Alarm: " + fired.map(function (x) { return x.l || x.tm; }).join(", "));
+    if (get("tSound") !== "0") { playSound(); }
+    renderAlarms();
+  }
+
+  function alMeta(a, hm) {
+    var parts = [], rang = a.rg && (Date.now() - a.rg) < 86400000 && new Date(a.rg).getDate() === new Date().getDate();
+    if (a.l) { parts.push(a.l); }
+    if (a.dy) { parts.push("Every day"); }
+    else if (a.on) { parts.push(a.tm > hm ? "Today" : "Tomorrow"); }
+    if (rang && !a.on) { parts.push("Rang at " + pad(new Date(a.rg).getHours()) + ":" + pad(new Date(a.rg).getMinutes())); }
+    return parts.join(", ");
+  }
+  function buildAlarm(a, hm) {
+    var li = document.createElement("li"), sw = document.createElement("button"), body = document.createElement("div"), tm = document.createElement("span"), meta = document.createElement("em");
+    li.className = "al-row" + (a.on ? "" : " is-off") + (a.rg && Date.now() - a.rg < 300000 ? " is-rang" : ""); li.setAttribute("data-id", a.id);
+    sw.type = "button"; sw.className = "al-switch"; sw.setAttribute("role", "switch"); sw.setAttribute("aria-checked", a.on ? "true" : "false");
+    sw.setAttribute("aria-label", "Alarm " + a.tm + (a.l ? ", " + a.l : "")); sw.innerHTML = "<i></i>";
+    tm.className = "al-tm"; tm.textContent = a.tm;
+    meta.className = "ic-meta"; meta.textContent = alMeta(a, hm);
+    body.className = "ic-body"; body.appendChild(tm); if (meta.textContent) { body.appendChild(meta); }
+    li.appendChild(sw); li.appendChild(body); li.appendChild(btn("ic-del", "Delete alarm", ICON_X));
+    return li;
+  }
+  function renderAlarms() {
+    if (!el.alList) { return; }
+    var list = readAlarms().sort(function (a, b) { return a.tm < b.tm ? -1 : (a.tm > b.tm ? 1 : 0); }), hm = nowHM(), key = "", i;
+    for (i = 0; i < list.length; i++) { var a = list[i]; key += a.id + a.tm + (a.on ? 1 : 0) + (a.dy ? 1 : 0) + (a.l || "") + "|" + alMeta(a, hm) + (a.rg && Date.now() - a.rg < 300000 ? "r" : "") + ";"; }
+    if (key !== alKey) {
+      while (el.alList.firstChild) { el.alList.removeChild(el.alList.firstChild); }
+      for (i = 0; i < list.length; i++) { el.alList.appendChild(buildAlarm(list[i], hm)); }
+      alKey = key;
+    }
+    el.alEmpty.hidden = list.length > 0;
+    el.alAdd.disabled = list.length >= AL_MAX;
+  }
+  function openAlarmForm(open) {
+    el.alForm.hidden = !open;
+    el.alAdd.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) { try { el.alTime.focus(); } catch (e) { } }
+  }
+  function saveAlarm() {
+    var tm = el.alTime.value, list = readAlarms();
+    if (!/^\d{2}:\d{2}$/.test(tm)) { toast("Pick a time for the alarm."); return; }
+    if (list.length >= AL_MAX) { toast("You can keep up to " + AL_MAX + " alarms."); return; }
+    var a = { id: newId(list.length), tm: tm, l: el.alLabel.value.trim().slice(0, 30), on: true, dy: !!el.alDaily.checked, f: "" };
+    if (tm <= nowHM()) { a.f = today() + " " + tm; }       // today's time already passed: first ring is the next occurrence
+    list.push(a); writeAlarms(list);
+    el.alLabel.value = ""; el.alDaily.checked = false;
+    openAlarmForm(false); renderAlarms();
+  }
+  function bindAlarms() {
+    if (!el.alList) { return; }
+    el.alAdd.innerHTML = ICON_PLUS;
+    el.alAdd.addEventListener("click", function () { openAlarmForm(el.alForm.hidden); });
+    el.alCancel.addEventListener("click", function () { openAlarmForm(false); });
+    el.alSave.addEventListener("click", saveAlarm);
+    el.alLabel.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); saveAlarm(); } });
+    el.alList.addEventListener("click", function (e) {
+      var li = e.target.closest ? e.target.closest("li") : null; if (!li) { return; }
+      var id = li.getAttribute("data-id"), list = readAlarms(), k;
+      for (k = 0; k < list.length; k++) { if (String(list[k].id) === id) { break; } }
+      if (k >= list.length) { return; }
+      if (e.target.closest(".al-switch")) {
+        list[k].on = !list[k].on;
+        if (list[k].on) { list[k].f = list[k].tm <= nowHM() ? today() + " " + list[k].tm : ""; }   // never fire at once for a time that already passed
+        writeAlarms(list); renderAlarms();
+      } else if (e.target.closest(".ic-del")) {
+        list.splice(k, 1); writeAlarms(list); renderAlarms();
+      }
+    });
+  }
+
+  // ================= notes (several; the first one is the note edited in Settings) =================
+  var NOTES_MAX = 8, noteKey = null;
+  function readNotes() {
+    var raw = get("noteList"), a = null;
+    if (raw !== null && raw !== undefined) { try { a = JSON.parse(raw); } catch (e) { a = null; } }
+    if (!Array.isArray(a)) { var old = get("notes") || ""; a = old.trim() ? [{ id: "n0", t: old }] : []; }   // the single note from older versions
+    return a.filter(function (n) { return n && n.id; }).map(function (n) { return { id: String(n.id), t: String(n.t || "").slice(0, 400) }; });
+  }
+  function writeNotes(a) { a = a.slice(0, NOTES_MAX); set("noteList", JSON.stringify(a)); set("notes", a.length ? a[0].t : ""); persist(); }
+  function setFirstNote(v) {
+    var list = readNotes();
+    if (list.length) { list[0].t = v; } else if (v) { list.push({ id: newId(0), t: v }); } else { return; }
+    writeNotes(list);
+  }
+  function fit(ta) {
+    ta.style.height = "auto";
+    var h = ta.scrollHeight; if (h) { ta.style.height = Math.min(h + 2, 168) + "px"; }
+  }
+  function fitAllNotes() { if (!el.noteList) { return; } var t = el.noteList.querySelectorAll("textarea"), i; for (i = 0; i < t.length; i++) { fit(t[i]); } }
+  function buildNote(n) {
+    var li = document.createElement("li"), ta = document.createElement("textarea");
+    li.className = "nt-item"; li.setAttribute("data-id", n.id);
+    ta.className = "ic-textarea nt-text"; ta.rows = 1; ta.maxLength = 400; ta.placeholder = "Write a note"; ta.setAttribute("aria-label", "Note");
+    li.appendChild(ta); li.appendChild(btn("ic-del nt-del", "Delete note", ICON_X));
+    return li;
+  }
+  function renderNotes() {
+    if (!el.noteList) { return; }
+    var list = readNotes(), ul = el.noteList, ae = document.activeElement, focused = !!ae && ae.tagName === "TEXTAREA" && ul.contains(ae), key = "", i, j, rows, ta;   // only a note being typed in blocks the rebuild (a clicked Delete button must not)
+    for (i = 0; i < list.length; i++) { key += list[i].id + ","; }
+    if (key !== noteKey && !focused) {
+      while (ul.firstChild) { ul.removeChild(ul.firstChild); }
+      for (i = 0; i < list.length; i++) { ul.appendChild(buildNote(list[i])); }
+      noteKey = key;
+    }
+    rows = ul.children;
+    for (i = 0; i < rows.length; i++) {
+      ta = rows[i].firstChild;
+      for (j = 0; j < list.length; j++) {
+        if (list[j].id === rows[i].getAttribute("data-id")) {
+          if (document.activeElement !== ta && ta.value !== list[j].t) { ta.value = list[j].t; fit(ta); }
+          break;
+        }
+      }
+    }
+    el.noteEmpty.hidden = list.length > 0;
+    el.noteAdd.disabled = list.length >= NOTES_MAX;
+  }
+  function noteOf(node) { var li = node && node.closest ? node.closest("li") : null; return li ? li.getAttribute("data-id") : ""; }
+  function syncNotesModal() { var nm = $("idle-notes"); if (nm && document.activeElement !== nm) { nm.value = get("notes") || ""; } }
+  function bindNotes() {
+    if (!el.noteList) { return; }
+    el.noteAdd.innerHTML = ICON_PLUS;
+    el.noteAdd.addEventListener("click", function () {
+      var list = readNotes();
+      if (list.length >= NOTES_MAX) { return; }
+      try { if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); } } catch (e) { }
+      list = readNotes();                                   // a blur may have dropped an empty note
+      if (list.length >= NOTES_MAX) { return; }
+      var n = { id: newId(list.length), t: "" };
+      list.push(n); writeNotes(list); noteKey = null; renderNotes();
+      var ta = el.noteList.lastChild ? el.noteList.lastChild.firstChild : null;
+      if (ta) { ta.focus(); try { ta.parentNode.scrollIntoView({ block: "nearest" }); } catch (e2) { } }
+    });
+    el.noteList.addEventListener("input", function (e) {
+      var ta = e.target, id = noteOf(ta); if (!id || ta.tagName !== "TEXTAREA") { return; }
+      var list = readNotes(), k; for (k = 0; k < list.length; k++) { if (list[k].id === id) { list[k].t = ta.value.slice(0, 400); break; } }
+      if (k < list.length) { writeNotes(list); syncNotesModal(); }
+      fit(ta);
+    });
+    el.noteList.addEventListener("focusout", function (e) {   // an empty note is not kept
+      var ta = e.target, id = noteOf(ta); if (!id || ta.tagName !== "TEXTAREA" || ta.value.trim()) { return; }
+      writeNotes(readNotes().filter(function (n) { return n.id !== id; })); syncNotesModal();
+      setTimeout(function () { noteKey = null; renderNotes(); }, 0);
+    });
+    el.noteList.addEventListener("click", function (e) {
+      if (!e.target.closest || !e.target.closest(".nt-del")) { return; }
+      var id = noteOf(e.target); if (!id) { return; }
+      try { if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); } } catch (eB) { }
+      writeNotes(readNotes().filter(function (n) { return n.id !== id; })); syncNotesModal();
+      noteKey = null; renderNotes();
+    });
+  }
+
+  // ================= smooth scrolling (idle screen) =================
+  // The wheel moves a target offset; a rAF loop eases scrollTop toward it (about 14% of the gap per frame), so scrolling up and
+  // down glides instead of jumping in steps. Inner scrollers (notes textarea, alarm list, unfinished list) keep their own wheel.
+  function bindSmoothScroll() {
+    var box = $("idle-clock"), target = 0, raf = 0;
+    if (!box || !window.requestAnimationFrame) { return; }
+    function inner(node, dy) {
+      while (node && node !== box) {
+        if (node.scrollHeight > node.clientHeight + 1) {
+          var oy = ""; try { oy = getComputedStyle(node).overflowY; } catch (e) { }
+          if (oy === "auto" || oy === "scroll") {
+            if ((dy < 0 && node.scrollTop > 0) || (dy > 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 1)) { return true; }
+          }
+        }
+        node = node.parentNode;
+      }
+      return false;
+    }
+    function step() {
+      var diff = target - box.scrollTop;
+      if (Math.abs(diff) < 0.5) { box.scrollTop = target; raf = 0; return; }
+      box.scrollTop += diff * 0.14;
+      raf = requestAnimationFrame(step);
+    }
+    box.addEventListener("wheel", function (e) {
+      if (!isIdle() || e.ctrlKey) { return; }
+      var dy = e.deltaY; if (e.deltaMode === 1) { dy *= 32; } else if (e.deltaMode === 2) { dy *= box.clientHeight; }
+      if (!dy || inner(e.target, dy)) { return; }
+      var max = Math.max(0, box.scrollHeight - box.clientHeight);
+      if (!raf) { target = box.scrollTop; }
+      target = Math.max(0, Math.min(max, target + dy));
+      e.preventDefault();
+      if (!raf) { raf = requestAnimationFrame(step); }
+    }, { passive: false });
+    box.addEventListener("scroll", function () { if (!raf) { target = box.scrollTop; } });   // keys / touch / drag keep the target in step
+  }
+
   // ================= clock =================
   function tick() {
     dayCheck();
+    alarmCheck();
     if (state === "running" && num0(get("tEnd")) - Date.now() <= 0) { finish(); return; }
     if (state === "running") { setText(el.readout, clock(leftMs())); }
     renderIdle();
   }
-  // one 1-second interval, only while something needs it: a running timer, or the idle screen showing seconds
+  // ONE interval, only while something needs it: a running timer or the idle screen (every second), or just armed alarms
+  // (every 15 s is plenty: an alarm also fires up to 2 minutes late, so a throttled hidden panel never misses it)
+  var tickMs = 0;
   function tickerCheck() {
-    var need = state === "running" || isIdle();
-    if (need && !ticker) { ticker = setInterval(tick, 1000); }
-    else if (!need && ticker) { clearInterval(ticker); ticker = 0; }
+    var want = (state === "running" || isIdle()) ? 1000 : (hasActiveAlarm() ? 15000 : 0);
+    if (want === tickMs && !!ticker === !!want) { return; }
+    if (ticker) { clearInterval(ticker); ticker = 0; }
+    tickMs = want;
+    if (want) { ticker = setInterval(tick, want); }
   }
 
   function init() {
     el.elapsed = $("idle-elapsed"); el.eh = $("ie-h"); el.em = $("ie-m"); el.es = $("ie-s");
     el.timerBox = $("idle-timer"); el.timerLabel = $("idle-timer-label"); el.timerTime = $("idle-timer-time"); el.timerFill = $("idle-timer-fill");
-    el.todos = $("idle-todos"); el.todoList = $("idle-todos-list"); el.todoCount = $("idle-todos-count"); el.todoAdd = $("idle-todo-add");
+    el.todos = $("idle-todos"); el.todoList = $("idle-todos-list"); el.todoCount = $("idle-todos-count"); el.todoAdd = $("idle-todo-add"); el.todoBar = $("idle-todos-bar");
     el.missed = $("idle-missed"); el.missedToggle = $("idle-missed-toggle"); el.missedLabel = $("idle-missed-label"); el.missedList = $("idle-missed-list");
     el.missedSummary = $("idle-missed-summary");
-    el.notesCard = $("idle-notes-card"); el.notesEdit = $("idle-notes-edit");
+    el.sw = $("idle-sw"); el.swTime = $("sw-time"); el.swToggle = $("sw-toggle"); el.swReset = $("sw-reset"); el.swHide = $("sw-hide");
+    el.alList = $("al-list"); el.alEmpty = $("al-empty"); el.alAdd = $("al-add"); el.alForm = $("al-form"); el.alTime = $("al-time"); el.alLabel = $("al-label");
+    el.alDaily = $("al-daily"); el.alSave = $("al-save"); el.alCancel = $("al-cancel");
+    el.noteList = $("note-list"); el.noteEmpty = $("note-empty"); el.noteAdd = $("note-add");
+    el.paneNotes = $("tb-pane-notes"); el.paneTodo = $("tb-pane-todo");
+    if (el.todoAdd) { el.todoAdd.innerHTML = ICON_PLUS; }
     el.h = $("idle-timer-h"); el.m = $("idle-timer-m"); el.start = $("idle-timer-start"); el.reset = $("idle-timer-reset");
     el.readout = $("idle-timer-readout"); el.voice = $("idle-timer-voice"); el.vol = $("idle-timer-volume"); el.note = $("idle-timer-sound-note");
 
@@ -547,20 +856,22 @@
     window.addEventListener("beforeunload", function () { if (saveTimer) { flushFile(); } });
     state = get("tState") || "idle";
     if (state === "running" && num0(get("tEnd")) - Date.now() <= 0) { state = "done"; set("tState", "done"); }   // ran out while the panel was closed
-    bindControls(); bindIdleCards(); renderLists(); soundNote(); render(); tickerCheck();
+    bindControls(); bindIdleCards(); bindTabs(); bindStopwatch(); bindAlarms(); bindNotes(); bindSmoothScroll();
+    renderLists(); soundNote(); render(); tickerCheck();
     if (!dataFile || !dataFile.read()) { persist(); }   // first run of this version: write the backup file now
 
     // idle screen shown / hidden -> refresh content once, start/stop the 1-second tick
     try {
-      new MutationObserver(function () { if (isIdle()) { renderLists(); renderElapsed(); renderTimerChip(); } tickerCheck(); })
+      new MutationObserver(function () { if (isIdle()) { renderLists(); renderElapsed(); renderTimerChip(); renderStopwatch(); fitAllNotes(); } else { openAlarmForm(false); } tickerCheck(); })
         .observe(document.body, { attributes: true, attributeFilter: ["class"] });
     } catch (e2) { }
     // "Reset everything" in Settings
     var rs = $("settings-reset");
     if (rs) {
       rs.addEventListener("click", function () {
-        ["showElapsed", "tH", "tM", "tState", "tEnd", "tRemain", "tTotal", "tSound", "tVoice", "tVolume", "tSoundPath", "notes", "todoDay", "todoSaved", "missed"].forEach(del);
-        draft = 0; missedOpen = false; todoKey = ""; missedKey = "";
+        ["showElapsed", "tH", "tM", "tState", "tEnd", "tRemain", "tTotal", "tSound", "tVoice", "tVolume", "tSoundPath", "notes", "todoDay", "todoSaved", "missed",
+         "swState", "swStart", "swAcc", "swHidden", "alarms", "noteList", "idleTab"].forEach(del);
+        draft = 0; missedOpen = false; todoKey = ""; missedKey = ""; alKey = ""; noteKey = null;
         if (dataFile) { clearTimeout(saveTimer); saveTimer = 0; dataFile.remove(); }
         var i; for (i = 1; i <= TODOS; i++) { del("todo" + i); del("todoDone" + i); }
         if (nodeApi) { nodeApi.clear(); } window.__mtIdleSoundBlob = "";
@@ -570,6 +881,7 @@
         if (el.vol) { el.vol.value = 80; el.vol.dispatchEvent(new Event("input")); }
         if ($("idle-notes")) { $("idle-notes").value = ""; }
         refreshTodoControls(); var j; for (j = 1; j <= TODOS; j++) { if ($("idle-todo-" + j)) { $("idle-todo-" + j).value = ""; } }
+        setPane("notes"); renderStopwatch();
         renderLists(); soundNote(); render(); tickerCheck();
       });
     }

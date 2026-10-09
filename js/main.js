@@ -5828,9 +5828,9 @@
   // After N seconds without mouse activity the whole UI (.app) fades out and is then display:none'd, so
   // CEF stops styling / laying out / painting it - the only thing still animating is the background
   // video/GIF, which keeps playing underneath the clock overlay (#idle-clock). Any mouse movement brings
-  // the UI back only through the unlock bar at the bottom: "slide" (drag the handle across) or "tap" (click the bar), or Esc.
-  // Mouse movement no longer leaves Idle Mode, so notes and tasks on the idle screen can be clicked and edited.
-  // Saved in localStorage (via Store): "idleEnabled" = "1"/"0", "idleTimeout" = seconds, "idleExit" = "slide"/"tap".
+  // the UI back only through the unlock bar at the bottom ("slide", "tap" or "both"), Esc, or a click on an empty spot.
+  // Mouse movement does not leave Idle Mode, so notes and tasks on the idle screen can be clicked and edited.
+  // Saved in localStorage (via Store): "idleEnabled" = "1"/"0", "idleTimeout" = seconds, "idleExit" = "both"/"slide"/"tap".
   // ---------------------------------------------------------
   var Idle = {
     enabledKey: "idleEnabled",
@@ -5839,8 +5839,8 @@
     positionKey: "idlePosition",
     scaleKey: "idleScale",
     exitKey: "idleExit",
-    DEFAULT_EXIT: "slide",
-    EXITS: ["slide", "tap"],
+    DEFAULT_EXIT: "both",
+    EXITS: ["both", "slide", "tap", "move"],
     SLIDE_DONE: 0.88,        // handle released past this share of the track = unlock
     DEFAULT_SECONDS: 60,
     MIN_SECONDS: 5,
@@ -5915,7 +5915,7 @@
       this.unlockFill = $("iu-fill");
       this.unlockLabel = $("iu-label");
       this.unlockHandle = $("iu-handle");
-      this.canUnlock = !!(this.unlockEl && this.unlockTrack && this.unlockHandle);   // no bar in the page = old behaviour (mouse move leaves)
+      this.canUnlock = !!(this.unlockEl && this.unlockTrack && this.unlockHandle);
       if (!this.appEl || !this.clockEl || !this.timeEl || !this.dateEl || !this.toggleEl || !this.inputEl) { return; }
 
       this.initSession();
@@ -5930,6 +5930,7 @@
       this.applyScale();
       this.applyExitMode();
       this.bindUnlock();
+      this.bindLeave();
       if (this.messageInputEl) { this.messageInputEl.value = Store.get(this.messageKey) || ""; }
 
       this.onCheck = function () { self.check(); };
@@ -5945,7 +5946,7 @@
       document.addEventListener("mousedown", this.onActivity, true);
       document.addEventListener("wheel", this.onActivity, true);
       document.addEventListener("keydown", this.onActivity, true);
-      // Esc always leaves Idle Mode (also the safety net if the unlock bar ever fails).
+      // Esc always leaves Idle Mode .
       document.addEventListener("keydown", function (e) {
         if ((e.key === "Escape" || e.keyCode === 27) && self.isIdle) { e.stopPropagation(); self.exit(); }
       }, true);
@@ -6028,7 +6029,7 @@
     // ----- activity -----
     handleMove: function (e) {
       if (!this.enabled) { return; }
-      if (this.isIdle && this.canUnlock) { return; }          // mouse movement no longer leaves Idle Mode
+      if (this.isIdle && this.exitMode !== "move") { return; }          // mouse movement leaves Idle Mode only in "move" mode
       var x = e.screenX, y = e.screenY;
       // Hiding the UI makes Chromium fire a synthetic mousemove at the SAME coordinates (the element under
       // the cursor changed). Requiring real movement stops that from instantly ending Idle Mode.
@@ -6039,9 +6040,9 @@
 
     markActive: function () {
       if (!this.enabled) { return; }
-      if (this.isIdle && this.canUnlock) { return; }          // only the unlock bar / Esc leave Idle Mode
+      if (this.isIdle && this.exitMode !== "move") { return; }          // only the unlock bar / Esc / a click on an empty spot leave Idle Mode (any activity in "move" mode)
       this.lastActive = Date.now();       // cheap: no timer is touched on every mousemove
-      if (this.isIdle) { this.exit(); }
+      if (this.isIdle) { if (Date.now() - this.idleSince < 700) { return; } this.exit(); }   // "move" mode: ignore the synthetic mousemove Chromium fires while the UI hides
     },
 
     // ----- idle timer: ONE pending timeout that re-checks itself, never one per mousemove -----
@@ -6077,6 +6078,7 @@
       var self = this;
       if (this.isIdle) { return; }
       this.isIdle = true;
+      this.idleSince = Date.now();
       try { if (document.activeElement && document.activeElement !== document.body) { document.activeElement.blur(); } } catch (eB) { }
       this.resetUnlock();                                  // handle back at the start, no transition
       if (this.unlockEl) { this.unlockEl.setAttribute("aria-hidden", "false"); }
@@ -6212,7 +6214,7 @@
     // Tap: click the bar. Both: keyboard Enter / Space / Right arrow on the handle.
     applyExitMode: function () {
       if (!this.unlockEl) { return; }
-      var tap = this.exitMode === "tap", txt = tap ? "Tap to open" : "Slide to open";
+      var txt = this.exitMode === "move" ? "Move the mouse to open" : this.exitMode === "tap" ? "Tap to open" : (this.exitMode === "slide" ? "Slide to open" : "Slide or tap");
       this.unlockEl.setAttribute("data-mode", this.exitMode);
       if (this.unlockLabel) { this.unlockLabel.textContent = txt; }
       if (this.unlockHandle) { this.unlockHandle.setAttribute("aria-label", txt); }
@@ -6255,7 +6257,7 @@
       var self = this, startX = 0, startP = 0;
       function px(e) { return e.touches && e.touches.length ? e.touches[0].clientX : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0].clientX : e.clientX); }
       function begin(e) {
-        if (self.exitMode !== "slide" || !self.isIdle) { return; }
+        if (self.exitMode === "tap" || !self.isIdle) { return; }
         if (e.type === "mousedown" && e.button !== 0) { return; }
         self.dragging = true; self.didDrag = false; startX = px(e); startP = self.unlockProgress || 0;
         self.unlockEl.classList.add("is-dragging"); self.unlockEl.classList.remove("is-releasing");
@@ -6291,7 +6293,7 @@
       // Tap mode: the whole bar is the button. Slide mode: a plain click only nudges the handle to show it must be dragged.
       this.unlockTrack.addEventListener("click", function (e) {
         if (!self.isIdle) { return; }
-        if (self.exitMode === "tap") { self.exit(); return; }
+        if (self.exitMode === "tap" || (self.exitMode === "both" && !self.didDrag)) { self.exit(); return; }
       });
       this.unlockHandle.addEventListener("click", function (e) {
         if (!self.isIdle) { return; }
@@ -6305,6 +6307,18 @@
         }
       });
       this.unlockEl.addEventListener("animationend", function () { self.unlockEl.classList.remove("is-hint"); });
+    },
+
+    // ----- leaving the idle screen -----
+    // Also: Esc (bound in init) or a click on an empty spot: anything that is not a card, chip, input or button.
+    bindLeave: function () {
+      var self = this;
+      this.clockEl.addEventListener("click", function (e) {
+        if (!self.isIdle) { return; }
+        var t = e.target;
+        if (t && t.closest && t.closest(".idle-card, .idle-timer, .idle-elapsed, .idle-message, button, input, textarea, select, a")) { return; }
+        self.exit();
+      });
     },
 
     setEnabled: function (on) {

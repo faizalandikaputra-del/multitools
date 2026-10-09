@@ -19,7 +19,7 @@ button.disabled > svg.ncp, button:disabled > svg.ncp { filter: none; transform: 
 .utility-btn > svg.ncp, .fl-ico > svg.ncp { width: 18px; height: 18px; }
 .fl-tool > svg.ncp { width: 17px; height: 17px; }
 .fl-sq > svg.ncp { width: 20px; height: 20px; }
-@media (prefers-reduced-motion: reduce) { svg.ncp { transition: none; } button:hover > svg.ncp { transform: none; } }
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
 
 /* keep the ease buttons as strokes (an older rule filled their svg solid) */
 html body .shell.shell .fl-sq svg.ncp { fill: none; stroke: currentColor; }

@@ -21,4 +21,4 @@ html.mt-light body svg.curve-svg > rect:first-of-type { fill: rgba(255, 255, 255
 /* corner grip (free width) stays, but hides until the graph is hovered so it never fights the expand icon */
 #nc-gsize { opacity: 0; pointer-events: none; transition: opacity .15s ease; }
 .canvas-area:hover #nc-gsize, html.nc-gsize-drag #nc-gsize { opacity: 1; pointer-events: auto; }
-@media (prefers-reduced-motion: reduce) { #nc-gdiv::before, #nc-gsize { transition: none; } }
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */

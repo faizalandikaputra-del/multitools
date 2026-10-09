@@ -515,7 +515,7 @@
     root.style.setProperty("--settings-background-end", colorOf("gradC2"));
     root.style.setProperty("--settings-background-direction", gd + "deg");
     root.style.setProperty("--settings-background-dim", (1 - gi / 100).toFixed(3));
-    var btns = document.querySelectorAll("[data-background-color-edit]");
+    var btns = document.querySelectorAll("[data-color-edit]");   /* every color button (UI, graph line, handle, gradient, effect), not only the gradient ones */
     for (var i = 0; i < btns.length; i++) { btns[i].style.setProperty("--settings-edit-color", colorOf(btns[i].getAttribute("data-color-edit"))); }
 
     /* swatches */

@@ -1,5 +1,5 @@
 /* NeuCurve - nc-fix22.css (loaded LAST, after nc-fix21.css)
-   AUTO-FIT PRESET TILES, like Flow.
+   PRESET TILES: columns follow the Card Size slider (--grid-cols); every tile stays square.
    Before: the preset grid always had a FIXED number of columns (the "Grid Columns" slider, 3-8), so the boxes behind
    the preset graphs only stretched / shrank - narrow panel = tiny boxes, wide panel = huge boxes, and the box never
    changed how many fit in a row.
@@ -11,7 +11,10 @@
 :root { --nc-tile-min: 44px; }
 
 html body .shell.shell .preset-grid {
-  grid-template-columns: repeat(auto-fill, minmax(var(--nc-tile-min, 44px), 1fr)) !important;
+  /* Card Size slider (preset options menu, 3-8) sets --grid-cols on this element: it decides how many cards per row.
+     Before, this rule forced auto-fill and ignored the slider, so card size could not be changed. Default 4 columns
+     until the slider sets a value. */
+  grid-template-columns: repeat(var(--grid-cols, 4), minmax(0, 1fr)) !important;
   align-content: start;
   min-width: 0;
 }

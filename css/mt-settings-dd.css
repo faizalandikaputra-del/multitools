@@ -1,0 +1,22 @@
+/* Multi Tool - mt-settings-dd.css  (html/settings.html, loaded after mt-select.css)
+   The Settings window now uses the SAME dropdown menu as the panel (js/mt-select.js + css/mt-select.css).
+   mt-select.css reads the panel's tokens; this file maps them to the window's tokens, so the menu, the highlight bar,
+   the check mark, the scrollbar and the open-field ring all follow the Settings theme color (tint), live. */
+:root {
+  --surface-hover: #1f1f24;
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --highlight-top: rgba(255, 255, 255, 0.05);
+  --text: var(--p-ink, #fafafa);
+  --text-dim: var(--p-ink-3, #8b8997);
+  --radius-card: 10px;
+  --fs-value: 0.78rem;
+  --fs-label-sm: 0.64rem;
+  --accent-glow: rgba(var(--accent-rgb, 255, 255, 255), 0.32);
+}
+.mt-menu { font-family: inherit; background: var(--surface-hover); }
+.mt-opt.is-active { background: rgba(var(--accent-rgb, 255, 255, 255), 0.2); }
+.mt-opt.is-selected { color: var(--accent-strong, var(--accent, #fff)); }
+/* closed field: same open ring as the panel's select */
+.settings-select { cursor: pointer; transition: background-color .16s linear, box-shadow .16s ease, border-color .16s ease; }
+.settings-select.mt-open { border-color: rgba(var(--accent-rgb, 255, 255, 255), 0.9); box-shadow: 0 0 0 3px var(--accent-glow); }
+.label-assign-row select.mt-open { border-color: rgba(var(--accent-rgb, 255, 255, 255), 0.9); box-shadow: 0 0 0 3px var(--accent-glow); }

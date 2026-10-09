@@ -57,8 +57,6 @@ input[type="range"]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--hp
 .tab:focus-visible, .tool:focus-visible, .btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .cat-tab:focus-visible,
 .shortcut-tile:focus-visible, .preset-item:focus-visible, .expr-item:focus-visible { outline: 2px solid var(--hp-ring); outline-offset: 2px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .tab:hover, .tool:hover, .btn:hover, .icon-btn:hover, .preset-item:hover, .expr-item:hover, .snippet-card:hover, .shortcut-tile:hover { transform: none; }
-}
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
 :root[data-reduce-motion="true"] .tab:hover, :root[data-reduce-motion="true"] .tool:hover, :root[data-reduce-motion="true"] .btn:hover,
 :root[data-reduce-motion="true"] .icon-btn:hover, :root[data-reduce-motion="true"] .preset-item:hover { transform: none; }

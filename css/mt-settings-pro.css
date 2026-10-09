@@ -234,9 +234,7 @@ html.is-offline .settings-workspace-kicker { color: #f5b14a; }
 }
 
 /* ---------- reduced motion / animations off ---------- */
-@media (prefers-reduced-motion: reduce) {
-  .settings-section.is-active .settings-group, .settings-workspace-header.p-swap h1, .settings-workspace-header.p-swap p { animation: none !important; }
-}
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
 html[data-reduce-motion="true"] .settings-section.is-active .settings-group,
 html[data-reduce-motion="true"] .settings-workspace-header.p-swap h1,
 html[data-reduce-motion="true"] .settings-workspace-header.p-swap p { animation: none !important; }

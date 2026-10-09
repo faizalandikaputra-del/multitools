@@ -7,9 +7,11 @@
   <script>if (typeof globalThis === 'undefined') { window.globalThis = window; }</script>
   <link rel="stylesheet" href="../css/mt-uitheme.css?v=7">
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
-  <link rel="stylesheet" href="../css/mt-settings-window.css?v=1">
-  <link rel="stylesheet" href="../css/mt-settings-pro.css?v=1">
+  <link rel="stylesheet" href="../css/mt-settings-window.css?v=2">
+  <link rel="stylesheet" href="../css/mt-settings-pro.css?v=2">
   <link rel="stylesheet" href="../css/mt-bg-preview.css?v=1">
+  <link rel="stylesheet" href="../css/mt-select.css?v=1">
+  <link rel="stylesheet" href="../css/mt-settings-dd.css?v=1">
   <link rel="stylesheet" href="../css/mt-idle-focus.css?v=1">
   <script src="../js/ae2021-compat.js?v=10"></script>
 </head>
@@ -45,7 +47,7 @@
 <div class="settings-row"><span class="settings-row-copy"><b>Duration</b></span><div class="settings-row-ctrl"><input class="settings-input settings-input-num" type="number" id="idle-timer-h" min="0" max="23" step="1" value="1" inputmode="numeric"><span class="settings-unit">h</span><input class="settings-input settings-input-num" type="number" id="idle-timer-m" min="0" max="59" step="1" value="0" inputmode="numeric"><span class="settings-unit">min</span></div></div>
 <div class="settings-row"><span class="settings-row-copy"><b>Time left</b><small class="settings-timer-readout" id="idle-timer-readout" data-mirror>01:00:00</small></span><div class="settings-row-ctrl"><button type="button" id="idle-timer-start" class="wbtn wbtn-primary" data-mirror>Start</button><button type="button" id="idle-timer-reset" class="wbtn wbtn-ghost">Reset</button></div></div>
 <label class="settings-toggle-row" for="idle-timer-sound"><span class="settings-row-copy"><b>Play a sound when time is up</b></span><input type="checkbox" id="idle-timer-sound" checked><i></i></label>
-<div class="settings-row"><span class="settings-row-copy"><b>Sound</b><small>The voice uses a female voice installed on your computer, pitched up. Choose your own file for a real anime voice clip.</small></span><div class="settings-row-ctrl"><select class="settings-select" id="idle-timer-voice"><option value="voice">Anime girl voice + chime</option><option value="chime">Chime only</option><option value="custom">My own file</option></select></div></div>
+<div class="settings-row"><span class="settings-row-copy"><b>Sound</b><small>Chime is the built-in sound. Custom plays your own audio file (mp3, wav, ogg, m4a).</small></span><div class="settings-row-ctrl"><select class="settings-select" id="idle-timer-voice"><option value="chime">Chime (built-in)</option><option value="custom">Custom sound file</option></select></div></div>
 <div class="settings-range-block"><div class="settings-opacity-head"><label for="idle-timer-volume">Volume</label><output id="idle-timer-volume-val" data-mirror>80%</output></div><input id="idle-timer-volume" class="settings-range" type="range" min="0" max="100" step="1" value="80"></div>
 <div class="settings-pad"><button type="button" id="idle-timer-test" class="wbtn">Test sound</button><button type="button" id="idle-timer-sound-set" class="wbtn">Choose file</button><button type="button" id="idle-timer-sound-clear" class="wbtn wbtn-ghost">Remove</button></div><p class="settings-tip" id="idle-timer-sound-note" data-mirror></p></div><div class="settings-group"><header class="settings-group-header"><div><h2>Notes</h2><p>Shown on the idle screen.</p></div></header>
 <div class="settings-pad"><textarea class="settings-input settings-textarea" id="idle-notes" rows="4" maxlength="400" placeholder="Write a note for yourself"></textarea></div></div><div class="settings-group"><header class="settings-group-header"><div><h2>Daily list</h2><p>Up to 8 tasks, shown on the idle screen. Ticks clear at the start of each new day; the tasks stay.</p></div></header>
@@ -57,6 +59,7 @@
 <div class="settings-pad"><button type="button" class="wbtn wbtn-danger" id="win-reset-ask">Reset everything</button><button type="button" class="wbtn wbtn-danger is-armed" id="settings-reset" hidden>Click again to reset</button></div></div></section></div>
   </section>
 </main>
+<script src="../js/mt-select.js?v=1"></script>
 <script src="../js/mt-settings-bus.js?v=2"></script>
 <script src="../js/mt-settings-window.js?v=1"></script>
 <script src="../js/mt-bg-preview.js?v=1"></script>

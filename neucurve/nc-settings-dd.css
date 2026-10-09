@@ -1,0 +1,51 @@
+/* NeuCurve - nc-settings-dd.css  (neucurve/settings.html, loaded LAST)
+   The Layout Mode / Background Effect dropdowns now look and move like Multi Tool's dropdown (css/mt-select.css):
+   same surface, border, radius, shadow, pop-in from the field, staggered items, accent highlight, left accent bar and
+   check mark on the current value. The tint is the window's theme color (--p-rgb), so changing UI / Theme Color
+   re-tints the menu live. Behavior (nc-settings.js createDropdown) is unchanged. */
+.settings-language-dropdown__trigger { cursor: pointer; }
+.settings-language-dropdown__trigger[aria-expanded='true'] { border-color: rgba(var(--p-rgb), 0.9) !important; box-shadow: 0 0 0 3px rgba(var(--p-rgb), 0.32) !important; }
+
+.settings-language-dropdown__menu {
+  background: #1f1f24 !important;
+  border: 0 !important; border-radius: 10px !important; padding: 5px !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 44px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.28) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%);
+  scrollbar-width: thin;
+}
+.settings-language-dropdown__menu::-webkit-scrollbar { width: 6px; }
+.settings-language-dropdown__menu::-webkit-scrollbar-thumb { background: rgba(var(--p-rgb), 0.35); border-radius: 3px; }
+.settings-language-dropdown__menu::-webkit-scrollbar-thumb:hover { background: rgba(var(--p-rgb), 0.6); }
+.settings-language-dropdown__menu.is-open { animation: ncDdPop .26s cubic-bezier(.2, .9, .25, 1.08) !important; transform-origin: 50% 0; }
+.settings-language-dropdown__menu.is-up.is-open { transform-origin: 50% 100%; }
+
+.settings-language-dropdown__option {
+  position: relative; display: flex !important; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 9px 7px 10px !important; min-height: 0 !important; border-radius: 6px !important;
+  font: inherit; font-size: 0.78rem !important; font-weight: 500; line-height: 1.25; color: var(--p-ink, #f0f0f0) !important;
+  transition: background-color .12s linear, color .12s linear, transform .18s cubic-bezier(.22, 1, .36, 1);
+}
+.settings-language-dropdown__menu.is-open .settings-language-dropdown__option { animation: ncDdItem .26s cubic-bezier(.22, 1, .36, 1) backwards; }
+.settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(1) { animation-delay: 0ms; }
+.settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(2) { animation-delay: 14ms; }
+.settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(3) { animation-delay: 28ms; }
+.settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(4) { animation-delay: 42ms; }
+.settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(n+5) { animation-delay: 56ms; }
+.settings-language-dropdown__option:hover, .settings-language-dropdown__option:focus, .settings-language-dropdown__option:focus-visible {
+  background: rgba(var(--p-rgb), 0.2) !important; color: var(--p-ink, #fff) !important; transform: translateX(2px);
+}
+.settings-language-dropdown__option.is-selected {
+  background: transparent !important; box-shadow: none !important; font-weight: 600; color: rgb(var(--p-rgb)) !important;
+}
+.settings-language-dropdown__option.is-selected:hover { background: rgba(var(--p-rgb), 0.2) !important; }
+.settings-language-dropdown__option.is-selected::before {
+  content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; width: 3px; border-radius: 2px; background: rgb(var(--p-rgb));
+}
+.settings-language-dropdown__option::after {
+  content: ""; flex: 0 0 auto; width: 4px; height: 8px; margin-right: 3px; border: solid currentColor; border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(.5); opacity: 0; transition: opacity .15s, transform .2s cubic-bezier(.34, 1.56, .64, 1);
+}
+.settings-language-dropdown__option.is-selected::after { opacity: 1; transform: rotate(45deg) scale(1); }
+
+@keyframes ncDdPop { from { opacity: 0; transform: translateY(-8px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes ncDdItem { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }

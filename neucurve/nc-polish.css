@@ -74,6 +74,4 @@ html body .shell.shell .preset-item:hover .preset-thumbnail {
 }
 html body .shell.shell .preset-item:hover .preset-name { color: #fff; }
 html body .shell.shell .preset-item:active { transform: translateY(0) scale(.97); }
-@media (prefers-reduced-motion: reduce) {
-  html body .shell.shell .preset-item:hover, html body .shell.shell .fl-ico:hover, html body .shell.shell .fl-tool:hover { transform: none; }
-}
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */

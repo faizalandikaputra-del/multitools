@@ -113,6 +113,7 @@
       });
       if (mo) { mo.takeRecords(); }
       fitting = false;
+      applyOrig();
       watchImage(found[0].img);
     });
   }
@@ -147,7 +148,7 @@
     prevFrame.style.width = frameW + "px"; prevFrame.style.height = frameH + "px";
     prevBox.style.display = st.path ? "block" : "none";
     if (prevImg.getAttribute("data-src") !== st.path) { prevImg.setAttribute("data-src", st.path); prevImg.src = st.path; }
-    prevImg.style.opacity = String(st.op);
+    prevImg.style.opacity = String(st.op); applyOrig();
     withSize(st.path, function (nat) {
       var p = place(frameW, frameH, nat, st);
       prevImg.style.left = (fx + p.x) + "px"; prevImg.style.top = (fy + p.y) + "px";
@@ -233,7 +234,29 @@
   }
 
   /* Flow's "Use Original Media Colors": off = grayscale + contrast(1.05) like Flow, on = the picture's own colors (CSS in nc-bg.css) */
-  function applyOrig() { var on = read("bgOrig", "false") === "true"; if (root.classList.contains("nc-bg-orig") !== on) { root.classList.toggle("nc-bg-orig", on); } }
+  /* Off = grayscale + contrast(1.05), on = the picture's own colors. A CSS "filter" on an SVG <image> is ignored by older CEP
+     Chromium builds, which is why the colors never went away. So a real SVG filter (feColorMatrix) is used and set inline on
+     every background element; nc-bg.css keeps the plain CSS rule as a second layer. */
+  function ensureGrayFilter() {
+    if (document.getElementById("nc-gray-svg") || !document.body) { return; }
+    var d = document.createElement("div");
+    d.id = "nc-gray-svg"; d.setAttribute("aria-hidden", "true");
+    d.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";
+    d.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" focusable="false"><filter id="nc-gray-f" color-interpolation-filters="sRGB">' +
+      '<feColorMatrix type="saturate" values="0"/>' +
+      '<feComponentTransfer><feFuncR type="linear" slope="1.05" intercept="-0.025"/><feFuncG type="linear" slope="1.05" intercept="-0.025"/><feFuncB type="linear" slope="1.05" intercept="-0.025"/></feComponentTransfer></filter></svg>';
+    document.body.appendChild(d);
+  }
+  function paintOrig(on) {
+    ensureGrayFilter();
+    var els = document.querySelectorAll("svg.curve-svg > image, #nc-bg-prev img"), i, v = on ? "none" : "url(#nc-gray-f)";
+    for (i = 0; i < els.length; i++) { if (els[i].style.filter !== v) { els[i].style.filter = v; } }
+  }
+  function applyOrig() {
+    var on = read("bgOrig", "false") === "true";
+    if (root.classList.contains("nc-bg-orig") !== on) { root.classList.toggle("nc-bg-orig", on); }
+    paintOrig(on);
+  }
   applyOrig();
   function refresh() {
     applyOrig();

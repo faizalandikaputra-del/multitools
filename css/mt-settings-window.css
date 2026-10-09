@@ -134,5 +134,5 @@ html.is-offline .settings-workspace-kicker { color: #f59e0b; }
 .label-assign-row select option { background: #171717; }
 
 @media (max-width: 520px) { .settings-sidebar { flex-basis: 56px; width: 56px; } .settings-navigation-item span, .settings-brand-copy { display: none; } .settings-navigation-item { justify-content: center; padding: 0; } .settings-navigation-item i { margin-right: 0; } }
-@media (prefers-reduced-motion: reduce), (update-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
 html[data-reduce-motion="true"] * { transition-duration: 0.01ms !important; }

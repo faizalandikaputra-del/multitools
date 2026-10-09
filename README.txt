@@ -1135,3 +1135,24 @@ Idle screen: time in After Effects, timer, notes, daily list (js/mt-idle-focus.j
 - neucurve/nc-settings-fit.css (new, loaded last in neucurve/settings.html): removes the hard-coded 583 x 620 / 559 x 596 / 383 px boxes.
   The window now follows its real size; rows wrap; below 560 px wide the sidebar becomes icons only (scaled displays have a narrower CSS viewport than 585).
 - CSXS/manifest.xml: Curve settings window MinSize width 585 -> 380, MaxSize 585 -> 900 so it can be resized. Restart After Effects after installing.
+
+[motionfix] Animations ignored when Windows "Show animations" is off; NeuCurve color dots; "Use Original Media Colors".
+- Removed the remaining @media (prefers-reduced-motion) blocks (hover-polish, mt-settings-pro, mt-settings-window, nc-flowfx, nc-gbox,
+  nc-icons-pro, nc-polish). They froze hover lifts, settings-window transitions, NeuCurve falling particles/rain and icon motion whenever the
+  OS animation setting was off. Animations now only stop through Settings > Enable animations (<html data-reduce-motion="true">).
+- neucurve/nc-settings.js: the colored dot on every "Edit" color button (UI / Theme, Graph Line, Handle & Node, Effect) now follows its color
+  (only the two gradient buttons were painted before, the rest stayed black).
+- neucurve/nc-bg.js: "Use Original Media Colors" off now really grayscales the background. A CSS filter on an SVG <image> is ignored by older
+  CEP Chromium, so an SVG feColorMatrix filter (#nc-gray-f) is set inline on the graph image and on the Adjust-background preview.
+
+[cardsize] Curve tab > preset options (three dots) > Card Size slider did nothing.
+- neucurve/nc-fix22.css forced grid-template-columns to auto-fill and overrode the slider's --grid-cols. It now uses repeat(var(--grid-cols, 4), 1fr),
+  so the slider (3-8 columns) changes the card size again. Tiles stay square. Cache-bust ?v=2.
+
+[dropdowns+sound] Settings-window dropdowns match Multi Tool; anime voice removed; custom sound option.
+- html/settings.html now loads js/mt-select.js + css/mt-select.css + css/mt-settings-dd.css: every <select> in the Multi Tool Settings window opens the same
+  animated menu as the panel (pop-in, staggered items, accent highlight bar, check mark) and follows the theme color live.
+- neucurve/nc-settings-dd.css (new, last in neucurve/settings.html): Layout Mode / Background Effect menus restyled to the same look, tinted by the NeuCurve
+  UI / Theme Color (--p-rgb). Behavior unchanged.
+- Idle timer sound (Settings > Idle screen > Sound): "Anime girl voice" and its speech code were deleted. Options are now "Chime (built-in)" and
+  "Custom sound file". Choosing Custom with no file opens the file chooser at once; until a file exists the chime plays. A saved old "voice" value becomes "chime".

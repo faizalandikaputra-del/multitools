@@ -81,7 +81,7 @@ html.nc-away #nc-fx span, html.nc-away #nc-fx span::before, html.nc-away #nc-fx 
   100% { opacity: 0; transform: translate3d(var(--r-drift), 118vh, 0) rotate(7deg); }
 }
 
-@media (prefers-reduced-motion: reduce) { #nc-fx span { animation: none; } #nc-fx[data-fx="rain"] span, #nc-fx[data-fx="circles"] span { display: none; } }
+/* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
 html[data-reduce-motion="true"] #nc-fx span { animation: none; }
 html[data-reduce-motion="true"] #nc-fx[data-fx="rain"] span, html[data-reduce-motion="true"] #nc-fx[data-fx="circles"] span { display: none; }
 

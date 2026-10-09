@@ -35,7 +35,7 @@
        and restyles cards, buttons, inputs, modal and sidebar. See the file's own header comment. -->
   <link rel="stylesheet" href="../css/glass-theme.css?v=9">
   <!-- v17: hover / press / focus polish for every tab (additive, loaded after glass-theme.css) -->
-  <link rel="stylesheet" href="../css/hover-polish.css?v=1">
+  <link rel="stylesheet" href="../css/hover-polish.css?v=2">
   <!-- Custom tooltip (name only, smooth pop) + smoother sidebar highlight. Companion: js/mt-tooltip.js -->
   <link rel="stylesheet" href="../css/mt-tooltip.css?v=3">
   <link rel="stylesheet" href="../css/panel-refresh.css?v=1">
@@ -440,9 +440,8 @@
         <div class="field-row">
           <label class="field-label" for="idle-timer-voice">Sound</label>
           <select class="select" id="idle-timer-voice">
-            <option value="voice">Anime girl voice + chime</option>
-            <option value="chime">Chime only</option>
-            <option value="custom">My own file</option>
+            <option value="chime">Chime (built-in)</option>
+            <option value="custom">Custom sound file</option>
           </select>
         </div>
         <div class="bg-editor-row idle-scale-row">
@@ -616,7 +615,7 @@
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
-  <script src="../js/mt-idle-focus.js?v=1"></script>
+  <script src="../js/mt-idle-focus.js?v=2"></script>
   <script src="../js/mt-settings-bus.js?v=2"></script>
   <script src="../js/mt-settings-remote.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the

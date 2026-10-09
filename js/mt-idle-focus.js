@@ -7,7 +7,7 @@
    The controls live in #settings-modal (mirrored into the Settings window by js/mt-settings-remote.js); the idle screen
    itself is display-only. Load AFTER js/main.js. ES5, Chromium-74 safe.
    Keys (all prefixed "mtx."): showElapsed, tH, tM, tState (idle|running|paused|done), tEnd, tRemain, tTotal,
-   tSound, tVoice (voice|chime|custom), tVolume, tSoundPath, notes, todo1..8, todoDone1..8, todoDay. */
+   tSound, tVoice (chime|custom), tVolume, tSoundPath, notes, todo1..8, todoDone1..8, todoDay. */
 (function () {
   "use strict";
   var P = "mtx.", TODOS = 8;
@@ -81,22 +81,8 @@
     return (notes.length - 1) * 0.11 + 1.1;
   }
 
-  // a female voice installed on the computer, pitched up. Japanese first; otherwise English.
-  function speak(vol) {
-    var ss = window.speechSynthesis; if (!ss || typeof SpeechSynthesisUtterance === "undefined" || vol <= 0) { return false; }
-    var voices = []; try { voices = ss.getVoices() || []; } catch (e) { }
-    var FEM = /female|haruka|ayumi|nanami|mayu|kyoko|zira|hazel|susan|aria|jenny|samantha|karen|victoria|zoe|libby|sonia|google/i;
-    function pick(re) {
-      var list = voices.filter(function (v) { return re.test(v.lang || ""); }), i;
-      for (i = 0; i < list.length; i++) { if (FEM.test(list[i].name || "")) { return list[i]; } }
-      return list[0] || null;
-    }
-    var v = pick(/^ja/i), ja = !!v; if (!v) { v = pick(/^en/i); }
-    var u = new SpeechSynthesisUtterance(ja ? "時間だよ！おつかれさま！" : "Time's up! Great work, senpai. Take a little break!");
-    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = "en-US"; }
-    u.pitch = 1.9; u.rate = ja ? 1.0 : 1.08; u.volume = Math.min(1, vol);
-    try { ss.cancel(); ss.speak(u); return true; } catch (e3) { return false; }
-  }
+  // sound mode: "chime" (built-in) or "custom" (your own file). The old anime-girl voice ("voice") was removed; saved "voice" becomes "chime".
+  function soundMode() { var m = get("tVoice"); return m === "custom" ? "custom" : "chime"; }
 
   function soundUrl() {
     var p = get("tSoundPath");
@@ -104,16 +90,14 @@
     return window.__mtIdleSoundBlob || "";
   }
   function playSound() {
-    var mode = get("tVoice") || "voice", vol = volume();
-    if (mode === "custom") {
+    var vol = volume();
+    if (soundMode() === "custom") {
       var url = soundUrl();
       if (url) {
         try { if (audio) { audio.pause(); } audio = new Audio(url); audio.volume = vol; audio.play(); return; } catch (e) { }
       }
-      mode = "voice";   // no usable file: fall back to the built-in sound
     }
-    var d = chime(vol);
-    if (mode === "voice") { setTimeout(function () { if (!speak(vol)) { /* no voice on this computer: the chime alone is the sound */ } }, Math.round(d * 1000) - 150); }
+    chime(vol);   // built-in sound (also the fallback while no custom file is chosen)
   }
 
   // ---- custom sound file (copied next to the backgrounds so it survives restarts) ----
@@ -137,12 +121,9 @@
     };
   })();
   function soundNote() {
-    var n = "", mode = get("tVoice") || "voice";
-    if (mode === "custom") {
-      n = (get("tSoundPath") && nodeApi && nodeApi.exists(get("tSoundPath"))) ? "Using your file." : (window.__mtIdleSoundBlob ? "Using your file for this session only." : "No file chosen yet. The built-in sound plays until you choose one.");
-    } else if (mode === "voice") {
-      var has = false; try { has = !!(window.speechSynthesis && window.speechSynthesis.getVoices().length); } catch (e) { }
-      if (!has) { n = "No voice found on this computer: the chime plays instead. Choose your own file for a voice clip."; }
+    var n = "";
+    if (soundMode() === "custom") {
+      n = (get("tSoundPath") && nodeApi && nodeApi.exists(get("tSoundPath"))) ? "Using your file." : (window.__mtIdleSoundBlob ? "Using your file for this session only." : "No file chosen yet. Press Choose file. The built-in chime plays until then.");
     }
     if (el.note && el.note.textContent !== n) { el.note.textContent = n; }
   }
@@ -225,8 +206,14 @@
     if (el.reset) { el.reset.addEventListener("click", reset); }
 
     if (el.voice) {
-      el.voice.value = get("tVoice") || "voice";
-      el.voice.addEventListener("change", function () { set("tVoice", el.voice.value); soundNote(); });
+      el.voice.value = soundMode();
+      el.voice.addEventListener("change", function () {
+        set("tVoice", el.voice.value); soundNote();
+        // Custom without a file yet: open the file chooser right away
+        if (el.voice.value === "custom" && !(get("tSoundPath") && nodeApi && nodeApi.exists(get("tSoundPath"))) && !window.__mtIdleSoundBlob) {
+          var fi = $("idle-timer-file"); if (fi) { fi.click(); }
+        }
+      });
     }
     if (el.vol) {
       el.vol.value = num(get("tVolume"), 0, 100, 80);
@@ -254,7 +241,7 @@
     if ($("idle-timer-sound-clear")) {
       $("idle-timer-sound-clear").addEventListener("click", function () {
         if (nodeApi) { nodeApi.clear(); } del("tSoundPath"); window.__mtIdleSoundBlob = "";
-        if (get("tVoice") === "custom") { set("tVoice", "voice"); if (el.voice) { el.voice.value = "voice"; } }
+        if (get("tVoice") === "custom") { set("tVoice", "chime"); if (el.voice) { el.voice.value = "chime"; } }
         soundNote();
       });
     }
@@ -301,7 +288,6 @@
     state = get("tState") || "idle";
     if (state === "running" && num0(get("tEnd")) - Date.now() <= 0) { state = "done"; set("tState", "done"); }   // ran out while the panel was closed
     bindControls(); renderLists(); soundNote(); render(); tickerCheck();
-    try { if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = soundNote; } } catch (e) { }
 
     // idle screen shown / hidden -> refresh content once, start/stop the 1-second tick
     try {
@@ -317,7 +303,7 @@
         if (nodeApi) { nodeApi.clear(); } window.__mtIdleSoundBlob = "";
         state = "idle"; newDay();
         ["idle-show-elapsed", "idle-timer-sound"].forEach(function (id) { if ($(id)) { $(id).checked = true; } });
-        if (el.h) { el.h.value = 1; } if (el.m) { el.m.value = 0; } if (el.voice) { el.voice.value = "voice"; }
+        if (el.h) { el.h.value = 1; } if (el.m) { el.m.value = 0; } if (el.voice) { el.voice.value = "chime"; }
         if (el.vol) { el.vol.value = 80; el.vol.dispatchEvent(new Event("input")); }
         if ($("idle-notes")) { $("idle-notes").value = ""; }
         refreshTodoControls(); var j; for (j = 1; j <= TODOS; j++) { if ($("idle-todo-" + j)) { $("idle-todo-" + j).value = ""; } }

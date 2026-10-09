@@ -10,6 +10,12 @@
     if (typeof globalThis === 'undefined') { window.globalThis = window; }
   </script>
 
+  <!-- Settings window: the old Svelte settings page is replaced by settings.html (Flow-style).
+       If CEP still opens this URL (old manifest / cached window), jump to the new page. -->
+  <script>
+    if (/[?&]ext=settings/.test(location.search)) { location.replace("settings.html" + location.search); }
+  </script>
+
   <!-- Global error handler for debugging (catches JS errors in older CEF) -->
   <script>
     window.onerror = function(msg, url, line, col, error) {
@@ -89,12 +95,13 @@
   <link rel="stylesheet" href="./nc-apply-glow.css">
   <link rel="stylesheet" href="./nc-fluid-polish.css">
   <link rel="stylesheet" href="./nc-glass.css">
-  <link rel="stylesheet" href="./nc-bg.css">
+  <link rel="stylesheet" href="./nc-bg.css?v=14">
   <link rel="stylesheet" href="./nc-extras.css">
   <link rel="stylesheet" href="./nc-live.css">
-  <link rel="stylesheet" href="./nc-flow.css?v=17">
+  <link rel="stylesheet" href="./nc-flow.css?v=19">
   <link rel="stylesheet" href="./nc-morph.css?v=15">
   <link rel="stylesheet" href="./nc-grad.css?v=2">
+  <link rel="stylesheet" href="./nc-flowfx.css?v=4">
   <link rel="stylesheet" href="./nc-polish.css?v=1">
   <link rel="stylesheet" href="./nc-fix16.css?v=1">
   <link rel="stylesheet" href="./nc-fix17.css?v=2">
@@ -104,28 +111,35 @@
   <link rel="stylesheet" href="./nc-icons-pro.css?v=2">
   <link rel="stylesheet" href="./nc-fix20.css?v=1">
   <link rel="stylesheet" href="./nc-fix21.css?v=2">
+  <link rel="stylesheet" href="./nc-fix22.css?v=1">
+  <link rel="stylesheet" href="./nc-fix23.css?v=1">
+  <link rel="stylesheet" href="./nc-gbox.css?v=2">
+  <link rel="stylesheet" href="./nc-view.css?v=1">
+  <link rel="stylesheet" href="./nc-handle.css?v=1">
   <!-- Same custom tooltip as the main panel (shared files, replaces the native title tooltip) -->
   <link rel="stylesheet" href="../css/mt-tooltip.css?v=3">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). Also
        re-scans for styles the Svelte bundle below injects at runtime. -->
-  <script src="./nc-away.js?v=3"></script>
+  <script src="./nc-away.js?v=4"></script>
   <script src="../js/ae2021-compat.js?v=10"></script>
   <script src="../js/mt-tooltip.js?v=3"></script>
   <script src="./CSInterface.js"></script>
   <script src="./nc-light.js?v=2"></script>
   <script src="./nc-theme-sync.js?v=2"></script>
-  <script src="./nc-bg.js"></script>
-  <script src="./nc-extras.js?v=2"></script>
+  <script src="./nc-bg.js?v=14"></script>
+  <script src="./nc-extras.js?v=3"></script>
   <script src="./nc-live.js"></script>
   <script src="./nc-glow.js"></script>
-  <script src="./nc-particles.js?v=6"></script>
+  <script src="./nc-particles.js?v=9"></script>
   <script src="./nc-apply-glow.js"></script>
-  <script src="./nc-gsize.js?v=3"></script>
-  <script src="./nc-flow.js?v=21"></script>
+  <script src="./nc-gsize.js?v=6"></script>
+  <script src="./nc-flow.js?v=23"></script>
+  <script src="./nc-view.js?v=1"></script>
+  <script src="./nc-handle.js?v=1"></script>
   <script src="./nc-morph.js?v=15"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
-  <script defer src="./assets/index.js?v=5"></script>
+  <script defer src="./assets/index.js?v=9"></script>
   <script defer src="./nc-icons-pro.js?v=5"></script>
 </head>
 <body>

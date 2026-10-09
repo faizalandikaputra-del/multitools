@@ -19,7 +19,7 @@
   "use strict";
 
   var K_BG = "mtx.mdBg", K_MODE = "mtx.mdMode", K_SCHEME = "mtx.mdScheme";
-  var DEFAULT_SEED = "#8b6cf7";
+  var DEFAULT_SEED = "#ffffff";
 
   // ---------------------------------------------------------------- colour maths
   function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }

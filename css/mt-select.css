@@ -23,8 +23,8 @@
 
 .mt-list { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; }
 .mt-list::-webkit-scrollbar { width: 6px; }
-.mt-list::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb, 139,108,247), .35); border-radius: 3px; }
-.mt-list::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb, 139,108,247), .6); }
+.mt-list::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb, 255, 255, 255), .35); border-radius: 3px; }
+.mt-list::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb, 255, 255, 255), .6); }
 
 .mt-opt {
   position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -35,11 +35,11 @@
 .mt-menu.is-open .mt-opt { animation: mtOptIn .26s cubic-bezier(.22, 1, .36, 1) backwards; animation-delay: var(--d, 0ms); }
 @keyframes mtOptIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
 .mt-opt-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mt-opt.is-active { background: rgba(var(--accent-rgb, 139,108,247), .2); transform: translateX(2px); }
-.mt-opt.is-selected { color: var(--accent-strong, var(--accent, #8b6cf7)); font-weight: 600; }
+.mt-opt.is-active { background: rgba(var(--accent-rgb, 255, 255, 255), .2); transform: translateX(2px); }
+.mt-opt.is-selected { color: var(--accent-strong, var(--accent, #ffffff)); font-weight: 600; }
 .mt-opt.is-selected::before {
   content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; width: 3px; border-radius: 2px;
-  background: var(--accent-strong, var(--accent, #8b6cf7));
+  background: var(--accent-strong, var(--accent, #ffffff));
 }
 .mt-opt.is-disabled { opacity: .38; cursor: default; }
 .mt-opt-check { flex: 0 0 auto; width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(.5); transition: opacity .15s, transform .2s cubic-bezier(.34, 1.56, .64, 1); }
@@ -49,7 +49,7 @@
 
 /* the closed select: arrow flips while its menu is open */
 select.select { transition: background-color .16s linear, box-shadow .16s ease, background-position .2s; cursor: pointer; }
-select.select.mt-open { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb, 139,108,247), .9), 0 0 0 3px var(--accent-glow, rgba(139,108,247,.4)); }
+select.select.mt-open { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb, 255, 255, 255), .9), 0 0 0 3px var(--accent-glow, rgba(255, 255, 255,.4)); }
 
 /* ---------- context menus (right-click): softer pop + staggered items ---------- */
 .ctx-menu {

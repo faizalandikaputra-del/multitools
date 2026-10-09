@@ -1,0 +1,123 @@
+/* NeuCurve - nc-settings-pro.css
+   NeuCurve-only part of the settings redesign. Load AFTER ../css/mt-settings-pro.css (shared tokens, header, nav, rows, switch, sliders).
+   This file removes the old card-stack / glass look and restyles the NeuCurve controls: color buttons, swatches, handle presets,
+   dropzones, segmented control, dropdowns, color editor and profile editor. No ids, classes or scripts changed. */
+
+html { background: var(--p-ground); }
+body { background: var(--p-ground); padding: 12px; }
+body::before { display: none; }
+.settings-window { border-radius: 14px; }
+.settings-window::after, .settings-sidebar::after { display: none; }
+.settings-sidebar { background: var(--p-ground); flex: 0 0 176px; width: 176px; }
+.settings-workspace { background: transparent; }
+
+/* groups were bordered cards here */
+.settings-group { background: none; border: 0; border-radius: 0; margin: 0; padding: 22px 0 8px; }
+.settings-group-header-with-action { align-items: center; display: flex; gap: 16px; justify-content: space-between; }
+.settings-group-header-with-action > div { min-width: 0; }
+.settings-group.has-dd-open { overflow: visible; position: relative; z-index: 30; }
+.settings-group.has-dd-open > .settings-group-header { border-radius: 0; }
+
+/* opacity / slider pairs sit directly in the group */
+.settings-group > .settings-opacity-head { padding: 14px 28px 10px; margin: 0; }
+.settings-group > .settings-range { margin: 0 28px 18px; width: calc(100% - 56px); }
+
+/* ---------- buttons ---------- */
+.settings-row > button, .settings-group-header-with-action > button, .settings-background-head button, .settings-profile-image-copy > button {
+  align-items: center; background: var(--p-raise); border: 1px solid var(--p-line-strong); border-radius: 9px; box-shadow: none; color: var(--p-ink); cursor: pointer; display: inline-flex; flex: 0 0 auto; font: 500 12px/1 var(--p-body); gap: 8px; height: 30px; justify-content: center; letter-spacing: 0.005em; min-height: 0; min-width: 56px; padding: 0 13px;
+  transition: background-color 140ms var(--p-ease), border-color 140ms var(--p-ease), color 140ms var(--p-ease), transform 120ms var(--p-ease);
+}
+.settings-row > button:hover, .settings-group-header-with-action > button:hover, .settings-background-head button:hover, .settings-profile-image-copy > button:hover { background: var(--p-raise-2); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
+.settings-row > button:active, .settings-group-header-with-action > button:active, .settings-profile-image-copy > button:active { transform: scale(0.97); }
+.settings-row > button.is-open { background: rgba(var(--p-rgb), 0.16); border-color: rgba(var(--p-rgb), 0.8); color: #fff; }
+.settings-group-header-with-action > button, .settings-profile-image-copy > button { background: transparent; border-color: transparent; color: var(--p-ink-2); }
+.settings-group-header-with-action > button:hover, .settings-profile-image-copy > button:hover { background: var(--p-raise); border-color: transparent; color: var(--p-ink); }
+.settings-group-header-with-action > button { margin-right: -10px; }
+.settings-group-header-with-action > button:disabled, .settings-profile-image-copy > button:disabled { opacity: 0.4; pointer-events: none; }
+.nc-actions { padding: 10px 28px 0; }
+.nc-btn { height: 32px; }
+
+/* every color button shows the color it edits */
+.settings-row > button[data-color-edit]::before {
+  background: var(--settings-edit-color, #000); border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); content: ""; flex: 0 0 12px; height: 12px; width: 12px;
+}
+
+/* ---------- segmented control (Side / Area) ---------- */
+.nc-seg { background: rgba(0, 0, 0, 0.28); border: 1px solid var(--p-line); border-radius: 10px; gap: 2px; padding: 3px; }
+.nc-seg button { background: transparent; border-radius: 7px; color: var(--p-ink-2); font: 500 12px/1 var(--p-body); height: 26px; padding: 0 11px; transition: background-color 160ms var(--p-ease), color 160ms var(--p-ease), box-shadow 160ms var(--p-ease); }
+.nc-seg button:hover { background: var(--p-raise); color: var(--p-ink); }
+.nc-seg button.is-selected { background: var(--p-accent); box-shadow: 0 2px 10px rgba(var(--p-rgb), 0.45); color: var(--p-on, #fff); }
+
+/* ---------- gradient preview ---------- */
+.settings-background-gradient-preview { border: 1px solid var(--p-line-strong); border-radius: 12px; height: 56px; margin: 8px 28px 10px; }
+
+/* ---------- quick-preset swatches ---------- */
+.settings-swatches { display: grid; gap: 12px 10px; grid-template-columns: repeat(8, 1fr); justify-items: center; padding: 6px 28px 16px; }
+.settings-swatches button { border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); height: 26px; transition: transform 200ms var(--p-spring), box-shadow 160ms var(--p-ease); width: 26px; }
+.settings-swatches button:hover { border: 0; transform: scale(1.14); }
+.settings-swatches button:active { transform: scale(0.94); }
+.settings-swatches button.is-selected { box-shadow: 0 0 0 2px var(--p-panel), 0 0 0 4px #f4f3f8; }
+
+/* ---------- handle presets + dropzones ---------- */
+.settings-handle-presets { display: grid; gap: 8px; grid-template-columns: repeat(5, 1fr); padding: 6px 28px 14px; }
+.settings-handle-presets button { background: var(--p-raise); border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--p-line); color: var(--p-ink-2); gap: 8px; height: 64px; transition: background-color 160ms var(--p-ease), box-shadow 160ms var(--p-ease), color 160ms var(--p-ease), transform 140ms var(--p-ease); }
+.settings-handle-presets button:hover { background: var(--p-raise-2); border: 0; color: var(--p-ink); }
+.settings-handle-presets button:active { transform: scale(0.96); }
+.settings-handle-presets button.is-selected { background: rgba(var(--p-rgb), 0.14); border: 0; box-shadow: inset 0 0 0 1.5px var(--p-accent); color: var(--p-ink); }
+.settings-handle-presets b { font: 500 11px/1 var(--p-body); letter-spacing: 0; }
+.settings-handle-shape { filter: none; }
+
+.settings-handle-dropzone, .settings-dropzone {
+  background: var(--p-raise); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 14px; color: var(--p-ink-3); margin: 0 28px 6px; width: calc(100% - 56px);
+  transition: background-color 160ms var(--p-ease), border-color 160ms var(--p-ease), color 160ms var(--p-ease);
+}
+.settings-handle-dropzone { height: 72px; }
+.settings-dropzone { height: 116px; margin-top: 8px; }
+.settings-handle-dropzone:hover, .settings-handle-dropzone.is-dragging, .settings-handle-dropzone.is-selected, .settings-dropzone:hover, .settings-dropzone.is-dragging, .settings-dropzone.is-selected { background: rgba(var(--p-rgb), 0.1); border-color: rgba(var(--p-rgb), 0.75); color: var(--p-ink); }
+.settings-handle-upload-empty b, .settings-drop-empty b { font: 500 12px/1.4 var(--p-body); }
+.settings-drop-empty { gap: 8px; }
+.settings-drop-preview img, .settings-drop-preview video { filter: none; }
+.settings-dropzone:not(.use-original-color) .settings-drop-preview img, .settings-dropzone:not(.use-original-color) .settings-drop-preview video { filter: grayscale(1) contrast(1.05); }
+
+/* ---------- dropdowns ---------- */
+.settings-language-dropdown { flex: 0 0 150px; }
+.settings-language-dropdown__trigger {
+  background: rgba(0, 0, 0, 0.28); border: 1px solid var(--p-line-strong); border-radius: 9px; box-shadow: none; color: var(--p-ink); font: 400 12.5px/1 var(--p-body); height: 32px; padding: 0 12px;
+  transition: border-color 140ms var(--p-ease), box-shadow 140ms var(--p-ease), background-color 140ms var(--p-ease);
+}
+.settings-language-dropdown__trigger:hover { background: rgba(0, 0, 0, 0.36); border-color: rgba(255, 255, 255, 0.26); }
+.settings-language-dropdown__trigger:focus, .settings-language-dropdown__trigger:focus-visible, .settings-language-dropdown__trigger[aria-expanded='true'] { background: rgba(0, 0, 0, 0.36); border-color: rgba(var(--p-rgb), 0.85); box-shadow: 0 0 0 3px rgba(var(--p-rgb), 0.2); }
+.settings-language-dropdown__menu { background: rgba(29, 29, 34, 0.97); border: 1px solid var(--p-line-strong); border-radius: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); padding: 5px; }
+.settings-language-dropdown__option { border-radius: 8px; color: var(--p-ink-2); font: 400 12.5px/1.2 var(--p-body); min-height: 30px; padding: 7px 10px; transition: background-color 120ms var(--p-ease), color 120ms var(--p-ease); }
+.settings-language-dropdown__option:hover, .settings-language-dropdown__option:focus, .settings-language-dropdown__option:focus-visible { background: var(--p-raise-2); color: var(--p-ink); }
+.settings-language-dropdown__option.is-selected { background: rgba(var(--p-rgb), 0.18); box-shadow: none; color: var(--p-ink); font-weight: 600; }
+
+/* ---------- color editor (opens under a color row) ---------- */
+.settings-color-editor { background: rgba(0, 0, 0, 0.24); border: 1px solid var(--p-line); border-radius: 14px; gap: 12px; margin: 4px 28px 12px; padding: 14px; }
+.settings-color-preview { border: 1px solid var(--p-line-strong); border-radius: 10px; box-shadow: none; height: 44px; }
+.settings-color-slider { border-radius: 999px; height: 6px; }
+.settings-color-slider::-webkit-slider-thumb { background: #fff; border: 0; border-radius: 50%; box-shadow: 0 0 0 2px var(--p-panel), 0 0 0 3px rgba(255, 255, 255, 0.55), 0 2px 6px rgba(0, 0, 0, 0.5); height: 14px; transition: transform 140ms var(--p-ease); width: 14px; }
+.settings-color-slider:hover::-webkit-slider-thumb { transform: scale(1.15); }
+.settings-hex-input { background: rgba(0, 0, 0, 0.28); border: 1px solid var(--p-line-strong); border-radius: 9px; color: var(--p-ink); font: 600 12px/1 var(--p-display); height: 32px; letter-spacing: 0.06em; text-transform: uppercase; }
+.settings-hex-input:focus { border-color: rgba(var(--p-rgb), 0.85); box-shadow: 0 0 0 3px rgba(var(--p-rgb), 0.2); }
+
+/* ---------- profile editor ---------- */
+.settings-profile-editor { padding: 6px 28px 14px; }
+.settings-profile-image-row { align-items: center; border-bottom: 1px solid var(--p-line); gap: 18px; margin-bottom: 16px; padding-bottom: 18px; }
+.settings-profile-avatar-button { background: var(--p-raise-2); border: 0; border-radius: 50%; box-shadow: 0 0 0 3px var(--p-panel), 0 0 0 4px rgba(var(--p-rgb), 0.8); flex: 0 0 84px; height: 84px; padding: 0; width: 84px; transition: transform 200ms var(--p-spring); }
+.settings-profile-avatar-button:hover { transform: scale(1.04); }
+.settings-profile-avatar-button img { background: var(--p-ground); }
+.settings-profile-avatar-button > span { background: rgba(0, 0, 0, 0.58); bottom: 0; left: 0; right: 0; top: 0; }
+.settings-profile-image-copy > b { color: var(--p-ink); font: 600 14px/1.25 var(--p-display); }
+.settings-profile-image-copy > small { color: var(--p-ink-3); font: 400 11px/1.45 var(--p-body); margin: 3px 0 8px; }
+.settings-profile-image-copy > button { background: var(--p-raise); border-color: var(--p-line-strong); color: var(--p-ink); }
+.settings-profile-field { gap: 7px; margin-bottom: 14px; }
+.settings-profile-field > span { color: var(--p-ink); font: 500 12.5px/1.3 var(--p-body); }
+.settings-profile-field input, .settings-profile-field textarea {
+  background: rgba(0, 0, 0, 0.28); border: 1px solid var(--p-line-strong); border-radius: 9px; color: var(--p-ink); font: 400 12.5px/1.5 var(--p-body); padding: 0 12px;
+  transition: border-color 140ms var(--p-ease), box-shadow 140ms var(--p-ease);
+}
+.settings-profile-field input { height: 36px; }
+.settings-profile-field textarea { min-height: 76px; padding: 9px 12px; resize: none; }
+.settings-profile-field input:focus, .settings-profile-field textarea:focus { background: rgba(0, 0, 0, 0.36); border-color: rgba(var(--p-rgb), 0.85); box-shadow: 0 0 0 3px rgba(var(--p-rgb), 0.2); }
+.settings-profile-tip { color: var(--p-ink-3); font: 400 11px/1.5 var(--p-body); margin: 2px 0 0; }

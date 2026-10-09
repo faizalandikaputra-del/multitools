@@ -24,7 +24,7 @@ body.nc-bg-edit #nc-bg-editor { opacity: 1; visibility: visible; pointer-events:
 .nc-bge-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
 .nc-bge-actions button { background: #1a1a1f; border: 1px solid #2a2a30; color: #bbb; font-size: 10px; padding: 5px 14px; border-radius: 6px; cursor: pointer; }
 .nc-bge-actions button:hover { background: #24242b; color: #fff; }
-.nc-bge-actions button.primary { background: var(--ui-color, #3366ff); border-color: var(--ui-color, #3366ff); color: #fff; }
+.nc-bge-actions button.primary { background: var(--ui-color, #3366ff); border-color: var(--ui-color, #3366ff); color: var(--nc-bge-on, #fff); }
 
 /* FULL-window preview: image over the whole Settings window; the frame is what the graph really shows. */
 #nc-bg-prev { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #08080a; z-index: 5; }
@@ -33,3 +33,7 @@ body.nc-bg-edit #nc-bg-editor { opacity: 1; visibility: visible; pointer-events:
   box-shadow: 0 0 0 200vmax rgba(6, 6, 10, 0.62), inset 0 0 0 1px rgba(0, 0, 0, 0.5); }
 body.nc-bg-edit #nc-bg-prev { cursor: grab; }
 body.nc-bg-dragging #nc-bg-prev { cursor: grabbing; }
+
+/* ---------- Use Original Media Colors (Flow: .curve-graph-background img { filter: grayscale(1) contrast(1.05) } + .use-original-color { filter: none }) ---------- */
+svg.curve-svg > image, #nc-bg-prev img { filter: grayscale(1) contrast(1.05); }
+html.nc-bg-orig svg.curve-svg > image, html.nc-bg-orig #nc-bg-prev img { filter: none; }

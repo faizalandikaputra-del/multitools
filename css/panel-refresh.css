@@ -5,6 +5,6 @@
 .refresh-btn svg { transition: transform 0.3s ease; }
 .refresh-btn:hover svg { transform: rotate(90deg); }
 .refresh-btn:active svg { transform: rotate(90deg) scale(0.9); }
-.refresh-btn.is-spinning { pointer-events: none; color: var(--accent-strong, var(--theme-accent, #8b6cf7)); }
+.refresh-btn.is-spinning { pointer-events: none; color: var(--accent-strong, var(--theme-accent, #ffffff)); }
 .refresh-btn.is-spinning svg { animation: mt-refresh-spin 0.7s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
 @keyframes mt-refresh-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

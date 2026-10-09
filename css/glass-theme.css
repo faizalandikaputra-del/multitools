@@ -27,7 +27,7 @@
   --surface-card: rgba(30, 30, 36, 0.75);
   --surface-hover: rgba(45, 45, 55, 0.85);
   --border-subtle: rgba(255, 255, 255, 0.08);
-  --accent-glow: rgba(var(--accent-rgb, 127, 0, 255), 0.4);   /* follows Settings > Theme color */
+  --accent-glow: rgba(var(--accent-rgb, 255, 255, 255), 0.4);   /* follows Settings > Theme color */
   --radius-card: 10px;
   --radius-btn: 6px;
 

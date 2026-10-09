@@ -9,7 +9,7 @@ html body .shell.shell .fl-star svg.ncp { fill: none; stroke: currentColor; stro
 html body .shell.shell .fl-star svg.ncp .ncp-t { fill-opacity: 0; }
 
 html body .shell.shell .fl-star:hover,
-html body .shell.shell .fl-star:focus-visible { color: var(--fl-accent, #ffd21f); }
+html body .shell.shell .fl-star:focus-visible { color: var(--fl-accent, #FFFFFF); }
 html body .shell.shell .fl-star:hover svg.ncp .ncp-t,
 html body .shell.shell .fl-star:focus-visible svg.ncp .ncp-t { fill-opacity: .25; }
 

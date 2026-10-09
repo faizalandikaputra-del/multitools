@@ -1,0 +1,110 @@
+/* NeuCurve - nc-flowfx.css : Flow's ambient effects, ported (from Flow panel/css/style.css .flow-particles / .flow-snow / .flow-rain).
+   Layer #nc-fx is built by nc-particles.js; --fx-color / --fx-glow / --fx-soft play the role of Flow's
+   --curve-theme-color / --curve-theme-glow / --curve-theme-soft. Also holds the Flow film-grain for the
+   background gradient (#nc-grad::after). */
+
+#nc-fx {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 0;
+  overflow: hidden; pointer-events: none; contain: strict;
+  --fx-color: #ffffff; --fx-glow: rgba(255, 255, 255, 0.44); --fx-soft: rgba(255, 255, 255, 0.22);
+}
+#nc-fx span { position: absolute; color: var(--fx-color); pointer-events: none; }
+/* nc-away.css pauses EVERY animation while the pointer is outside the panel / idle (anti black-flash fix). The effect layer is
+   exempt on purpose: Flow's particles never stop, and a frozen field looked nothing like Flow. The dots only animate
+   transform + opacity (compositor), so the cost is small. */
+html.nc-away #nc-fx span, html.nc-away #nc-fx span::before, html.nc-away #nc-fx span::after { animation-play-state: running !important; }
+
+/* ---- particles : soft glowing dots that breathe and drift in place */
+#nc-fx[data-fx="particles"] span {
+  left: var(--p-x); top: var(--p-y); width: var(--p-size); height: var(--p-size);
+  background: currentColor; border-radius: 50%; opacity: 0.16;
+  box-shadow: 0 0 10px currentColor, 0 0 24px var(--fx-glow), 0 0 42px var(--fx-soft);
+  transform: translate3d(0, 10px, 0) scale(0.72);
+  animation: ncParticleFloat var(--p-dur) ease-in-out infinite alternate; animation-delay: var(--p-delay);
+  will-change: transform, opacity;
+}
+@keyframes ncParticleFloat {
+  0%   { opacity: 0.12; transform: translate3d(0, 10px, 0) scale(0.72); }
+  48%  { opacity: var(--p-alpha); }
+  100% { opacity: 0.24; transform: translate3d(var(--p-dx), var(--p-dy), 0) scale(1.18); }
+}
+
+/* ---- circles : plain flat circles (no glow) rising slowly, fading in and out */
+#nc-fx[data-fx="circles"] span {
+  left: var(--c-x); bottom: -20px; width: var(--c-size); height: var(--c-size);
+  background: currentColor; border-radius: 50%; opacity: 0;
+  animation: ncCircleRise var(--c-dur) linear infinite; animation-delay: var(--c-delay);
+  will-change: transform, opacity;
+}
+@keyframes ncCircleRise {
+  0%   { opacity: 0; transform: translate3d(0, 0, 0); }
+  12%  { opacity: var(--c-alpha); }
+  85%  { opacity: var(--c-alpha); }
+  100% { opacity: 0; transform: translate3d(var(--c-drift), calc(-100vh - 40px), 0); }
+}
+
+/* ---- snow : six-arm crystals falling and spinning */
+#nc-fx[data-fx="snow"] span {
+  left: var(--s-x); top: 0; width: var(--s-size); height: 1px;
+  background: currentColor; border-radius: 999px; opacity: 0; transform-origin: center;
+  box-shadow: 0 0 8px var(--fx-glow), 0 0 22px var(--fx-soft), 0 0 34px var(--fx-soft);
+  animation: ncSnowFall var(--s-dur) linear infinite; animation-delay: var(--s-delay);
+  will-change: transform, opacity;
+}
+#nc-fx[data-fx="snow"] span::before, #nc-fx[data-fx="snow"] span::after {
+  content: ""; position: absolute; left: 0; top: 50%; width: 100%; height: 1px;
+  background: currentColor; border-radius: 999px; transform-origin: center;
+  box-shadow: 0 0 8px var(--fx-glow), 0 0 22px var(--fx-soft), 0 0 34px var(--fx-soft);
+}
+#nc-fx[data-fx="snow"] span::before { transform: rotate(60deg); }
+#nc-fx[data-fx="snow"] span::after { transform: rotate(-60deg); }
+@keyframes ncSnowFall {
+  0%   { opacity: 0; transform: translate3d(0, -14vh, 0) rotate(0deg); }
+  12%  { opacity: var(--s-alpha); }
+  86%  { opacity: var(--s-alpha); }
+  100% { opacity: 0; transform: translate3d(var(--s-drift), 112vh, 0) rotate(360deg); }
+}
+
+/* ---- rain : slanted streaks with a fading tail */
+#nc-fx[data-fx="rain"] span {
+  left: var(--r-x); top: 0; width: var(--r-width); height: var(--r-len);
+  background: linear-gradient(to bottom, transparent 0%, currentColor 58%, currentColor 100%);
+  border-radius: 999px; opacity: 0; box-shadow: 0 0 5px var(--fx-glow);
+  transform: translate3d(0, -18vh, 0) rotate(7deg);
+  animation: ncRainFall var(--r-dur) linear infinite; animation-delay: var(--r-delay);
+  will-change: transform, opacity;
+}
+@keyframes ncRainFall {
+  0%   { opacity: 0; transform: translate3d(0, -18vh, 0) rotate(7deg); }
+  10%  { opacity: var(--r-alpha); }
+  88%  { opacity: var(--r-alpha); }
+  100% { opacity: 0; transform: translate3d(var(--r-drift), 118vh, 0) rotate(7deg); }
+}
+
+@media (prefers-reduced-motion: reduce) { #nc-fx span { animation: none; } #nc-fx[data-fx="rain"] span, #nc-fx[data-fx="circles"] span { display: none; } }
+html[data-reduce-motion="true"] #nc-fx span { animation: none; }
+html[data-reduce-motion="true"] #nc-fx[data-fx="rain"] span, html[data-reduce-motion="true"] #nc-fx[data-fx="circles"] span { display: none; }
+
+/* ---- Flow film grain on the background gradient (Flow: .flow-grain = feTurbulence, overlay, opacity .16) */
+#nc-grad::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 220px 220px;
+  filter: contrast(145%) brightness(82%);
+  mix-blend-mode: overlay; opacity: 0.16;
+}
+
+
+/* ---- layer order like Flow: the effect sits BEHIND the panel (Flow: .flow-snow z-index 2, #graphPanel z-index 3), so dots
+   never cross the graph, the curve, the buttons or the preset tiles. For that the big container surfaces must not paint
+   an opaque background while an effect is on (same list nc-grad.css uses for "Whole panel"; body keeps its own colour). */
+html.nc-fx-on #app { position: relative; z-index: 1; }
+html.nc-fx-on body .shell.shell .extension-wrapper.extension-wrapper,
+html.nc-fx-on body .extension-wrapper.extension-wrapper,
+html.nc-fx-on body .main-container.main-container,
+html.nc-fx-on body .content-wrapper.content-wrapper,
+html.nc-fx-on body .fixed-section.fixed-section,
+html.nc-fx-on body .variable-section.variable-section,
+html.nc-fx-on body .library-area.library-area,
+html.nc-fx-on body .preset-container.preset-container,
+html.nc-fx-on body .action-container.action-container { background: transparent !important; }

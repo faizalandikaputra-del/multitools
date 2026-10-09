@@ -1,0 +1,28 @@
+/* NeuCurve - nc-fix23.css (v1)  LANDSCAPE: the tool rows under the graph no longer spill out of the graph column.
+   In a narrow graph column (side-by-side layout) the first row (eraser, invert, download, speed graph, value pill, save)
+   needed ~200px and the second row (back / middle / forward, Apply, gear) never had room: the save icon was pushed over the
+   column divider into the preset column, the value pill was squeezed into a tall capsule showing just "0", Apply collapsed
+   to 0px wide and the gear hung outside the column.
+   Now both rows WRAP: icons shrink a little (24-30px), the value pill and Apply keep a minimum width and drop to their own
+   line when the column is narrow. Wide columns keep the old single-line rows. Portrait is untouched.
+   Chromium 74 safe: wrapping uses margins, not flex gap. */
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row {
+  flex-wrap: wrap; margin-left: -3px; margin-right: -3px; margin-top: 0; margin-bottom: 0;
+}
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row > * {
+  margin: 0 3px 6px !important;
+}
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row + .fl-row { margin-top: 2px; }
+
+/* row 1: the five icon buttons share the line, shrinking from 30px down to 24px */
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row1 > .fl-ico {
+  flex: 1 1 24px; min-width: 24px; max-width: 30px;
+}
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row1 > .fl-star { flex: 0 0 30px; max-width: none; }
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row1 > .fl-pill {
+  flex: 1 1 96px; min-width: 96px; width: auto;
+}
+/* row 2: Apply keeps a usable width (wraps to its own line next to the gear when the column is narrow) */
+html body .shell.shell .content-wrapper.is-landscape .fixed-section .fl-row2 > .apply-btn {
+  flex: 1 1 90px; min-width: 90px; width: auto;
+}

@@ -1,0 +1,92 @@
+/* Multi Tool - mt-idle-focus.css
+   Idle screen extras (js/mt-idle-focus.js): live time in After Effects (hours / minutes / seconds), countdown timer,
+   notes and daily list. They stack under the clock inside #idle-clock and use the same frosted-chip look as
+   .idle-session / .idle-message (css/style.css > Idle Screensaver). The idle screen is never interactive
+   (pointer-events: none, any mouse move brings the panel back), so these are display-only; edit them in Settings > Idle screen. */
+
+/* the old one-line "You've been in After Effects for ..." chip is replaced by the live segments below */
+.idle-clock .idle-session { display: none; }
+
+.idle-elapsed, .idle-timer, .idle-card {
+  margin-top: var(--space-2);
+  max-width: min(80vw, 24rem);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.idle-elapsed[hidden], .idle-timer[hidden], .idle-card[hidden] { display: none; }
+
+/* ---- time in After Effects ---- */
+.idle-elapsed { display: inline-flex; flex-direction: column; gap: 0.35rem; padding: 0.55rem 0.7rem 0.6rem; border-radius: 1.1rem; }
+.ie-label { font-size: calc(var(--idle-scale) * 0.7rem); font-weight: 500; opacity: 0.78; padding-left: 0.15rem; }
+.ie-segs { display: flex; gap: 0.35rem; }
+.ie-seg {
+  display: flex; flex-direction: column; align-items: center; min-width: calc(var(--idle-scale) * 3.4rem);
+  padding: 0.35rem 0.5rem 0.3rem; border-radius: 0.75rem; background: rgba(255, 255, 255, 0.08);
+}
+.ie-num { font-size: calc(var(--idle-scale) * clamp(1.15rem, 5.2vmin, 1.7rem)); font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.ie-unit { font-style: normal; font-size: calc(var(--idle-scale) * 0.62rem); opacity: 0.7; margin-top: 0.1rem; }
+
+/* ---- timer ---- */
+.idle-timer { display: block; width: min(80vw, 19rem); padding: 0.6rem 0.85rem 0.7rem; border-radius: 1.1rem; }
+.it-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.it-label { font-size: calc(var(--idle-scale) * 0.78rem); font-weight: 500; opacity: 0.85; }
+.it-time { font-size: calc(var(--idle-scale) * clamp(1.1rem, 4.8vmin, 1.55rem)); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.it-bar { margin-top: 0.5rem; height: 0.25rem; border-radius: 999px; background: rgba(255, 255, 255, 0.16); overflow: hidden; }
+.it-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent, #5b8cff); transition: width 0.9s linear; }
+.idle-timer.is-paused .it-time { opacity: 0.6; }
+.idle-timer.is-done { border-color: var(--accent, #5b8cff); animation: idle-timer-done 1.6s ease-in-out infinite; }
+.idle-timer.is-done .it-bar i { width: 100% !important; }
+@keyframes idle-timer-done {
+  0%, 100% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), 0 0 0 0 rgba(var(--accent-rgb, 91, 140, 255), 0.5); }
+  50%      { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), 0 0 0 0.45rem rgba(var(--accent-rgb, 91, 140, 255), 0); }
+}
+:root[data-reduce-motion="true"] .idle-timer.is-done { animation: none; }
+:root[data-reduce-motion="true"] .it-bar i { transition: none; }
+
+/* ---- notes + daily list ---- */
+.idle-card { display: block; width: min(80vw, 19rem); padding: 0.6rem 0.85rem 0.7rem; border-radius: var(--radius-m, 0.75rem); }
+.ic-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
+.ic-head strong { font-size: calc(var(--idle-scale) * 0.8rem); font-weight: 600; }
+.ic-head span { font-size: calc(var(--idle-scale) * 0.7rem); opacity: 0.7; font-variant-numeric: tabular-nums; }
+.ic-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.ic-list li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.35; }
+.ic-list li::before {
+  content: ""; flex: 0 0 auto; width: 0.85em; height: 0.85em; margin-top: 0.22em; box-sizing: border-box;
+  border: 1.5px solid rgba(255, 255, 255, 0.6); border-radius: 50%;
+}
+.ic-list li.is-done { opacity: 0.55; text-decoration: line-through; }
+.ic-list li.is-done::before { background: var(--accent, #5b8cff) no-repeat center / 70%; border-color: var(--accent, #5b8cff);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3l2.3 2.3 4.7-5' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.ic-text { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+
+html[data-theme="light"]:not(.has-bg-media) .idle-elapsed,
+html[data-theme="light"]:not(.has-bg-media) .idle-timer,
+html[data-theme="light"]:not(.has-bg-media) .idle-card {
+  color: var(--text, #1c1b20); background: rgba(255, 255, 255, 0.72); border-color: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+html[data-theme="light"]:not(.has-bg-media) .ie-seg { background: rgba(0, 0, 0, 0.05); }
+html[data-theme="light"]:not(.has-bg-media) .it-bar { background: rgba(0, 0, 0, 0.12); }
+html[data-theme="light"]:not(.has-bg-media) .ic-list li::before { border-color: rgba(0, 0, 0, 0.45); }
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .idle-elapsed, .idle-timer, .idle-card { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
+}
+.idle-clock[data-position="center"] .idle-elapsed, .idle-clock[data-position="center"] .idle-card { text-align: left; }
+
+/* ---- panel Settings modal ---- */
+.idle-timer-row { flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
+.idle-todo-edit { display: flex; align-items: center; gap: var(--space-2); }
+.idle-todo-edit .idle-message-input { flex: 1; min-width: 0; }
+.idle-notes-input { width: 100%; min-height: 4.2rem; resize: vertical; font-family: inherit; line-height: 1.4; }
+
+/* ---- Settings window ---- */
+.settings-textarea { width: 100%; height: auto; min-height: 84px; padding: 8px; resize: vertical; font-family: inherit; line-height: 1.45; box-sizing: border-box; }
+.settings-input-fill { flex: 1; min-width: 0; }
+.settings-todo-row { gap: 10px; }
+.settings-check { flex: 0 0 auto; width: 15px; height: 15px; margin: 0; accent-color: var(--accent, #fff); }
+.settings-row-copy small.settings-timer-readout { display: block; margin-top: 2px; font-size: 18px !important; font-weight: 600; letter-spacing: -0.01em; color: var(--mtp-text, #e5e5e5); font-variant-numeric: tabular-nums; }
+.wbtn-primary { background: var(--accent, #fff); border-color: var(--accent, #fff); color: var(--on-accent, #111); font-weight: 600; }

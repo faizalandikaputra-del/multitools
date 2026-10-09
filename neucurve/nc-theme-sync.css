@@ -21,11 +21,11 @@
    hardcoded in the compiled bundle to a fixed blue (#3b82f6 / rgba(59,130,246,.4)) - it never reads --ui-color
    or --accent at all, unlike the rest of NeuCurve. Re-color both from NeuCurve's own --ui-color (Settings > UI Color). */
 html .ball {
-  background: var(--ui-color, #FFD21F) !important;
-  box-shadow: 0 0 6px rgba(var(--nc-ui-rgb, 255, 210, 31), 0.6) !important;
+  background: var(--ui-color, #FFFFFF) !important;
+  box-shadow: 0 0 6px rgba(var(--nc-ui-rgb, 255, 255, 255), 0.6) !important;
 }
 html .trail {
-  background: rgba(var(--nc-ui-rgb, 255, 210, 31), 0.4) !important;
+  background: rgba(var(--nc-ui-rgb, 255, 255, 255), 0.4) !important;
 }
 
 /* Belt-and-braces for the curve itself: force the main curve <path>'s own SVG "stroke" presentation attribute

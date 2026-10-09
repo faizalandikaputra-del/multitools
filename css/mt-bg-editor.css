@@ -1,0 +1,47 @@
+/* Multi Tool - mt-bg-editor.css
+   "Adjust Background" editor (#bg-editor) restyled to be identical to NeuCurve's (neucurve/nc-bg.css #nc-bg-editor):
+   dark card 300px / 12px radius, 13px title, 10px labels, thin 3px track (no fill-trail), small white thumb with an
+   accent ring, mono value readout, 6px-radius Reset / Done buttons. Specificity + !important on purpose: the Glass,
+   Material You and fill-trail (panel-refinements.css) slider rules would otherwise win. */
+#bg-editor.bg-editor {
+  width: min(94vw, 300px); gap: 8px; padding: 12px; bottom: 12px;
+  background: rgba(22, 22, 26, 0.94); border: 1px solid #2a2a30; border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5); color: #ddd; font: 11px Inter, sans-serif;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+#bg-editor .bg-editor-head { align-items: baseline; justify-content: space-between; gap: 8px; }
+#bg-editor .bg-editor-head strong { font-size: 13px; font-weight: 600; color: #ddd; }
+#bg-editor .bg-editor-hint { font-size: 10px; color: #8a8a8a; }
+#bg-editor .bg-editor-row { gap: 8px; }
+#bg-editor .bg-editor-row label { flex: 0 0 62px; font-size: 10px; color: #888; }
+#bg-editor .bg-editor-row input[type="range"] {
+  flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; height: 3px; margin: 0;
+  background: #2a2a30 !important; border-radius: 4px; outline: none;
+}
+#bg-editor .bg-editor-row input[type="range"]::-webkit-slider-runnable-track,
+#bg-editor .bg-editor-row input[type="range"].rf-slider::-webkit-slider-runnable-track {
+  height: 3px !important; background: transparent !important; box-shadow: none !important; border-radius: 4px;
+}
+#bg-editor .bg-editor-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px !important; height: 12px !important; margin-top: -4.5px !important; border-radius: 50%;
+  background: #fff !important; border: 2px solid var(--accent, #3366ff) !important; box-shadow: none !important; cursor: pointer; transform: none !important;
+}
+#bg-editor .bg-editor-row output {
+  flex: 0 0 34px; min-width: 0; text-align: right; font: 10px "JetBrains Mono", monospace; font-weight: 400; color: #999;
+}
+#bg-editor .bg-editor-actions { gap: 8px; margin-top: 2px; }
+#bg-editor .bg-editor-actions .btn {
+  background: #1a1a1f; border: 1px solid #2a2a30; color: #bbb; font-size: 10px; padding: 5px 14px; border-radius: 6px; transform: none;
+}
+#bg-editor .bg-editor-actions .btn:hover { background: #24242b; color: #fff; transform: none; }
+#bg-editor .bg-editor-actions .btn.btn-primary { background: var(--accent, #3366ff); border-color: var(--accent, #3366ff); color: var(--on-accent, #fff); box-shadow: none; }
+#bg-editor .bg-editor-actions .btn.btn-primary:hover { filter: brightness(1.08); }
+
+/* light theme: same card as NeuCurve's light variant */
+:root[data-theme="light"] #bg-editor.bg-editor { background: rgba(246, 246, 249, 0.96); border-color: #d5d5cf; color: #222; }
+:root[data-theme="light"] #bg-editor .bg-editor-head strong { color: #111; }
+:root[data-theme="light"] #bg-editor .bg-editor-hint { color: #707070; }
+:root[data-theme="light"] #bg-editor .bg-editor-row label { color: #626262; }
+:root[data-theme="light"] #bg-editor .bg-editor-row input[type="range"] { background: #d5d5cf !important; }
+:root[data-theme="light"] #bg-editor .bg-editor-row output { color: #545454; }
+:root[data-theme="light"] #bg-editor .bg-editor-actions .btn { background: #e5e5e0; border-color: #d5d5cf; color: #333; }

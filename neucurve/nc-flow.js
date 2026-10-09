@@ -14,17 +14,25 @@
 (function () {
   "use strict";
 
-  /* ---------------- first-run defaults (runs before the bundle reads localStorage) ---------------- */
+  /* ---------------- first-run defaults (runs before the bundle reads localStorage) ----------------
+     v22: default accent is WHITE (was yellow #FFD21F). Fresh installs get white. Installs that were seeded with the old
+     yellow are moved to white once (flowInit2); a colour the user picked themselves is left alone. */
   try {
-    if (window.parent === window || true) {
-      if (!localStorage.getItem("neucurve_flowInit")) {
-        localStorage.setItem("neucurve_graphLineColor", "#FFD21F");
-        localStorage.setItem("neucurve_handleColor", "#FFD21F");
-        localStorage.setItem("neucurve_uiColor", "#FFD21F");
-        localStorage.setItem("neucurve_hStyle", "heart");
-        localStorage.setItem("neucurve_hSize", "5");
-        localStorage.setItem("neucurve_flowInit", "1");
-      }
+    var YEL = "#ffd21f", WHITE = "#FFFFFF";
+    if (!localStorage.getItem("neucurve_flowInit")) {
+      localStorage.setItem("neucurve_graphLineColor", WHITE);
+      localStorage.setItem("neucurve_handleColor", WHITE);
+      localStorage.setItem("neucurve_uiColor", WHITE);
+      localStorage.setItem("neucurve_hStyle", "heart");
+      localStorage.setItem("neucurve_hSize", "5");
+      localStorage.setItem("neucurve_flowInit", "1");
+      localStorage.setItem("neucurve_flowInit2", "1");
+    } else if (!localStorage.getItem("neucurve_flowInit2")) {
+      ["graphLineColor", "handleColor", "uiColor"].forEach(function (k) {
+        var v = localStorage.getItem("neucurve_" + k);
+        if (v === null || String(v).toLowerCase() === YEL) { localStorage.setItem("neucurve_" + k, WHITE); }
+      });
+      localStorage.setItem("neucurve_flowInit2", "1");
     }
   } catch (e) { }
 
@@ -249,7 +257,21 @@
       var tt = on ? "Auto Apply is ON - the graph is applied to After Effects live. Click to apply manually." : "";
       if ((b.title || b.__mtTitle || "") !== tt) { b.title = tt; }
     }
+    fitApply();
   }
+  /* v23: "AUTO APPLY" does not fit a narrow button -> html.nc-apply-narrow makes the gray state read "APPLY" (see nc-flow.css) */
+  var fitRO = null, fitBtn = null;
+  function fitApply() {
+    var b = q(".apply-btn"), r = document.documentElement;
+    if (!b) { return; }
+    if (window.ResizeObserver && fitBtn !== b) {
+      try { if (fitRO) { fitRO.disconnect(); } fitRO = new window.ResizeObserver(function () { fitApply(); }); fitRO.observe(b); fitBtn = b; } catch (e) { }
+    }
+    var w = b.clientWidth, narrow = w > 0 && w < 96, has = r.className.indexOf("nc-apply-narrow") >= 0;
+    if (narrow && !has) { r.className += " nc-apply-narrow"; }
+    else if (!narrow && has) { r.className = r.className.replace(/\s*nc-apply-narrow/g, ""); }
+  }
+  window.addEventListener("resize", fitApply);
   window.addEventListener("storage", syncAuto);
   window.addEventListener("focus", syncAuto);
   document.addEventListener("mouseenter", syncAuto, true);

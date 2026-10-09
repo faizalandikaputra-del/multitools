@@ -1,0 +1,38 @@
+/* NeuCurve - nc-view.css (v1)  PANEL VIEW: graph only / presets only. Driven by nc-view.js (classes on <html>).
+   Chromium 74 safe: no gap on flex, no inset, no aspect-ratio. */
+
+/* ---- GRAPH ONLY: the preset column and the divider disappear, the graph column takes the full panel ---- */
+html.nc-view-graph body .shell.shell .variable-section,
+html.nc-view-graph body .shell.shell .section-divider-vertical,
+html.nc-view-graph body .shell.shell .section-divider-horizontal,
+/* portrait: nc-flow.js parks the scrub slider, library toolbar and divider inside the graph column's bottom bar */
+html.nc-view-graph body .shell.shell .action-container .section-divider,
+html.nc-view-graph body .shell.shell .action-container .preview-strip-container,
+html.nc-view-graph body .shell.shell .action-container .library-header { display: none !important; }
+html.nc-view-graph body .shell.shell .content-wrapper .fixed-section {
+  width: 100% !important; max-width: none !important;
+  height: 100% !important; max-height: none !important;
+  flex: 1 1 auto !important;
+}
+
+/* ---- PRESETS ONLY: graph + mode tabs disappear. The Apply bar (with the gear) stays: presets still need Apply,
+        and the gear is the way back to Settings. ---- */
+html.nc-view-presets body .shell.shell .fixed-section > .model-nav-strip,
+html.nc-view-presets body .shell.shell .fixed-section > .canvas-area,
+html.nc-view-presets body .shell.shell .model-tabs-horizontal,       /* portrait mode tabs sit above the content */
+html.nc-view-presets body .shell.shell .section-divider-vertical,
+html.nc-view-presets body .shell.shell .section-divider-horizontal { display: none !important; }
+html.nc-view-presets body .shell.shell .content-wrapper .fixed-section {
+  width: 100% !important; max-width: none !important;
+  height: auto !important; max-height: none !important;
+  flex: 0 0 auto !important;
+}
+html.nc-view-presets body .shell.shell .content-wrapper .variable-section {
+  width: 100% !important; max-width: none !important;
+  height: auto !important; min-height: 0;
+  flex: 1 1 auto !important;
+}
+/* landscape = row layout: presets-only stacks the presets above the Apply bar (portrait already has them in order) */
+html.nc-view-presets body .shell.shell .content-wrapper.is-landscape { flex-direction: column !important; }
+html.nc-view-presets body .shell.shell .content-wrapper.is-landscape .fixed-section { order: 2; }
+html.nc-view-presets body .shell.shell .content-wrapper.is-landscape .variable-section { order: 1; }

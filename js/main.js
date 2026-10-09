@@ -1330,7 +1330,7 @@
   // ---------------------------------------------------------
   var ActivePalette = {
     KEY: "activePaletteColor",
-    DEFAULT: "#8B6CF7",
+    DEFAULT: "#FFFFFF",
     isValid: function (v) { return /^#?[0-9a-f]{6}$/i.test(v || ""); },
     norm: function (v) { v = String(v).trim(); if (v.charAt(0) !== "#") { v = "#" + v; } return v.toUpperCase(); },
     get: function () {
@@ -3300,7 +3300,7 @@
           "</div>" +
           '<div class="field">' +
             '<span class="field-label">Color Accent</span>' +
-            '<input type="color" id="sc-add-color" value="#8b6cf7">' +
+            '<input type="color" id="sc-add-color" value="#ffffff">' +
           "</div>" +
           '<div class="modal-footer">' +
             '<button class="btn btn-ghost" id="sc-add-cancel" type="button">Cancel</button>' +
@@ -3346,7 +3346,7 @@
         typeEl.disabled = false;
         fieldPinned.style.display = "none";
         nameEl.value = ""; codeEl.value = ""; ffxPathEl.value = ""; jsxCodeEl.value = ""; cmdIdEl.value = "";
-        typeEl.value = "expr"; colorEl.value = "#8b6cf7";
+        typeEl.value = "expr"; colorEl.value = "#ffffff";
         syncFields();
         back.classList.add("is-open"); back.setAttribute("aria-hidden", "false");
         nameEl.focus();
@@ -3365,7 +3365,7 @@
           fieldPinned.style.display = "";
           back.querySelector("#sc-add-pinned-info").textContent = target.item.file + " (in " + target.item.folder + ")";
           nameEl.value = target.item.name;
-          colorEl.value = target.item.color || "#8b6cf7";
+          colorEl.value = target.item.color || "#ffffff";
         } else {
           typeEl.disabled = false;
           fieldPinned.style.display = "none";
@@ -3377,7 +3377,7 @@
             ffxPathEl.value = it.type === "ffx-path" ? (it.path || "") : "";
             jsxCodeEl.value = it.type === "jsx" ? (it.code || "") : "";
             cmdIdEl.value = it.type === "cmd" ? (it.commandId || "") : "";
-            colorEl.value = it.color || "#8b6cf7";
+            colorEl.value = it.color || "#ffffff";
           } else {
             var ov = TileCustom.getFor(target.key) || {};
             var fn = ov.fn;
@@ -3391,7 +3391,7 @@
             ffxPathEl.value = fn && fn.type === "ffx-path" ? (fn.path || "") : "";
             jsxCodeEl.value = fn && fn.type === "jsx" ? (fn.code || "") : "";
             cmdIdEl.value = fn && fn.type === "cmd" ? (fn.commandId || "") : "";
-            colorEl.value = ov.accent || "#8b6cf7";
+            colorEl.value = ov.accent || "#ffffff";
           }
           syncFields();
         }
@@ -4724,7 +4724,7 @@
       }, true);
     },
 
-    defaultTheme: "#8b6cf7",
+    defaultTheme: "#ffffff",
 
     // Updates the global CSS variables -> indicator, borders, hovers, switches all follow instantly.
     // Also pushes the same accent into the NeuCurve tab (separate iframe document) so its buttons/active
@@ -4948,6 +4948,17 @@
 
       $("settings-btn").addEventListener("click", function () { self.open(); });
 
+      // Use Original Media Colors (same switch as NeuCurve). Saved as "mtx.bgOrig": "0" = grayscale, anything else = original colors.
+      var origToggle = $("bg-original-color");
+      var applyOrig = function (on) { document.documentElement.classList.toggle("mt-bg-gray", !on); };
+      if (origToggle) {
+        origToggle.checked = Store.get("bgOrig") !== "0";
+        applyOrig(origToggle.checked);
+        origToggle.addEventListener("change", function () {
+          Store.set("bgOrig", origToggle.checked ? "1" : "0");
+          applyOrig(origToggle.checked);
+        });
+      }
       var animToggle = $("anim-enabled");
       if (animToggle) {
         animToggle.checked = Motion.isOn();
@@ -5119,6 +5130,7 @@
         Store.remove("bgColor"); Store.remove("bgImage"); Store.remove("bgImagePath"); Store.remove("themeColor"); Store.removeMatching("toolImg.");
         Store.remove("bgMotionGif"); Store.remove("bgMotionType"); Store.remove("bgMotionVideoPath"); Store.remove(self.opacityKey); Store.remove("tabOrder");
         Store.remove("easyLayerLabels");
+        Store.remove("bgOrig"); if ($("bg-original-color")) { $("bg-original-color").checked = true; } document.documentElement.classList.remove("mt-bg-gray");
         if (Node) { Node.clearSlot("bg-image"); Node.clearSlot("bg-motion-video"); }
         Idle.reset();
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass

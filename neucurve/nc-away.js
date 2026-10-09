@@ -13,21 +13,26 @@
 (function () {
   "use strict";
   var root = document.documentElement;
-  var out = true, idle = false, away = true;   // start "away" until the first real pointer event
+  /* v4: Settings > "Keep Animations Running" (neucurve_keepMotion, default ON). ON = the gate never closes: nothing is
+     paused when the pointer leaves the panel or rests for 4 s (the freeze looked like "animations suddenly stop").
+     OFF = the old behaviour below (anti black-flash). */
+  function keep() { try { return localStorage.getItem("neucurve_keepMotion") !== "0"; } catch (e) { return true; } }
+  var out = true, idle = false, away = !keep();   // old mode: start "away" until the first real pointer event
   var IDLE_MS = 4000, lastAct = Date.now();
   window.__ncAway = function () { return away; };
   window.__ncPointerOut = function () { return out; };
   function update() {
-    var v = out || idle;
+    var v = keep() ? false : (out || idle);
     if (v === away) { return; }
     away = v;
     if (v) { root.classList.add("nc-away"); } else { root.classList.remove("nc-away"); }
     try { window.dispatchEvent(new Event("nc-away")); } catch (e) { }
   }
-  root.classList.add("nc-away");
+  if (!keep()) { root.classList.add("nc-away"); }
   function act() { lastAct = Date.now(); out = false; idle = false; update(); }
   function leave() { out = true; update(); }
-  setInterval(function () { if (!idle && !out && Date.now() - lastAct > IDLE_MS) { idle = true; update(); } }, 1000);
+  setInterval(function () { if (!idle && !out && Date.now() - lastAct > IDLE_MS) { idle = true; } update(); }, 1000);
+  window.addEventListener("storage", function (e) { if (!e.key || e.key === "neucurve_keepMotion") { update(); } });
   var opts = true;
   document.addEventListener("mousemove", act, opts);
   document.addEventListener("mouseenter", act, opts);

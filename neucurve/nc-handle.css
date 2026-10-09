@@ -1,0 +1,13 @@
+/* NeuCurve - nc-handle.css (v1)  Press a handle -> its numbers show.
+   nc-flow.css hides every <text> inside the graph (Flow has no axis numbers). The bundle already draws the value label
+   ("0.38, 0.43") next to the handle you are holding, so that one is shown again, and the 0 / 1 axis numbers appear while a
+   handle is pressed (nc-handle.js sets html.nc-press). Released = back to the clean Flow look. */
+html.nc-press body .shell.shell svg.curve-svg text { display: inline; }
+html body .shell.shell svg.curve-svg text:not([fill="#aaa"]):not([fill="#777"]) {
+  display: inline;                     /* the value label only exists while a handle is held */
+  font-weight: 700; font-size: 10px;
+  stroke: #0b0b0b; stroke-width: 2.6px; stroke-linejoin: round; paint-order: stroke;
+  pointer-events: none;
+}
+html.nc-press body .shell.shell svg.curve-svg text[fill="#aaa"],
+html.nc-press body .shell.shell svg.curve-svg text[fill="#777"] { stroke: #0b0b0b; stroke-width: 2px; paint-order: stroke; pointer-events: none; }

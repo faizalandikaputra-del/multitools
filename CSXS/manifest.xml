@@ -5,6 +5,8 @@
     <Extension Id="com.ogatt.multitool.panel" Version="1.1.0" />
     <!-- Curve tab (NeuCurve): its Settings popup and Graph Editor open as their own windows -->
     <Extension Id="com.ogatt.multitool.curve.settings" Version="1.1.0" />
+    <!-- Multi Tool Settings: opens as its own window (gear button in the panel), same idea as the Curve settings above -->
+    <Extension Id="com.ogatt.multitool.settings" Version="1.1.0" />
     <Extension Id="com.ogatt.multitool.curve.graph" Version="1.1.0" />
   </ExtensionList>
   <ExecutionEnvironment>
@@ -48,11 +50,11 @@
       </DispatchInfo>
     </Extension>
 
-    <!-- NeuCurve: Settings popup -->
-    <Extension Id="com.ogatt.multitool.curve.settings">
+    <!-- Multi Tool: Settings window (opened by the gear button; mirrors the controls that live in the panel) -->
+    <Extension Id="com.ogatt.multitool.settings">
       <DispatchInfo>
         <Resources>
-          <MainPath>./neucurve/index.html?ext=settings</MainPath>
+          <MainPath>./html/settings.html</MainPath>
           <ScriptPath>./jsx/host.jsx</ScriptPath>
           <CEFCommandLine>
             <Parameter>--allow-file-access-from-files</Parameter>
@@ -65,8 +67,34 @@
         <UI>
           <Type>Modeless</Type>
           <Geometry>
-            <Size><Width>320</Width><Height>580</Height></Size>
-            <MinSize><Width>280</Width><Height>450</Height></MinSize>
+            <Size><Width>640</Width><Height>660</Height></Size>
+            <MaxSize><Width>900</Width><Height>1400</Height></MaxSize>
+            <MinSize><Width>460</Width><Height>420</Height></MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+
+    <!-- NeuCurve: Settings popup -->
+    <Extension Id="com.ogatt.multitool.curve.settings">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./neucurve/settings.html?ext=settings</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Modeless</Type>
+          <Geometry>
+            <Size><Width>585</Width><Height>625</Height></Size>
+            <MaxSize><Width>585</Width><Height>1400</Height></MaxSize>
+            <MinSize><Width>585</Width><Height>420</Height></MinSize>
           </Geometry>
         </UI>
       </DispatchInfo>

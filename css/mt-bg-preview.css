@@ -1,0 +1,32 @@
+/* Multi Tool - mt-bg-preview.css  (Settings window, "Adjust background" - same look as NeuCurve's neucurve/nc-bg.css) */
+body.is-bgp .settings-window { opacity: 0; visibility: hidden; pointer-events: none; }
+body.is-bgp { cursor: grab; }
+body.is-bgp.is-bgp-dragging, body.is-bgp.is-bgp-dragging * { cursor: grabbing; user-select: none; }
+#bgp, #bgp-card { display: none; }
+body.is-bgp #bgp { display: block; }
+body.is-bgp #bgp-card { display: flex; }
+#bgp { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #08080a; z-index: 5; }
+#bgp .bgp-media { position: absolute; max-width: none; user-select: none; pointer-events: none; }
+#bgp.is-gray .bgp-media { filter: grayscale(1) contrast(1.05); }
+#bgp-frame { position: absolute; box-sizing: border-box; pointer-events: none; border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 200vmax rgba(6, 6, 10, 0.62), inset 0 0 0 1px rgba(0, 0, 0, 0.5); }
+#bgp-note { display: none; position: absolute; left: 24px; right: 24px; top: 40%; text-align: center; font: 11px Inter, sans-serif; color: #8a8a8a; }
+#bgp.no-preview #bgp-note { display: block; }
+#bgp-card {
+  position: fixed; left: 50%; bottom: 12px; z-index: 50; transform: translateX(-50%);
+  width: min(94vw, 300px); box-sizing: border-box; flex-direction: column; gap: 8px;
+  padding: 12px; background: rgba(22, 22, 26, 0.94); border: 1px solid #2a2a30; border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5); color: #ddd; font: 11px Inter, sans-serif; cursor: default;
+}
+.bgp-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.bgp-head strong { font-size: 13px; font-weight: 600; }
+.bgp-head span { font-size: 10px; color: #8a8a8a; }
+.bgp-row { display: flex; align-items: center; gap: 8px; }
+.bgp-row label { flex: 0 0 62px; font-size: 10px; color: #888; }
+.bgp-row input[type="range"] { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; height: 3px; margin: 0; background: #2a2a30; border-radius: 4px; outline: none; }
+.bgp-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; cursor: pointer; border: 2px solid var(--accent, #3366ff); }
+.bgp-row output { flex: 0 0 34px; text-align: right; font: 10px "JetBrains Mono", monospace; color: #999; }
+.bgp-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+.bgp-actions button { background: #1a1a1f; border: 1px solid #2a2a30; color: #bbb; font-size: 10px; padding: 5px 14px; border-radius: 6px; cursor: pointer; }
+.bgp-actions button:hover { background: #24242b; color: #fff; }
+.bgp-actions button.primary { background: var(--accent, #3366ff); border-color: var(--accent, #3366ff); color: var(--on-accent, #111); font-weight: 600; }

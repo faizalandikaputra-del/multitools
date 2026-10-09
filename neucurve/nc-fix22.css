@@ -1,0 +1,31 @@
+/* NeuCurve - nc-fix22.css (loaded LAST, after nc-fix21.css)
+   AUTO-FIT PRESET TILES, like Flow.
+   Before: the preset grid always had a FIXED number of columns (the "Grid Columns" slider, 3-8), so the boxes behind
+   the preset graphs only stretched / shrank - narrow panel = tiny boxes, wide panel = huge boxes, and the box never
+   changed how many fit in a row.
+   Now (same rule as Flow's #library): columns = repeat(auto-fill, minmax(MIN, 1fr)).
+   The panel width decides how many boxes fit per row; every box stays square (aspect-ratio 1:1) and grows to fill
+   the leftover width, so the row is always full and nothing is cut off. Resize the panel and the boxes re-flow live.
+   Tune the smallest box size with --nc-tile-min below (Flow uses 42px). */
+
+:root { --nc-tile-min: 44px; }
+
+html body .shell.shell .preset-grid {
+  grid-template-columns: repeat(auto-fill, minmax(var(--nc-tile-min, 44px), 1fr)) !important;
+  align-content: start;
+  min-width: 0;
+}
+
+html body .shell.shell .grid-scroll { min-width: 0; overflow-x: hidden; }
+
+/* each cell may shrink below its content; the box (thumbnail) is always a square that fills the cell */
+html body .shell.shell .preset-item { min-width: 0; }
+html body .shell.shell .preset-item .preset-thumbnail {
+  width: 100%; aspect-ratio: 1 / 1; box-sizing: border-box;
+}
+
+/* names stay on ONE line under the box and get "..." when the box is small (same as Flow) */
+html body .shell.shell .preset-item .preset-name {
+  display: block; max-width: 100%; box-sizing: border-box; padding: 0 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+}

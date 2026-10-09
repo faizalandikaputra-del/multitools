@@ -2,7 +2,7 @@
    Settings that live in NeuCurve's Settings window and apply to the graph (Curve tab / graph window):
      1. Handle Style        : circle (default) / heart / square / diamond / star / PNG-GIF image,
                               plus handle size and handle-line thickness.
-     2. Falling Effect      : Off / Particles / Rain + color + opacity (drawn by nc-particles.js).
+     2. Falling Effect      : Off / Particles / Snow / Rain + color + opacity (drawn by nc-particles.js).
    3. Background Gradient : on/off, 6 presets (Amber Night = default look), Color 1/2, Glow, Direction, Intensity, Area
                               (Whole panel / Graph only). Keys: gradOn gradP gradC1 gradC2 gradGlow gradDir gradInt gradArea.
    4. White Glow          : direction / strength / reach of the white light behind the preset tiles. Keys: wgDir wgInt wgSize.
@@ -15,7 +15,7 @@
   var IS_SETTINGS = /[?&]ext=settings/.test(location.search);
   var KEYS = /^(hStyle|hSize|hLine|hImg|pEffect|pColor|pAlpha|gradOn|gradP|gradC1|gradC2|gradGlow|gradDir|gradInt|gradArea|wgDir|wgInt|wgSize|gWp|gHp|gWl|gHl)$/;
   var DEF = { hStyle: "circle", hSize: "4.5", hLine: "1.2", hImg: "", pEffect: "particles", pColor: "#ffffff", pAlpha: "100",
-    gradOn: "0", gradP: "amber", gradC1: "#1a120a", gradC2: "#3d2810", gradGlow: "#e0a420", gradDir: "160", gradInt: "100", gradArea: "panel", wgDir: "90", wgInt: "45", wgSize: "55", gWp: "100", gHp: "100", gWl: "100", gHl: "100" };
+    gradOn: "0", gradP: "bw", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", wgDir: "90", wgInt: "45", wgSize: "55", gWp: "100", gHp: "100", gWl: "100", gHl: "100" };
   var NS = "http://www.w3.org/2000/svg";
 
   function read(k) { try { var v = localStorage.getItem("neucurve_" + k); return v === null ? DEF[k] : v; } catch (e) { return DEF[k]; } }
@@ -130,6 +130,7 @@
 
   /* ---------------- background gradient ---------------- */
   var GRAD_PRESETS = [
+    ["bw", "Black & White", "#000000", "#ffffff", "#ffffff"],
     ["amber", "Amber Night", "#1a120a", "#3d2810", "#e0a420"],
     ["violet", "Violet Dusk", "#140f24", "#2d1b52", "#9b6bff"],
     ["ocean", "Deep Ocean", "#0a1620", "#0f3350", "#37b6ff"],
@@ -144,12 +145,13 @@
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
   function rgba(h, a) { var c = hexRgb(h); return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  /* v2 (Flow look): two solid colours blended along the direction, dimmed by Intensity (Flow: --flow-panel-background-dim
+     = 1 - intensity), film grain added in nc-flowfx.css (#nc-grad::after). The old radial "glow" blobs are gone: they
+     smeared the gradient. Colour 1 sits at the start of the direction, Colour 2 at the end. */
   function gradCss(st) {
-    var k = st.gInt / 100;
-    var glowA = (0.34 * k).toFixed(3), glowA2 = (0.18 * k).toFixed(3);
-    return "radial-gradient(ellipse 85% 55% at 88% 102%, " + rgba(st.gGlow, glowA) + ", rgba(0,0,0,0) 70%)," +
-           "radial-gradient(ellipse 60% 40% at 8% -4%, " + rgba(st.gGlow, glowA2) + ", rgba(0,0,0,0) 70%)," +
-           "linear-gradient(" + st.gDir + "deg, " + rgba(st.gC1, k.toFixed(3)) + " 0%, " + rgba(st.gC2, k.toFixed(3)) + " 100%)";
+    var dim = (1 - st.gInt / 100).toFixed(3);
+    return "linear-gradient(rgba(0,0,0," + dim + "), rgba(0,0,0," + dim + ")), " +
+           "linear-gradient(" + st.gDir + "deg, " + rgba(st.gC1, 1) + " 0%, " + rgba(st.gC2, 1) + " 100%)";
   }
   /* White glow behind the preset tiles. Direction = the side it comes from, clockwise from the top
      (0 = top, 90 = right (default), 180 = bottom, 270 = left; in-between angles aim at a corner). */
@@ -224,6 +226,8 @@
   var FX = [
     ["off", "Off", '<circle cx="12" cy="12" r="7.5" fill="none"/><path d="M6.7 17.3L17.3 6.7" fill="none"/>'],
     ["particles", "Particles", '<circle cx="7" cy="8" r="2.2" stroke="none"/><circle cx="16" cy="6.5" r="1.6" stroke="none"/><circle cx="12" cy="13" r="2.8" stroke="none"/><circle cx="18" cy="17" r="2" stroke="none"/><circle cx="6.5" cy="18" r="1.5" stroke="none"/>'],
+    ["circles", "Circles", '<circle cx="8" cy="15" r="3.2" stroke="none"/><circle cx="16" cy="9" r="4.2" stroke="none"/>'],
+    ["snow", "Snow", '<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9" fill="none"/>'],
     ["rain", "Rain", '<path d="M8 4l-2 6M14 3l-2.4 7.2M20 5l-2 6M10 13l-2 6M17 14l-2.2 6.6" fill="none"/>']
   ];
 
@@ -300,7 +304,7 @@
     var gc1 = colorRow("Color 1", "gradC1"), gc2 = colorRow("Color 2", "gradC2"), gcg = colorRow("Glow", "gradGlow");
     var gdir = slider("Direction", "gradDir", 0, 360, 1, function (v) { return Math.round(v) + "\u00b0"; });
     var gint = slider("Intensity", "gradInt", 0, 100, 1, function (v) { return Math.round(v) + "%"; });
-    gs.appendChild(gc1); gs.appendChild(gc2); gs.appendChild(gcg); gs.appendChild(gdir); gs.appendChild(gint);
+    gs.appendChild(gc1); gs.appendChild(gc2); gs.appendChild(gdir); gs.appendChild(gint);
     var garea = el("div", "nc-x-seg");
     [["panel", "Whole panel"], ["graph", "Graph only"]].forEach(function (a) {
       var b = el("button", "nc-x-segbtn", a[1]); b.type = "button"; b.setAttribute("data-a", a[0]);
@@ -308,9 +312,9 @@
     });
     var gaRow = el("div", "nc-x-row"); gaRow.appendChild(el("span", "nc-x-lab", "Area")); gaRow.appendChild(garea); gs.appendChild(gaRow);
     var grs = el("button", "nc-x-btn nc-x-btn-ghost", "Reset gradient"); grs.type = "button";
-    grs.addEventListener("click", function () { set("gradP", "amber"); set("gradC1", "#1a120a"); set("gradC2", "#3d2810"); set("gradGlow", "#e0a420"); set("gradDir", "160"); set("gradInt", "100"); set("gradArea", "panel"); set("gradOn", "0"); });
+    grs.addEventListener("click", function () { set("gradP", "bw"); set("gradC1", "#000000"); set("gradC2", "#ffffff"); set("gradGlow", "#ffffff"); set("gradDir", "160"); set("gradInt", "100"); set("gradArea", "panel"); set("gradOn", "0"); });
     var gra = el("div", "nc-x-actions"); gra.appendChild(grs); gs.appendChild(gra);
-    gs.appendChild(el("p", "nc-x-note", "Paints a soft gradient with a warm glow behind the whole Curve tab (or only behind the graph). Panels turn translucent so it shows through."));
+    gs.appendChild(el("p", "nc-x-note", "Paints a two-colour gradient with fine film grain (Flow style) behind the whole Curve tab (or only behind the graph). Panels turn translucent so it shows through."));
     wrap.appendChild(gs);
 
     // --- white glow (the soft white light behind the preset tiles)
@@ -373,7 +377,7 @@
     var prs = el("button", "nc-x-btn nc-x-btn-ghost", "Reset effect"); prs.type = "button";
     prs.addEventListener("click", function () { set("pEffect", "particles"); set("pColor", "#ffffff"); set("pAlpha", "100"); });
     var pra = el("div", "nc-x-actions"); pra.appendChild(prs); fx.appendChild(pra);
-    fx.appendChild(el("p", "nc-x-note", "Falls over the preset Library area of the Curve tab. Color and opacity apply to both Particles and Rain."));
+    fx.appendChild(el("p", "nc-x-note", "Floats over the whole Curve tab. Color and opacity apply to Particles, Snow and Rain."));
     wrap.appendChild(fx);
 
     ui = { wdir: wdir, wint: wint, wsz: wsz, wsides: wsides, gsz: [[gwp, "gWp"], [ghp, "gHp"], [gwl, "gWl"], [ghl, "gHl"]], gTog: gTog, gps: gps, gc1: gc1, gc2: gc2, gcg: gcg, gdir: gdir, gint: gint, garea: garea, fxs: fxs, pc: pc, pa: pa, wrap: wrap, shapes: shapes, size: size, line: line, nm: nm, clr: clr };

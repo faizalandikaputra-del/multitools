@@ -24,7 +24,7 @@ button:not(.apply-btn):active {
 select:focus-visible,
 input:focus-visible {
   outline: none;
-  box-shadow: 0 0 8px rgba(var(--nc-ui-rgb, 255, 210, 31), 0.5);
+  box-shadow: 0 0 8px rgba(var(--nc-ui-rgb, 255, 255, 255), 0.5);
 }
 
 /* Same opt-in reduced-motion attribute nc-apply-glow.css already checks (NOT the OS

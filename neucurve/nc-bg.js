@@ -18,7 +18,9 @@
    plus Opacity / Zoom / Position X / Position Y sliders, Reset and Done. */
 (function () {
   var root = document.documentElement;
-  var IS_SETTINGS = /[?&]ext=settings/.test(location.search);
+  /* Settings window = "?ext=settings" in the URL, OR the settings.html page itself (CEP can drop the query string, and then
+     the preview was never laid out: blank area + only the slider card). */
+  var IS_SETTINGS = /[?&]ext=settings/.test(location.search) || /settings\.html$/i.test(location.pathname) || !!document.getElementById("nc-bg-edit-open");
   var editor = null, prevBox = null, prevImg = null, prevFrame = null, frameW = 0, frameH = 0, editing = false, drag = null, ready = false;
   var sizes = {};                       // path -> { w, h } natural size (loaded once)
   var mo = null, moEl = null, fitting = false, lastAspect = "";
@@ -153,6 +155,18 @@
     });
   }
 
+  /* "Done" uses the UI color as its background; with a white/light UI color the white label vanished. Pick a readable label color. */
+  function syncOnColor() {
+    if (!editor) { return; }
+    var c = ""; try { c = getComputedStyle(root).getPropertyValue("--ui-color").trim(); } catch (e) { }
+    var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c), on = "#fff";
+    if (m) {
+      var h = m[1].length === 3 ? m[1].replace(/./g, "$&$&") : m[1];
+      var r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
+      if ((0.299 * r + 0.587 * g + 0.114 * b) > 150) { on = "#111"; }
+    }
+    editor.style.setProperty("--nc-bge-on", on);
+  }
   var ROWS = [["op", "Opacity", 0, 100], ["zoom", "Zoom", 100, 300], ["x", "Position X", 0, 100], ["y", "Position Y", 0, 100]];
   function buildEditor() {
     if (editor) { return; }
@@ -166,6 +180,7 @@
     h += '<div class="nc-bge-actions"><button type="button" id="nc-bge-reset">Reset</button><button type="button" id="nc-bge-done" class="primary">Done</button></div>';
     editor.innerHTML = h;
     document.body.appendChild(editor);
+    syncOnColor();
 
     editor.addEventListener("input", function (e) {
       var k = e.target.getAttribute && e.target.getAttribute("data-k"); if (!k) { return; }
@@ -217,14 +232,18 @@
     });
   }
 
+  /* Flow's "Use Original Media Colors": off = grayscale + contrast(1.05) like Flow, on = the picture's own colors (CSS in nc-bg.css) */
+  function applyOrig() { var on = read("bgOrig", "false") === "true"; if (root.classList.contains("nc-bg-orig") !== on) { root.classList.toggle("nc-bg-orig", on); } }
+  applyOrig();
   function refresh() {
+    applyOrig();
     var st = state();
     if (IS_SETTINGS) { layoutPreview(); syncControls(st); } else { fitGraph(); }
   }
 
   function openEditor() {
     if (editing || !state().path) { return; }
-    buildEditor(); editing = true;
+    buildEditor(); syncOnColor(); editing = true;
     document.body.classList.add("nc-bg-edit");
     refresh();
   }
@@ -238,7 +257,7 @@
   function onSync(ev) {
     try {
       var d = ev && ev.data; if (typeof d === "string") { d = JSON.parse(d); }
-      if (d && /^(bgImagePath|bgOpacity|bgZoom|bgPosX|bgPosY|bgAspect)$/.test(d.key)) { write(d.key, d.val); refresh(); }
+      if (d && /^(bgImagePath|bgOpacity|bgZoom|bgPosX|bgPosY|bgAspect|bgOrig)$/.test(d.key)) { write(d.key, d.val); refresh(); }
     } catch (e) { }
   }
 

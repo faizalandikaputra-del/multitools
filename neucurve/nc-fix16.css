@@ -20,7 +20,7 @@ html body .shell.shell .preset-item:hover .preset-thumbnail {
 }
 html body .shell.shell .preset-item.selected .preset-thumbnail,
 html body .shell.shell .preset-item.ctx-target .preset-thumbnail {
-  background: rgba(0, 0, 0, .35) !important; border: 1.5px solid var(--fl-accent, var(--ui-color, #FFD21F)) !important;
+  background: rgba(0, 0, 0, .35) !important; border: 1.5px solid var(--fl-accent, var(--ui-color, #FFFFFF)) !important;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, .04) !important;
 }
 

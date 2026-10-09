@@ -1,0 +1,24 @@
+/* NeuCurve - nc-gbox.css (v19)  FLOW GRAPH BOX
+   Graph box in the Curve tab drawn like Flow's #graphPanel-top: glass floor, 10px radius, hairline border,
+   the divider pill under it is the native NeuCurve one, skinned in nc-flow.css.
+   Tokens copied from Flow _variables.css. Loaded after nc-fix22.css. Off switch: remove the <link> in index.html. */
+:root {
+  --gb-surface: rgba(18, 18, 20, .78);
+  --gb-line: rgba(255, 255, 255, .105);
+  --gb-radius: 10px;
+}
+
+/* the box: SVG floor rect. nc-grad.css (!important) still wins when a gradient/background is on. */
+html body svg.curve-svg > rect:first-of-type {
+  fill: var(--gb-surface);
+  stroke: var(--gb-line);
+  stroke-width: 1;
+  rx: var(--gb-radius);
+  ry: var(--gb-radius);
+}
+html.mt-light body svg.curve-svg > rect:first-of-type { fill: rgba(255, 255, 255, .72); stroke: rgba(0, 0, 0, .12); }
+
+/* corner grip (free width) stays, but hides until the graph is hovered so it never fights the expand icon */
+#nc-gsize { opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.canvas-area:hover #nc-gsize, html.nc-gsize-drag #nc-gsize { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { #nc-gdiv::before, #nc-gsize { transition: none; } }

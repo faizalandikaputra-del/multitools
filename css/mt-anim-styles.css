@@ -81,10 +81,10 @@
 /* mini preview of the real animation: three bars enter the way the cards will. Plays on hover, on pick and when Speed changes. */
 .mtx-pv {
   position: relative; display: block; height: 48px; border-radius: 10px; overflow: hidden;
-  background: rgba(var(--accent-rgb, 139, 108, 247), 0.09);
+  background: rgba(var(--accent-rgb, 255, 255, 255), 0.09);
   box-shadow: inset 0 0 0 1px var(--border-subtle);
 }
-.mtx-pv b { position: absolute; left: 9px; height: 8px; border-radius: 4px; background: rgba(var(--accent-rgb, 139, 108, 247), 0.55); }
+.mtx-pv b { position: absolute; left: 9px; height: 8px; border-radius: 4px; background: rgba(var(--accent-rgb, 255, 255, 255), 0.55); }
 .mtx-pv b:nth-child(1) { top: 9px;  width: 62%; --i: 0; }
 .mtx-pv b:nth-child(2) { top: 21px; width: 44%; --i: 1; }
 .mtx-pv b:nth-child(3) { top: 33px; width: 54%; --i: 2; }
@@ -118,7 +118,7 @@
 
 /* easing cards: the curve itself is the preview */
 .mtx-curve { display: block; margin: 0 auto; width: 40px; height: 34px; overflow: visible; }
-.mtx-curve path { fill: none; stroke: rgba(var(--accent-rgb, 139, 108, 247), 0.95); stroke-width: 2; stroke-linecap: round; }
+.mtx-curve path { fill: none; stroke: rgba(var(--accent-rgb, 255, 255, 255), 0.95); stroke-width: 2; stroke-linecap: round; }
 .mtx-curve line { stroke: var(--border-subtle); stroke-width: 1; stroke-dasharray: 2 3; }
 .mtx-ease-grid .ui-theme-card { padding-top: 9px; }
 

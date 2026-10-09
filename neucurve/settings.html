@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuCurve Settings</title>
+  <script>if (typeof globalThis === 'undefined') { window.globalThis = window; }</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./nc-settings.css?v=3">
+  <link rel="stylesheet" href="./nc-settings-extra.css?v=3">
+  <link rel="stylesheet" href="./nc-bg.css?v=14">
+  <link rel="stylesheet" href="../css/mt-settings-pro.css?v=1">
+  <link rel="stylesheet" href="./nc-settings-pro.css?v=1">
+  <script src="../js/ae2021-compat.js?v=10"></script>
+  <script src="./CSInterface.js"></script>
+</head>
+<body>
+<div id="app">
+<main class="settings-window">
+  <aside class="settings-sidebar">
+    <nav class="settings-navigation" aria-label="NeuCurve settings">
+      <button class="settings-navigation-item is-active" type="button" data-settings-tab="appearance">
+        <i><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 22a10 10 0 1 1 10-10c0 3-2.2 4-4.5 4H15a2 2 0 0 0-1.5 3.3c.6.7.4 2.7-1.5 2.7z"/></svg></i>
+        <span>Appearance</span>
+      </button>
+      <button class="settings-navigation-item" type="button" data-settings-tab="background">
+        <i><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></i>
+        <span>Background</span>
+      </button>
+      <button class="settings-navigation-item" type="button" data-settings-tab="handles">
+        <i><svg viewBox="0 0 24 24"><path d="M5 19c4 0 3-14 14-14"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/></svg></i>
+        <span>Handles</span>
+      </button>
+      <button class="settings-navigation-item" type="button" data-settings-tab="behavior">
+        <i><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></i>
+        <span>Behavior</span>
+      </button>
+    </nav>
+  </aside>
+
+  <section class="settings-workspace">
+    <header class="settings-workspace-header">
+      <span class="settings-workspace-kicker">NeuCurve / Settings</span>
+      <h1 id="settingsSectionTitle">Appearance</h1>
+      <p id="settingsSectionDescription">Customize NeuCurve's interface and graph colors.</p>
+    </header>
+
+    <div class="settings-body">
+
+      <!-- APPEARANCE -->
+      <section class="settings-section is-active" data-settings-section="appearance" data-settings-title="Appearance" data-settings-description="Customize NeuCurve's interface and graph colors.">
+        <div class="settings-group">
+          <header class="settings-group-header">
+            <h2>Interface Colors</h2>
+            <p>Choose the colors used throughout the NeuCurve panel.</p>
+          </header>
+          <div class="settings-row" data-setting-row="uiColor"><span>UI / Theme Color</span><button type="button" data-color-edit="uiColor">Edit</button></div>
+          <div class="settings-row" data-setting-row="graphLineColor"><span>Graph Line Color</span><button type="button" data-color-edit="graphLineColor">Edit</button></div>
+          <div class="settings-row" data-setting-row="handleColor"><span>Handle &amp; Node Color</span><button type="button" data-color-edit="handleColor">Edit</button></div>
+        </div>
+
+        <div class="settings-group">
+          <header class="settings-group-header">
+            <h2>Quick Presets</h2>
+            <p>Apply one color across the main NeuCurve interface controls.</p>
+          </header>
+          <div class="settings-swatches" id="settingsSwatches"></div>
+        </div>
+
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Preset Glow</h2><p>The soft white light behind the preset tiles.</p></div>
+            <button type="button" id="settingsResetGlow">Reset</button>
+          </header>
+          <div class="settings-language-row">
+            <span class="settings-language-copy"><b>Side</b><small>The side the light comes from.</small></span>
+            <div class="nc-seg" id="settingsGlowSide">
+              <button type="button" data-v="0">Top</button><button type="button" data-v="90">Right</button><button type="button" data-v="180">Bottom</button><button type="button" data-v="270">Left</button>
+            </div>
+          </div>
+          <div class="settings-opacity-head"><span>Direction</span><b id="settingsGlowDirValue">90&deg;</b></div>
+          <input id="settingsGlowDir" class="settings-range" type="range" min="0" max="360" step="1" />
+          <div class="settings-opacity-head"><span>Strength</span><b id="settingsGlowIntValue">45%</b></div>
+          <input id="settingsGlowInt" class="settings-range" type="range" min="0" max="100" step="1" />
+          <div class="settings-opacity-head"><span>Reach</span><b id="settingsGlowSizeValue">55%</b></div>
+          <input id="settingsGlowSize" class="settings-range" type="range" min="20" max="100" step="1" />
+          <p class="settings-tip">Strength 0% turns the glow off.</p>
+        </div>
+      </section>
+
+      <!-- BACKGROUND -->
+      <section class="settings-section" data-settings-section="background" data-settings-title="Background" data-settings-description="Configure the extension gradient and graph media.">
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Extension Background Gradient</h2><p>Blend two colors across the Curve tab.</p></div>
+            <button type="button" id="settingsResetGradient">Reset</button>
+          </header>
+          <label class="settings-toggle-row">
+            <span>Enable Gradient</span>
+            <input type="checkbox" id="settingsGradOn" />
+            <i></i>
+          </label>
+          <div class="settings-row settings-background-color-row" data-setting-row="gradC1"><span>Background Color 1</span><button type="button" data-color-edit="gradC1" data-background-color-edit>Edit</button></div>
+          <div class="settings-row settings-background-color-row" data-setting-row="gradC2"><span>Background Color 2</span><button type="button" data-color-edit="gradC2" data-background-color-edit>Edit</button></div>
+          <div class="settings-background-gradient-preview" id="settingsGradientPreview" aria-hidden="true"></div>
+          <div class="settings-opacity-head"><span>Gradient Direction</span><b id="settingsGradDirValue">160&deg;</b></div>
+          <input id="settingsGradDir" class="settings-range" type="range" min="0" max="360" step="1" />
+          <div class="settings-opacity-head"><span>Colour Intensity</span><b id="settingsGradIntValue">100%</b></div>
+          <input id="settingsGradInt" class="settings-range" type="range" min="0" max="100" step="1" />
+          <div class="settings-language-row">
+            <span class="settings-language-copy"><b>Area</b><small>Where the gradient is painted.</small></span>
+            <div class="nc-seg" id="settingsGradArea"><button type="button" data-v="panel">Whole panel</button><button type="button" data-v="graph">Graph only</button></div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Graph Background Media</h2><p>Use an image or GIF behind the graph.</p></div>
+            <button type="button" id="settingsClearBackground">Clear</button>
+          </header>
+          <label class="settings-toggle-row"><span>Use Original Media Colors</span><input type="checkbox" id="settingsBgOriginal" /><i></i></label>
+          <button class="settings-dropzone" id="settingsDropzone" type="button">
+            <span class="settings-drop-preview" id="settingsDropPreview"></span>
+            <span class="settings-drop-empty" id="settingsDropEmpty">
+              <svg class="nc-svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              <b>Drop media here<br />or Browse</b>
+            </span>
+          </button>
+          <input id="settingsFileInput" type="file" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif" />
+          <div class="settings-opacity-head"><span>Opacity</span><b id="settingsOpacityValue">100%</b></div>
+          <input id="settingsOpacity" class="settings-range" type="range" min="0" max="100" step="1" />
+          <div class="nc-actions"><button type="button" id="nc-bg-edit-open" class="nc-btn">Adjust Background</button></div>
+          <p class="settings-tip">Set position and zoom with Adjust Background. Use low-resolution images or GIFs for optimal performance.</p>
+        </div>
+      </section>
+
+      <!-- HANDLES -->
+      <section class="settings-section" data-settings-section="handles" data-settings-title="Handles" data-settings-description="Choose the graph handle shape, image, and size.">
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Handle Style</h2><p>Select a preset shape or upload a custom PNG or GIF.</p></div>
+            <button type="button" id="settingsClearHandleImage">Clear Custom</button>
+          </header>
+          <div class="settings-handle-presets" id="settingsHandlePresets">
+            <button type="button" data-handle-style="heart" aria-label="Heart handle"><i class="settings-handle-shape is-heart"></i><b>Heart</b></button>
+            <button type="button" data-handle-style="circle" aria-label="Circle handle"><i class="settings-handle-shape is-circle"></i><b>Circle</b></button>
+            <button type="button" data-handle-style="square" aria-label="Square handle"><i class="settings-handle-shape is-square"></i><b>Square</b></button>
+            <button type="button" data-handle-style="diamond" aria-label="Diamond handle"><i class="settings-handle-shape is-diamond"></i><b>Diamond</b></button>
+            <button type="button" data-handle-style="star" aria-label="Star handle"><i class="settings-handle-shape is-star"></i><b>Star</b></button>
+          </div>
+          <button class="settings-handle-dropzone" id="settingsHandleDropzone" type="button">
+            <span class="settings-handle-upload-preview" id="settingsHandlePreview"></span>
+            <span class="settings-handle-upload-empty" id="settingsHandleEmpty">
+              <svg class="nc-svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              <b>Upload a PNG or animated GIF handle</b>
+            </span>
+          </button>
+          <input id="settingsHandleFileInput" type="file" accept=".png,.gif,image/png,image/gif" />
+          <div class="settings-opacity-head"><span>Handle Size</span><b id="settingsHandleSizeValue">4.5</b></div>
+          <input id="settingsHandleSize" class="settings-range" type="range" min="2" max="9" step="0.5" />
+          <div class="settings-opacity-head"><span>Handle Line Thickness</span><b id="settingsHandleLineThicknessValue">1.2px</b></div>
+          <input id="settingsHandleLineThickness" class="settings-range" type="range" min="0.5" max="6" step="0.1" />
+          <p class="settings-tip">Animated GIFs play on the handles. Use small images (about 64&times;64 px) for best performance.</p>
+        </div>
+      </section>
+
+      <!-- BEHAVIOR -->
+      <section class="settings-section" data-settings-section="behavior" data-settings-title="Behavior" data-settings-description="Control how NeuCurve responds while you work.">
+        <div class="settings-group">
+          <header class="settings-group-header">
+            <h2>Panel Behavior</h2>
+            <p>Adjust layout, automatic actions and graph limits.</p>
+          </header>
+          <div class="settings-language-row">
+            <span class="settings-language-copy"><b>Layout Mode</b><small>Auto follows the panel width.</small></span>
+            <select id="settingsLayoutMode" aria-label="Layout Mode">
+              <option value="auto">Auto</option>
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </div>
+          <label class="settings-toggle-row"><span>Auto Apply</span><input type="checkbox" id="settingsAutoApply" /><i></i></label>
+          <label class="settings-toggle-row"><span>Allow Overshoot</span><input type="checkbox" id="settingsOvershoot" /><i></i></label>
+          <label class="settings-toggle-row"><span>Keep Animations Running</span><input type="checkbox" id="settingsKeepMotion" /><i></i></label>
+        </div>
+
+        <div class="settings-group">
+          <header class="settings-group-header">
+            <h2>Curve Tab View</h2>
+            <p>Show only the graph or only the presets. Turning one on turns the other off.</p>
+          </header>
+          <label class="settings-toggle-row"><span>Hide Preset Graphs<small>Only the graph and its settings stay.</small></span><input type="checkbox" id="settingsHidePresets" /><i></i></label>
+          <label class="settings-toggle-row"><span>Hide Graph Settings<small>Only the preset graphs stay.</small></span><input type="checkbox" id="settingsHideGraph" /><i></i></label>
+        </div>
+
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Falling Effect</h2><p>Ambient animation floating over the Curve tab.</p></div>
+            <button type="button" id="settingsResetEffect">Reset</button>
+          </header>
+          <div class="settings-language-row settings-background-effect-row">
+            <span class="settings-language-copy"><b>Background Effect</b><small>Choose the ambient animation shown in the Curve tab.</small></span>
+            <select id="settingsBackgroundEffect" aria-label="Background Effect">
+              <option value="particles">Particles</option>
+              <option value="circles">Circles</option>
+              <option value="snow">Snow</option>
+              <option value="rain">Rain</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+          <div class="settings-row" data-setting-row="pColor"><span>Effect Color</span><button type="button" data-color-edit="pColor">Edit</button></div>
+          <div class="settings-opacity-head"><span>Effect Opacity</span><b id="settingsEffectAlphaValue">100%</b></div>
+          <input id="settingsEffectAlpha" class="settings-range" type="range" min="0" max="100" step="1" />
+        </div>
+      </section>
+
+    </div>
+  </section>
+</main>
+</div>
+<script src="./nc-bg.js?v=14"></script>
+<script src="./nc-settings.js?v=6"></script>
+<script src="../js/mt-settings-polish.js?v=1"></script>
+</body>
+</html>

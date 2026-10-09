@@ -1004,3 +1004,126 @@ With the default choice nothing is set on <html>, so the panel behaves exactly a
 staggerCards() keeps .mt-stagger as long as MTAnim.cleanupMs() says (slow speeds / Cascade need more than 900 ms), and the
 settings-reset handler calls MTAnim.reset(). Not scaled by Speed: the sidebar highlight (mt-smooth.js sets its own duration)
 and the 110 ms leave fade (showTab() waits for exactly that long).
+
+
+CURVE SETTINGS WINDOW = FLOW STYLE
+--------------------------------------------
+The NeuCurve Settings window (gear icon) is now a standalone page copied from Flow's settings window:
+neucurve/settings.html + nc-settings.css (Flow's stylesheet) + nc-settings-extra.css + nc-settings.js.
+Layout: sidebar tabs (Appearance / Background / Handles / Behavior) + Profile card at the bottom, header with
+title, grouped rows, Edit/Close color editor (hue / saturation / value + hex), quick preset swatches, custom dropdowns.
+manifest.xml: the settings extension now opens ./neucurve/settings.html?ext=settings at a fixed 585 x 625 like Flow.
+It does NOT load the Svelte bundle any more. Every control uses the SAME localStorage keys (prefix neucurve_) and the
+same "com.neucurve.sync" event as before, so the Curve tab, Graph Editor, nc-extras.js, nc-bg.js (Adjust Background),
+nc-gsize.js and nc-particles.js are untouched.
+Tabs: Appearance = UI / Graph line / Handle colors, Quick Presets, Preset Glow (wgDir wgInt wgSize).
+Background = gradient (gradOn gradC1 gradC2 gradGlow gradDir gradInt gradArea) + graph image (bgImagePath, bgOpacity,
+"Adjust Background" button = nc-bg.js editor). Handles = hStyle hSize hLine hImg. Behavior = layoutMode, autoApply,
+overshoot, falling effect (pEffect pColor pAlpha), graph size (gWp gHp gWl gHl). Profile = name / bio / picture
+(neucurve_profile, local to this window only).
+Not ported on purpose: Language (NeuCurve UI stays English), RGB Mode, Hide Home Indicator, home-indicator color,
+video background (NeuCurve has no such feature). The old Svelte settings page is still inside assets/index.js but
+is no longer opened. Restart After Effects once so CEP reloads the manifest.
+
+CURVE TAB PRESET BOXES AUTO-FIT (nc-fix22.css)
+-----------------------------------------------
+The boxes behind the preset graphs now auto-fit the panel like Flow: columns = repeat(auto-fill, minmax(44px, 1fr)),
+so the panel width decides how many boxes fit in a row, every box stays square and fills the leftover width.
+The old "Grid Columns" slider (3-8) no longer changes anything. Smallest box size: --nc-tile-min in nc-fix22.css.
+To go back to fixed columns, delete the nc-fix22.css line from neucurve/index.html.
+
+
+CURVE TAB VIEW: GRAPH ONLY / PRESETS ONLY (nc-view.css + nc-view.js)
+----------------------------------------------------------------------
+Curve Settings > Behavior > "Curve Tab View" has two toggles that exclude each other (turning one on turns the other off):
+  Hide Preset Graphs   -> only the graph column stays (mode tabs, graph, tools, Apply, gear); the preset column and divider are gone.
+  Hide Graph Settings  -> only the preset graphs stay (slider, library toolbar, preset grid). The Apply bar and the gear stay on
+                          purpose: presets still need Apply, and the gear is the way back to Settings.
+Both off (default) = the normal two-column Curve tab, unchanged.
+Works in portrait and landscape. Not applied to the Large Graph Editor window or the Settings window.
+Storage: localStorage neucurve_hidePresets / neucurve_hideGraph ("true"/"false"), synced live through the same
+"com.neucurve.sync" event as every other NeuCurve setting (no restart of the panel needed).
+Files: neucurve/nc-view.css, neucurve/nc-view.js (linked at the end of neucurve/index.html), neucurve/settings.html (new group),
+neucurve/nc-settings.js (two toggles + the exclusion), neucurve/nc-settings-extra.css (hint text under a toggle label).
+To remove the feature: delete the nc-view.css / nc-view.js lines from neucurve/index.html.
+
+
+CURVE TAB: TOOL ROWS FIT THE GRAPH COLUMN IN LANDSCAPE (nc-fix23.css)
+----------------------------------------------------------------------
+In the side-by-side layout the rows under the graph used to overflow the narrow graph column (save-preset icon over the divider,
+value pill squeezed to "0", Apply 0px wide, gear outside). Both rows now wrap: icons shrink 30 -> 24px, the value pill and Apply
+keep a minimum width and move to their own line when the column is narrow. Wide columns keep single-line rows. Portrait untouched.
+To go back, delete the nc-fix23.css line from neucurve/index.html.
+
+
+SETTINGS DROPDOWNS NO LONGER CUT OFF (nc-settings.js place(), nc-settings.css .is-up)
+----------------------------------------------------------------------
+The Background Effect list always opened upward, so near the top of the scroll area its first items were clipped and could not
+be scrolled to. Every Settings dropdown (Layout Mode, Background Effect) now opens downward when it fits, otherwise upward,
+and if neither side has room the list gets its own scrollbar.
+
+
+HANDLE NUMBERS, DROPDOWN CLIP, AUTO WINDOW SIZE (nc-handle.css/js, nc-settings.*, manifest.xml)
+----------------------------------------------------------------------
+- Handle numbers: press (or drag) a handle in the Curve tab and its value ("0.38, 0.43") shows next to it, plus the 0 / 1 axis
+  numbers; release = clean Flow look again. The label was always drawn by the bundle but nc-flow.css hides every <text> in the
+  graph; nc-handle.css un-hides the value label and nc-handle.js sets html.nc-press while the pointer is down.
+  Files: neucurve/nc-handle.css, neucurve/nc-handle.js (linked in neucurve/index.html).
+- Falling Effect / Layout Mode list cut off: the card (.settings-group, overflow:hidden) clipped the open list. The open card now
+  gets .has-dd-open (overflow visible, raised above the next cards) and the list picks up / down / scrolls (place()).
+- Settings window fits its content: after opening, switching tab, opening a color editor or any layout change, nc-settings.js
+  fitWindow() calls CSInterface.resizeContent(585, height) so the active tab fits, limited to the screen height (min 420).
+  manifest.xml: settings window is now 585 x 420-1400 (was fixed 585 x 625) and the window box in nc-settings-extra.css follows
+  the window height. Restart After Effects once so CEP reloads the manifest.
+
+
+GRAPH SIZE MENU REMOVED FROM CURVE SETTINGS
+----------------------------------------------------------------------
+Behavior no longer has the "Graph Size" group (4 sliders + "Reset to Auto"). The graph can still be resized by dragging the small grip
+at the graph's bottom-right corner in the Curve tab (nc-gsize.js is untouched, same neucurve_gWp/gHp/gWl/gHl keys).
+
+
+SETTINGS WINDOW (separate window, like NeuCurve Settings)
+---------------------------------------------------------
+The gear button now opens Settings in its own window (html/settings.html, extension id com.ogatt.multitool.settings,
+registered in CSXS/manifest.xml as Modeless). Sections: Appearance, Background, Motion, Idle screen, Easy Layer, Data and updates.
+The controls themselves still live in #settings-modal inside the panel (never shown now), so every existing handler keeps working.
+js/mt-settings-remote.js (panel) replays what you do in the window on those controls and sends their state back;
+js/mt-settings-window.js (window) mirrors it. Transport: js/mt-settings-bus.js (CEP event "com.multitool.settings.*").
+Controls are matched by id or data-* attribute, so a new control needs the same id in html/index.html and html/settings.html.
+After updating, restart After Effects (the manifest changed).
+
+Settings > Background > "Use original media colors" (same switch as NeuCurve)
+- ON (default, same look as before): image / GIF / video keep their own colors.
+- OFF: background goes grayscale + contrast(1.05), like NeuCurve. Saved in localStorage "mtx.bgOrig"; Reset settings turns it back ON.
+- Files: html/index.html + html/settings.html (#bg-original-color), js/main.js (Settings.init), css/style.css (html.mt-bg-gray).
+
+NeuCurve > Settings > Adjust Background: preview fix
+- The full-window preview stayed blank when the Settings window did not get "?ext=settings" in its URL. nc-bg.js now also detects
+  settings.html itself. "Done" label now picks a readable color on a white/light UI color (--nc-bge-on).
+
+NeuCurve > Settings > Adjust Background now matches Multi Tool's Background "Display" editor
+- Same card (solid, 14px radius, 22rem), title "Display", dim labels + bold values, sliders with accent fill-trail, pill Reset/Done buttons.
+- Files: neucurve/nc-bg.css, neucurve/nc-bg.js (fill-trail --_pct).
+
+Multi Tool > Settings > Background > Adjust background now looks like NeuCurve's editor (the reference)
+- css/mt-bg-editor.css (loaded before material-theme.css): same card, sizes, thin slider, mono readout and buttons. Title "Adjust Background".
+- NeuCurve's own editor is back to its original look (only the earlier preview fix + readable Done label are kept).
+
+Multi Tool Settings window > Background > Adjust background: NeuCurve-style preview (js/mt-bg-preview.js, css/mt-bg-preview.css)
+- The Settings window turns into a full-window preview of the background; the bright frame = the shape of the panel, the rest is dimmed.
+  Drag = move, scroll = zoom, Esc / Done = close. Card: Opacity, Zoom, Position X/Y, Reset, Done. The panel behind updates live.
+- The panel no longer hides its UI for this; the old in-panel editor (#bg-editor) stays as a fallback (opened from the panel's own Settings modal).
+- Panel side: js/mt-settings-remote.js sends "bgview" (view/opacity/panel shape) and, on request, "bgsrc" (file / data URL).
+  A session-only video (blob: URL) cannot be shown in another window: the sliders still work, the preview shows a note.
+
+Idle screen: time in After Effects, timer, notes, daily list (js/mt-idle-focus.js, css/mt-idle-focus.css)
+- Idle screen now shows, under the clock: live Hours / Minutes / Seconds in After Effects, the timer (progress bar, pulses when done),
+  a "Today" daily list (up to 8 tasks) and your notes. The idle screen is display-only; edit everything in Settings > Idle screen.
+- Timer: set hours + minutes, Start / Pause / Resume / Reset. Keeps running while the panel is open (survives a panel reload; if it ran out
+  while the panel was closed it shows "Time is up"). When time is up: toast + sound (switch + volume + Test sound in the same section).
+- Sound: "Anime girl voice + chime" = a rising sparkle chime, then a female voice installed on the computer (Japanese if available,
+  otherwise English), pitched up, saying a short "time's up". "My own file" copies a chosen audio file to Documents/MyMultitoolExtension/Sounds
+  (use a real anime voice clip here). If no voice exists on the computer the chime alone plays.
+- Daily list ticks clear at the start of a new day (tasks stay). "Reset everything" clears all of it.
+- The old one-line session chip (.idle-session) is hidden; the live segments replace it.

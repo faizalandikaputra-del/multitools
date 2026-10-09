@@ -40,13 +40,13 @@
   --text-dim: #a0a0a0;
   --text-faint: #666666;      /* placeholder text only */
   /* Theme color: main.js updates these three at runtime (Settings > Theme color) */
-  --theme-accent: #8b6cf7;                    /* Adobe-style purple (default) */
-  --theme-accent-soft: rgba(139, 108, 247, 0.2);
-  --theme-on-accent: #ffffff;
+  --theme-accent: #ffffff;                    /* white (default) */
+  --theme-accent-soft: rgba(255, 255, 255, 0.2);
+  --theme-on-accent: #111114;
   --accent: var(--theme-accent);
   --accent-strong: var(--theme-accent);
   --accent-soft: var(--theme-accent-soft);
-  --accent-rgb: 139, 108, 247;    /* kept in sync with --theme-accent by main.js, for glows/rings */
+  --accent-rgb: 255, 255, 255;    /* kept in sync with --theme-accent by main.js, for glows/rings */
   --on-accent: var(--theme-on-accent);
   --overlay: rgba(10, 10, 10, 0.62);
   --danger: #ff6b7a;
@@ -166,6 +166,11 @@ svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-
   transform-origin: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
   transform: scale(var(--bg-zoom, 1));
 }
+
+/* Settings > Background > Use Original Media Colors. Off adds html.mt-bg-gray: grayscale + contrast(1.05), the same
+   treatment NeuCurve uses (neucurve/nc-bg.css). On (default) leaves the media untouched. */
+html.mt-bg-gray .bg-layer,
+html.mt-bg-gray .bg-motion-media { filter: grayscale(1) contrast(1.05); }
 
 /* ---------- Background editor (Settings > Display) ---------- */
 body.is-bg-edit .app {

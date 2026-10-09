@@ -64,6 +64,8 @@
   <link rel="stylesheet" href="../css/mt-smooth.css?v=2">
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
+  <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
+  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=1">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -187,6 +189,27 @@
     <div class="idle-time" id="idle-time"></div>
     <div class="idle-session" id="idle-session" aria-hidden="true"></div>
     <div class="idle-message" id="idle-message-el" aria-hidden="true"></div>
+    <!-- Time in After Effects, live (js/mt-idle-focus.js) -->
+    <div class="idle-elapsed" id="idle-elapsed" hidden>
+      <span class="ie-label">Time in After Effects</span>
+      <div class="ie-segs">
+        <span class="ie-seg"><b class="ie-num" id="ie-h">00</b><i class="ie-unit">hours</i></span>
+        <span class="ie-seg"><b class="ie-num" id="ie-m">00</b><i class="ie-unit">minutes</i></span>
+        <span class="ie-seg"><b class="ie-num" id="ie-s">00</b><i class="ie-unit">seconds</i></span>
+      </div>
+    </div>
+    <div class="idle-timer" id="idle-timer" hidden>
+      <div class="it-top"><span class="it-label" id="idle-timer-label">Timer</span><span class="it-time" id="idle-timer-time">00:00:00</span></div>
+      <div class="it-bar"><i id="idle-timer-fill"></i></div>
+    </div>
+    <div class="idle-card idle-todos" id="idle-todos" hidden>
+      <div class="ic-head"><strong>Today</strong><span id="idle-todos-count"></span></div>
+      <ul class="ic-list" id="idle-todos-list"></ul>
+    </div>
+    <div class="idle-card idle-notes" id="idle-notes-card" hidden>
+      <div class="ic-head"><strong>Notes</strong></div>
+      <p class="ic-text" id="idle-notes-text"></p>
+    </div>
   </div>
 
   <!-- Right-click context menu for tool squares -->
@@ -214,7 +237,7 @@
         <label for="theme-color">Theme color</label>
         <div class="field-actions">
           <button class="btn btn-ghost" id="theme-reset">Default</button>
-          <input type="color" id="theme-color" value="#8b6cf7">
+          <input type="color" id="theme-color" value="#ffffff">
         </div>
       </div>
 
@@ -254,6 +277,17 @@
           <button class="btn btn-ghost" id="bg-motion-clear">Remove</button>
         </div>
         <p class="field-note" id="bg-motion-note"></p>
+      </div>
+
+      <!-- Use Original Media Colors: ON (default) = the picture / GIF / video keeps its own colors; OFF = grayscale
+           like NeuCurve. Same switch as NeuCurve settings. Logic: Settings.initBgOriginal() in js/main.js + css/style.css. -->
+      <div class="field field-column">
+        <label class="switch-row" for="bg-original-color">
+          <span>Use Original Media Colors</span>
+          <input type="checkbox" id="bg-original-color" checked>
+          <span class="switch-track"></span>
+        </label>
+        <p class="field-note">On keeps the colors of your image, GIF or video. Off turns the background grayscale.</p>
       </div>
 
       <!-- Display: opens the background full-screen (UI hidden) with a floating editor for position, opacity
@@ -378,6 +412,90 @@
         <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Move the mouse to bring it back.</p>
       </div>
 
+
+      <!-- Idle screen extras: time in After Effects (live h/m/s), countdown timer with sound, notes, daily list.
+           Logic: js/mt-idle-focus.js (keys mtx.timer*, mtx.notes, mtx.todo*). Shown by css/mt-idle-focus.css while body.is-idle. -->
+      <div class="field field-column" id="idle-focus-field">
+        <span class="field-label">Idle screen: timer, notes and daily list</span>
+        <label class="switch-row" for="idle-show-elapsed">
+          <span>Show time in After Effects</span>
+          <input type="checkbox" id="idle-show-elapsed" checked>
+          <span class="switch-track"></span>
+        </label>
+        <div class="field-row idle-timer-row">
+          <label class="field-label" for="idle-timer-h">Timer</label>
+          <input class="idle-num" type="number" id="idle-timer-h" min="0" max="23" step="1" value="1" inputmode="numeric"><span class="field-note">h</span>
+          <input class="idle-num" type="number" id="idle-timer-m" min="0" max="59" step="1" value="0" inputmode="numeric"><span class="field-note">min</span>
+        </div>
+        <div class="field-row idle-timer-row">
+          <span class="field-label" id="idle-timer-readout" data-mirror>01:00:00</span>
+          <button class="btn btn-primary" type="button" id="idle-timer-start">Start</button>
+          <button class="btn btn-ghost" type="button" id="idle-timer-reset">Reset</button>
+        </div>
+        <label class="switch-row" for="idle-timer-sound">
+          <span>Play a sound when time is up</span>
+          <input type="checkbox" id="idle-timer-sound" checked>
+          <span class="switch-track"></span>
+        </label>
+        <div class="field-row">
+          <label class="field-label" for="idle-timer-voice">Sound</label>
+          <select class="select" id="idle-timer-voice">
+            <option value="voice">Anime girl voice + chime</option>
+            <option value="chime">Chime only</option>
+            <option value="custom">My own file</option>
+          </select>
+        </div>
+        <div class="bg-editor-row idle-scale-row">
+          <label for="idle-timer-volume">Volume</label>
+          <input type="range" id="idle-timer-volume" min="0" max="100" step="1" value="80" aria-label="Timer sound volume">
+          <output class="field-row-value" id="idle-timer-volume-val" for="idle-timer-volume">80%</output>
+        </div>
+        <div class="field-actions">
+          <button class="btn" type="button" id="idle-timer-test">Test sound</button>
+          <button class="btn" type="button" id="idle-timer-sound-set">Choose file</button>
+          <button class="btn btn-ghost" type="button" id="idle-timer-sound-clear">Remove</button>
+        </div>
+        <p class="field-note" id="idle-timer-sound-note" data-mirror></p>
+        <div class="field-row idle-message-row">
+          <label class="field-label" for="idle-notes">Notes</label>
+          <textarea class="idle-message-input idle-notes-input" id="idle-notes" rows="3" maxlength="400" placeholder="Shown on the idle screen"></textarea>
+        </div>
+        <span class="field-label">Daily list</span>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-1" aria-label="Task 1 done">
+            <input class="idle-message-input" type="text" id="idle-todo-1" maxlength="80" placeholder="Task 1">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-2" aria-label="Task 2 done">
+            <input class="idle-message-input" type="text" id="idle-todo-2" maxlength="80" placeholder="Task 2">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-3" aria-label="Task 3 done">
+            <input class="idle-message-input" type="text" id="idle-todo-3" maxlength="80" placeholder="Task 3">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-4" aria-label="Task 4 done">
+            <input class="idle-message-input" type="text" id="idle-todo-4" maxlength="80" placeholder="Task 4">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-5" aria-label="Task 5 done">
+            <input class="idle-message-input" type="text" id="idle-todo-5" maxlength="80" placeholder="Task 5">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-6" aria-label="Task 6 done">
+            <input class="idle-message-input" type="text" id="idle-todo-6" maxlength="80" placeholder="Task 6">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-7" aria-label="Task 7 done">
+            <input class="idle-message-input" type="text" id="idle-todo-7" maxlength="80" placeholder="Task 7">
+          </div>
+          <div class="idle-todo-edit">
+            <input type="checkbox" id="idle-todo-done-8" aria-label="Task 8 done">
+            <input class="idle-message-input" type="text" id="idle-todo-8" maxlength="80" placeholder="Task 8">
+          </div>
+        <p class="field-note">The timer keeps running while the panel is open. Ticks in the daily list clear themselves at the start of each new day; the tasks stay.</p>
+      </div>
+
       <div class="field">
         <span class="field-label">Tool images</span>
         <div class="field-actions">
@@ -415,9 +533,9 @@
   <!-- Background editor ("Display"): floating panel shown while body.is-bg-edit is set (the rest of the UI
        is faded out so the background is fully visible). Opacity slider keeps its old ids so the existing
        opacity code in js/main.js drives it unchanged. -->
-  <div id="bg-editor" class="bg-editor" role="dialog" aria-label="Background display" aria-hidden="true">
+  <div id="bg-editor" class="bg-editor" role="dialog" aria-label="Adjust Background" aria-hidden="true">
     <div class="bg-editor-head">
-      <strong>Display</strong>
+      <strong>Adjust Background</strong>
       <span class="bg-editor-hint">Drag to move &middot; scroll to zoom</span>
     </div>
     <div class="bg-editor-row">
@@ -468,6 +586,7 @@
 
   <input type="file" id="tool-file" accept="image/*" hidden>
   <input type="file" id="bg-file" accept="image/*" hidden>
+  <input type="file" id="idle-timer-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" hidden>
   <input type="file" id="bg-motion-file" accept=".gif,.mp4,.webm,image/gif,video/mp4,video/webm" hidden>
 
   <script src="../js/CSInterface.js?v=9"></script>
@@ -496,6 +615,10 @@
   <script src="../js/panel-refresh.js?v=1"></script>
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
+  <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
+  <script src="../js/mt-idle-focus.js?v=1"></script>
+  <script src="../js/mt-settings-bus.js?v=1"></script>
+  <script src="../js/mt-settings-remote.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->

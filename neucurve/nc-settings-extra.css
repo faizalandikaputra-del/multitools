@@ -1,0 +1,33 @@
+/* NeuCurve - nc-settings-extra.css : small additions to nc-settings.css (copied from Flow's settings window). */
+.settings-navigation-item i svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-navigation-item i { display: inline-flex; align-items: center; justify-content: center; }
+.nc-svg-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-profile-avatar-button span .nc-svg-icon { width: 13px; height: 13px; }
+.settings-brand-avatar img, .settings-profile-avatar-button img { object-fit: cover; }
+/* accent follows the NeuCurve UI color */
+:root { --settings-theme: #3366ff; }
+/* segmented control (Side / Area) */
+.nc-seg { display: flex; flex: 0 0 auto; gap: 2px; padding: 2px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(255,255,255,.04); }
+.nc-seg button { height: 24px; padding: 0 9px; border: 0; border-radius: 5px; background: transparent; color: #a3a3a3; font-size: 11px; font-weight: 500; cursor: pointer; transition: background-color 150ms, color 150ms; }
+.nc-seg button:hover { color: #fff; background: rgba(255,255,255,.06); }
+.nc-seg button.is-selected { color: #fff; background: var(--settings-theme, #3366ff); }
+/* generic action button + row */
+.nc-actions { display: flex; padding: 12px 18px 0; }
+.nc-btn { flex: 1; height: 30px; border: 1px solid var(--mtp-border-strong, #404040); border-radius: 6px; background: var(--mtp-content, #171717); color: #d4d4d4; font-size: 11px; font-weight: 500; cursor: pointer; transition: background-color 150ms, color 150ms; }
+.nc-btn:hover { background: var(--mtp-surface-hover, #262626); color: #fff; }
+.nc-btn[disabled] { opacity: .4; pointer-events: none; }
+.settings-group-header-with-action > button:disabled { opacity: .4; pointer-events: none; }
+#app { width: 100%; height: 100%; min-height: 0; }
+
+/* Curve Tab View: toggle rows with a one-line hint under the label */
+.settings-toggle-row > span > small {
+  display: block; margin-top: 2px; color: #8a8a8a; font-size: 10.5px; font-weight: 400; line-height: 1.3;
+}
+
+/* Auto window size: the window box follows the real window height (it used to be a fixed 596px, so a taller or shorter
+   window could not show more or less). 29px = the frame margins of the old 585 x 625 window. */
+.settings-window {
+  height: calc(100vh - 29px) !important;
+  max-height: none !important;
+  min-height: 0 !important;
+}

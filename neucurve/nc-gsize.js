@@ -6,6 +6,8 @@
    localStorage (prefix neucurve_): gWp gHp (portrait) gWl gHl (landscape), percent 25-100 of the free space; empty = auto.
    The compiled bundle (assets/index.js) calls window.__ncGS(isLandscape) when it computes the plot size, and exposes
    window.__ncGBump() (recompute) + window.__ncGPlot() (plot rectangle) - see the README note. Plain ES5 for old CEP hosts. */
+/* v19  FLOW FIT: the plot now fills the whole graph area (see __ncGS + the bundle patch "fit"), so dragging the native divider under the
+   graph resizes the box live, exactly like Flow. localStorage neucurve_gFit = "0" restores the old capped aspect. */
 (function () {
   "use strict";
   var IS_SETTINGS = /[?&]ext=settings/.test(location.search);
@@ -24,10 +26,29 @@
   }
 
   /* called by the bundle every time it computes the plot size; null = keep NeuCurve's own automatic size */
+  /* v20 FLOW LIMITS (portrait). Same numbers as Flow's curve-types.js: the graph column is max 300px wide and centred, and the graph
+     height is locked between minGraphTop and maxGraphTop, so the box can never turn flat or huge when the divider is dragged.
+     panel = min(panel width, 300); min = max(172, min(210, panel*.62)); max = max(min, min(270, panel*.9)). Padding of the plot = 12px a side. */
+  var PAD = 12;
+  function lim(panelW) {
+    var pw = Math.min(panelW, 300), lo = Math.max(172, Math.min(210, pw * 0.62)), hi = Math.max(lo, Math.min(270, pw * 0.9));
+    return { pw: pw, lo: lo, hi: hi };
+  }
+  window.__ncGClamp = function (nw, nh, panelW) {
+    var L = lim(panelW);
+    return { w: Math.max(1, Math.min(nw, L.pw - 16)), h: Math.max(1, Math.min(nh, L.hi)) };
+  };
+  window.__ncGBounds = function (panelW) {
+    if (rd("gFit") === "0") { return null; }
+    var L = lim(panelW);
+    return { min: Math.round(L.lo + PAD * 2), max: Math.round(L.hi + PAD * 2) };
+  };
   window.__ncGS = function (land) {
+    /* portrait: "fit" = Flow limits above, no 1.3 / 1.25 aspect caps. landscape + gFit="0": the old automatic look. Custom % sizes sit on top. */
+    var fit = !land && rd("gFit") !== "0";
     var s = land ? "l" : "p", w = pct(rd("gW" + s)), h = pct(rd("gH" + s));
-    if (w === null && h === null) { return null; }
-    return { w: (w === null ? 100 : w) / 100, h: (h === null ? 100 : h) / 100 };
+    if (w === null && h === null) { return fit ? { w: 1, h: 1, fit: true } : null; }
+    return { w: (w === null ? 100 : w) / 100, h: (h === null ? 100 : h) / 100, fit: fit };
   };
   function bump() { try { if (window.__ncGBump) { window.__ncGBump(); } } catch (e) { } }
   function setSize(land, w, h) {

@@ -1269,3 +1269,11 @@ plot inside it changes (25-100% per axis). Make the whole box bigger with the di
 Idle screen: slider and "About" removed
 The unlock slider/tap bar (#idle-unlock), the "Leave idle screen by" setting (mtx.idleExit) and the About info button/popover
 are gone. Leave the idle screen with Esc or by clicking an empty spot (Idle.bindLeave() in js/main.js). Mouse movement does not leave.
+
+IDLE SCREEN WIDGETS (adjust)
+----------------------------
+Idle screen > small button bottom right = "Adjust widgets" (css/mt-idle-adjust.css, js/mt-idle-adjust.js).
+Drag the grip under a widget to resize it (the width snaps to a 12-column grid with equal gaps; text scales with the width), eye button = show / hide it, "Reset sizes"
+= defaults, button again or Esc = done. The Timer now always shows on the idle screen with play / pause / reset
+(js/mt-idle-focus.js renderTimerChip). Clicking a button that redraws its own icon (stopwatch / timer) no longer
+counts as an empty-spot click that leaves the idle screen (bindLeave in js/main.js uses event.composedPath()).

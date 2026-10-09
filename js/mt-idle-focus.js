@@ -250,16 +250,23 @@
     var t = split(now - start);
     setText(el.eh, pad(t.h)); setText(el.em, pad(t.m)); setText(el.es, pad(t.s));
   }
+  var tIcon = "";
   function renderTimerChip() {
     var box = el.timerBox; if (!box) { return; }
-    if (state === "idle") { box.hidden = true; return; }
-    box.hidden = false;
+    box.hidden = false;                              // always on the idle screen: idle shows the set duration, ready to start
     box.classList.toggle("is-paused", state === "paused");
     box.classList.toggle("is-done", state === "done");
     var left = leftMs(), total = num0(get("tTotal")) || 1;
     setText(el.timerLabel, state === "done" ? "Time is up" : (state === "paused" ? "Timer paused" : "Timer"));
     setText(el.timerTime, state === "done" ? "00:00:00" : clock(left));
-    el.timerFill.style.width = (state === "done" ? 100 : Math.max(0, Math.min(100, (1 - left / total) * 100))) + "%";
+    el.timerFill.style.width = (state === "idle" ? 0 : state === "done" ? 100 : Math.max(0, Math.min(100, (1 - left / total) * 100))) + "%";
+    if (el.timerGo) {
+      var ico = state === "running" ? "pause" : "play";
+      if (ico !== tIcon) { el.timerGo.innerHTML = ico === "pause" ? ICON_PAUSE : ICON_PLAY; tIcon = ico; }
+      el.timerGo.classList.toggle("is-running", state === "running");
+      el.timerGo.setAttribute("aria-label", state === "running" ? "Pause timer" : (state === "paused" ? "Resume timer" : (state === "done" ? "Start timer again" : "Start timer")));
+    }
+    if (el.timerRst) { el.timerRst.hidden = state === "idle"; }
   }
   // ---- Today list, unfinished history and notes on the idle screen (interactive) ----
   var draft = 0, missedOpen = false, todoKey = "", missedKey = "";
@@ -459,10 +466,15 @@
     function bindCheck(id, key, def) {
       var c = $(id); if (!c) { return; }
       c.checked = get(key) === null ? def : get(key) !== "0";
-      c.addEventListener("change", function () { set(key, c.checked ? "1" : "0"); renderIdle(); });
+      c.addEventListener("change", function () { set(key, c.checked ? "1" : "0"); renderIdle(); if (window.__mtApplyCards) { window.__mtApplyCards(); } });
     }
     bindCheck("idle-show-elapsed", "showElapsed", true);
     bindCheck("idle-timer-sound", "tSound", true);
+    ["idle-show-sw|showSw", "idle-show-al|showAl", "idle-show-tabs|showTabs"].forEach(function (p) {
+      var id = p.split("|")[0], key = p.split("|")[1], c = $(id); if (!c) { return; }
+      c.checked = get(key) !== "0";
+      c.addEventListener("change", function () { set(key, c.checked ? "1" : "0"); applyCards(); });
+    });
 
     if (el.h) { el.h.value = num(get("tH"), 0, 23, 1); el.h.addEventListener("change", function () { el.h.value = num(el.h.value, 0, 23, 1); set("tH", el.h.value); render(); }); }
     if (el.m) { el.m.value = num(get("tM"), 0, 59, 0); el.m.addEventListener("change", function () { el.m.value = num(el.m.value, 0, 59, 0); set("tM", el.m.value); render(); }); }
@@ -778,6 +790,53 @@
     });
   }
 
+  // ================= show / hide the cards (idle screen switch) + card scale =================
+  // Folded (default) = only the clock, message and an active timer show. The switch slides the dashboard open / closed.
+  // Card Scale (Settings > Idle screen) zooms the cards (60-140%) through --idle-card-scale on #idle-clock.
+  // Per-card show / hide: each card has a Settings switch (keys showElapsed, showSw, showAl, showTabs; default on).
+  // Hidden cards keep their data. With every card off, the Show / Hide panels switch goes away too.
+  function applyCards() {
+    var dash = $("idle-dash"), btn = $("idle-fold-btn"), sw = get("showSw") !== "0", al = get("showAl") !== "0", tb = get("showTabs") !== "0", el0 = get("showElapsed") !== "0";
+    if (dash) { dash.classList.toggle("no-sw", !sw); dash.classList.toggle("no-al", !al); dash.classList.toggle("no-tabs", !tb); dash.hidden = !(sw || al || tb); }
+    if (btn) { btn.hidden = !(sw || al || tb || el0); }
+  }
+  window.__mtApplyCards = function () { applyCards(); };
+  function folded() { return get("foldHidden") !== "0"; }
+  function applyFold(animate) {
+    var box = $("idle-clock"), fold = $("idle-fold"), btn = $("idle-fold-btn"), txt = $("idle-fold-text"), shut = folded();
+    if (!box || !fold || !btn) { return; }
+    box.classList.toggle("is-folded", shut);
+    btn.setAttribute("aria-checked", shut ? "false" : "true");
+    setText(txt, shut ? "Show panels" : "Hide panels");
+    clearTimeout(applyFold.t);
+    if (!animate) { fold.classList.toggle("is-closed", shut); fold.style.maxHeight = shut ? "0px" : "none"; return; }
+    if (shut) {
+      fold.style.maxHeight = fold.scrollHeight + "px"; void fold.offsetHeight;
+      fold.classList.add("is-closed"); fold.style.maxHeight = "0px";
+    } else {
+      fold.classList.remove("is-closed"); fold.style.maxHeight = fold.scrollHeight + "px";
+      applyFold.t = setTimeout(function () { if (!folded()) { fold.style.maxHeight = "none"; } }, 560);   // free again, so a growing note list is never clipped
+    }
+  }
+  function bindFold() {
+    var btn = $("idle-fold-btn"); if (!btn) { return; }
+    btn.addEventListener("click", function () { set("foldHidden", folded() ? "0" : "1"); applyFold(true); fitAllNotes(); });
+    applyFold(false);
+  }
+  function cardScale() { return num(get("cardScale"), 60, 140, 100); }
+  function applyCardScale() {
+    var box = $("idle-clock"), v = cardScale(), out = $("idle-card-scale-val"), inp = $("idle-card-scale");
+    if (box) { box.style.setProperty("--idle-card-scale", v / 100); }
+    if (out) { out.textContent = v + "%"; }
+    if (inp && String(inp.value) !== String(v)) { inp.value = v; }
+    if (inp && window.__rfUpdateFill) { window.__rfUpdateFill(inp); }
+  }
+  function bindCardScale() {
+    var inp = $("idle-card-scale"); if (!inp) { applyCardScale(); return; }
+    inp.addEventListener("input", function () { set("cardScale", inp.value); applyCardScale(); });
+    applyCardScale();
+  }
+
   // ================= smooth scrolling (idle screen) =================
   // The wheel moves a target offset; a rAF loop eases scrollTop toward it (about 14% of the gap per frame), so scrolling up and
   // down glides instead of jumping in steps. Inner scrollers (notes textarea, alarm list, unfinished list) keep their own wheel.
@@ -837,6 +896,9 @@
   function init() {
     el.elapsed = $("idle-elapsed"); el.eh = $("ie-h"); el.em = $("ie-m"); el.es = $("ie-s");
     el.timerBox = $("idle-timer"); el.timerLabel = $("idle-timer-label"); el.timerTime = $("idle-timer-time"); el.timerFill = $("idle-timer-fill");
+    el.timerGo = $("idle-timer-go"); el.timerRst = $("idle-timer-rst");
+    if (el.timerGo) { el.timerGo.addEventListener("click", start); }
+    if (el.timerRst) { el.timerRst.addEventListener("click", reset); }
     el.todos = $("idle-todos"); el.todoList = $("idle-todos-list"); el.todoCount = $("idle-todos-count"); el.todoAdd = $("idle-todo-add"); el.todoBar = $("idle-todos-bar");
     el.missed = $("idle-missed"); el.missedToggle = $("idle-missed-toggle"); el.missedLabel = $("idle-missed-label"); el.missedList = $("idle-missed-list");
     el.missedSummary = $("idle-missed-summary");
@@ -856,7 +918,7 @@
     window.addEventListener("beforeunload", function () { if (saveTimer) { flushFile(); } });
     state = get("tState") || "idle";
     if (state === "running" && num0(get("tEnd")) - Date.now() <= 0) { state = "done"; set("tState", "done"); }   // ran out while the panel was closed
-    bindControls(); bindIdleCards(); bindTabs(); bindStopwatch(); bindAlarms(); bindNotes(); bindSmoothScroll();
+    bindControls(); bindIdleCards(); bindTabs(); bindStopwatch(); bindAlarms(); bindNotes(); bindFold(); applyCards(); bindCardScale(); bindSmoothScroll();
     renderLists(); soundNote(); render(); tickerCheck();
     if (!dataFile || !dataFile.read()) { persist(); }   // first run of this version: write the backup file now
 
@@ -870,18 +932,18 @@
     if (rs) {
       rs.addEventListener("click", function () {
         ["showElapsed", "tH", "tM", "tState", "tEnd", "tRemain", "tTotal", "tSound", "tVoice", "tVolume", "tSoundPath", "notes", "todoDay", "todoSaved", "missed",
-         "swState", "swStart", "swAcc", "swHidden", "alarms", "noteList", "idleTab"].forEach(del);
+         "swState", "swStart", "swAcc", "swHidden", "alarms", "noteList", "idleTab", "cardScale", "foldHidden", "showSw", "showAl", "showTabs"].forEach(del);
         draft = 0; missedOpen = false; todoKey = ""; missedKey = ""; alKey = ""; noteKey = null;
         if (dataFile) { clearTimeout(saveTimer); saveTimer = 0; dataFile.remove(); }
         var i; for (i = 1; i <= TODOS; i++) { del("todo" + i); del("todoDone" + i); }
         if (nodeApi) { nodeApi.clear(); } window.__mtIdleSoundBlob = "";
         state = "idle"; newDay();
-        ["idle-show-elapsed", "idle-timer-sound"].forEach(function (id) { if ($(id)) { $(id).checked = true; } });
+        ["idle-show-elapsed", "idle-timer-sound", "idle-show-sw", "idle-show-al", "idle-show-tabs"].forEach(function (id) { if ($(id)) { $(id).checked = true; } });
         if (el.h) { el.h.value = 1; } if (el.m) { el.m.value = 0; } if (el.voice) { el.voice.value = "chime"; }
         if (el.vol) { el.vol.value = 80; el.vol.dispatchEvent(new Event("input")); }
         if ($("idle-notes")) { $("idle-notes").value = ""; }
         refreshTodoControls(); var j; for (j = 1; j <= TODOS; j++) { if ($("idle-todo-" + j)) { $("idle-todo-" + j).value = ""; } }
-        setPane("notes"); renderStopwatch();
+        setPane("notes"); renderStopwatch(); applyFold(false); applyCardScale(); applyCards();
         renderLists(); soundNote(); render(); tickerCheck();
       });
     }

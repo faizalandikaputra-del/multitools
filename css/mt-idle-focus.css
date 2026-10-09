@@ -144,6 +144,44 @@ body.is-idle .idle-card { pointer-events: auto; }
 :root[data-reduce-motion="true"] .iu-fill, :root[data-reduce-motion="true"] .iu-handle, :root[data-reduce-motion="true"] .iu-label { transition: none; }
 :root[data-reduce-motion="true"] .idle-unlock.is-hint .iu-handle { animation: none; }
 
+/* ---- show / hide switch for the cards ---- */
+.idle-fold-btn {
+  display: inline-flex; align-items: center; gap: 0.55rem; margin: var(--space-2) 0 0; padding: 0.3rem 0.8rem 0.3rem 0.35rem; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 999px;
+  font: inherit; font-size: calc(var(--idle-scale) * 0.76rem); font-weight: 500; color: inherit; background: rgba(255, 255, 255, 0.1); cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.07); pointer-events: auto;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.idle-fold-btn:hover { background: rgba(255, 255, 255, 0.18); }
+.idle-fold-btn:active { transform: scale(0.97); }
+.idle-fold-btn:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.ifb-track { position: relative; flex: 0 0 auto; width: 2rem; height: 1.15rem; border-radius: 999px; background: rgba(255, 255, 255, 0.26); transition: background-color 0.2s ease; }
+.ifb-track i { position: absolute; top: 0.15rem; left: 0.15rem; width: 0.85rem; height: 0.85rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.25s var(--smooth, ease); }
+.idle-fold-btn[aria-checked="true"] .ifb-track { background: var(--accent, #5b8cff); }
+.idle-fold-btn[aria-checked="true"] .ifb-track i { transform: translateX(0.85rem); }
+html[data-theme="light"]:not(.has-bg-media) .idle-fold-btn { color: var(--text, #1c1b20); background: rgba(255, 255, 255, 0.72); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6); }
+html[data-theme="light"]:not(.has-bg-media) .ifb-track { background: rgba(0, 0, 0, 0.22); }
+html[data-theme="light"]:not(.has-bg-media) .idle-fold-btn[aria-checked="true"] .ifb-track { background: var(--accent, #5b8cff); }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) { .idle-fold-btn { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); } }
+:root[data-reduce-motion="true"] .idle-fold-btn, :root[data-reduce-motion="true"] .ifb-track, :root[data-reduce-motion="true"] .ifb-track i, :root[data-reduce-motion="true"] .idle-fold { transition: none; }
+
+/* the folding wrapper around the dashboard: height + fade + slide (max-height is driven by bindFold in js/mt-idle-focus.js) */
+.idle-fold {
+  box-sizing: border-box; width: calc(100% + 1rem); max-width: 37rem; margin: 0 -0.5rem -1rem; padding: 0 0.5rem 1rem; overflow: hidden;
+  max-height: none; opacity: 1; transform: none;
+  transition: max-height 0.5s var(--smooth, ease), opacity 0.3s ease, transform 0.5s var(--smooth, ease), visibility 0s linear 0s;
+}
+.idle-fold.is-closed { opacity: 0; transform: translateY(-0.6rem); visibility: hidden; pointer-events: none; transition: max-height 0.5s var(--smooth, ease), opacity 0.25s ease, transform 0.5s var(--smooth, ease), visibility 0s linear 0.5s; }
+.idle-clock.is-folded .idle-elapsed { display: none !important; }
+.idle-fold .idle-dash { margin-top: var(--space-2); }
+
+/* per-card show / hide (Settings > Idle screen): classes on #idle-dash set by applyCards() in js/mt-idle-focus.js */
+.idle-dash.no-sw #idle-sw, .idle-dash.no-al #idle-alarms, .idle-dash.no-tabs #idle-tabs { display: none; }
+.idle-dash.no-sw #idle-alarms, .idle-dash.no-al #idle-sw { grid-column: 1 / -1; }
+.idle-fold-btn[hidden], .idle-dash[hidden] { display: none; }
+
+/* Card Scale (Settings > Idle screen): scales the chips and dashboard cards, not the clock text */
+.idle-chips, .idle-fold .idle-dash { zoom: var(--idle-card-scale, 1); }
+
 /* mouse-move mode: no bar, the cursor itself is the way out */
 .idle-unlock[data-mode="move"] { display: none; }
 
@@ -447,3 +485,8 @@ html[data-theme="light"]:not(.has-bg-media) .td-progress { background: rgba(0, 0
   .al-time, .al-label { flex: 1 1 100%; width: 100%; }
   .al-form-actions { flex-wrap: wrap; }
 }
+
+/* ---- timer chip on the idle screen: play / pause + reset (js/mt-idle-focus.js renderTimerChip) ---- */
+.it-actions { display: flex; align-items: center; justify-content: space-between; min-height: 1.6rem; margin-top: 0.5rem; }
+.it-actions .ic-link[hidden] { display: none; }
+.idle-timer .ic-round.is-running { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }

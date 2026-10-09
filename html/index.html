@@ -65,7 +65,8 @@
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
-  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=10">
+  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=13">
+  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=3">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -189,6 +190,10 @@
     <div class="idle-time" id="idle-time"></div>
     <div class="idle-session" id="idle-session" aria-hidden="true"></div>
     <div class="idle-message" id="idle-message-el" aria-hidden="true"></div>
+    <!-- Show / hide switch for the cards below (time in AE + dashboard). Logic: js/mt-idle-focus.js (bindFold). Key: mtx.foldHidden -->
+    <button class="idle-fold-btn" id="idle-fold-btn" type="button" role="switch" aria-checked="false" aria-controls="idle-fold">
+      <span class="ifb-track" aria-hidden="true"><i></i></span><span class="ifb-text" id="idle-fold-text">Show panels</span>
+    </button>
     <!-- Status chips side by side: time in After Effects (live) + the countdown timer from Settings (js/mt-idle-focus.js) -->
     <div class="idle-chips">
       <div class="idle-elapsed" id="idle-elapsed" hidden>
@@ -199,14 +204,19 @@
           <span class="ie-seg"><b class="ie-num" id="ie-s">00</b><i class="ie-unit">seconds</i></span>
         </div>
       </div>
-      <div class="idle-timer" id="idle-timer" hidden>
+      <div class="idle-timer" id="idle-timer">
         <div class="it-top"><span class="it-label" id="idle-timer-label">Timer</span><span class="it-time" id="idle-timer-time">00:00:00</span></div>
         <div class="it-bar"><i id="idle-timer-fill"></i></div>
+        <div class="it-actions">
+          <button class="ic-round" id="idle-timer-go" type="button" aria-label="Start timer"></button>
+          <button class="ic-link" id="idle-timer-rst" type="button" hidden>Reset</button>
+        </div>
       </div>
     </div>
 
     <!-- Dashboard: stopwatch and alarms side by side, Notes / To-Do tabs underneath (one column on a narrow panel).
          Interactive while idle. Logic: js/mt-idle-focus.js. Keys: mtx.sw*, mtx.alarms, mtx.noteList, mtx.idleTab, mtx.todo*. -->
+    <div class="idle-fold" id="idle-fold">
     <div class="idle-dash" id="idle-dash">
       <section class="idle-card idle-sw" id="idle-sw" aria-label="Stopwatch">
         <div class="sw-time" id="sw-time">00:00:00</div>
@@ -259,6 +269,7 @@
         </div>
       </section>
     </div>
+    </div>
   </div>
 
   <!-- Leave the idle screen. Slide: drag the handle across. Tap: click the bar. Both: either. Mode = Settings > Idle screen > Leave idle screen by.
@@ -269,6 +280,16 @@
       <span class="iu-label" id="iu-label">Slide or tap</span>
       <button class="iu-handle" id="iu-handle" type="button" aria-label="Slide or tap to open"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg><svg class="iu-tap-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.6"/><circle cx="8" cy="8" r="1.9" fill="currentColor" stroke="none"/></svg></button>
     </div>
+  </div>
+
+  <!-- Adjust widgets (bottom right of the idle screen): resize + show / hide every idle widget without opening Settings.
+       Logic: js/mt-idle-adjust.js. Keys: mtx.wLayout, mtx.showTimer (+ the show* switches of Settings > Idle screen cards). -->
+  <div class="idle-adjust" id="idle-adjust">
+    <button class="ia-reset" id="ia-reset" type="button" tabindex="-1">Reset sizes</button>
+    <button class="ia-btn" id="ia-btn" type="button" aria-pressed="false" aria-label="Adjust widgets" title="Adjust widgets">
+      <svg class="ia-ico-grid" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M21 14l-7 7"/><path d="M21 18.5L18.5 21"/></svg>
+      <svg class="ia-ico-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </button>
   </div>
 
   <!-- Right-click context menu for tool squares -->
@@ -477,6 +498,11 @@
           <input type="range" id="idle-scale" min="60" max="160" step="1" value="100" aria-label="Idle clock text scale">
           <output class="field-row-value" id="idle-scale-val" for="idle-scale">100%</output>
         </div>
+        <div class="bg-editor-row idle-scale-row" id="idle-card-scale-row">
+          <label for="idle-card-scale">Card Scale</label>
+          <input type="range" id="idle-card-scale" min="60" max="140" step="1" value="100" aria-label="Idle screen card scale">
+          <output class="field-row-value" id="idle-card-scale-val" for="idle-card-scale">100%</output>
+        </div>
         <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Slide or tap the bar at the bottom to bring it back (Esc or a click on an empty spot also works). With Mouse move, any cursor movement leaves at once, so notes and tasks cannot be edited on the idle screen.</p>
       </div>
 
@@ -488,6 +514,21 @@
         <label class="switch-row" for="idle-show-elapsed">
           <span>Show time in After Effects</span>
           <input type="checkbox" id="idle-show-elapsed" checked>
+          <span class="switch-track"></span>
+        </label>
+        <label class="switch-row" for="idle-show-sw">
+          <span>Show stopwatch</span>
+          <input type="checkbox" id="idle-show-sw" checked>
+          <span class="switch-track"></span>
+        </label>
+        <label class="switch-row" for="idle-show-al">
+          <span>Show alarms</span>
+          <input type="checkbox" id="idle-show-al" checked>
+          <span class="switch-track"></span>
+        </label>
+        <label class="switch-row" for="idle-show-tabs">
+          <span>Show notes and to-do</span>
+          <input type="checkbox" id="idle-show-tabs" checked>
           <span class="switch-track"></span>
         </label>
         <div class="field-row idle-timer-row">
@@ -678,7 +719,7 @@
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-anim.js?v=1"></script>
-  <script src="../js/main.js?v=25"></script>
+  <script src="../js/main.js?v=26"></script>
   <script src="../js/mt-smooth.js?v=1"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
@@ -688,7 +729,8 @@
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
-  <script src="../js/mt-idle-focus.js?v=9"></script>
+  <script src="../js/mt-idle-focus.js?v=12"></script>
+  <script src="../js/mt-idle-adjust.js?v=3"></script>
   <script src="../js/mt-settings-bus.js?v=2"></script>
   <script src="../js/mt-settings-remote.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the

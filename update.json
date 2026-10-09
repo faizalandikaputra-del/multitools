@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.22",
+    "latest_version":  "1.8.23",
     "changelog":  "- Add Animation\r\n- Adding Feature\r\n- Change Ui\r\n- Fix Bug Settings\r\n- Update Besar",
     "files":  [
                   {
@@ -55,8 +55,12 @@
                       "sha256":  "6290753c0ea1d47364c9f6dcbd0e3fb7119df5faef71b7354d2a06da7e5b2857"
                   },
                   {
+                      "path":  "css/mt-idle-adjust.css",
+                      "sha256":  "517bc14e0dfdd813f0c0300296d6f965aa44d31555fcf4da5b16a4dc9b99e458"
+                  },
+                  {
                       "path":  "css/mt-idle-focus.css",
-                      "sha256":  "789a6b882f160b6917c9c239d20b66a47ed06d7d3c90dd2d45b41850725e2f52"
+                      "sha256":  "76e992e09049c9bd85e7b132ad32a4a358692b520bb0fd9296214362bc514b9a"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -152,11 +156,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "21f60d6a811cfc88c760b10ebcaf9396445b26f7821cdde44615c6978005c437"
+                      "sha256":  "28310d98eebf04f30ee79a2b7794a2b0cec2aca9fdf9cdd74b5cb5e786f40aa1"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "dfdf6105dec50e1baad1d47b45a4b1b04b7960554cdb2c16abd44ac81805a44c"
+                      "sha256":  "c2fdcaacbf65c81a2f838b780f6fab785469a8e69f09560e10cb4d640bc5b4d9"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -172,7 +176,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "c6e8172f3467a8222e3b32bc16aa3c4cceb6e73504d336e16858191d425c934b"
+                      "sha256":  "c6c854a2949cf6fd2eb21f41b36cdea04b736dd46590a13cfc62ebe7a5caf125"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -195,8 +199,12 @@
                       "sha256":  "e8ef3560b7751a8e93b4c564f04c498a7d9f8850ae580962b506c2a7a72e88a0"
                   },
                   {
+                      "path":  "js/mt-idle-adjust.js",
+                      "sha256":  "4972d41e98e4542d94123f852cfea0c4c8c4848c194d3c2aff5fa62fde14cb11"
+                  },
+                  {
                       "path":  "js/mt-idle-focus.js",
-                      "sha256":  "41fe79eb72a4c28772f9c9985c8167926e185b630928e156bd4d7fe86a051dba"
+                      "sha256":  "80b2f270e62ee72e8750c2fc45e8a9937f481057f8f193c4ebe8f71283527e16"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -516,7 +524,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "697903f4ba853a54f8e440ed012e98b223cedc48a90e7877a24e1ea0efcd6b91"
+                      "sha256":  "61ff476b6afcf31ec40b244ba890484b5be4596583b155ba46d68546e453f791"
                   }
               ]
 }

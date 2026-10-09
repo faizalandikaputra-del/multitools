@@ -6315,8 +6315,12 @@
       var self = this;
       this.clockEl.addEventListener("click", function (e) {
         if (!self.isIdle) { return; }
-        var t = e.target;
-        if (t && t.closest && t.closest(".idle-card, .idle-timer, .idle-elapsed, .idle-message, button, input, textarea, select, a")) { return; }
+        var t = e.target, sel = ".idle-card, .idle-timer, .idle-elapsed, .idle-message, button, input, textarea, select, a";
+        if (t && t.closest && t.closest(sel)) { return; }
+        // A button that re-draws its own icon on click (stopwatch / timer play-pause) is already detached from the page when the click
+        // reaches here, so closest() finds nothing and the click looked like an empty spot. The event path is fixed at dispatch: use it.
+        var path = e.composedPath ? e.composedPath() : [], i;
+        for (i = 0; i < path.length; i++) { if (path[i] && path[i].matches && path[i].matches(sel)) { return; } }
         self.exit();
       });
     },

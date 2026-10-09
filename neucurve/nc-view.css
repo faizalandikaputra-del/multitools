@@ -7,7 +7,6 @@ html.nc-view-graph body .shell.shell .section-divider-vertical,
 html.nc-view-graph body .shell.shell .section-divider-horizontal,
 /* portrait: nc-flow.js parks the scrub slider, library toolbar and divider inside the graph column's bottom bar */
 html.nc-view-graph body .shell.shell .action-container .section-divider,
-html.nc-view-graph body .shell.shell .action-container .preview-strip-container,
 html.nc-view-graph body .shell.shell .action-container .library-header { display: none !important; }
 html.nc-view-graph body .shell.shell .content-wrapper .fixed-section {
   width: 100% !important; max-width: none !important;
@@ -36,3 +35,21 @@ html.nc-view-presets body .shell.shell .content-wrapper .variable-section {
 html.nc-view-presets body .shell.shell .content-wrapper.is-landscape { flex-direction: column !important; }
 html.nc-view-presets body .shell.shell .content-wrapper.is-landscape .fixed-section { order: 2; }
 html.nc-view-presets body .shell.shell .content-wrapper.is-landscape .variable-section { order: 1; }
+
+/* ---- GRAPH ONLY: the preview strip (track line + ball) sits inside the graph box, along its bottom edge (nc-view.js docks it).
+        Right side is left free for the resize grip + expand icon. ---- */
+html.nc-view-graph body .shell.shell .canvas-area { position: relative; }
+html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container {
+  position: absolute; left: 12px; right: 56px; bottom: 2px; z-index: 6; width: auto; margin: 0; padding: 4px 0; cursor: pointer;
+  box-sizing: border-box; background: transparent; border: 0;
+}
+html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .preview-track-wrapper {
+  height: 14px; background: transparent; border: 0; border-radius: 7px; overflow: visible;
+}
+html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .hash-marks { display: none; }
+html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .track { height: 100%; }
+html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .track::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px;
+  background: rgba(255, 255, 255, .22); border-radius: 3px;
+}
+html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .progress { background: rgba(255, 255, 255, .14); height: 4px; top: 50%; margin-top: -2px; border-radius: 3px; }

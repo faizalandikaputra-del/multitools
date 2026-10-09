@@ -65,7 +65,7 @@
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
-  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=1">
+  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=4">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -202,13 +202,31 @@
       <div class="it-top"><span class="it-label" id="idle-timer-label">Timer</span><span class="it-time" id="idle-timer-time">00:00:00</span></div>
       <div class="it-bar"><i id="idle-timer-fill"></i></div>
     </div>
-    <div class="idle-card idle-todos" id="idle-todos" hidden>
+    <!-- Today list + unfinished history. Interactive while idle (js/mt-idle-focus.js). -->
+    <div class="idle-card idle-todos" id="idle-todos">
       <div class="ic-head"><strong>Today</strong><span id="idle-todos-count"></span></div>
       <ul class="ic-list" id="idle-todos-list"></ul>
+      <button class="ic-add" id="idle-todo-add" type="button"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6h8"/></svg><span>Add task</span></button>
+      <div class="ic-missed" id="idle-missed" hidden>
+        <button class="ic-missed-toggle" id="idle-missed-toggle" type="button" aria-expanded="false" aria-controls="idle-missed-list">
+          <span id="idle-missed-label">Unfinished</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg>
+        </button>
+        <ul class="ic-list ic-missed-list" id="idle-missed-list" hidden></ul>
+      </div>
     </div>
-    <div class="idle-card idle-notes" id="idle-notes-card" hidden>
+    <div class="idle-card idle-notes" id="idle-notes-card">
       <div class="ic-head"><strong>Notes</strong></div>
-      <p class="ic-text" id="idle-notes-text"></p>
+      <textarea class="ic-textarea" id="idle-notes-edit" rows="3" maxlength="400" placeholder="Write a note" aria-label="Notes"></textarea>
+    </div>
+  </div>
+
+  <!-- Leave the idle screen. Slide mode: drag the handle across. Tap mode: click the bar. Mode = Settings > Idle screen > Leave idle screen by.
+       Logic: Idle module in main.js (unlock*). Esc also leaves. -->
+  <div class="idle-unlock" id="idle-unlock" data-mode="slide" aria-hidden="true">
+    <div class="iu-track" id="iu-track">
+      <span class="iu-fill" id="iu-fill"></span>
+      <span class="iu-label" id="iu-label">Slide to open</span>
+      <button class="iu-handle" id="iu-handle" type="button" aria-label="Slide to open"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg><svg class="iu-tap-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.6"/><circle cx="8" cy="8" r="1.9" fill="currentColor" stroke="none"/></svg></button>
     </div>
   </div>
 
@@ -390,6 +408,13 @@
           <label class="field-label" for="idle-timeout">Idle Timeout (seconds)</label>
           <input class="idle-num" type="number" id="idle-timeout" min="5" max="3600" step="1" value="60" inputmode="numeric" disabled>
         </div>
+        <div class="field-row idle-exit-row" id="idle-exit-row">
+          <label class="field-label" for="idle-exit">Leave idle screen by</label>
+          <select class="select" id="idle-exit">
+            <option value="slide">Slide</option>
+            <option value="tap">Tap</option>
+          </select>
+        </div>
         <div class="field-row idle-message-row" id="idle-message-row">
           <label class="field-label" for="idle-message">Idle Custom Message</label>
           <input class="idle-message-input" type="text" id="idle-message" maxlength="140" placeholder="e.g. Rendering... grab a coffee">
@@ -409,7 +434,7 @@
           <input type="range" id="idle-scale" min="60" max="160" step="1" value="100" aria-label="Idle clock text scale">
           <output class="field-row-value" id="idle-scale-val" for="idle-scale">100%</output>
         </div>
-        <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Move the mouse to bring it back.</p>
+        <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Slide or tap the bar at the bottom to bring it back (Esc also works). Moving the mouse no longer leaves, so you can edit notes and tasks on the idle screen.</p>
       </div>
 
 
@@ -492,7 +517,12 @@
             <input type="checkbox" id="idle-todo-done-8" aria-label="Task 8 done">
             <input class="idle-message-input" type="text" id="idle-todo-8" maxlength="80" placeholder="Task 8">
           </div>
-        <p class="field-note">The timer keeps running while the panel is open. Ticks in the daily list clear themselves at the start of each new day; the tasks stay.</p>
+        <div class="field-row idle-missed-row">
+          <span class="field-label">Unfinished history</span>
+          <span class="field-note" id="idle-missed-summary" data-mirror>Nothing unfinished.</span>
+          <button class="btn btn-ghost" type="button" id="idle-missed-clear">Clear history</button>
+        </div>
+        <p class="field-note">The timer keeps running while the panel is open. Ticks in the daily list clear at the start of each new day; the tasks stay. A task you did not tick by then moves to Unfinished history on the idle screen, where you can finish it later. Tasks and notes are also saved to a file, so they survive a cleared panel storage.</p>
       </div>
 
       <div class="field">
@@ -605,7 +635,7 @@
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-anim.js?v=1"></script>
-  <script src="../js/main.js?v=22"></script>
+  <script src="../js/main.js?v=23"></script>
   <script src="../js/mt-smooth.js?v=1"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
@@ -615,7 +645,7 @@
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
-  <script src="../js/mt-idle-focus.js?v=2"></script>
+  <script src="../js/mt-idle-focus.js?v=3"></script>
   <script src="../js/mt-settings-bus.js?v=2"></script>
   <script src="../js/mt-settings-remote.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the

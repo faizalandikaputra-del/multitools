@@ -1,8 +1,14 @@
 /* Multi Tool - mt-idle-focus.css
    Idle screen extras (js/mt-idle-focus.js): live time in After Effects (hours / minutes / seconds), countdown timer,
-   notes and daily list. They stack under the clock inside #idle-clock and use the same frosted-chip look as
-   .idle-session / .idle-message (css/style.css > Idle Screensaver). The idle screen is never interactive
-   (pointer-events: none, any mouse move brings the panel back), so these are display-only; edit them in Settings > Idle screen. */
+   Today list (with unfinished history) and notes. They stack under the clock inside #idle-clock and use the same frosted-chip
+   look as .idle-session / .idle-message (css/style.css > Idle Screensaver). The clock, time and timer chips are display-only;
+   the Today list and Notes cards take clicks and typing (pointer-events: auto while body.is-idle). Mouse movement no longer
+   leaves the idle screen: the unlock bar (#idle-unlock, "slide" or "tap" mode, see Idle in js/main.js) or Esc does. */
+
+/* the idle box scrolls when the cards are taller than the panel; bottom padding keeps content clear of the unlock bar */
+.idle-clock { max-height: 100vh; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; padding-bottom: calc(var(--space-4) + 4.25rem); }
+.idle-clock::-webkit-scrollbar { width: 0; height: 0; }
+body.is-idle .idle-card { pointer-events: auto; }
 
 /* the old one-line "You've been in After Effects for ..." chip is replaced by the live segments below */
 .idle-clock .idle-session { display: none; }
@@ -45,22 +51,158 @@
 :root[data-reduce-motion="true"] .idle-timer.is-done { animation: none; }
 :root[data-reduce-motion="true"] .it-bar i { transition: none; }
 
-/* ---- notes + daily list ---- */
+/* ---- Today list, unfinished history, notes (interactive) ---- */
 .idle-card { display: block; width: min(80vw, 19rem); padding: 0.6rem 0.85rem 0.7rem; border-radius: var(--radius-m, 0.75rem); }
 .ic-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
 .ic-head strong { font-size: calc(var(--idle-scale) * 0.8rem); font-weight: 600; }
 .ic-head span { font-size: calc(var(--idle-scale) * 0.7rem); opacity: 0.7; font-variant-numeric: tabular-nums; }
-.ic-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-.ic-list li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.35; }
-.ic-list li::before {
-  content: ""; flex: 0 0 auto; width: 0.85em; height: 0.85em; margin-top: 0.22em; box-sizing: border-box;
-  border: 1.5px solid rgba(255, 255, 255, 0.6); border-radius: 50%;
+.ic-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.ic-list[hidden], .ic-missed[hidden] { display: none; }
+
+.ic-row { display: flex; align-items: center; gap: 0.5rem; min-height: 1.9rem; padding: 0 0.15rem; border-radius: 0.5rem; transition: background-color 0.15s ease, opacity 0.3s ease, transform 0.3s var(--smooth, ease); }
+.ic-row:hover, .ic-row:focus-within { background: rgba(255, 255, 255, 0.07); }
+.ic-check {
+  flex: 0 0 auto; width: 1.1rem; height: 1.1rem; margin: 0; padding: 0; box-sizing: border-box; cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.6); border-radius: 50%; background: transparent no-repeat center / 70%;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
-.ic-list li.is-done { opacity: 0.55; text-decoration: line-through; }
-.ic-list li.is-done::before { background: var(--accent, #5b8cff) no-repeat center / 70%; border-color: var(--accent, #5b8cff);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3l2.3 2.3 4.7-5' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.ic-text { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.ic-check:hover { border-color: var(--accent, #5b8cff); }
+.ic-check:active { transform: scale(0.88); }
+.ic-row.is-done .ic-check, .ic-row.is-finishing .ic-check {
+  background-color: var(--accent, #5b8cff); border-color: var(--accent, #5b8cff);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3l2.3 2.3 4.7-5' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.ic-input {
+  flex: 1 1 auto; min-width: 0; margin: 0; padding: 0.2rem 0.1rem; border: 0; border-bottom: 1px solid transparent; border-radius: 0; outline: none;
+  font: inherit; font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.35; color: inherit; background: transparent;
+  transition: border-color 0.15s ease;
+}
+.ic-input:focus { border-bottom-color: var(--accent, #5b8cff); }
+.ic-input::placeholder, .ic-textarea::placeholder { color: inherit; opacity: 0.45; }
+.ic-row.is-done .ic-input { opacity: 0.55; text-decoration: line-through; }
+.ic-del {
+  flex: 0 0 auto; display: grid; place-items: center; width: 1.4rem; height: 1.4rem; margin: 0; padding: 0; border: 0; border-radius: 50%;
+  color: inherit; background: transparent; cursor: pointer; opacity: 0; transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+.ic-del svg, .ic-add svg, .ic-missed-toggle svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ic-del svg { width: 0.65rem; height: 0.65rem; }
+.ic-row:hover .ic-del, .ic-row:focus-within .ic-del, .ic-del:focus-visible { opacity: 0.7; }
+.ic-del:hover { opacity: 1; background: rgba(255, 255, 255, 0.14); }
+.ic-check:focus-visible, .ic-del:focus-visible, .ic-add:focus-visible, .ic-missed-toggle:focus-visible, .iu-handle:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+
+.ic-add {
+  display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.3rem 0 0; padding: 0.25rem 0.55rem 0.25rem 0.3rem; border: 0; border-radius: 0.5rem;
+  font: inherit; font-size: calc(var(--idle-scale) * 0.75rem); color: inherit; background: transparent; cursor: pointer; opacity: 0.72;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+.ic-add svg { width: 0.7rem; height: 0.7rem; }
+.ic-add:hover:not(:disabled) { opacity: 1; background: rgba(255, 255, 255, 0.08); }
+.ic-add:disabled { opacity: 0.35; cursor: default; }
+
+/* unfinished history: tasks not ticked when the day changed. Finish = done today, Remove = drop it. */
+.ic-missed { margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+.ic-missed-toggle {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; margin: 0; padding: 0.15rem 0.1rem; border: 0;
+  font: inherit; font-size: calc(var(--idle-scale) * 0.75rem); font-weight: 600; color: inherit; background: transparent; cursor: pointer; opacity: 0.85;
+}
+.ic-missed-toggle svg { width: 0.75rem; height: 0.75rem; transition: transform 0.2s var(--smooth, ease); }
+.ic-missed.is-open .ic-missed-toggle svg { transform: rotate(180deg); }
+.ic-missed-list { margin-top: 0.25rem; max-height: 9rem; overflow-y: auto; }
+.ic-missed-list::-webkit-scrollbar { width: 0; }
+.ic-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; padding: 0.2rem 0; }
+.ic-label { font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.3; overflow-wrap: anywhere; }
+.ic-meta { font-style: normal; font-size: calc(var(--idle-scale) * 0.66rem); opacity: 0.62; }
+.ic-missed-row.is-finishing { opacity: 0; transform: translateX(0.5rem); transition-delay: 0.12s; }
+.ic-missed-row.is-finishing .ic-label { text-decoration: line-through; }
+
+.ic-textarea {
+  display: block; width: 100%; min-height: 3.6rem; max-height: 8rem; margin: 0; padding: 0.4rem 0.5rem; box-sizing: border-box; resize: none; outline: none;
+  font: inherit; font-size: calc(var(--idle-scale) * clamp(0.78rem, 2.2vmin, 0.95rem)); line-height: 1.4; color: inherit;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid transparent; border-radius: 0.5rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.ic-textarea:hover { background: rgba(255, 255, 255, 0.09); }
+.ic-textarea:focus { border-color: var(--accent, #5b8cff); background: rgba(255, 255, 255, 0.1); }
+
+/* ---- unlock bar: the way out of the idle screen ---- */
+.idle-unlock {
+  position: fixed; z-index: 41; left: 50%; bottom: var(--space-4); width: min(78vw, 17rem); transform: translateX(-50%);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+body.is-idle .idle-unlock { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.6s var(--smooth, ease) 0.15s; }
+.iu-track {
+  position: relative; display: flex; align-items: center; height: 3rem; padding: 4px; box-sizing: border-box; overflow: hidden;
+  border-radius: 999px; color: #fff; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  -webkit-user-select: none; user-select: none; touch-action: none;
+}
+.iu-fill {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; transform: scaleX(0); transform-origin: left center;
+  background: rgba(var(--accent-rgb, 91, 140, 255), 0.4); transition: transform 0.28s var(--smooth, ease);
+}
+.iu-label {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; padding-left: 2.4rem;
+  font-size: 0.85rem; font-weight: 500; letter-spacing: 0.01em; pointer-events: none; transition: opacity 0.2s ease;
+}
+.iu-handle {
+  position: relative; z-index: 1; flex: 0 0 auto; display: grid; place-items: center; width: 2.4rem; height: 2.4rem; margin: 0; padding: 0; border: 0; border-radius: 50%;
+  color: var(--on-accent, #fff); background: var(--accent, #5b8cff); cursor: grab; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.28s var(--smooth, ease);
+}
+.iu-handle svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.idle-unlock.is-dragging .iu-handle, .idle-unlock.is-dragging .iu-fill, .idle-unlock.is-dragging .iu-label { transition: none; }
+.idle-unlock.is-dragging .iu-handle { cursor: grabbing; }
+.idle-unlock.is-hint .iu-handle { animation: iu-nudge 0.5s var(--smooth, ease); }
+@keyframes iu-nudge { 0%, 100% { transform: translate3d(0, 0, 0); } 40% { transform: translate3d(1rem, 0, 0); } }
+/* tap mode, minimal: one small hairline ring with a dot, breathing slowly, and a quiet label under it. No filled accent
+   disc, no glow, no second ring, no tracking caps. Total height (~3.4rem) stays inside the 4.25rem the idle box reserves
+   at the bottom, so it can never sit on top of the Today / Notes cards. The whole block is still one button (click on
+   .iu-track, see Idle in js/main.js). */
+.iu-tap-ico { display: none; }
+.idle-unlock[data-mode="tap"] { width: auto; min-width: 5rem; bottom: var(--space-4); }
+.idle-unlock[data-mode="tap"] .iu-track,
+html[data-theme="light"]:not(.has-bg-media) .idle-unlock[data-mode="tap"] .iu-track {
+  flex-direction: column; justify-content: center; gap: 0.3rem; height: auto; padding: 0.35rem 0.9rem; overflow: visible; cursor: pointer;
+  background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.idle-unlock[data-mode="tap"] .iu-track:hover { background: none; }
+.idle-unlock[data-mode="tap"] .iu-track:active { transform: none; }
+.idle-unlock[data-mode="tap"] .iu-fill { display: none; }
+.idle-unlock[data-mode="tap"] .iu-label {
+  position: static; order: 2; padding: 0; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.02em; opacity: 0.45;
+  text-shadow: none; transition: opacity 0.2s ease;
+}
+.idle-unlock[data-mode="tap"] .iu-track:hover .iu-label { opacity: 0.9; }
+.idle-unlock[data-mode="tap"] .iu-handle {
+  order: 1; width: 2.1rem; height: 2.1rem; cursor: pointer; pointer-events: none; color: #fff;
+  background: transparent; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: none;
+  transition: transform 0.2s var(--smooth, ease), border-color 0.2s ease;
+}
+.idle-unlock[data-mode="tap"] .iu-handle > svg,
+.idle-unlock[data-mode="tap"] .iu-handle > .iu-tap-ico { display: none; }
+/* the dot */
+.idle-unlock[data-mode="tap"] .iu-handle::before {
+  content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
+  background: #fff; opacity: 0.85; pointer-events: none;
+}
+/* one slow ring */
+.idle-unlock[data-mode="tap"] .iu-handle::after {
+  content: ""; position: absolute; top: -1px; right: -1px; bottom: -1px; left: -1px; border-radius: 50%; pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.5); opacity: 0; animation: iu-beacon 3.2s ease-out infinite;
+}
+.idle-unlock[data-mode="tap"] .iu-track:hover .iu-handle { border-color: rgba(255, 255, 255, 0.75); transform: scale(1.06); }
+.idle-unlock[data-mode="tap"] .iu-track:active .iu-handle { transform: scale(0.94); }
+@keyframes iu-beacon { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.7); opacity: 0; } }
+:root[data-reduce-motion="true"] .idle-unlock[data-mode="tap"] .iu-handle::after { animation: none; opacity: 0.2; transform: scale(1.3); }
+html[data-theme="light"]:not(.has-bg-media) .idle-unlock[data-mode="tap"] .iu-handle { border-color: rgba(0, 0, 0, 0.4); color: #000; }
+html[data-theme="light"]:not(.has-bg-media) .idle-unlock[data-mode="tap"] .iu-handle::before { background: #000; }
+html[data-theme="light"]:not(.has-bg-media) .idle-unlock[data-mode="tap"] .iu-handle::after { border-color: rgba(0, 0, 0, 0.45); }
+html[data-theme="light"]:not(.has-bg-media) .idle-unlock[data-mode="tap"] .iu-label { color: #000; }
+
+:root[data-reduce-motion="true"] .ic-row, :root[data-reduce-motion="true"] .ic-check, :root[data-reduce-motion="true"] .ic-missed-toggle svg,
+:root[data-reduce-motion="true"] .iu-fill, :root[data-reduce-motion="true"] .iu-handle, :root[data-reduce-motion="true"] .iu-label { transition: none; }
+:root[data-reduce-motion="true"] .idle-unlock.is-hint .iu-handle { animation: none; }
 
 html[data-theme="light"]:not(.has-bg-media) .idle-elapsed,
 html[data-theme="light"]:not(.has-bg-media) .idle-timer,
@@ -70,16 +212,29 @@ html[data-theme="light"]:not(.has-bg-media) .idle-card {
 }
 html[data-theme="light"]:not(.has-bg-media) .ie-seg { background: rgba(0, 0, 0, 0.05); }
 html[data-theme="light"]:not(.has-bg-media) .it-bar { background: rgba(0, 0, 0, 0.12); }
-html[data-theme="light"]:not(.has-bg-media) .ic-list li::before { border-color: rgba(0, 0, 0, 0.45); }
+html[data-theme="light"]:not(.has-bg-media) .ic-check { border-color: rgba(0, 0, 0, 0.45); }
+html[data-theme="light"]:not(.has-bg-media) .ic-row:hover, html[data-theme="light"]:not(.has-bg-media) .ic-row:focus-within { background: rgba(0, 0, 0, 0.05); }
+html[data-theme="light"]:not(.has-bg-media) .ic-del:hover, html[data-theme="light"]:not(.has-bg-media) .ic-add:hover:not(:disabled) { background: rgba(0, 0, 0, 0.08); }
+html[data-theme="light"]:not(.has-bg-media) .ic-missed { border-top-color: rgba(0, 0, 0, 0.12); }
+html[data-theme="light"]:not(.has-bg-media) .ic-textarea { background: rgba(0, 0, 0, 0.05); }
+html[data-theme="light"]:not(.has-bg-media) .ic-textarea:hover { background: rgba(0, 0, 0, 0.07); }
+html[data-theme="light"]:not(.has-bg-media) .ic-textarea:focus { background: rgba(0, 0, 0, 0.06); border-color: var(--accent, #5b8cff); }
+html[data-theme="light"]:not(.has-bg-media) .iu-track {
+  color: var(--text, #1c1b20); background: rgba(255, 255, 255, 0.72); border-color: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .idle-elapsed, .idle-timer, .idle-card { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
+  .idle-elapsed, .idle-timer, .idle-card, .iu-track { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
 }
 .idle-clock[data-position="center"] .idle-elapsed, .idle-clock[data-position="center"] .idle-card { text-align: left; }
 
 /* ---- panel Settings modal ---- */
 .idle-timer-row { flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
 .idle-todo-edit { display: flex; align-items: center; gap: var(--space-2); }
+.idle-exit-row { justify-content: space-between; }
+.idle-exit-row .select { flex: 0 1 10rem; width: auto; min-width: 8rem; }
+.idle-missed-row { flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
 .idle-todo-edit .idle-message-input { flex: 1; min-width: 0; }
 .idle-notes-input { width: 100%; min-height: 4.2rem; resize: vertical; font-family: inherit; line-height: 1.4; }
 

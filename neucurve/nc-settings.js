@@ -10,7 +10,7 @@
   var APP_ID = "nc-settings";
   var DEF = {
     uiColor: "#FFFFFF", graphLineColor: "#FFFFFF", handleColor: "#FFFFFF",
-    autoApply: "false", overshoot: "true", keepMotion: "1", layoutMode: "auto",
+    autoApply: "false", overshoot: "true", keepMotion: "1", liveBall: "1", layoutMode: "auto",
     bgImagePath: "", bgOpacity: "1",
     gradOn: "0", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", gradP: "bw",
     wgDir: "90", wgInt: "45", wgSize: "55",
@@ -28,7 +28,7 @@
     "<circle cx='12' cy='50' r='5' fill='#3366ff'/><circle cx='52' cy='14' r='5' fill='#3366ff'/></svg>");
 
   var els = {};
-  var activeKey = "", activeEditor = null, profileTimer = null;
+  var activeKey = "", profileTimer = null;
   var profile = loadProfile(), profileShown = false;
 
   function $(id) { return document.getElementById(id); }
@@ -148,53 +148,37 @@
   function scheduleFit() { clearTimeout(fitTimer); fitTimer = setTimeout(fitWindow, 60); }
   window.__ncFitWindow = fitWindow;
 
-  /* ---------------- color editor (same as Flow) ---------------- */
+  /* ---------------- color editor: Multi Tool's picker popover ----------------
+     "Edit" opens the same themed picker the Multi Tool panel uses (js/mt-colorpicker.js), anchored to the button through an
+     invisible <input type="color"> (cpProxy). The picker writes cpProxy.value and fires "input" while you drag, so the color
+     is applied live, exactly like the old inline sliders did. Closing (Esc / click outside / scroll) is detected from the
+     class the picker puts on cpProxy. No OS color dialog is ever used. */
+  var cpProxy = null, lastKey = "";
+  function ensureProxy() {
+    if (cpProxy) { return cpProxy; }
+    cpProxy = document.createElement("input");
+    cpProxy.type = "color"; cpProxy.className = "nc-cp-proxy"; cpProxy.tabIndex = -1; cpProxy.setAttribute("aria-hidden", "true");
+    cpProxy.addEventListener("input", function () { if (activeKey) { set(activeKey, cpProxy.value); refreshAll(); } });
+    document.body.appendChild(cpProxy);
+    if (typeof MutationObserver !== "undefined") {
+      new MutationObserver(function () {
+        if (activeKey && !/mt-cp-open/.test(cpProxy.className)) { lastKey = activeKey; closeColorEditor(); }
+      }).observe(cpProxy, { attributes: true, attributeFilter: ["class"] });
+    }
+    return cpProxy;
+  }
   function openColorEditor(key, button) {
-    var row = document.querySelector('[data-setting-row="' + key + '"]');
+    var px = ensureProxy(), r = button.getBoundingClientRect();
     closeColorEditor();
-    if (!row) { return; }
-    activeKey = key; button.classList.add("is-open"); button.textContent = "Close";
-    activeEditor = document.createElement("div");
-    activeEditor.className = "settings-color-editor";
-    activeEditor.innerHTML =
-      '<div class="settings-color-preview"></div>' +
-      '<input class="settings-color-slider settings-color-hue" type="range" min="0" max="360" step="1" data-color-slider="hue" />' +
-      '<input class="settings-color-slider settings-color-saturation" type="range" min="0" max="100" step="1" data-color-slider="saturation" />' +
-      '<input class="settings-color-slider settings-color-value" type="range" min="0" max="100" step="1" data-color-slider="value" />' +
-      '<input class="settings-hex-input" type="text" spellcheck="false" />';
-    row.parentNode.insertBefore(activeEditor, row.nextSibling);
-    var sliders = activeEditor.querySelectorAll("[data-color-slider]"), hex = activeEditor.querySelector(".settings-hex-input");
-    for (var i = 0; i < sliders.length; i++) { sliders[i].addEventListener("input", fromSliders); }
-    hex.addEventListener("change", fromHex);
-    hex.addEventListener("keydown", function (e) { if (e.key === "Enter") { fromHex(e); hex.blur(); } });
-    refreshColorEditor(true);
+    activeKey = key; button.classList.add("is-open");
+    px.style.left = r.left + "px"; px.style.top = r.top + "px"; px.style.width = r.width + "px"; px.style.height = r.height + "px";
+    px.value = colorOf(key);
+    px.click();
   }
   function closeColorEditor() {
     var b = document.querySelectorAll("[data-color-edit]");
-    for (var i = 0; i < b.length; i++) { b[i].classList.remove("is-open"); b[i].textContent = "Edit"; }
-    if (activeEditor && activeEditor.parentNode) { activeEditor.parentNode.removeChild(activeEditor); }
-    activeEditor = null; activeKey = "";
-  }
-  function q(sel) { return activeEditor.querySelector(sel); }
-  function fromSliders() {
-    var c = hsvToHex(Number(q('[data-color-slider="hue"]').value) || 0, Number(q('[data-color-slider="saturation"]').value) || 0, Number(q('[data-color-slider="value"]').value) || 0);
-    set(activeKey, c); refreshAll(); refreshColorEditor(false);
-  }
-  function fromHex(e) {
-    var v = normalizeHex(e.currentTarget.value);
-    if (!v) { refreshColorEditor(true); return; }
-    set(activeKey, v); refreshAll(); refreshColorEditor(true);
-  }
-  function refreshColorEditor(updateSliders) {
-    if (!activeEditor || !activeKey) { return; }
-    var color = colorOf(activeKey), hsv = hexToHsv(color);
-    var hue = q('[data-color-slider="hue"]'), sat = q('[data-color-slider="saturation"]'), val = q('[data-color-slider="value"]');
-    if (updateSliders) { hue.value = String(Math.round(hsv.h)); sat.value = String(Math.round(hsv.s)); val.value = String(Math.round(hsv.v)); }
-    hue.style.background = "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)";
-    sat.style.background = "linear-gradient(to right, " + hsvToHex(hsv.h, 0, hsv.v) + ", " + hsvToHex(hsv.h, 100, hsv.v) + ")";
-    val.style.background = "linear-gradient(to right, #000000, " + hsvToHex(hsv.h, hsv.s, 100) + ", #ffffff)";
-    q(".settings-color-preview").style.setProperty("--editor-color", color);
-    q(".settings-hex-input").value = "# " + color.slice(1).toUpperCase();
+    for (var i = 0; i < b.length; i++) { b[i].classList.remove("is-open"); }
+    activeKey = "";
   }
 
   /* ---------------- generic helpers ---------------- */
@@ -315,41 +299,65 @@
     var menu = document.createElement("div"); menu.className = "settings-language-dropdown__menu"; menu.id = selectId + "Menu"; menu.setAttribute("role", "listbox");
     wrap.insertBefore(trigger, sel); wrap.appendChild(menu);
     var open = false;
-    var group = wrap.closest ? wrap.closest(".settings-group") : null;   /* the card clips (overflow:hidden), so it must let the open list out */
-    function close() { open = false; menu.classList.remove("is-open"); trigger.setAttribute("aria-expanded", "false"); if (group) { group.classList.remove("has-dd-open"); } }
+    /* v2: while open, the list is moved to <body> and drawn with position:fixed. The card (overflow:hidden), the scroll area and the
+       card's own transform (a transformed ancestor makes position:fixed relative to itself) can no longer clip, offset or hide it. */
+    function dock() {
+      menu.classList.remove("is-floating", "is-up");
+      menu.style.left = menu.style.top = menu.style.bottom = menu.style.width = menu.style.maxHeight = menu.style.overflowY = "";
+      if (menu.parentNode !== wrap) { wrap.appendChild(menu); }
+    }
+    function close() {
+      if (!open) { return; }
+      open = false; menu.classList.remove("is-open"); trigger.setAttribute("aria-expanded", "false");
+      document.removeEventListener("scroll", onMove, true); window.removeEventListener("resize", onMove);
+      dock();
+    }
+    function onMove(e) { if (open && !(e && e.target === menu)) { place(); } }
+    /* idempotent: when the options are unchanged only the selected class + label are updated. Rebuilding the buttons while the list is
+       open replayed the pop-in / stagger animation of every item = the flicker when choosing a value. */
     function sync() {
-      menu.textContent = "";
-      for (var i = 0; i < sel.options.length; i++) {
-        var o = document.createElement("button"); o.type = "button"; o.className = "settings-language-dropdown__option";
-        o.setAttribute("role", "option"); o.setAttribute("data-index", String(i));
-        if (i === sel.selectedIndex) { o.classList.add("is-selected"); }
-        o.textContent = sel.options[i].textContent; menu.appendChild(o);
+      var n = sel.options.length, kids = menu.children, same = kids.length === n, i, o;
+      for (i = 0; same && i < n; i++) { if (kids[i].textContent !== sel.options[i].textContent) { same = false; } }
+      if (!same) {
+        menu.textContent = "";
+        for (i = 0; i < n; i++) {
+          o = document.createElement("button"); o.type = "button"; o.className = "settings-language-dropdown__option";
+          o.setAttribute("role", "option"); o.setAttribute("data-index", String(i));
+          o.textContent = sel.options[i].textContent; menu.appendChild(o);
+        }
       }
+      for (i = 0; i < n; i++) { kids[i].classList.toggle("is-selected", i === sel.selectedIndex); }
       label.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : "";
     }
     function pick(i) {
       if (i < 0 || i >= sel.options.length) { return; }
       sel.selectedIndex = i;
       var ev; try { ev = new Event("change", { bubbles: true }); } catch (e) { ev = document.createEvent("Event"); ev.initEvent("change", true, true); }
-      sel.dispatchEvent(ev); sync(); close(); trigger.focus();
+      close(); sync(); sel.dispatchEvent(ev); try { trigger.focus({ preventScroll: true }); } catch (e) { trigger.focus(); }
     }
-    /* open downward when it fits, else upward, else the side with more room (menu scrolls inside itself) so it is never cut off */
+    /* open downward when it fits, else upward, else the side with more room (list scrolls inside itself); bounds = the window, 8px margin */
     function place() {
-      var box = wrap.closest ? wrap.closest(".settings-body") : null;
-      var top = 0, bottom = window.innerHeight;
-      if (box) { var b = box.getBoundingClientRect(); top = Math.max(top, b.top); bottom = Math.min(bottom, b.bottom); }
+      var M = 8, vw = document.documentElement.clientWidth || window.innerWidth, vh = window.innerHeight;
       var t = trigger.getBoundingClientRect();
       menu.style.maxHeight = ""; menu.style.overflowY = "";
-      menu.classList.remove("is-up");
-      var need = menu.scrollHeight + 2, below = bottom - t.bottom - 10, above = t.top - top - 10;
+      menu.classList.add("is-floating");
+      var w = Math.round(t.width), left = Math.max(M, Math.min(Math.round(t.left), vw - w - M));
+      menu.style.width = w + "px"; menu.style.left = left + "px"; menu.style.bottom = "auto";
+      var need = menu.scrollHeight + 2, below = vh - t.bottom - M - 4, above = t.top - M - 4;
       var up = below < need && above > below;
-      var room = Math.max(80, up ? above : below);
-      if (need > room) { menu.style.maxHeight = Math.floor(room) + "px"; menu.style.overflowY = "auto"; }
+      var room = Math.max(80, Math.floor(up ? above : below));
+      if (need > room) { menu.style.maxHeight = room + "px"; menu.style.overflowY = "auto"; }
+      var h = Math.min(need, room);
+      menu.style.top = Math.round(up ? t.top - 4 - h : t.bottom + 4) + "px";
       menu.classList.toggle("is-up", up);
     }
     trigger.addEventListener("click", function () {
       if (open) { close(); }
-      else { sync(); open = true; menu.classList.add("is-open"); trigger.setAttribute("aria-expanded", "true"); if (group) { group.classList.add("has-dd-open"); } place(); }
+      else {
+        sync(); open = true; document.body.appendChild(menu);
+        menu.classList.add("is-open"); trigger.setAttribute("aria-expanded", "true"); place();
+        document.addEventListener("scroll", onMove, true); window.addEventListener("resize", onMove);   /* follow the trigger while the page scrolls */
+      }
     });
     trigger.addEventListener("keydown", function (e) {
       if (e.key === "ArrowDown") { e.preventDefault(); if (!open) { trigger.click(); } else { pick(Math.min(sel.options.length - 1, sel.selectedIndex + 1)); } }
@@ -359,7 +367,7 @@
     menu.addEventListener("click", function (e) {
       var t = e.target; while (t && t !== menu) { if (t.classList && t.classList.contains("settings-language-dropdown__option")) { pick(Number(t.getAttribute("data-index"))); return; } t = t.parentNode; }
     });
-    document.addEventListener("mousedown", function (e) { if (open && !wrap.contains(e.target)) { close(); } });
+    document.addEventListener("mousedown", function (e) { if (open && !wrap.contains(e.target) && !menu.contains(e.target)) { close(); } });
     sel.addEventListener("change", sync);
     sel._ncSync = sync; sync();
   }
@@ -392,9 +400,14 @@
     /* color edit buttons */
     var eb = document.querySelectorAll("[data-color-edit]");
     for (i = 0; i < eb.length; i++) {
+      /* a press outside the picker closes it first; if that press was on this very button, it should stay closed */
+      eb[i].addEventListener("mousedown", function (e) {
+        e.currentTarget.__ncOff = (lastKey === e.currentTarget.getAttribute("data-color-edit")) && !!document.querySelector(".mt-cp.is-closing");
+      });
       eb[i].addEventListener("click", function (e) {
         var k = e.currentTarget.getAttribute("data-color-edit");
-        if (activeKey === k) { closeColorEditor(); } else { openColorEditor(k, e.currentTarget); }
+        if (e.currentTarget.__ncOff) { e.currentTarget.__ncOff = false; lastKey = ""; return; }
+        openColorEditor(k, e.currentTarget);
       });
     }
 
@@ -406,6 +419,7 @@
     toggle("settingsAutoApply", "autoApply", "true", "false", function () { return readBool("autoApply"); });
     toggle("settingsOvershoot", "overshoot", "true", "false", function () { return read("overshoot") !== "false"; });
     toggle("settingsKeepMotion", "keepMotion", "1", "0", function () { return read("keepMotion") !== "0"; });
+    toggle("settingsLiveBall", "liveBall", "1", "0", function () { return read("liveBall") !== "0"; });
     /* panel view: the two toggles exclude each other, so the Curve tab is never left empty */
     toggle("settingsHidePresets", "hidePresets", "true", "false", function () { return readBool("hidePresets"); });
     toggle("settingsHideGraph", "hideGraph", "true", "false", function () { return readBool("hideGraph"); });
@@ -557,10 +571,6 @@
     $("settingsClearHandleImage").disabled = !img;
     root.style.setProperty("--settings-handle-preview-size", clamp(Math.round(num(read("hSize"), 2, 9, 4.5) * 14 / 4.5), 12, 24) + "px");
 
-    if (activeEditor) {
-      var hx = q(".settings-hex-input"), want = "# " + colorOf(activeKey).slice(1).toUpperCase();
-      if (hx.value !== want && document.activeElement !== hx) { refreshColorEditor(!/settings-color-slider/.test(document.activeElement && document.activeElement.className || "")); }
-    }
   }
 
   /* Window size: 585 wide like Flow, height follows the content (fitWindow). Re-applied a few times at startup so an old

@@ -190,6 +190,7 @@
     var divider = q(".section-divider");
     var strip = q(".preview-strip-container");
     var head = q(".library-header");
+    if (document.documentElement.classList.contains("nc-view-graph")) { strip = null; }   /* v-view: graph-only view docks the strip inside the graph box (nc-view.js) */
     var host = bar, side = q(".fl-side");
     if (land) {
       var vs = q(".variable-section");

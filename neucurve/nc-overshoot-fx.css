@@ -1,0 +1,33 @@
+/* NeuCurve - nc-overshoot-fx.css (v1)  OVERSHOOT CROSSING EFFECT. Driven by nc-overshoot-fx.js.
+   Motion personality: Energetic-light (160-520 ms, ease-out-expo in, ease-in out). Three layers:
+   primary   = the 0 / 1 line lights up and a sweep runs out from the handle,
+   secondary = a ring bursts at the handle + a tinted band fills the overshoot zone,
+   ambient   = the band breathes slowly while you stay in overshoot.
+   Overlay lives inside .canvas-area, never captures the pointer. Chromium 74 safe (no inset, no gap, no aspect-ratio). */
+#nc-ovfx { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; z-index: 7; --c: #fff; }
+
+/* secondary + ambient: zone tint between the unit line and the plot edge */
+#nc-ovfx .ncov-band { position: absolute; opacity: 0; transition: opacity .2s cubic-bezier(.3, 0, 1, 1); }          /* exit = accelerate */
+#nc-ovfx .ncov-band.on { opacity: 1; transition: opacity .18s cubic-bezier(.05, .7, .1, 1); }                       /* enter = decelerate */
+#nc-ovfx .ncov-band > i { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: linear-gradient(to top, var(--c), rgba(0, 0, 0, 0)); opacity: .2; }
+#nc-ovfx .ncov-band.bot > i { background: linear-gradient(to bottom, var(--c), rgba(0, 0, 0, 0)); }
+#nc-ovfx .ncov-band.on > i { animation: ncov-breath 2.4s ease-in-out .3s infinite; }
+
+/* primary: the unit line */
+#nc-ovfx .ncov-edge { position: absolute; height: 0; }
+#nc-ovfx .ncov-edge::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 2px; border-radius: 1px;
+  background: var(--c); box-shadow: 0 0 8px var(--c), 0 0 18px var(--c);
+  opacity: 0; transition: opacity .2s cubic-bezier(.3, 0, 1, 1);
+}
+#nc-ovfx .ncov-edge.on::before { opacity: .9; transition: opacity .12s cubic-bezier(.05, .7, .1, 1); }
+#nc-ovfx .ncov-sweep { position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: #fff; border-radius: 1px; box-shadow: 0 0 10px var(--c), 0 0 22px var(--c); opacity: 0; transform: scaleX(0); }
+#nc-ovfx .ncov-sweep.go { animation: ncov-sweep .52s cubic-bezier(.05, .7, .1, 1) both; }
+#nc-ovfx .ncov-sweep.soft { animation-duration: .3s; box-shadow: none; background: var(--c); }
+/* secondary: ring burst at the handle */
+#nc-ovfx .ncov-burst { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2px solid var(--c); box-shadow: 0 0 10px var(--c); opacity: 0; transform: scale(.3); }
+#nc-ovfx .ncov-burst.go { animation: ncov-burst .36s cubic-bezier(.05, .7, .1, 1) both; }
+
+@keyframes ncov-sweep { 0% { transform: scaleX(0); opacity: 1; } 55% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+@keyframes ncov-burst { 0% { transform: scale(.3); opacity: .85; } 100% { transform: scale(2.7); opacity: 0; } }
+@keyframes ncov-breath { 0%, 100% { opacity: .14; } 50% { opacity: .26; } }

@@ -1156,3 +1156,112 @@ Idle screen: time in After Effects, timer, notes, daily list (js/mt-idle-focus.j
   UI / Theme Color (--p-rgb). Behavior unchanged.
 - Idle timer sound (Settings > Idle screen > Sound): "Anime girl voice" and its speech code were deleted. Options are now "Chime (built-in)" and
   "Custom sound file". Choosing Custom with no file opens the file chooser at once; until a file exists the chime plays. A saved old "voice" value becomes "chime".
+
+
+IDLE SCREEN: SLIDE / TAP TO LEAVE, EDITABLE NOTES + TASKS, UNFINISHED HISTORY
+Mouse movement no longer leaves the idle screen. A bar at the bottom does: Settings > Idle screen > "Leave idle screen by"
+= Slide (drag the round handle to the end of the bar and release) or Tap (click the bar). Esc leaves in both modes.
+Code: Idle.applyExitMode()/bindUnlock() in js/main.js, #idle-unlock in html/index.html, .idle-unlock in css/mt-idle-focus.css.
+Key: mtx.idleExit = "slide" | "tap" (default slide).
+While idle, the Today list and the Notes card take clicks and typing: tick a task, edit its text, add (max 8) or remove it,
+type in Notes. Edits are mirrored into the Settings controls (same mtx.todoN / mtx.todoDoneN / mtx.notes keys).
+Daily tasks no longer get lost: tasks, ticks, notes and history are kept in memory, in localStorage and in
+Documents/MyMultitoolExtension/DailyTasks.json (written 0.4 s after each change). On start, the file is used when
+localStorage is empty or older (cleared, or full because of a big GIF background).
+Unfinished history (mtx.missed, JSON): when the date changes, every task that was not ticked moves there with the date it
+was missed (same task missed again = one entry, day count goes up), the ticks reset, the tasks stay. Open it with
+"Unfinished (n)" under the Today list. Finish = done today (leaves the history and ticks today's task with the same text);
+x = remove. Ticking today's task also clears its history entry. Settings > Idle screen > Daily list shows the count and
+has "Clear history". Code: newDay()/readMissed()/finishMissed() in js/mt-idle-focus.js.
+
+SETTINGS WINDOWS: NO NATIVE CONTROLS (Multi Tool + NeuCurve)
+-------------------------------------------------------------
+Both Settings windows now use the same controls as the Multi Tool panel:
+- Color fields open the themed picker popover (js/mt-colorpicker.js). NeuCurve "Edit" buttons use it too; the old inline
+  hue/saturation/value sliders are gone (nc-settings.js openColorEditor, anchored through an invisible input).
+- Number fields get the themed stepper (js/mt-spinbox.js, Multi Tool window).
+- Dropdowns use the themed menu (js/mt-select.js in Multi Tool, nc-settings.js dropdown + nc-settings-dd.css in NeuCurve).
+- Sliders (.settings-range and the Adjust Background preview) use the panel slider: sunken track, accent fill, round thumb.
+- Checkboxes (.settings-check) are drawn custom, with an accent fill and tick.
+Styles: css/mt-settings-controls.css (shared, loaded last) + neucurve/nc-settings-controls.css (NeuCurve accent bridge).
+Only the OS file chooser (Choose image / Browse) stays native; CEP has no themed replacement for it.
+
+IDLE SCREEN: TAP MODE LOOK
+--------------------------
+Settings > Idle screen > Leave idle screen by > Tap now shows a round beacon button (pulsing rings, "Tap to open" under it,
+no bar) instead of the slide-style pill. Slide mode is unchanged. Styles: css/mt-idle-focus.css ([data-mode="tap"] block);
+the extra tap icon sits next to the chevron inside #iu-handle in html/index.html and is shown only in tap mode.
+
+
+CURVE DRAG SMOOTHNESS, MOVE CURSOR, SETTINGS CONTROLS, MINIMAL TAP SCREEN
+--------------------------------------------------------------------------
+- Dragging a handle / the curve was heavy because neucurve/nc-glow.js re-synced 14 wide blended strokes (plus a forced
+  getComputedStyle) synchronously on every mutation. Now: 8 glow steps, no mix-blend-mode, one sync per animation frame,
+  cached curve colour, and only every 3rd glow layer is drawn/updated while a drag runs (nc-glow.css html.nc-graph-drag;
+  full glow returns on release).
+- Handles and anchors show the Move cursor on hover and for the whole drag (nc-live.js adds html.nc-handle-drag, nc-live.css).
+  Dragging the empty graph keeps the crosshair.
+- css/mt-final-controls.css (last in html/settings.html and neucurve/settings.html): every range slider and scrollbar in both
+  Settings windows is themed; color-scheme is set so nothing falls back to the OS look. js/mt-settings-polish.js now sets --fill
+  on every range (also when its value is set from code).
+- Idle screen, Tap mode: the filled accent disc + two pulsing rings + caps label became one hairline ring with a dot, one slow
+  ring and a quiet label (css/mt-idle-focus.css). Height fits the space the idle box reserves, so it no longer overlaps the cards.
+
+GRAPH RESIZE GRIP MOVED (Curve tab)
+-----------------------------------
+The resize grip (nc-gsize.js) no longer sits on the plot's bottom-right corner. It is now a faint 14px mark in the box's corner
+cluster, directly left of the expand icon, and turns solid on hover. Drag, Shift = keep proportions, double-click = auto: unchanged.
+Styles: neucurve/nc-gbox.css (v21 block).
+
+CURVE TAB: OVERSHOOT RESISTANCE
+-------------------------------
+With "Allow Overshoot" ON, dragging a Bezier handle or a Custom anchor/handle above 1 or below 0 now feels heavy: inside 0..1 the
+handle follows the pointer 1:1, outside it only follows a fraction that shrinks fast (pointer 0.5 past the edge = handle 0.14 past,
+and it can never pass about 0.37 beyond the edge). That discourages overshoot without removing it. Allow Overshoot OFF still clamps
+hard to 0..1. Elastic / Bounce / Wave are unchanged. Bundle patch: ncClampOv() / ncClampOvInc() / ncOvG() in assets/index.js.
+Switch the resistance off (plain free overshoot again): localStorage neucurve_ovResist = "0".
+
+CURVE TAB: FLOOR FILLS THE GRAPH BOX + SETTINGS DROPDOWN FIX
+------------------------------------------------------------
+1) Graph floor / background fills the whole graph box (neucurve/nc-gfill.js, nc-gbox.css v20, nc-bg.js v16).
+   The plot (curve, handles, grid, 0..1 range) keeps its size. Only the floor rect and the Graph Background image are stretched
+   to the .canvas-area box plus OVERSHOOT px on every side (default 6, constant at the top of nc-gfill.js), so the background
+   shows edge to edge with no seam. .canvas-area crops the overshoot. Off: localStorage neucurve_gFill = "0".
+   Settings > Graph Background > Adjust Background now previews the shape of the whole box (bgAspect follows the box).
+2) NeuCurve Settings dropdowns (Layout Mode / Background Effect), nc-settings.js v9:
+   - the open list is moved to <body> with position:fixed (class is-floating), bounded by the window, so no card / scroll area /
+     transformed ancestor can clip or offset it; small windows open up or down with the most room.
+   - ":focus-visible" removed from dropdown selector lists in nc-settings.css / nc-settings-pro.css / nc-settings-dd.css: old CEP
+     (Chromium < 86) drops the whole rule when one selector in the list is unknown, which killed the hover / open styles.
+
+CURVE TAB: NO OVERSHOOT RESISTANCE + LANDSCAPE PLOT FILLS THE BOX
+-----------------------------------------------------------------
+Supersedes "CURVE TAB: OVERSHOOT RESISTANCE" above.
+1) Resistance is now OPT-IN. Dragging a Bezier handle / Custom anchor past 0 or 1 follows the pointer 1:1, exactly like inside 0..1,
+   so entering overshoot no longer feels different or heavy. Bring the old rubber-band back: localStorage neucurve_ovResist = "1".
+   Allow Overshoot OFF still clamps hard to 0..1. Bundle patch: ncOvRes() in assets/index.js.
+2) Landscape layout: the plot was only (windowWidth * 50%) wide using a stale width, then capped again by the 1.3 aspect rule, which left
+   wide empty bands left/right of the plot. Now the plot width is the measured width of the graph box (bundle: r(12,s=se||...)) and
+   "fit" (no aspect cap, no 300px cap) applies to landscape too (nc-gsize.js v8: __ncGS / __ncGClamp(nw,nh,panelW,land)).
+   Together with nc-gfill.js the floor and the Graph Background reach the box edge plus 6px overshoot.
+   Old landscape look: localStorage neucurve_gFit = "0".
+
+CURVE TAB: PREVIEW STRIP INSIDE THE GRAPH BOX WHEN "HIDE PRESET GRAPHS" IS ON
+-----------------------------------------------------------------------------
+The scrub strip (track line + ball that previews the animation of the curve) used to disappear together with the presets. In the
+graph-only view it is now docked inside the graph box, along the bottom edge (left of the resize grip / expand icon).
+Click the strip = Preview (it presses the Preview button that is hidden with the preset toolbar; the ball runs along the track).
+Turning Hide Preset Graphs off hands the strip back to nc-flow.js (under the graph / above the presets) as before.
+Files: neucurve/nc-view.js v3 (dock + click), nc-view.css v3, nc-flow.js v24 (does not re-park the strip while nc-view-graph is on).
+
+CURVE TAB LIVE PREVIEW BALL + GRAPH RESIZE GRIP FIX
+---------------------------------------------------
+Live Preview Ball (neucurve/nc-ball.js + nc-ball.css): the ball that ran on the scrub strip under the graph now runs INSIDE the
+graph, looping forever along the drawn curve (x = time, y = value) with a short comet tail. It follows every edit live and works in
+all modes (Bezier, Custom, Elastic, Bounce, Wave, Steps) and in the Large Graph Editor. The strip under the graph is hidden while it
+is on. The Preview (play) button restarts the run. Settings > Behavior > "Live Preview Ball" (neucurve_liveBall, default 1);
+OFF = ball removed, strip comes back.
+
+Resize grip fix (neucurve/nc-gsize.js v24): the square box cap used to switch off on the first drag step, so the box jumped to the
+full panel width, the plot jumped, the grip left the cursor, and it flickered at 100%. The box now stays put while resizing; only the
+plot inside it changes (25-100% per axis). Make the whole box bigger with the divider under it. Double-click the grip = auto.

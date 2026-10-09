@@ -64,9 +64,17 @@
       if (t.classList && (t.classList.contains("curve-svg") || t.classList.contains("canvas-container"))) { onGraph = true; break; }
       t = t.parentNode;
     }
-    if (onGraph) { L.down = true; root.classList.add("nc-graph-drag"); }
+    if (onGraph) {
+      L.down = true; root.classList.add("nc-graph-drag");
+      /* grabbing a handle / anchor keeps the Move cursor for the whole drag; the rest of the graph keeps the crosshair */
+      var h = e.target;
+      while (h && h !== document.body) {
+        if (h.tagName && (h.tagName.toLowerCase() === "circle" || (h.parentNode && h.parentNode.classList && h.parentNode.classList.contains("handles") && h.tagName.toLowerCase() === "g"))) { root.classList.add("nc-handle-drag"); break; }
+        h = h.parentNode;
+      }
+    }
   }, true);
-  function release() { if (L.down) { L.down = false; root.classList.remove("nc-graph-drag"); } }
+  function release() { if (L.down) { L.down = false; root.classList.remove("nc-graph-drag"); root.classList.remove("nc-handle-drag"); } }
   window.addEventListener("mouseup", release, true);
   window.addEventListener("blur", release);
   document.addEventListener("mouseleave", function (e) { if (e.buttons === 0) { release(); } });

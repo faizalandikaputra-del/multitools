@@ -1,0 +1,4 @@
+/* NeuCurve - nc-ball.css (v1): the live preview ball runs inside the graph (nc-ball.js), so the scrub strip under the graph is hidden
+   while it is on (also when it is docked inside the graph in "Hide Preset Graphs" view). Settings > Live Preview Ball OFF = strip is back. */
+html.nc-ball-on body .preview-strip-container { display: none !important; }
+html body svg.curve-svg g.nc-ball { pointer-events: none; }

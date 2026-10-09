@@ -5752,7 +5752,9 @@
   // After N seconds without mouse activity the whole UI (.app) fades out and is then display:none'd, so
   // CEF stops styling / laying out / painting it - the only thing still animating is the background
   // video/GIF, which keeps playing underneath the clock overlay (#idle-clock). Any mouse movement brings
-  // the UI back immediately. Saved in localStorage (via Store): "idleEnabled" = "1"/"0", "idleTimeout" = seconds.
+  // the UI back only through the unlock bar at the bottom: "slide" (drag the handle across) or "tap" (click the bar), or Esc.
+  // Mouse movement no longer leaves Idle Mode, so notes and tasks on the idle screen can be clicked and edited.
+  // Saved in localStorage (via Store): "idleEnabled" = "1"/"0", "idleTimeout" = seconds, "idleExit" = "slide"/"tap".
   // ---------------------------------------------------------
   var Idle = {
     enabledKey: "idleEnabled",
@@ -5760,6 +5762,10 @@
     messageKey: "idleMessage",
     positionKey: "idlePosition",
     scaleKey: "idleScale",
+    exitKey: "idleExit",
+    DEFAULT_EXIT: "slide",
+    EXITS: ["slide", "tap"],
+    SLIDE_DONE: 0.88,        // handle released past this share of the track = unlock
     DEFAULT_SECONDS: 60,
     MIN_SECONDS: 5,
     MAX_SECONDS: 3600,
@@ -5808,6 +5814,10 @@
       return this.POSITIONS.indexOf(v) !== -1 ? v : this.DEFAULT_POSITION;
     },
 
+    clampExit: function (v) {
+      return this.EXITS.indexOf(v) !== -1 ? v : this.DEFAULT_EXIT;
+    },
+
     init: function () {
       var self = this, root = document.documentElement, frame = $("curve-frame");
       this.appEl = document.querySelector(".app");
@@ -5823,6 +5833,13 @@
       this.positionEl = $("idle-position");
       this.scaleEl = $("idle-scale");
       this.scaleValEl = $("idle-scale-val");
+      this.exitEl = $("idle-exit");
+      this.unlockEl = $("idle-unlock");
+      this.unlockTrack = $("iu-track");
+      this.unlockFill = $("iu-fill");
+      this.unlockLabel = $("iu-label");
+      this.unlockHandle = $("iu-handle");
+      this.canUnlock = !!(this.unlockEl && this.unlockTrack && this.unlockHandle);   // no bar in the page = old behaviour (mouse move leaves)
       if (!this.appEl || !this.clockEl || !this.timeEl || !this.dateEl || !this.toggleEl || !this.inputEl) { return; }
 
       this.initSession();
@@ -5830,10 +5847,13 @@
       this.seconds = this.clamp(Store.get(this.timeoutKey));
       this.position = this.clampPosition(Store.get(this.positionKey));
       this.scale = this.clampScale(Store.get(this.scaleKey) || this.DEFAULT_SCALE);
+      this.exitMode = this.clampExit(Store.get(this.exitKey));
       this.lastActive = Date.now();
       this.syncControls();
       this.applyPosition();
       this.applyScale();
+      this.applyExitMode();
+      this.bindUnlock();
       if (this.messageInputEl) { this.messageInputEl.value = Store.get(this.messageKey) || ""; }
 
       this.onCheck = function () { self.check(); };
@@ -5849,6 +5869,10 @@
       document.addEventListener("mousedown", this.onActivity, true);
       document.addEventListener("wheel", this.onActivity, true);
       document.addEventListener("keydown", this.onActivity, true);
+      // Esc always leaves Idle Mode (also the safety net if the unlock bar ever fails).
+      document.addEventListener("keydown", function (e) {
+        if ((e.key === "Escape" || e.keyCode === 27) && self.isIdle) { e.stopPropagation(); self.exit(); }
+      }, true);
 
       // The Curve tab is an <iframe>: mouse events inside it never reach this document.
       if (frame) {
@@ -5862,6 +5886,9 @@
       this.inputEl.addEventListener("change", function () { self.setSeconds(self.inputEl.value); });
       if (this.positionEl) {
         this.positionEl.addEventListener("change", function () { self.setPosition(self.positionEl.value); });
+      }
+      if (this.exitEl) {
+        this.exitEl.addEventListener("change", function () { self.setExitMode(self.exitEl.value); });
       }
       if (this.scaleEl) {
         // live preview while dragging ("input"), persisted once released ("change") - same split as the
@@ -5925,6 +5952,7 @@
     // ----- activity -----
     handleMove: function (e) {
       if (!this.enabled) { return; }
+      if (this.isIdle && this.canUnlock) { return; }          // mouse movement no longer leaves Idle Mode
       var x = e.screenX, y = e.screenY;
       // Hiding the UI makes Chromium fire a synthetic mousemove at the SAME coordinates (the element under
       // the cursor changed). Requiring real movement stops that from instantly ending Idle Mode.
@@ -5935,6 +5963,7 @@
 
     markActive: function () {
       if (!this.enabled) { return; }
+      if (this.isIdle && this.canUnlock) { return; }          // only the unlock bar / Esc leave Idle Mode
       this.lastActive = Date.now();       // cheap: no timer is touched on every mousemove
       if (this.isIdle) { this.exit(); }
     },
@@ -5972,6 +6001,9 @@
       var self = this;
       if (this.isIdle) { return; }
       this.isIdle = true;
+      try { if (document.activeElement && document.activeElement !== document.body) { document.activeElement.blur(); } } catch (eB) { }
+      this.resetUnlock();                                  // handle back at the start, no transition
+      if (this.unlockEl) { this.unlockEl.setAttribute("aria-hidden", "false"); }
       this.startClock();                                   // text is ready before the fade-in
       this.showMessage();
       this.clockEl.setAttribute("aria-hidden", "false");
@@ -5993,6 +6025,9 @@
       void this.appEl.offsetWidth;                         // ...is committed here, so the fade-in can run
       document.body.classList.remove("is-idle");
       this.clockEl.setAttribute("aria-hidden", "true");
+      if (this.unlockEl) { this.unlockEl.setAttribute("aria-hidden", "true"); }
+      this.dragging = false;
+      try { if (document.activeElement && this.clockEl.contains(document.activeElement)) { document.activeElement.blur(); } } catch (eC) { }
       this.restoreScroll();
       indicatorPlaced = false; moveIndicator();            // tab indicator was measured as 0 while hidden
       this.lastActive = Date.now();
@@ -6067,6 +6102,7 @@
       this.inputEl.disabled = !this.enabled;
       if (this.rowEl) { this.rowEl.classList.toggle("is-disabled", !this.enabled); }
       if (this.positionEl) { this.positionEl.value = this.position; }
+      if (this.exitEl) { this.exitEl.value = this.exitMode; }
       if (this.scaleEl) {
         this.scaleEl.value = this.scale;
         if (window.__rfUpdateFill) { window.__rfUpdateFill(this.scaleEl); }   // slider fill-trail, see panel-refinements.js
@@ -6095,6 +6131,106 @@
       if (this.scaleValEl) { this.scaleValEl.textContent = this.scale + "%"; }
     },
 
+    // ----- unlock bar (bottom of the idle screen) -----
+    // Slide: drag the round handle to the end of the bar (>= SLIDE_DONE of the way) and release.
+    // Tap: click the bar. Both: keyboard Enter / Space / Right arrow on the handle.
+    applyExitMode: function () {
+      if (!this.unlockEl) { return; }
+      var tap = this.exitMode === "tap", txt = tap ? "Tap to open" : "Slide to open";
+      this.unlockEl.setAttribute("data-mode", this.exitMode);
+      if (this.unlockLabel) { this.unlockLabel.textContent = txt; }
+      if (this.unlockHandle) { this.unlockHandle.setAttribute("aria-label", txt); }
+      this.resetUnlock();
+    },
+
+    setExitMode: function (mode) {
+      this.exitMode = this.clampExit(mode);
+      Store.set(this.exitKey, this.exitMode);
+      this.applyExitMode();
+      this.syncControls();
+    },
+
+    // Move the handle / fill to progress p (0..1) with no transition.
+    setUnlockProgress: function (p) {
+      if (!this.canUnlock) { return; }
+      var max = this.slideMax(), x = Math.max(0, Math.min(1, p)) * max;
+      this.unlockHandle.style.transform = "translate3d(" + x + "px,0,0)";
+      if (this.unlockFill) { this.unlockFill.style.transform = "scaleX(" + ((x + this.unlockHandle.offsetWidth + 4) / Math.max(1, this.unlockTrack.clientWidth)) + ")"; }
+      if (this.unlockLabel) { this.unlockLabel.style.opacity = String(Math.max(0, 1 - p * 1.6)); }
+      this.unlockProgress = p;
+    },
+
+    slideMax: function () {
+      return Math.max(1, this.unlockTrack.clientWidth - this.unlockHandle.offsetWidth - 8);   // 4px padding each side
+    },
+
+    resetUnlock: function () {
+      if (!this.canUnlock) { return; }
+      this.unlockEl.classList.remove("is-dragging", "is-releasing");
+      this.unlockHandle.style.transform = "";
+      if (this.unlockFill) { this.unlockFill.style.transform = ""; }
+      if (this.unlockLabel) { this.unlockLabel.style.opacity = ""; }
+      this.unlockProgress = 0;
+      this.dragging = false;
+    },
+
+    bindUnlock: function () {
+      if (!this.canUnlock) { return; }
+      var self = this, startX = 0, startP = 0;
+      function px(e) { return e.touches && e.touches.length ? e.touches[0].clientX : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0].clientX : e.clientX); }
+      function begin(e) {
+        if (self.exitMode !== "slide" || !self.isIdle) { return; }
+        if (e.type === "mousedown" && e.button !== 0) { return; }
+        self.dragging = true; self.didDrag = false; startX = px(e); startP = self.unlockProgress || 0;
+        self.unlockEl.classList.add("is-dragging"); self.unlockEl.classList.remove("is-releasing");
+        e.preventDefault();
+      }
+      function move(e) {
+        if (!self.dragging) { return; }
+        if (e.type === "mousemove" && e.buttons === 0) { finish(); return; }     // button released outside the panel
+        self.setUnlockProgress(startP + (px(e) - startX) / self.slideMax());
+        if (Math.abs(self.unlockProgress) > 0.02) { self.didDrag = true; }
+        if (e.cancelable) { e.preventDefault(); }
+      }
+      function finish() {
+        if (!self.dragging) { return; }
+        self.dragging = false;
+        self.unlockEl.classList.remove("is-dragging"); self.unlockEl.classList.add("is-releasing");
+        if ((self.unlockProgress || 0) >= self.SLIDE_DONE) {
+          self.setUnlockProgress(1);
+          setTimeout(function () { self.exit(); }, 140);
+        } else {
+          self.setUnlockProgress(0);                                              // spring back (CSS transition)
+        }
+      }
+      this.unlockHandle.addEventListener("mousedown", begin);
+      this.unlockHandle.addEventListener("touchstart", begin, { passive: false });
+      document.addEventListener("mousemove", move, true);
+      document.addEventListener("touchmove", move, { passive: false, capture: true });
+      document.addEventListener("mouseup", finish, true);
+      document.addEventListener("touchend", finish, true);
+      document.addEventListener("touchcancel", finish, true);
+      window.addEventListener("blur", finish);
+
+      // Tap mode: the whole bar is the button. Slide mode: a plain click only nudges the handle to show it must be dragged.
+      this.unlockTrack.addEventListener("click", function (e) {
+        if (!self.isIdle) { return; }
+        if (self.exitMode === "tap") { self.exit(); return; }
+      });
+      this.unlockHandle.addEventListener("click", function (e) {
+        if (!self.isIdle) { return; }
+        if (self.exitMode === "slide" && e.detail !== 0 && !self.didDrag) {       // real mouse click (no drag): hint only
+          self.unlockEl.classList.remove("is-hint"); void self.unlockEl.offsetWidth; self.unlockEl.classList.add("is-hint");
+        }
+      });
+      this.unlockHandle.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight" || e.keyCode === 13 || e.keyCode === 32 || e.keyCode === 39) {
+          e.preventDefault(); e.stopPropagation(); self.exit();
+        }
+      });
+      this.unlockEl.addEventListener("animationend", function () { self.unlockEl.classList.remove("is-hint"); });
+    },
+
     setEnabled: function (on) {
       this.enabled = !!on;
       Store.set(this.enabledKey, this.enabled ? "1" : "0");
@@ -6119,6 +6255,8 @@
       Store.remove(this.messageKey);
       Store.remove(this.positionKey);
       Store.remove(this.scaleKey);
+      Store.remove(this.exitKey);
+      this.exitMode = this.DEFAULT_EXIT;
       this.enabled = false;
       this.seconds = this.DEFAULT_SECONDS;
       this.position = this.DEFAULT_POSITION;
@@ -6129,6 +6267,7 @@
       this.exit();
       this.applyPosition();
       this.applyScale();
+      this.applyExitMode();
       this.syncControls();
     }
   };

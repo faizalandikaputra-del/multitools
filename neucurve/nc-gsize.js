@@ -1,4 +1,4 @@
-/* NeuCurve - nc-gsize.js (v18)  FREE GRAPH SIZE
+/* NeuCurve - nc-gsize.js (v24)  FREE GRAPH SIZE
    Drag the small grip at the bottom-right corner of the graph to make the plot bigger / smaller with NO fixed aspect
    (wide, tall, 1:1 ... anything). Hold Shift while dragging to keep the current proportions. Double-click the grip = back to auto.
    Works in portrait, landscape and auto mode: the size is remembered separately for portrait and landscape (auto just
@@ -34,7 +34,9 @@
     var pw = Math.min(panelW, 300), lo = Math.max(172, Math.min(210, pw * 0.62)), hi = Math.max(lo, Math.min(270, pw * 0.9));
     return { pw: pw, lo: lo, hi: hi };
   }
-  window.__ncGClamp = function (nw, nh, panelW) {
+  window.__ncGClamp = function (nw, nh, panelW, land) {
+    /* v23: landscape AND portrait with "Hide Preset Graphs" (html.nc-view-graph) = the graph owns the whole panel: no 300px / 270px caps */
+    if (land || document.documentElement.classList.contains("nc-view-graph")) { return { w: Math.max(1, nw), h: Math.max(1, nh) }; }   /* v21: landscape = the whole box, no 300px / height caps */
     var L = lim(panelW);
     return { w: Math.max(1, Math.min(nw, L.pw - 16)), h: Math.max(1, Math.min(nh, L.hi)) };
   };
@@ -45,7 +47,7 @@
   };
   window.__ncGS = function (land) {
     /* portrait: "fit" = Flow limits above, no 1.3 / 1.25 aspect caps. landscape + gFit="0": the old automatic look. Custom % sizes sit on top. */
-    var fit = !land && rd("gFit") !== "0";
+    var fit = rd("gFit") !== "0";   /* v21: fit in landscape too (the old 1.3 aspect cap left empty side bands) */
     var s = land ? "l" : "p", w = pct(rd("gW" + s)), h = pct(rd("gH" + s));
     if (w === null && h === null) { return fit ? { w: 1, h: 1, fit: true } : null; }
     return { w: (w === null ? 100 : w) / 100, h: (h === null ? 100 : h) / 100, fit: fit };
@@ -63,9 +65,37 @@
   var grip = null, dragging = false;
   function q(sel) { return document.querySelector(sel); }
 
+  /* v22 SQUARE BOX: the box width is capped to the box height and centred, so it never turns into a flat strip.
+     v24 FIX (grip bug): the cap now stays ON while you drag / after you set a custom size. Before, the first drag step switched the
+     cap off, so the box jumped from the square to the full panel width in the middle of the drag: the free space (the 100% the
+     percentages are measured against) changed under the pointer, the plot jumped, the grip flew away from the cursor, and it
+     flickered whenever the size touched 100%/100% (cap on <-> off). Now the box never changes while resizing; only the plot inside
+     it does (25-100% of the box on each axis, so wide / tall / 1:1 all work). Make the whole box bigger with the divider under it.
+     No cap only with gFit="0" or in the Large Graph Editor (?ext=graph). */
+  function hug(area, P) {
+    /* width cap = box height (height never depends on width, so no feedback loop / flicker). Not binding when the panel is narrower.
+       v25 FIX (box merged with the presets / cut off): margin:auto on a flex-column child turns off "stretch", so the box became
+       shrink-to-fit = as wide as the plot inside it. The bundle measures this very box (bind:clientWidth) to size the plot, so the
+       size fed itself and froze at the first width: dragging the split divider, narrowing the panel, or switching Multi Tool tabs
+       left the box wider than its column (landscape: drawn over the presets, portrait: cut by the panel edge).
+       Now the box gets an explicit width:100% (capped by max-width), so it always follows its column and the plot follows the box. */
+    var st = area.style;
+    var capped = rd("gFit") !== "0" && !/[?&]ext=graph/.test(location.search);
+    var want = area.clientHeight;
+    if (capped && want > 80) {
+      if (st.maxWidth !== want + "px") { st.maxWidth = want + "px"; }
+      if (st.marginLeft !== "auto") { st.marginLeft = "auto"; st.marginRight = "auto"; }
+      if (st.width !== "100%") { st.width = "100%"; }
+      if (st.boxSizing !== "border-box") { st.boxSizing = "border-box"; }
+    } else if (st.maxWidth || st.marginLeft || st.width) {
+      st.maxWidth = ""; st.marginLeft = ""; st.marginRight = ""; st.width = ""; st.boxSizing = "";
+    }
+  }
+
   function place() {
     var area = q(".canvas-area"), svg = q("svg.curve-svg"), P = window.__ncGPlot && window.__ncGPlot();
     if (!area || !svg || !P) { if (grip) { grip.style.display = "none"; } return; }
+    hug(area, P);
     if (!grip) {
       grip = document.createElement("div"); grip.id = "nc-gsize"; grip.title = "Drag to resize the graph (Shift = keep proportions, double-click = auto)";
       grip.innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M10 3 3 10M10 7 7 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -75,8 +105,13 @@
     if (grip.parentNode !== area) { area.appendChild(grip); }
     var ar = area.getBoundingClientRect(), sr = svg.getBoundingClientRect();
     grip.style.display = "flex";
-    grip.style.left = Math.round(sr.left - ar.left + P.x + P.w - 11) + "px";
-    grip.style.top = Math.round(sr.top - ar.top + P.y + P.h - 11) + "px";
+    /* v21: the grip no longer sits on the plot corner (where you drag the curve). It lives in the box's bottom-right
+       corner cluster, directly left of the expand icon, and is only a faint mark until you hover it. */
+    var ex = q(".fl-expand"), er = ex ? ex.getBoundingClientRect() : null, gw = 14, gh = 14, gx, gy;
+    if (er && er.width) { gx = er.left - ar.left - gw - 4; gy = er.top - ar.top + Math.round((er.height - gh) / 2); }
+    else { gx = sr.right - ar.left - gw - 8; gy = sr.bottom - ar.top - gh - 4; }
+    grip.style.left = Math.round(gx) + "px";
+    grip.style.top = Math.round(gy) + "px";
   }
   window.__ncGPC = function () { if (!dragging) { place(); } };
 

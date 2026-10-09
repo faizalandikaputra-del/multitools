@@ -20,7 +20,7 @@
      soft bloom that fades to ~0 at GLOW_RADIUS. Layers are listed outermost first: [stroke width, opacity].
      Tune: GLOW_PEAK (brightness next to the line), GLOW_SIGMA (how far it spreads), GLOW_RADIUS (cut-off),
      GLOW_STEPS (more = smoother, a little more work while dragging). */
-  var GLOW_PEAK = 0.26, GLOW_SIGMA = 4.5, GLOW_RADIUS = 15, GLOW_STEPS = 14, CORE_R = 1.5;
+  var GLOW_PEAK = 0.26, GLOW_SIGMA = 4.5, GLOW_RADIUS = 15, GLOW_STEPS = 8, CORE_R = 1.5;   /* 8 steps: smooth enough, and 43% fewer wide strokes to repaint on every drag frame */
   function buildLayers() {
     var out = [], i, n = GLOW_STEPS, r, a, step = (GLOW_RADIUS - CORE_R) / (n - 1);
     function cover(x) { return GLOW_PEAK * Math.exp(-(x * x) / (2 * GLOW_SIGMA * GLOW_SIGMA)); }
@@ -56,7 +56,7 @@
     g = document.createElementNS(NS, "g");
     g.setAttribute("class", "nc-glow");
     g.setAttribute("pointer-events", "none");
-    g.style.mixBlendMode = "screen";
+    /* no mix-blend-mode: it forces an offscreen pass over the whole graph on every drag frame */
     for (i = 0; i < LAYERS.length; i++) {
       var p = document.createElementNS(NS, "path");
       p.setAttribute("fill", "none");
@@ -109,29 +109,49 @@
     }
   }
 
-  function sync() {
+  /* Drag cost: the old sync() ran synchronously for every mutation, called getComputedStyle (forced style recalc)
+     and rewrote 14 paths each time. Now: one sync per animation frame (still before paint, so no lag), the curve
+     colour is cached and only re-read when the stroke attribute changes or on the slow timer, and the halo pass
+     is skipped while a "d"-only change comes in. */
+  var colorCache = "", colorFor = "";
+  function sync(light) {
     scheduled = false;
+    var dragging = document.documentElement.classList.contains("nc-graph-drag");
     var svgs = document.querySelectorAll("svg.curve-svg"), i, j;
     for (i = 0; i < svgs.length; i++) {
       var path = mainPath(svgs[i]);
       if (!path) { continue; }
       var g = ensureGroup(svgs[i], path);
       var d = path.getAttribute("d") || "";
-      // Computed style first: reflects any CSS override (e.g. nc-theme-sync.css's accent !important rule),
-      // not just whatever "stroke" attribute value NeuCurve's own bundle last wrote.
-      var s = "";
-      try { s = getComputedStyle(path).stroke || ""; } catch (e) { /* ignore */ }
-      if (!s || s === "none") { s = path.getAttribute("stroke") || ""; }
+      var attr = path.getAttribute("stroke") || "";
+      var s = colorCache;
+      if (!light || !s || colorFor !== attr) {
+        // Computed style first: reflects any CSS override (e.g. nc-theme-sync.css's accent !important rule),
+        // not just whatever "stroke" attribute value NeuCurve's own bundle last wrote.
+        s = "";
+        try { s = getComputedStyle(path).stroke || ""; } catch (e) { /* ignore */ }
+        if (!s || s === "none") { s = attr; }
+        colorCache = s; colorFor = attr;
+      }
       for (j = 0; j < g.children.length; j++) {
+        if (dragging && j % 3 !== 1) { continue; }   // layers hidden by nc-glow.css during a drag are refreshed on release
         var gp = g.children[j];
         if (gp.getAttribute("d") !== d) { gp.setAttribute("d", d); }
         if (gp.getAttribute("stroke") !== s) { gp.setAttribute("stroke", s); }
       }
-      syncHalos(svgs[i], s);
+      if (!light) { syncHalos(svgs[i], s); }
     }
   }
 
+  var rafPending = false;
   function schedule() { if (!scheduled) { scheduled = true; setTimeout(sync, 0); } }
+  function scheduleFrame() {
+    if (rafPending) { return; }
+    rafPending = true;
+    (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(function () { rafPending = false; sync(true); });
+  }
+
+  window.addEventListener("mouseup", function () { setTimeout(sync, 40); }, false);   // repaint every glow layer after a drag
 
   function start() {
     try {
@@ -140,12 +160,12 @@
         for (var i = 0; i < list.length; i++) {
           var t = list[i].target;
           if (t && t.closest && t.closest("g.nc-glow")) { continue; }   // ignore our own edits
-          if (list[i].type === "attributes") { sync(); return; }        // sync now: no 1-frame lag while dragging
+          if (list[i].type === "attributes") { scheduleFrame(); return; }   // once per frame, before paint
           schedule();
         }
       }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["d", "stroke"] });
     } catch (e) { /* very old CEF: fall back to polling */ }
-    setInterval(function () { if (window.__ncAway && window.__ncAway()) { return; } sync(); }, 500);
+    setInterval(function () { if (window.__ncAway && window.__ncAway()) { return; } sync(); }, 1000);
     sync();
   }
 

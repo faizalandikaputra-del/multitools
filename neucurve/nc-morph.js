@@ -190,15 +190,23 @@
     return true;
   }
 
+  /* v2: the X range is blended too. Both curves are sampled by their own x fraction (0..1 of their own width) and the shown point is
+     lerp(oldPoint, newPoint, ease). Before, one fixed X grid (old range joined with new range) was used, so a curve that is narrower
+     than the other (Elastic / Bounce / Wave sit inside a zoomed-out box, Bezier fills it) kept flat "tails" running to the box edge during
+     the whole morph and lost them in one frame at the end: the line visibly popped / stretched when switching modes. */
   function render(a) {
-    var lin = (now() - a.t0) / DURATION, e, k, parts, n = GRID, yb = a.sb, x, ya = a.ya, y2;
+    var lin = (now() - a.t0) / DURATION, e, k, parts, n = GRID, yb = a.sb, u, xa, xb, x, y, ya = a.ya, y2;
     if (lin >= 1) { finish(a, true); return; }
     e = ease(lin < 0 ? 0 : lin);
     parts = new Array(n + 1);
     for (k = 0; k <= n; k++) {
-      x = a.xs[k];
-      y2 = yb.at(x);
-      parts[k] = (k === 0 ? "M" : "L") + fmt(x) + "," + fmt(ya[k] + (y2 - ya[k]) * e);
+      u = k / n;
+      xa = a.ax0 + (a.ax1 - a.ax0) * u;
+      xb = yb.minX + (yb.maxX - yb.minX) * u;
+      x = xa + (xb - xa) * e;
+      y2 = yb.at(xb);
+      y = ya[k] + (y2 - ya[k]) * e;
+      parts[k] = (k === 0 ? "M" : "L") + fmt(x) + "," + fmt(y);
     }
     a.written = parts.join(" ");
     a.path.setAttribute("d", a.written);
@@ -207,7 +215,7 @@
   }
 
   function start(path, fromD, toD, fromH) {
-    var A = parsePolyline(fromD), sa, i, x0, x1, a, svg;
+    var A = parsePolyline(fromD), sa, i, a, svg;
     if (!A || A.length < 2) { return; }
     sa = makeSampler(A);
     if (anim) { finish(anim, false); }
@@ -218,9 +226,9 @@
       a.hFrom.push(fromH && fromH.length ? (fromH[i] || fromH[fromH.length - 1]) : null);   // extra handles sprout from the last old one
     }
     if (!setTarget(a, toD)) { return; }
-    x0 = Math.min(sa.minX, a.sb.minX); x1 = Math.max(sa.maxX, a.sb.maxX);
-    if (!(x1 - x0 > 1)) { return; }
-    for (i = 0; i <= GRID; i++) { a.xs.push(x0 + (x1 - x0) * i / GRID); a.ya.push(sa.at(a.xs[i])); }
+    if (!(sa.maxX - sa.minX > 1) || !(a.sb.maxX - a.sb.minX > 1)) { return; }
+    a.ax0 = sa.minX; a.ax1 = sa.maxX;
+    for (i = 0; i <= GRID; i++) { a.ya.push(sa.at(a.ax0 + (a.ax1 - a.ax0) * i / GRID)); }
     anim = a;
     svg.classList.add(MORPH_CLASS);
     render(a);                                       // first frame in the same task as the switch: no flash of the new curve

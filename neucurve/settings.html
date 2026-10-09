@@ -6,13 +6,17 @@
   <title>NeuCurve Settings</title>
   <script>if (typeof globalThis === 'undefined') { window.globalThis = window; }</script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./nc-settings.css?v=3">
+  <link rel="stylesheet" href="./nc-settings.css?v=4">
   <link rel="stylesheet" href="./nc-settings-extra.css?v=3">
   <link rel="stylesheet" href="./nc-bg.css?v=14">
   <link rel="stylesheet" href="../css/mt-settings-pro.css?v=2">
-  <link rel="stylesheet" href="./nc-settings-pro.css?v=1">
+  <link rel="stylesheet" href="./nc-settings-pro.css?v=2">
   <link rel="stylesheet" href="./nc-settings-fit.css?v=1">
-  <link rel="stylesheet" href="./nc-settings-dd.css?v=1">
+  <link rel="stylesheet" href="../css/mt-colorpicker.css?v=1">
+  <link rel="stylesheet" href="./nc-settings-dd.css?v=2">
+  <link rel="stylesheet" href="../css/mt-settings-controls.css?v=2">
+  <link rel="stylesheet" href="./nc-settings-controls.css?v=1">
+  <link rel="stylesheet" href="../css/mt-final-controls.css?v=1">
   <script src="../js/ae2021-compat.js?v=10"></script>
   <script src="./CSInterface.js"></script>
 </head>
@@ -184,6 +188,7 @@
           <label class="settings-toggle-row"><span>Auto Apply</span><input type="checkbox" id="settingsAutoApply" /><i></i></label>
           <label class="settings-toggle-row"><span>Allow Overshoot</span><input type="checkbox" id="settingsOvershoot" /><i></i></label>
           <label class="settings-toggle-row"><span>Keep Animations Running</span><input type="checkbox" id="settingsKeepMotion" /><i></i></label>
+          <label class="settings-toggle-row"><span>Live Preview Ball<small>Ball runs along the curve inside the graph, always looping.</small></span><input type="checkbox" id="settingsLiveBall" /><i></i></label>
         </div>
 
         <div class="settings-group">
@@ -220,8 +225,9 @@
   </section>
 </main>
 </div>
+<script src="../js/mt-colorpicker.js?v=1"></script>
 <script src="./nc-bg.js?v=15"></script>
-<script src="./nc-settings.js?v=7"></script>
-<script src="../js/mt-settings-polish.js?v=1"></script>
+<script src="./nc-settings.js?v=11"></script>
+<script src="../js/mt-settings-polish.js?v=3"></script>
 </body>
 </html>

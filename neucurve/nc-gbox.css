@@ -1,4 +1,4 @@
-/* NeuCurve - nc-gbox.css (v19)  FLOW GRAPH BOX
+/* NeuCurve - nc-gbox.css (v20)  FLOW GRAPH BOX
    Graph box in the Curve tab drawn like Flow's #graphPanel-top: glass floor, 10px radius, hairline border,
    the divider pill under it is the native NeuCurve one, skinned in nc-flow.css.
    Tokens copied from Flow _variables.css. Loaded after nc-fix22.css. Off switch: remove the <link> in index.html. */
@@ -18,7 +18,20 @@ html body svg.curve-svg > rect:first-of-type {
 }
 html.mt-light body svg.curve-svg > rect:first-of-type { fill: rgba(255, 255, 255, .72); stroke: rgba(0, 0, 0, .12); }
 
+/* v20 FLOOR FILLS THE BOX (nc-gfill.js): the plot stays small and centred, but the floor rect (and the Graph Background image,
+   see nc-bg.js) is stretched to the whole graph box plus a little overshoot, so the background shows edge to edge.
+   .canvas-area (overflow:hidden + border + radius) crops the overshoot and draws the frame. Without html.nc-gfill nothing here applies. */
+html.nc-gfill body svg.curve-svg { overflow: visible; }
+html.nc-gfill body .canvas-container { overflow: visible; }
+html.nc-gfill body svg.curve-svg > rect:first-of-type {
+  x: var(--gf-x, 0px); y: var(--gf-y, 0px); width: var(--gf-w, 100%); height: var(--gf-h, 100%);
+  rx: 0; ry: 0; stroke: none;
+}
+
 /* corner grip (free width) stays, but hides until the graph is hovered so it never fights the expand icon */
-#nc-gsize { opacity: 0; pointer-events: none; transition: opacity .15s ease; }
-.canvas-area:hover #nc-gsize, html.nc-gsize-drag #nc-gsize { opacity: 1; pointer-events: auto; }
+/* v21: minimal - no box, 14px, faint until hovered, parked left of the expand icon (nc-gsize.js) so it never covers the graph. */
+html body #nc-gsize { width: 14px; height: 14px; padding: 0; opacity: .32; pointer-events: auto; background: none !important; border: 0 !important; border-radius: 4px; transform: none; box-shadow: none; transition: opacity .15s ease, color .15s ease; }
+html body #nc-gsize svg { width: 10px; height: 10px; }
+html body #nc-gsize:hover, html.nc-gsize-drag body #nc-gsize { opacity: 1; background: none !important; transform: none; }
+html.mt-light body #nc-gsize, html.mt-light body #nc-gsize:hover { background: none !important; border: 0 !important; }
 /* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */

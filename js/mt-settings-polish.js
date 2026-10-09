@@ -51,16 +51,23 @@
     if (r.__pFill !== s) { r.__pFill = s; r.style.setProperty("--fill", s); }
   }
   function fillAll() {
-    var list = document.querySelectorAll(".settings-range");
+    var list = document.querySelectorAll('input[type="range"]');
     for (var i = 0; i < list.length; i++) { fillOf(list[i]); }
   }
 
-  document.addEventListener("input", function (e) {
-    if (e.target && e.target.classList && e.target.classList.contains("settings-range")) { fillOf(e.target); }
-  }, true);
-  document.addEventListener("change", function (e) {
-    if (e.target && e.target.classList && e.target.classList.contains("settings-range")) { fillOf(e.target); }
-  }, true);
+  function isFillRange(t) { return !!t && t.tagName === "INPUT" && t.type === "range"; }
+  /* values set from code (the window mirrors the panel's sliders) fire no event: hook the setter once so --fill follows */
+  (function hookValue() {
+    try {
+      var proto = HTMLInputElement.prototype, d = Object.getOwnPropertyDescriptor(proto, "value");
+      if (!d || !d.set || d.set.__mtFill) { return; }
+      var set = function (v) { d.set.call(this, v); if (this.type === "range") { fillOf(this); } };
+      set.__mtFill = true;
+      Object.defineProperty(proto, "value", { configurable: true, enumerable: d.enumerable, get: d.get, set: set });
+    } catch (e) { /* old engine: fill still follows input / change events */ }
+  })();
+  document.addEventListener("input", function (e) { if (isFillRange(e.target)) { fillOf(e.target); } }, true);
+  document.addEventListener("change", function (e) { if (isFillRange(e.target)) { fillOf(e.target); } }, true);
 
   function swap() {
     var head = document.querySelector(".settings-workspace-header");

@@ -2480,7 +2480,6 @@ button.settings-sidebar-footer {
 
 .settings-language-dropdown__trigger:hover,
 .settings-language-dropdown__trigger:focus,
-.settings-language-dropdown__trigger:focus-visible,
 .settings-language-dropdown__trigger[aria-expanded='true'] {
   background: hsl(var(--sh-accent) / 0.45);
   border-color: hsl(var(--sh-input));
@@ -2549,8 +2548,7 @@ button.settings-sidebar-footer {
 }
 
 .settings-language-dropdown__option:hover,
-.settings-language-dropdown__option:focus,
-.settings-language-dropdown__option:focus-visible {
+.settings-language-dropdown__option:focus {
   background: rgba(255, 255, 255, 0.075);
   color: hsl(var(--sh-foreground));
   outline: none;

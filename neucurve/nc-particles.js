@@ -77,7 +77,7 @@
     return s;
   }
 
-  /* v8 "circles": plain flat circles (no glow) that rise slowly and fade in / out */
+  /* v8 "circles": glowing circles that rise slowly and fade in / out */
   function makeCircle(i, n, r) {
     var s = document.createElement("span");
     setVars(s, {

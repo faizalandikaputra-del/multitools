@@ -31,7 +31,7 @@
 .settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(3) { animation-delay: 28ms; }
 .settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(4) { animation-delay: 42ms; }
 .settings-language-dropdown__menu.is-open .settings-language-dropdown__option:nth-child(n+5) { animation-delay: 56ms; }
-.settings-language-dropdown__option:hover, .settings-language-dropdown__option:focus, .settings-language-dropdown__option:focus-visible {
+.settings-language-dropdown__option:hover, .settings-language-dropdown__option:focus {
   background: rgba(var(--p-rgb), 0.2) !important; color: var(--p-ink, #fff) !important; transform: translateX(2px);
 }
 .settings-language-dropdown__option.is-selected {
@@ -49,3 +49,9 @@
 
 @keyframes ncDdPop { from { opacity: 0; transform: translateY(-8px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes ncDdItem { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+/* v2: the open list is moved to <body> by nc-settings.js (createDropdown) and drawn with position:fixed, so no card, scroll area or
+   transformed ancestor can clip it. left / top / width / max-height are set inline from the trigger's position. */
+.settings-language-dropdown__menu.is-floating {
+  position: fixed; z-index: 2000; right: auto; margin: 0; box-sizing: border-box; min-width: 0; max-width: calc(100vw - 16px);
+}

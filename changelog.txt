@@ -2,3 +2,4 @@
 - Adding Feature
 - Change Ui
 - Fix Bug Settings
+- Update Besar

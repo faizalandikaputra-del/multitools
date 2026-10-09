@@ -103,10 +103,14 @@
       fitting = true;
       found.forEach(function (f) {
         var box = svgBox(f.svg); if (!box) { return; }
+        /* v15: nc-gfill.js stretches the floor to the whole graph box (+ a little overshoot): the image "covers" that box,
+           placed relative to the svg origin. No fill info (or another svg) = the plain svg box, as before. */
+        var G = window.__ncGFill, ox = 0, oy = 0;
+        if (G && G.svg === f.svg && G.w > 0 && G.h > 0) { ox = G.x; oy = G.y; box = { w: G.w, h: G.h }; }
         var p = place(box.w, box.h, nat, st);
         setAttr(f.img, "data-ncbg", "1");   /* guarded: an identical write every 300 ms still fires mutation observers */
         setAttr(f.img, "preserveAspectRatio", "none");
-        setAttr(f.img, "x", p.x.toFixed(2)); setAttr(f.img, "y", p.y.toFixed(2));
+        setAttr(f.img, "x", (p.x + ox).toFixed(2)); setAttr(f.img, "y", (p.y + oy).toFixed(2));
         setAttr(f.img, "width", p.w.toFixed(2)); setAttr(f.img, "height", p.h.toFixed(2));
         var asp = (box.w / box.h).toFixed(3);
         if (asp !== lastAspect) { lastAspect = asp; write("bgAspect", asp); broadcast("bgAspect", asp); }
@@ -117,6 +121,7 @@
       watchImage(found[0].img);
     });
   }
+  window.__ncBgFit = function () { if (!fitting) { fitGraph(); } };   // called by nc-gfill.js when the graph box changes
   // NeuCurve re-sets width/height/preserveAspectRatio itself when the graph is resized -> put our values back at once
   function watchImage(img) {
     if (typeof MutationObserver === "undefined" || moEl === img) { return; }

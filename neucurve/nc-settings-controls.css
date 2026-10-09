@@ -1,0 +1,18 @@
+/* NeuCurve - nc-settings-controls.css  (neucurve/settings.html, loaded after css/mt-settings-controls.css)
+   css/mt-colorpicker.css and css/mt-spinbox.css tint with --accent-rgb. NeuCurve's window keeps its theme in --p-rgb
+   (js/mt-settings-polish.js fills it from --settings-theme), so bridge it on the elements that need it. This is scoped
+   to those elements on purpose: defining --accent-rgb on :root would make --p-rgb refer to itself. */
+.mt-cp, input[type="number"], input[type="color"] {
+  --accent-rgb: var(--p-rgb);
+  --accent: rgb(var(--p-rgb));
+  --accent-strong: rgb(var(--p-rgb));
+  --accent-glow: rgba(var(--p-rgb), 0.32);
+}
+/* invisible anchor the picker popover is placed against (see openColorEditor in nc-settings.js) */
+.nc-cp-proxy { position: fixed; z-index: -1; margin: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+/* the "Edit" button keeps its lit state while the picker is open */
+[data-color-edit].is-open { border-color: rgba(var(--p-rgb), 0.9); box-shadow: 0 0 0 3px rgba(var(--p-rgb), 0.32); }
+
+/* slider footprint: NeuCurve gives .settings-range its own margins (18px / 16px below); keep the same spacing with the taller hit area */
+.settings-range { margin-top: -7px; margin-bottom: 9px; }
+.settings-group > .settings-range { margin-top: -7px; margin-bottom: 10px; }

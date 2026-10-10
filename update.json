@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.28",
+    "latest_version":  "1.8.29",
     "changelog":  "- Fix Animation\r\n- Adding Note \u0026 To-Do\r\n- Fix Bug",
     "files":  [
                   {
@@ -188,7 +188,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "3aa058fcc8cd6218bb20039a269867eeb7c1966b42989b9fc38df53ffd9f8658"
+                      "sha256":  "3af1c5a1da90292e7910fc38d88aa5a8d56cd3700dde880dfc10e489c4f0f755"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "a062558d02a24d4dcd8bce3668a6cd2a3c66c6c83156dbf7e5e87b641180c37c"
+                      "sha256":  "941d151d8541faecb117f266255bc8040701c25f7b8d8f173cf12c8a0265792f"
                   },
                   {
                       "path":  "neucurve/assets/index.js",

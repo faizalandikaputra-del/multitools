@@ -1892,12 +1892,53 @@
     // data.json is the raw text of saved_expressions.json (or null). Parses it into the same
     // {activeId, cats:[...]} shape the panel uses, or returns null if it's missing/invalid/empty.
     parse: function (json) {
-      if (!json) { return null; }
-      try {
-        var data = JSON.parse(json);
-        if (data && data.cats && data.cats.length) { return data; }
-      } catch (e) {}
+      if (!json || typeof json !== "string" || json.length > this.MAX_CHARS) { return null; }
+      try { return this.sanitize(JSON.parse(json), true); } catch (e) {}
       return null;
+    },
+
+    // Hard limits so a wrong/huge JSON can never freeze After Effects (every byte goes through
+    // evalScript, which blocks AE's main thread) or flood the panel with DOM nodes.
+    MAX_CHARS: 5000000, MAX_CATS: 200, MAX_ITEMS: 5000, MAX_CODE: 300000,
+
+    // Checks that `data` really is an Expression Code store: {activeId, cats:[{id,name,items:[{id,name,code}]}]}.
+    // Other CategoryStore JSON (e.g. the Color Palette backup, items = hex strings) has the same
+    // outer shape but fails here. strict=true (import/restore from file): any bad item rejects the
+    // whole file (returns null) so nothing gets overwritten. strict=false (reading localStorage):
+    // bad items are dropped instead, so an already-corrupted store heals itself.
+    sanitize: function (data, strict) {
+      if (!data || typeof data !== "object" || !Array.isArray(data.cats) || !data.cats.length) { return null; }
+      if (data.cats.length > this.MAX_CATS) { return null; }
+      var seenCat = {}, total = 0, chars = 0, cats = [];
+      for (var i = 0; i < data.cats.length; i++) {
+        var c = data.cats[i];
+        if (!c || typeof c !== "object" || !Array.isArray(c.items)) { if (strict) { return null; } continue; }
+        var cid = (typeof c.id === "string" || typeof c.id === "number") ? String(c.id) : "";
+        if (!cid || seenCat[cid]) { cid = "c" + Date.now() + "_" + i; }
+        seenCat[cid] = true;
+        var seenItem = {}, items = [];
+        for (var j = 0; j < c.items.length; j++) {
+          var it = c.items[j];
+          if (!it || typeof it !== "object" || typeof it.code !== "string" || it.code.length > this.MAX_CODE) {
+            if (strict) { return null; }
+            continue;
+          }
+          total++; chars += it.code.length;
+          if (total > this.MAX_ITEMS || chars > this.MAX_CHARS) { return null; }
+          var iid = (typeof it.id === "string" || typeof it.id === "number") ? String(it.id) : "";
+          if (!iid || seenItem[iid]) { iid = "s" + Date.now() + "_" + i + "_" + j; }
+          seenItem[iid] = true;
+          var out = { id: iid, name: typeof it.name === "string" ? it.name : "Untitled", code: it.code };
+          if (it.favorite === true) { out.favorite = true; }
+          items.push(out);
+        }
+        cats.push({ id: cid, name: typeof c.name === "string" && c.name ? c.name : "Category " + (i + 1), items: items });
+      }
+      if (!cats.length) { return null; }
+      var active = String(data.activeId);
+      var ok = false;
+      for (var k = 0; k < cats.length; k++) { if (cats[k].id === active) { ok = true; break; } }
+      return { activeId: ok ? active : cats[0].id, cats: cats };
     },
 
     // A freshly-seeded store (default single empty category) - the state a wiped localStorage
@@ -1940,6 +1981,16 @@
     exprCatStore.save = function (data) {
       originalSave.call(exprCatStore, data);
       ExprFile.save(data);
+    };
+    // Reading validates too: a wrongly-imported store already sitting in localStorage is cleaned
+    // (invalid items dropped) or, if unusable, discarded so the panel reseeds instead of throwing.
+    exprCatStore.load = function () {
+      var raw = Store.get(this.key);
+      if (!raw) { return null; }
+      var clean = null;
+      try { clean = ExprFile.sanitize(JSON.parse(raw), false); } catch (e) { clean = null; }
+      if (!clean) { Store.remove(this.key); return null; }
+      return clean;
     };
   })();
 
@@ -5215,12 +5266,23 @@
       $("expr-backup-import").addEventListener("click", function (e) {
         var btn = e.target; btn.classList.add("is-pending");
         Bridge.call("EXPR_FILE_backupImport", []).then(function (res) {
-          flashButtonResult(btn, !!res.ok);
-          toast(res.message || (res.ok ? "Import complete." : "Something went wrong."), !res.ok);
-          if (!res.ok || !res.data || !res.data.json) { return; }
+          // Canceled / read error: host reports it, nothing to validate.
+          if (!res.ok || !res.data || !res.data.json) {
+            flashButtonResult(btn, !!res.ok);
+            toast(res.message || (res.ok ? "Import complete." : "Something went wrong."), !res.ok);
+            return;
+          }
+          // The host only READS the picked file now. Validate here first: a wrong JSON must never
+          // replace the saved expressions (the old flow overwrote saved_expressions.json blindly).
           var restored = ExprFile.parse(res.data.json);
-          if (!restored) { toast("That backup file's JSON looks invalid.", true); return; }
-          exprCatStore.save(restored);
+          if (!restored) {
+            flashButtonResult(btn, false);
+            toast("That is not an Expression Code backup (wrong or too large JSON). Nothing was changed.", true);
+            return;
+          }
+          exprCatStore.save(restored);   // also mirrors to saved_expressions.json
+          flashButtonResult(btn, true);
+          toast(res.message || "Expressions imported.");
           // Re-render the Expression Code tab now if it's the one open, so the import shows up
           // immediately instead of waiting for the next tab switch.
           if (currentTab === "expr-code") { showTab("expr-code"); }

@@ -2437,6 +2437,7 @@ function loadExpressionsFromFile() {
     var p = _exprFilePaths();
     if (!p.file.exists) { return null; }
     f = p.file;
+    if (f.length > 5000000) { return null; }   // oversized/corrupt file: never push it through evalScript
     f.encoding = "UTF-8";
     if (!f.open("r")) { return null; }
     var content = f.read();
@@ -2477,6 +2478,7 @@ function EXPR_FILE_load() {
 // deleted, reordered (favorite) or renamed. Best-effort: failures are reported but never thrown.
 function EXPR_FILE_save(jsonString) {
   try {
+    if (String(jsonString).length > 5000000) { return _err(new Error("Expression data is too large to save.")); }
     var ok = saveExpressionsToFile(jsonString);
     return ok ? _ok("Saved.") : _err(new Error("Could not write saved_expressions.json (check file/folder permissions)."));
   } catch (e) {
@@ -2505,21 +2507,23 @@ function EXPR_FILE_backupExport() {
   }
 }
 
-// "Import Expressions" (Settings tab): lets the user pick a .json backup and REPLACES
-// saved_expressions.json with it. Returns the imported content so the JS side can also refresh
-// localStorage + the on-screen list immediately, without requiring a panel reload.
+// "Import Expressions" (Settings tab): lets the user pick a .json backup and returns its raw text.
+// It does NOT write anything: main.js validates the JSON first and only then saves it (which also
+// updates saved_expressions.json). Writing here blindly let a wrong .json overwrite the real
+// backup and freeze AE. Files over 2 MB are refused before being read.
 function EXPR_FILE_backupImport() {
   try {
     var picked = File.openDialog("Select an Expressions Backup (.json)", "JSON:*.json");
     if (!picked) { return _notice("Import canceled."); }
+    if (picked.length > 2000000) { throw new Error("That file is too large to be an Expressions backup (over 2 MB)."); }
     picked.encoding = "UTF-8";
     if (!picked.open("r")) { throw new Error("Could not open the selected file."); }
     var text = picked.read();
     picked.close();
     if (!text || !text.length) { throw new Error("That file is empty."); }
-    if (!saveExpressionsToFile(text)) { throw new Error("Could not write to saved_expressions.json (check file/folder permissions)."); }
     return _ok("Expressions imported from \"" + picked.name + "\".", { json: text });
   } catch (e) {
+    try { if (picked && picked.close) { picked.close(); } } catch (e2) {}
     return _err(e);
   }
 }

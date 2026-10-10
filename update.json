@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.29",
+    "latest_version":  "1.8.30",
     "changelog":  "- Fix Animation\r\n- Adding Note \u0026 To-Do\r\n- Fix Bug",
     "files":  [
                   {
@@ -60,7 +60,7 @@
                   },
                   {
                       "path":  "css/mt-idle-adjust.css",
-                      "sha256":  "eff9b91dbc7db1c7e126d931719f28ed09be91efc9a5ab7baba4ee8dc4a40a99"
+                      "sha256":  "8599325d67129fe1e19a39b00b5c23f12fd94ab9c6e7419c290f47eb281657f0"
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
@@ -212,7 +212,7 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "430e7efa045801008c3b3b0c6574f6bc9e3f6f4fc72e4c56274f6f81cf10db2d"
+                      "sha256":  "e83e09a3d7e6da26bad325af2dbb19501626a8e2817b8ee25bc84fd554cefb36"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",

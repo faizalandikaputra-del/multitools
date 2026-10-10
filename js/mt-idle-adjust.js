@@ -248,6 +248,24 @@
     applySize(w);
     return true;
   }
+  // Pulls a moved box back inside the idle screen (the box that clips overflow). A saved layout from a wider panel, or an
+  // offset that pushed the box past an edge, would otherwise leave it cut off. Returns true if it had to move.
+  function fitInside(w) {
+    var el = $(w.el), box = $("idle-clock"), s = layout[w.id];
+    if (!el || !box || !s || !(s.x || s.y) || el.offsetParent === null) { return false; }
+    var r = el.getBoundingClientRect(), c = box.getBoundingClientRect(), k = pxRatio(el.parentNode) || 1;
+    var L = c.left + 4, R = c.left + box.clientWidth - 4, dx = 0, dy = 0;
+    if (r.width <= R - L) { if (r.right > R) { dx = R - r.right; } else if (r.left < L) { dx = L - r.left; } }
+    if (r.top < c.top + 4) { dy = c.top + 4 - r.top; }
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { return false; }
+    var nx = clamp(Math.round((s.x || 0) + dx / k), -MAX_OFF, MAX_OFF), ny = clamp(Math.round((s.y || 0) + dy / k), -MAX_OFF, MAX_OFF);
+    if (Math.abs(nx) < 2) { nx = 0; } if (Math.abs(ny) < 2) { ny = 0; }
+    if (nx) { s.x = nx; } else { delete s.x; }
+    if (ny) { s.y = ny; } else { delete s.y; }
+    if (!s.span && !s.h && !s.x && !s.y) { delete layout[w.id]; }
+    applySize(w);
+    return true;
+  }
   // `first` (optional) is the box the user just touched: if it was moved it is resolved first; then every other moved box, until nothing overlaps.
   function resolveAll(first) {
     var pass, changed, i, w, list;
@@ -257,7 +275,8 @@
       for (i = 0; i < list.length; i++) {
         w = list[i];
         if (!(layout[w.id] && (layout[w.id].x || layout[w.id].y))) { continue; }   // a box in its grid place never moves aside: the moved box does
-        if (resolveOne(w)) { changed = true; }
+        if (fitInside(w)) { changed = true; }                                       // never cut off at an edge
+        if (layout[w.id] && resolveOne(w)) { changed = true; }
       }
       if (!changed) { break; }
     }
@@ -319,7 +338,10 @@
     var k = mv.k, r = mv.r, dx = e.clientX - mv.sx, dy = e.clientY - mv.sy;           // screen px
     var left = r.left + dx, top = r.top + dy, w = r.width, h = r.height, gx = null, gy = null, i, bx, by, xs = [], ys = [];
     // keep a part of the box on screen
-    left = clamp(left, KEEP - w, window.innerWidth - KEEP); top = clamp(top, KEEP - h, window.innerHeight - KEEP);
+    // keep the WHOLE box on screen (a box half past the edge is cut off); only a box bigger than the panel may overhang
+    var vw = window.innerWidth, vh = window.innerHeight;
+    left = (w <= vw - 8) ? clamp(left, 4, vw - w - 4) : clamp(left, KEEP - w, vw - KEEP);
+    top = (h <= vh - 8) ? clamp(top, 4, vh - h - 4) : clamp(top, KEEP - h, vh - KEEP);
     // soft snap: its own place (offset 0), then the other boxes
     xs.push(r.left - mv.x0 * k); ys.push(r.top - mv.y0 * k);
     xs.push(r.left - mv.x0 * k + w); ys.push(r.top - mv.y0 * k + h);

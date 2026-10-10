@@ -260,3 +260,9 @@ body.is-adjusting .wa-lift {
 
 /* a box dragged over another one: red outline, it will glide to the nearest free spot when dropped */
 body.is-adjusting .idle-chips > .wa-clash, body.is-adjusting .idle-dash > .wa-clash { outline-style: solid; outline-color: rgba(255, 107, 107, 0.95); }
+
+/* ---------- widgets never cut off on the idle screen ----------
+   .idle-clock used to hug its content (only two edges set per [data-position]) while keeping overflow-x:hidden, so a box
+   moved or widened past that narrow box was clipped (the Timer cut off at the right edge). In the idle screen the box now
+   covers the whole panel; align-items / justify-content / margin-top:auto still put the content in the chosen corner. */
+body.is-idle .idle-clock[data-position] { top: 0; right: 0; bottom: 0; left: 0; width: auto; height: auto; max-width: none; max-height: none; }

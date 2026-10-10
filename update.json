@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.25",
+    "latest_version":  "1.8.26",
     "changelog":  "- Fix Animation\r\n- Adding Note \u0026 To-Do\r\n- Fix Bug",
     "files":  [
                   {
@@ -304,7 +304,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "948d4f97e420812305fd9620d19a5ef2d92c5036f5b15c3b75406db180129c7a"
+                      "sha256":  "c4126e597f850eb1fe45004765200d2c1d50a172410c4172a4e48a3cca3007d6"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -383,6 +383,10 @@
                       "sha256":  "43ba433135db4e63df5a4d264c349face372a2b958168f01ab13840b3a5d7aa7"
                   },
                   {
+                      "path":  "neucurve/nc-fix25.css",
+                      "sha256":  "ad1b58d92c38ec14418634a7a14826f2aa06028c2fe64f19fa7866b2cc512a19"
+                  },
+                  {
                       "path":  "neucurve/nc-flow.css",
                       "sha256":  "53d6b38cef2965f403e7b645cf9804fc8dafda444db001699e13a1adec57832e"
                   },
@@ -424,7 +428,7 @@
                   },
                   {
                       "path":  "neucurve/nc-gsize.js",
-                      "sha256":  "3e3ab77e7091dc38f76ef933de6442f42c79b41e1c9e5d5238dbee8c59d74e3d"
+                      "sha256":  "1af3d29d75076a2ca00833f1e72316c130e9bdae2906eef8825b01c623ea7c61"
                   },
                   {
                       "path":  "neucurve/nc-handle.css",
@@ -544,7 +548,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "c1d001c30f418ae4f717e09e9d7113c464a62ab19c0af1381771c8679bdca872"
+                      "sha256":  "ac2010a1a82c2ea9bac0a723c855132c8170ee17251ea3a93da2fc748f086a65"
                   }
               ]
 }

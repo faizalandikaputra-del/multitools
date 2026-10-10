@@ -1,0 +1,10 @@
+/* NeuCurve - nc-fix25.css (loaded after nc-fix24.css)
+   GRAPH CUT OFF (left + right, landscape / auto): the plot was bigger than its box.
+   Root cause: .canvas-area is meant to be "relative" (it carries the class), but that utility class is not in the built CSS, so the
+   box computes to position:static. The bundle measures the box with Svelte's hidden resize frame (an absolutely positioned
+   <iframe> inside .canvas-area). With a static parent that frame is positioned against the whole window instead of the box, so
+   the plot was sized from the window (e.g. 840 x 700) while the box itself was only 420 x 509. The SVG is centred in the box
+   (overflow hidden), so both edges were clipped: the 0,0 end, the left handle and the 1,1 end disappeared.
+   Fix: make the box a positioned element, so the frame measures the box itself and the plot always fits it. */
+html body .shell.shell .canvas-area,
+html body .canvas-area.canvas-area { position: relative; }

@@ -92,10 +92,52 @@
     }
   }
 
+  /* v26 FIT CHECK, self-healing (landscape: graph cut off / not filling its box until you drag the divider or reload the panel).
+     The bundle sizes the plot from W / H handed to it by Svelte's hidden resize frame inside .canvas-area. In the real host that frame
+     can miss a change (docking of the toolbar under the graph, panel resize while the tab is hidden, slow first paint), so the plot
+     keeps an old size: the SVG is bigger than the box (clipped on both sides, the 1,1 end and the right handle vanish) or, in
+     landscape auto-fit, smaller than it. Dragging the divider "fixes" it only because that really resizes the box.
+     fitCheck() compares SVG and box, and when they disagree it does by itself what the drag does:
+       try 1: shrink .canvas-area by 1px for two frames (min/max-height)
+       try 2+: also shrink .fixed-section by 1px (width) for two frames = same effect as a 1px divider drag
+     then __ncGBump(). It runs on every place() AND from a ResizeObserver and a light watchdog (see start()), so a stale plot
+     heals within ~1s with no user action. Anti-loop: 3 tries, then it waits 2s before it is allowed to try again. */
+  var fitLast = "", fitTries = 0, fitAt = 0, fitBusy = false;
+  function wantFill() {   /* landscape + automatic size: the plot must fill the box (portrait is capped by design, custom % sizes are smaller on purpose) */
+    return !!(window.__ncGPlot && window.__ncGPlot().land) && rd("gFit") !== "0" && rd("gWl") === "" && rd("gHl") === "" && !/[?&]ext=graph/.test(location.search);
+  }
+  function fitCheck(area, svg) {
+    if (dragging || fitBusy || !window.__ncGBump) { return; }
+    var aw = area.clientWidth, ah = area.clientHeight;
+    if (aw < 60 || ah < 60) { return; }
+    var sr = svg.getBoundingClientRect();
+    var tooBig = sr.width > aw + 2 || sr.height > ah + 2;
+    var tooSmall = !tooBig && wantFill() && (sr.width < aw - 8 || sr.height < ah - 8);
+    if (!tooBig && !tooSmall) { fitLast = ""; fitTries = 0; return; }
+    var now = Date.now(), key = aw + "x" + ah + "/" + Math.round(sr.width) + "x" + Math.round(sr.height);
+    if (key !== fitLast) { fitLast = key; fitTries = 0; }
+    if (fitTries >= 3) { if (now - fitAt < 2000) { return; } fitTries = 0; }
+    fitTries++; fitAt = now; fitBusy = true;
+    var h = ah - 1, fs = area.parentElement, fw = null;
+    area.style.minHeight = h + "px"; area.style.maxHeight = h + "px";
+    if (fitTries >= 2 && fs && fs.classList.contains("fixed-section")) {   /* 2nd try: the same 1px the divider drag gives */
+      fw = fs.style.width; var cw = fs.getBoundingClientRect().width;
+      if (cw > 80) { fs.style.width = (cw - 1) + "px"; } else { fw = null; }
+    }
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        area.style.minHeight = ""; area.style.maxHeight = "";
+        if (fw !== null) { fs.style.width = fw; }
+        fitBusy = false; bump();
+      });
+    });
+  }
+
   function place() {
     var area = q(".canvas-area"), svg = q("svg.curve-svg"), P = window.__ncGPlot && window.__ncGPlot();
     if (!area || !svg || !P) { if (grip) { grip.style.display = "none"; } return; }
     hug(area, P);
+    fitCheck(area, svg);
     if (!grip) {
       grip = document.createElement("div"); grip.id = "nc-gsize"; grip.title = "Drag to resize the graph (Shift = keep proportions, double-click = auto)";
       grip.innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M10 3 3 10M10 7 7 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -167,6 +209,14 @@
       }
     }).observe(document.getElementById("app") || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "width", "height"] });
     sch();
+    /* v26: heal stale plots with no mutation / window resize to trigger it: observe the box and poll lightly (reads only) */
+    try {
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(function () { sch(); }), watched = null;
+        setInterval(function () { var a = q(".canvas-area"); if (a && a !== watched) { watched = a; ro.observe(a); } }, 500);
+      }
+    } catch (e) { }
+    setInterval(function () { if (!dragging && !document.hidden) { sch(); } }, 800);
   }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", start); } else { start(); }
 })();

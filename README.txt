@@ -1324,3 +1324,28 @@ so on a wide panel the default 5 columns became ~150px squares with thick curves
 in neucurve/index.html), portrait only (.content-wrapper:not(.is-landscape)): repeat(auto-fill, minmax(270px / --grid-cols, 1fr)), so
 the default is ~54px tiles and the panel width decides how many fit per row (787px = 12). Card Size slider still works (3 = bigger,
 8 = smaller). Radius 10px, name line 9px. Landscape is untouched. calc() only, no min()/max()/clamp() (Chromium 74 / AE 2021 safe).
+
+fix32: NeuCurve graph cut off in landscape / auto mode (left, right and 1,1 end clipped, plot bigger than its box).
+Two causes, both in the Curve tab:
+1) .canvas-area has the class "relative" but the utility class is not in the built CSS, so it computed to position:static. The bundle
+   measures the box with Svelte's hidden resize <iframe> (absolute inside .canvas-area); with a static parent that frame covered the whole
+   window, so the plot was sized from the window (e.g. 840 x 700) instead of the box (420 x 509). New neucurve/nc-fix25.css (linked after
+   nc-fix24.css in neucurve/index.html): .canvas-area { position: relative }.
+2) The plot was sized once at start-up. When nc-flow.js then docked the toolbar / buttons under the graph, the box shrank but no resize
+   event reached the bundle, so the plot kept the old size (e.g. 198 x 521 in a 216 x 409 box). neucurve/nc-gsize.js v25: place() now runs
+   fitCheck(): if the SVG is bigger than .canvas-area it shrinks the box by 1px for two frames (min/max-height) so the resize frame fires,
+   then calls __ncGBump(). At most 3 tries per box/plot size pair (no loop). nc-gsize.js query bumped to ?v=14.
+Both are needed: CSS alone and JS alone each left auto mode clipped. Checked at 491x627, 700x500, 900x700, 560x900, 400x700 in
+portrait, landscape and auto: the SVG always fits the box. Portrait and the Settings / graph windows are unchanged.
+
+fix33: NeuCurve landscape graph still came up cut off / not filling its box in the real host until the panel was reloaded AND the divider
+between graph and presets was dragged. The fix32 fit check only ran when a DOM mutation or a window resize happened to call place(); if
+Svelte's hidden resize frame missed a change and nothing else fired, the stale plot stayed. neucurve/nc-gsize.js v26 (query ?v=15):
+- fitCheck() now also catches a plot that is too SMALL (landscape, automatic size, gFit on: the plot must fill the box; portrait caps and
+  custom Graph Size % are left alone).
+- Self-healing: a ResizeObserver on .canvas-area plus a light 800 ms watchdog (reads only, skipped while the document is hidden or a drag is
+  running) call the check, so a stale plot heals by itself within about a second.
+- Escalation: try 1 shrinks .canvas-area by 1px for two frames; try 2+ also shrinks .fixed-section by 1px for two frames, which is what
+  a 1px divider drag does. 3 tries, then a 2 s pause before it may try again (no loop).
+Tested in headless Chromium: 15/15 size x layout combos fit, 5 aggressive resize-timing scenarios fit, injected too-big / too-small SVG
+heals, 0 nudges in 6 s of idle. The exact host event that leaves the plot stale could not be reproduced outside After Effects.

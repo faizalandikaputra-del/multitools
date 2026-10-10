@@ -28,6 +28,10 @@
     var sidebar = t.closest(".sidebar");
     if (!sidebar) { return; }
 
+    // This handler runs first (window capture) and swallows the event below, so the other wheel listeners never see it.
+    // Tell the activity trackers (Idle screen in main.js, js/mt-away.js) by hand: scrolling the tab bar is activity.
+    try { window.dispatchEvent(new Event("mt-wheel-activity")); } catch (eAct) { }
+
     e.preventDefault();
     e.stopPropagation();
     if (e.stopImmediatePropagation) { e.stopImmediatePropagation(); }

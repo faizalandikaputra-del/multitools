@@ -29,10 +29,49 @@
 
   /* Bezier / Custom draw cubic "C" segments, the other modes draw "L" polylines. Polylines are read straight from "d" (fast);
      anything else is sampled along the path with the browser's own getPointAtLength, so the ball follows whatever is drawn. */
+  /* v26: analytic sampler for paths made of absolute M / L / C only (what Bezier "L" polylines and Custom "C" curves are).
+     Evaluates the cubics directly instead of asking the browser for getTotalLength + hundreds of getPointAtLength calls, which was
+     ~70 ms on every mode switch (and every Custom drag frame in nc-ball.js). Returns [[x,y], ...] or null for anything else
+     (relative commands, arcs, H / V ...) so the caller falls back to the geometric sampler. */
+  function sampleCubicPath(d) {
+    var re = /([MLCZ])|(-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)|([A-Za-z])/g, m, cmd = "", nums = [], out = [], cx = 0, cy = 0, bad = false;
+    function flush() {
+      var i, k, n, t, u, x, y, x0, y0, x1, y1, x2, y2, x3, y3, ch;
+      if (cmd === "M" || cmd === "L") {
+        for (i = 0; i + 1 < nums.length; i += 2) { cx = nums[i]; cy = nums[i + 1]; out.push([cx, cy]); }
+      } else if (cmd === "C") {
+        for (i = 0; i + 5 < nums.length; i += 6) {
+          x0 = cx; y0 = cy; x1 = nums[i]; y1 = nums[i + 1]; x2 = nums[i + 2]; y2 = nums[i + 3]; x3 = nums[i + 4]; y3 = nums[i + 5];
+          ch = Math.abs(x1 - x0) + Math.abs(y1 - y0) + Math.abs(x2 - x1) + Math.abs(y2 - y1) + Math.abs(x3 - x2) + Math.abs(y3 - y2);
+          n = Math.max(12, Math.min(96, Math.ceil(ch / 3)));
+          for (k = 1; k <= n; k++) {
+            t = k / n; u = 1 - t;
+            x = u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x3;
+            y = u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3;
+            out.push([x, y]);
+          }
+          cx = x3; cy = y3;
+        }
+      }
+      nums = [];
+    }
+    while ((m = re.exec(d)) !== null) {
+      if (m[3]) { bad = true; break; }
+      if (m[1]) { flush(); cmd = m[1]; if (cmd === "Z") { cmd = ""; } }
+      else { nums.push(parseFloat(m[2])); }
+    }
+    if (bad) { return null; }
+    flush();
+    return out.length > 1 ? out : null;
+  }
+
   function parse(d, path) {
-    var i, n, len, q, SAMPLES = 260;
+    var i, n, len, q, SAMPLES = 160, fast;
     xs = []; ys = [];
     if (!d) { return; }
+    fast = !/[^MLmlz\d\s,.eE+-]/.test(d) ? null : sampleCubicPath(d);
+    if (fast) { for (i = 0; i < fast.length; i++) { xs.push(fast[i][0]); ys.push(fast[i][1]); } }
+    else
     if (!/[^MLmlz\d\s,.eE+-]/.test(d)) {
       n = d.match(/-?\d*\.?\d+(?:e-?\d+)?/gi) || [];
       for (i = 0; i + 1 < n.length; i += 2) { xs.push(parseFloat(n[i])); ys.push(parseFloat(n[i + 1])); }
@@ -68,7 +107,7 @@
   function build() {
     var i, d;
     g = mk("g", { "class": "nc-ball", "pointer-events": "none" });
-    for (i = 0; i < TAIL; i++) { d = mk("circle", { r: "0", opacity: "0" }); tail.push(d); g.appendChild(d); }
+    for (i = 0; i < TAIL; i++) { d = mk("circle", { r: (3.2 - i * 0.3).toFixed(2), cx: "0", cy: "0", opacity: "0" }); tail.push(d); g.appendChild(d); }
     var head = mk("g", { "class": "nc-ball-head" });
     h1 = mk("circle", { r: "12", opacity: ".12" });
     h2 = mk("circle", { r: "7.6", opacity: ".2" });
@@ -94,32 +133,58 @@
     }
   }
 
+  /* v27 smooth run. Why it stuttered: (1) the loop skipped frames (>= 28 ms apart) so the ball moved at an uneven ~30 fps,
+     (2) every 400-500 ms it forced a style recalc (getComputedStyle) and a layout (getBoundingClientRect) INSIDE the frame,
+     (3) it rewrote ~30 attributes per frame, even in the rest phases where nothing moves.
+     Now: one draw per display frame, size comes from a ResizeObserver, the colour is re-read only while the ball rests, and an
+     attribute is written only when its value changed (tail dots are moved with one transform each; their radius is fixed). */
+  var shown = false, ro = null, roSvg = null, roPoll = 0;
+  var lastHead = "", lastHeadO = "", lastTailT = [], lastTailO = [];
+  function watchSize(svg) {
+    if (roSvg === svg) {
+      if (!ro && performance.now() - roPoll > 1500) { roPoll = performance.now(); shown = svg.getBoundingClientRect().width > 0; }
+      return;
+    }
+    roSvg = svg;
+    if (ro) { try { ro.disconnect(); } catch (e) { } ro = null; }
+    shown = svg.getBoundingClientRect().width > 0;   /* once, here - never per frame */
+    if (window.ResizeObserver) {
+      try { ro = new ResizeObserver(function (es) { var r = es && es[0] && es[0].contentRect; if (r) { shown = r.width > 0; } }); ro.observe(svg); } catch (e) { ro = null; }
+    }
+  }
   function frame(now) {
     raf = 0;
     if (!on()) { stop(); return; }
-    var svg = document.querySelector("svg.curve-svg"), path = svg && mainPath(svg), t, p, o, pt, i, tp, tt, hs;
-    if (svg && path && svg.getBoundingClientRect().width > 0) {
+    /* no writes while the graph is being dragged (nc-glow.css hides the ball for that time) */
+    if (root.classList.contains("nc-graph-drag")) { raf = requestAnimationFrame(frame); return; }
+    var svg = document.querySelector("svg.curve-svg"), path = svg && mainPath(svg), t, p, o, pt, i, tp, tt, hs, d, s2, o2, rest, st = still();
+    if (svg && path) { watchSize(svg); }
+    if (svg && path && shown) {
       if (!g) { build(); }
       if (g.parentNode !== svg) {   /* keep it under the handles so they stay on top and grabbable */
         hs = svg.querySelector(":scope > g.handles");
         if (hs) { svg.insertBefore(g, hs); } else { svg.appendChild(g); }
       }
-      var d = path.getAttribute("d");
+      d = path.getAttribute("d");
       if (d !== curD) { curD = d; parse(d || "", path); }
-      paint(svg, path, now);
-      t = still() ? HOLD0 + RUN + 1 : (now - t0) % CYCLE;
-      p = prog(t); o = still() ? 1 : opa(t);
+      t = st ? HOLD0 + RUN + 1 : (now - t0) % CYCLE;
+      rest = st || t > HOLD0 + RUN;                                  /* the ball is not travelling: a good moment for the style read */
+      if (!lastColor || (rest && now - colorAt > 1500)) { paint(svg, path, now); }
+      p = prog(t); o = st ? 1 : opa(t);
       pt = pos(p);
       if (pt) {
-        g.__head.setAttribute("transform", "translate(" + pt[0].toFixed(2) + " " + pt[1].toFixed(2) + ")");
-        g.__head.setAttribute("opacity", o.toFixed(3));
+        s2 = "translate(" + pt[0].toFixed(2) + " " + pt[1].toFixed(2) + ")";
+        if (s2 !== lastHead) { lastHead = s2; g.__head.setAttribute("transform", s2); }
+        o2 = o.toFixed(3);
+        if (o2 !== lastHeadO) { lastHeadO = o2; g.__head.setAttribute("opacity", o2); }
         for (i = 0; i < TAIL; i++) {
-          tt = still() ? 0 : t - (i + 1) * TAIL_STEP;
+          tt = st ? 0 : t - (i + 1) * TAIL_STEP;
           tp = pos(prog(tt));
           if (!tp) { continue; }
-          tail[i].setAttribute("cx", tp[0].toFixed(2)); tail[i].setAttribute("cy", tp[1].toFixed(2));
-          tail[i].setAttribute("r", (3.2 - i * 0.3).toFixed(2));
-          tail[i].setAttribute("opacity", (still() ? 0 : .34 * (1 - i / TAIL) * o).toFixed(3));
+          s2 = "translate(" + tp[0].toFixed(2) + " " + tp[1].toFixed(2) + ")";
+          if (s2 !== lastTailT[i]) { lastTailT[i] = s2; tail[i].setAttribute("transform", s2); }
+          o2 = (st ? 0 : .34 * (1 - i / TAIL) * o).toFixed(3);
+          if (o2 !== lastTailO[i]) { lastTailO[i] = o2; tail[i].setAttribute("opacity", o2); }
         }
       }
     }
@@ -135,6 +200,7 @@
   function stop() {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     if (g && g.parentNode) { g.parentNode.removeChild(g); }
+    lastHead = ""; lastHeadO = ""; lastTailT = []; lastTailO = [];
     root.classList.remove("nc-ball-on");
     running = false;
   }

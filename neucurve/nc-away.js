@@ -16,7 +16,7 @@
   /* v4: Settings > "Keep Animations Running" (neucurve_keepMotion, default ON). ON = the gate never closes: nothing is
      paused when the pointer leaves the panel or rests for 4 s (the freeze looked like "animations suddenly stop").
      OFF = the old behaviour below (anti black-flash). */
-  function keep() { try { return localStorage.getItem("neucurve_keepMotion") !== "0"; } catch (e) { return true; } }
+  function keep() { return true; }   /* v27: the "Keep Animations Running" setting was removed - animations always keep running */
   var out = true, idle = false, away = !keep();   // old mode: start "away" until the first real pointer event
   var IDLE_MS = 4000, lastAct = Date.now();
   window.__ncAway = function () { return away; };

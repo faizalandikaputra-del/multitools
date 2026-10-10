@@ -1,0 +1,26 @@
+/* Multi Tool settings window: rows wrap instead of pushing the control over the label.
+   Seen in the Idle screen tab: the 230 px "Custom message" input ran left over its own label when the window was narrow.
+   Same rules the NeuCurve settings window already uses (neucurve/nc-settings-fit.css). Load AFTER the other settings CSS. */
+.settings-row, .settings-language-row, .label-assign-row { flex-wrap: wrap !important; min-width: 0; row-gap: 8px; }
+.settings-row-copy, .settings-language-copy { flex: 1 1 150px !important; min-width: 0 !important; }
+.settings-row-copy b, .settings-row-copy small, .settings-language-copy b { overflow-wrap: anywhere; }
+.settings-row-ctrl { flex: 0 1 auto !important; max-width: 100%; min-width: 0; margin-left: auto; }
+.settings-select, .settings-input, .settings-input-wide { max-width: 100%; box-sizing: border-box; }
+.settings-input-wide { width: min(240px, 100%); }
+.settings-toggle-row { flex-wrap: nowrap; min-width: 0; }
+.settings-toggle-row .settings-row-copy { flex: 1 1 0 !important; }
+.settings-body, .settings-section, .settings-group, .settings-workspace-header { max-width: 100%; min-width: 0; }
+.settings-body { overflow-x: hidden; }
+@media (max-width: 560px) { .settings-row-copy { flex-basis: 120px !important; } }
+
+/* rows that use .settings-language-row / .nc-seg / swatches were missing from the wrap rules: the segmented control ran over its own label
+   (Preset Glow > Side) and the quick colour swatches were cut off on the right. */
+.settings-language-row { flex-wrap: wrap; min-width: 0; row-gap: 8px; }
+.settings-language-copy { flex: 1 1 150px !important; min-width: 0 !important; }
+.settings-language-copy b, .settings-language-copy small, .settings-row-copy b, .settings-row-copy small { overflow-wrap: anywhere; }
+.nc-seg { flex: 0 1 auto !important; max-width: 100%; min-width: 0; flex-wrap: wrap; margin-left: auto; box-sizing: border-box; }
+.nc-seg button { flex: 1 1 auto; white-space: nowrap; }
+.settings-swatches { grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)) !important; padding-left: 0 !important; padding-right: 0 !important; max-width: 100%; box-sizing: border-box; }
+.settings-group-header, .settings-group-header-with-action { min-width: 0; }
+.settings-group-header > div { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) { .nc-seg button { padding: 0 7px !important; } }

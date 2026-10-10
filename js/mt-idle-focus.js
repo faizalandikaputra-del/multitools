@@ -669,10 +669,21 @@
     el.alEmpty.hidden = list.length > 0;
     el.alAdd.disabled = list.length >= AL_MAX;
   }
+  // Alarm time: two themed dropdowns (hour, minute) instead of <input type="time">, whose popup is the operating system's. The hidden #al-time keeps "HH:MM".
+  function buildTimePick() {
+    var h = $("al-time-h"), m = $("al-time-m"), out = $("al-time"), i, o, cur;
+    if (!h || !m || !out || h.options.length) { return; }
+    for (i = 0; i < 24; i++) { o = document.createElement("option"); o.value = pad(i); o.textContent = pad(i); h.appendChild(o); }
+    for (i = 0; i < 60; i++) { o = document.createElement("option"); o.value = pad(i); o.textContent = pad(i); m.appendChild(o); }
+    cur = /^\d{2}:\d{2}$/.test(out.value) ? out.value : "07:00";
+    h.value = cur.slice(0, 2); m.value = cur.slice(3, 5);
+    function sync() { out.value = h.value + ":" + m.value; }
+    h.addEventListener("change", sync); m.addEventListener("change", sync); sync();
+  }
   function openAlarmForm(open) {
     el.alForm.hidden = !open;
     el.alAdd.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) { try { el.alTime.focus(); } catch (e) { } }
+    if (open) { try { ($("al-time-h") || el.alTime).focus(); } catch (e) { } }
   }
   function saveAlarm() {
     var tm = el.alTime.value, list = readAlarms();
@@ -686,6 +697,7 @@
   }
   function bindAlarms() {
     if (!el.alList) { return; }
+    buildTimePick();
     el.alAdd.innerHTML = ICON_PLUS;
     el.alAdd.addEventListener("click", function () { openAlarmForm(el.alForm.hidden); });
     el.alCancel.addEventListener("click", function () { openAlarmForm(false); });

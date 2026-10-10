@@ -490,3 +490,14 @@ html[data-theme="light"]:not(.has-bg-media) .td-progress { background: rgba(0, 0
 .it-actions { display: flex; align-items: center; justify-content: space-between; min-height: 1.6rem; margin-top: 0.5rem; }
 .it-actions .ic-link[hidden] { display: none; }
 .idle-timer .ic-round.is-running { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }
+
+/* alarm time picker: two themed dropdowns (js buildTimePick) */
+.al-time-pick { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.25rem; font-weight: 600; }
+select.ic-field { -webkit-appearance: none; appearance: none; width: 3.1rem; padding-right: 1.1rem; text-align: left; font-variant-numeric: tabular-nums; cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23bdbdbd' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 0.35rem center; }
+select.ic-field.mt-open { border-color: var(--accent, #5b8cff); background-color: rgba(255, 255, 255, 0.14); }
+select.ic-field option { color: #111; }
+@media (max-width: 26rem) { .al-time-pick { width: 100%; } .al-time-pick select.ic-field { flex: 1 1 0; width: auto; } }
+.al-form-row { flex-wrap: wrap; row-gap: 0.4rem; }
+.al-form-row .al-label { flex: 1 1 7rem; min-width: 7rem; }

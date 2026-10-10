@@ -38,3 +38,15 @@ body { display: block !important; padding: 10px !important; }
   .settings-body { padding-left: 14px !important; padding-right: 14px !important; }
   .settings-row-copy { flex-basis: 120px !important; }
 }
+
+/* rows that use .settings-language-row / .nc-seg / swatches were missing from the wrap rules: the segmented control ran over its own label
+   (Preset Glow > Side) and the quick colour swatches were cut off on the right. */
+.settings-language-row { flex-wrap: wrap; min-width: 0; row-gap: 8px; }
+.settings-language-copy { flex: 1 1 150px !important; min-width: 0 !important; }
+.settings-language-copy b, .settings-language-copy small, .settings-row-copy b, .settings-row-copy small { overflow-wrap: anywhere; }
+.nc-seg { flex: 0 1 auto !important; max-width: 100%; min-width: 0; flex-wrap: wrap; margin-left: auto; box-sizing: border-box; }
+.nc-seg button { flex: 1 1 auto; white-space: nowrap; }
+.settings-swatches { grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)) !important; padding-left: 0 !important; padding-right: 0 !important; max-width: 100%; box-sizing: border-box; }
+.settings-group-header, .settings-group-header-with-action { min-width: 0; }
+.settings-group-header > div { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) { .nc-seg button { padding: 0 7px !important; } }

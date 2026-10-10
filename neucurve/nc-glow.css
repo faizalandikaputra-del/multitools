@@ -4,4 +4,8 @@
 
 /* While a drag is running only every 3rd glow layer is drawn (nc-glow.js skips updating the others): the curve
    keeps a soft halo but the browser repaints far fewer wide strokes per frame. Full glow returns on release. */
-html.nc-graph-drag .curve-svg > g.nc-glow > path:not(:nth-child(3n+2)) { display: none; }
+html.nc-graph-drag .curve-svg > g.nc-glow { display: none; }
+html.nc-graph-drag .curve-svg .nc-hglow { display: none; }
+
+/* v26: the live-preview ball and its tail step aside while the graph is being dragged (nc-ball.js stops writing then). */
+html.nc-graph-drag .curve-svg > g.nc-ball { visibility: hidden; }

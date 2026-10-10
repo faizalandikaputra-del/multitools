@@ -31,6 +31,7 @@
   ["mousemove", "mousedown", "wheel", "keydown", "touchstart", "mouseenter"].forEach(function (t) {
     document.addEventListener(t, wake, true);
   });
+  window.addEventListener("mt-wheel-activity", wake);   // js/tab-wheel.js swallows the real wheel event over the tab bar
   document.addEventListener("mouseleave", function (e) { if (!e.buttons) { set(true); clearTimeout(mTimer); setMoving(false); } });
   document.addEventListener("mouseout", function (e) { if (!e.relatedTarget && !e.buttons) { set(true); } }, true);
   document.addEventListener("visibilitychange", function () { if (document.hidden) { set(true); } });

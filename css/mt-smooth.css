@@ -19,6 +19,10 @@
   transition: transform var(--mt-ind-dur) cubic-bezier(0.65, 0, 0.35, 1), width var(--sbx-dur) var(--sbx-ease);
 }
 
+/* 1b. v2: the highlight is moved by a spring (js/mt-smooth.js adds html.mt-ind-spring when Element.animate exists), so the
+       CSS transition on transform must go - only the width change of the expanding rail keeps its transition. */
+:root.mt-ind-spring .tab-indicator { transition: width var(--sbx-dur) var(--sbx-ease); }
+
 /* 2. Tab switch: cards settle sooner (tab-motion.css / mt-motion-fix.css: 0.44s + 22ms per card, up to 14 cards
       = ~0.75s before the last card is still). Now 0.38s + 18ms = ~0.63s. The leave time (--mt-leave-dur) is NOT
       touched: showTab() in main.js waits for exactly that long. */

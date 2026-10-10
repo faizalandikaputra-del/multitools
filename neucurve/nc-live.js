@@ -38,7 +38,7 @@
     // resetting the mouse cursor (crosshair <-> arrow flicker). So during a drag the apply rate is much lower; the
     // final position is still applied right after you stop (trailing apply in the bundle's throttle).
     gap: function (model) {
-      if (L.down) { return model === BEZIER ? (old ? 420 : 320) : 600; }
+      if (L.down) { return model === BEZIER ? (old ? 700 : 500) : 800; }
       return model === BEZIER ? (old ? 130 : 70) : 450;
     },
     delay: function (model) {

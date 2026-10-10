@@ -1,0 +1,30 @@
+/* NeuCurve - nc-fix24.css (loaded after nc-fix23.css)
+   PORTRAIT PRESET TILES: compact grid like the Flow reference (yellow accent screenshot).
+   Before: portrait used repeat(var(--grid-cols), 1fr) (nc-fix22.css), so on a wide panel 5 columns became 5 huge
+   square cards (~150px each). The curves were drawn thick and the grid ran off the bottom of the panel.
+   Now (portrait only): columns = repeat(auto-fill, minmax(MIN, 1fr)). The panel width decides how many tiles fit in a
+   row, each tile stays square and only grows to absorb the leftover width, so a 787px panel shows ~12 small tiles per
+   row and names stay readable under them (long names get "...").
+   The preset options "Card Size" slider (--grid-cols, 3-8) still works: MIN = 270px / columns, so the default 5 = 54px,
+   3 = 90px (bigger tiles), 8 = ~34px (smaller tiles). Landscape (right column) is NOT touched: it keeps nc-fix22.css.
+   Chromium 74 (AE 2021) safe: only calc() with a plain division, no min() / max() / clamp(). */
+
+html body .shell.shell .content-wrapper:not(.is-landscape) .preset-grid {
+  grid-template-columns: repeat(auto-fill, minmax(calc(270px / var(--grid-cols, 5)), 1fr)) !important;
+  row-gap: 6px;
+  column-gap: 6px;
+}
+
+/* smaller tiles = smaller corner radius, tighter name line (same look as the reference tiles) */
+html body .shell.shell .content-wrapper:not(.is-landscape) .preset-item .preset-thumbnail {
+  border-radius: 10px;
+}
+html body .shell.shell .content-wrapper:not(.is-landscape) .preset-item .preset-name {
+  margin-top: 3px;
+  font-size: 9px;
+  line-height: 12px;
+}
+html body .shell.shell .content-wrapper:not(.is-landscape) .preset-item.selected::before,
+html body .shell.shell .content-wrapper:not(.is-landscape) .preset-item.ctx-target::before {
+  border-radius: 10px !important;
+}

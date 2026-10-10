@@ -24,7 +24,7 @@
        doesn't touch. Companion script: js/panel-refinements.js (loaded at the end of body). -->
   <link rel="stylesheet" href="../css/panel-refinements.css?v=9">
   <!-- Ambient colour circles (random drift + slow blink). Must stay BEFORE glass-theme.css, which hides the old static .app::before pools. -->
-  <link rel="stylesheet" href="../css/ambient-orbs.css?v=10">
+  <link rel="stylesheet" href="../css/ambient-orbs.css?v=11">
   <!-- Tab motion: staggered card entrance + quick panel leave on tab switch (opacity/transform only).
        Companion: showTab() in js/main.js. Must stay BEFORE glass-theme.css (which stays last). -->
   <link rel="stylesheet" href="../css/tab-motion.css?v=10">
@@ -45,6 +45,7 @@
   <link rel="stylesheet" href="../css/sidebar-center.css?v=1">
   <!-- Smooth themed dropdowns for every <select>, softer context menus / accordions. Companion: js/mt-select.js -->
   <link rel="stylesheet" href="../css/mt-select.css?v=1">
+  <link rel="stylesheet" href="../css/mt-dialog.css?v=1">
   <!-- Themed colour picker popover for every <input type="color"> (not the Custom Color wheel). Companion: js/mt-colorpicker.js -->
   <link rel="stylesheet" href="../css/mt-colorpicker.css?v=1">
   <!-- Smooth two-part stepper for every <input type="number">. Companion: js/mt-spinbox.js -->
@@ -61,11 +62,11 @@
   <!-- Motion/focus fixes (Animations OFF really off, tile focus ring, fewer endless loops). Needs js/mt-away.js. -->
   <link rel="stylesheet" href="../css/mt-motion-fix.css?v=3">
   <!-- Smoother motion: sidebar highlight, tab-switch cards, Settings modal, finished flash. Needs js/mt-smooth.js. -->
-  <link rel="stylesheet" href="../css/mt-smooth.css?v=2">
+  <link rel="stylesheet" href="../css/mt-smooth.css?v=3">
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
-  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=13">
+  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=14">
   <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=6">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=4">
@@ -227,7 +228,7 @@
         <div class="ic-head"><strong>Alarms</strong><button class="ic-round" id="al-add" type="button" aria-label="Add alarm" aria-expanded="false"></button></div>
         <div class="al-form" id="al-form" hidden>
           <div class="al-form-row">
-            <input class="ic-field al-time" id="al-time" type="time" value="07:00" aria-label="Alarm time">
+            <span class="al-time-pick" role="group" aria-label="Alarm time"><select class="ic-field al-h" id="al-time-h" aria-label="Hour"></select><b aria-hidden="true">:</b><select class="ic-field al-m" id="al-time-m" aria-label="Minute"></select><input type="hidden" id="al-time" value="07:00"></span>
             <input class="ic-field al-label" id="al-label" type="text" maxlength="30" placeholder="Label (optional)" aria-label="Alarm label" autocomplete="off" spellcheck="false">
           </div>
           <label class="al-daily" for="al-daily"><input type="checkbox" id="al-daily"><span>Repeat every day</span></label>
@@ -703,8 +704,8 @@
 
   <script src="../js/CSInterface.js?v=9"></script>
   <!-- Wheel over the left tab bar switches tabs. Loaded BEFORE main.js / smooth-scroll.js on purpose. -->
-  <script src="../js/tab-wheel.js?v=1"></script>
-  <script src="../js/mt-away.js?v=2"></script>
+  <script src="../js/tab-wheel.js?v=2"></script>
+  <script src="../js/mt-away.js?v=3"></script>
   <script src="../js/mt-tooltip.js?v=3"></script>
   <script src="../js/mt-select.js?v=1"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
@@ -718,8 +719,8 @@
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-anim.js?v=1"></script>
-  <script src="../js/main.js?v=26"></script>
-  <script src="../js/mt-smooth.js?v=1"></script>
+  <script src="../js/main.js?v=27"></script>
+  <script src="../js/mt-smooth.js?v=2"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
   <script src="../js/smooth-scroll.js?v=9"></script>
@@ -728,13 +729,13 @@
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
-  <script src="../js/mt-idle-focus.js?v=13"></script>
+  <script src="../js/mt-idle-focus.js?v=14"></script>
   <script src="../js/mt-idle-adjust.js?v=7"></script>
   <script src="../js/mt-settings-bus.js?v=2"></script>
   <script src="../js/mt-settings-remote.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->
-  <script src="../js/panel-refinements.js?v=9"></script>
+  <script src="../js/panel-refinements.js?v=10"></script>
 </body>
 </html>

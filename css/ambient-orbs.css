@@ -41,3 +41,11 @@
 /* Curve tab open: the orbs sit under the (transparent) NeuCurve iframe and cannot be seen there anyway, but their endless
    blink/drift kept repainting the panel behind it and made the Curve tab flash black. Hidden = zero repaint. */
 :root.mt-curve-open .ambient-orbs { display: none; }
+
+
+/* v27: Curve tab open - stop the panel's endless decorative animations (they force the parent to recomposite every frame
+   while NeuCurve's graph is being dragged inside the iframe). They resume when the tab is closed. */
+:root.mt-curve-open .panel-head h1::before,
+:root.mt-curve-open .ta-title::before,
+:root.mt-curve-open .preset-group-heading::before,
+:root.mt-curve-open .cat-toolbar-name::before { animation: none !important; will-change: auto !important; }

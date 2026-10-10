@@ -134,7 +134,7 @@
         colorCache = s; colorFor = attr;
       }
       for (j = 0; j < g.children.length; j++) {
-        if (dragging && j % 3 !== 1) { continue; }   // layers hidden by nc-glow.css during a drag are refreshed on release
+        if (dragging) { continue; }   // v27: glow is fully hidden during a drag (nc-glow.css); it is refreshed on release
         var gp = g.children[j];
         if (gp.getAttribute("d") !== d) { gp.setAttribute("d", d); }
         if (gp.getAttribute("stroke") !== s) { gp.setAttribute("stroke", s); }

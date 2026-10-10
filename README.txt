@@ -1297,3 +1297,30 @@ without mouse movement (not while adjusting) and returns on the next move.
 fix21: clicking the adjust button froze / crashed the panel. The body class observer in js/mt-idle-adjust.js re-wrote a body class on every
 callback while adjusting, which queued a new mutation record, forever. It now reacts only to the idle screen opening / closing, and body
 classes are written only when they really change (setClass).
+
+fix25: scrolling the left tab bar could drop the panel into the idle screen. js/tab-wheel.js handles that wheel on the window
+(capture) and stops the event, so the Idle timer (document capture listener in main.js) and js/mt-away.js never saw it, and the
+countdown kept running while you scrolled with a still mouse. tab-wheel now dispatches "mt-wheel-activity" before swallowing the
+event; Idle (main.js) and mt-away.js listen for it and count it as activity.
+
+fix26: coming back to Animation Presets now lands on the old scroll position at once, like the Tools tab. The "Presets" card title
+carries a live count ("Presets (60)", filled in as soon as the tab is painted from the cache), so its open/closed memory key
+("Presets" on a cold open, "Presets (60)" on the next visit) never matched and the card came back closed; there was nothing tall
+to scroll to, so the offset stayed at the top until the card was reopened. js/panel-refinements.js now ignores a trailing "(n)" in
+the key (open state and card accent colour), so the card returns open and the saved offset applies on the first frame.
+
+fix27: NeuCurve lag.
+- Mode switch (Bezier -> Custom and back): the morph (nc-morph.js) and the live ball (nc-ball.js) sampled the Custom path with
+  getTotalLength + up to 1200 getPointAtLength calls (about 70 ms per switch, far more on a cold JS engine right after AE starts;
+  nc-ball.js did 260 of them on EVERY Custom drag frame). New sampleCubicPath() evaluates the M / L / C path analytically; the
+  geometric sampler stays as a fallback for any other command and is capped at 400 points. Measured: no getPointAtLength left in
+  a mode switch, switch time about 100 ms -> 50 ms, no long task.
+- Constant background work: the live ball (nc-ball.js) and the APPLY glow (nc-apply-glow.js) wrote ~2000 attributes a second. Both now
+  run at ~30 fps, stop writing while the graph is being dragged (the ball is hidden for that time, nc-glow.css), and the ball no
+  longer forces a layout every frame. Mutations at rest: 1239 -> 630 per 3 s; graph drag keeps a steady 60 fps in the test.
+
+fix31: NeuCurve portrait preset tiles looked wrong (huge cards, cut off at the bottom). nc-fix22.css forced repeat(--grid-cols, 1fr),
+so on a wide panel the default 5 columns became ~150px squares with thick curves. New neucurve/nc-fix24.css (linked after nc-fix23.css
+in neucurve/index.html), portrait only (.content-wrapper:not(.is-landscape)): repeat(auto-fill, minmax(270px / --grid-cols, 1fr)), so
+the default is ~54px tiles and the panel width decides how many fit per row (787px = 12). Card Size slider still works (3 = bigger,
+8 = smaller). Radius 10px, name line 9px. Landscape is untouched. calc() only, no min()/max()/clamp() (Chromium 74 / AE 2021 safe).

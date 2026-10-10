@@ -62,7 +62,10 @@
     sections.forEach(function (section, i) {
       var heading = section.querySelector(".ta-title");
       var label = heading ? heading.textContent.replace(/\s+/g, " ").trim() : "Section";
-      var stateKey = tabId + "::" + label;
+      // The key must not change when a live count in the title does: "Presets <span>(60)</span>" is empty on a cold open
+      // but already filled when the tab is painted from the cache, so "Presets" and "Presets (60)" used to be two
+      // different keys and the card the person had opened came back closed (and the saved scroll offset had nothing to land on).
+      var stateKey = tabId + "::" + label.replace(/\s*\(\d+\)\s*$/, "");
       var willOpen = groupOpenState.hasOwnProperty(stateKey) ? groupOpenState[stateKey] : (openFirst && i === 0);
 
       var group = document.createElement("div");
@@ -129,7 +132,7 @@
       });
 
       // Feature F: right-click accent color override for this card - see below.
-      var accentKey = tabId + "::" + label;
+      var accentKey = stateKey;
       applyStoredAccent(group, accentKey);
       wireAccentMenu(group, accentKey);
     });

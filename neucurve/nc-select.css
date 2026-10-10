@@ -1,0 +1,17 @@
+/* NeuCurve - nc-select.css
+   The library select (Def / Sav) opened the operating system's list. js/mt-select.js (shared with Multi Tool) now replaces that popup;
+   this file dresses the menu in NeuCurve's colours. The tint follows UI colour (--nc-ui-rgb). Load AFTER ../css/mt-select.css. */
+.mt-menu {
+  --surface-hover: #1f1f24; --border-strong: rgba(255, 255, 255, 0.14); --highlight-top: rgba(255, 255, 255, 0.05);
+  --text: #ececf1; --text-dim: #9a9aa5; --radius-card: 10px;
+  --accent-rgb: var(--nc-ui-rgb, 255, 255, 255); --accent: rgb(var(--nc-ui-rgb, 255, 255, 255)); --accent-strong: rgb(var(--nc-ui-rgb, 255, 255, 255));
+  min-width: 84px; font-family: "Inter", "Segoe UI", sans-serif;
+}
+.mt-opt { font-size: 12px; font-weight: 500; }
+.mt-opt.is-selected { font-weight: 600; }
+.lib-select.mt-open { border-color: var(--fl-accent, #fff) !important; box-shadow: 0 0 0 3px rgba(var(--nc-ui-rgb, 255, 255, 255), 0.28); }
+html.mt-light .mt-menu {
+  --surface-hover: #f4f4f6; --border-strong: rgba(0, 0, 0, 0.14); --highlight-top: rgba(255, 255, 255, 0.7); --text: #1b1b20; --text-dim: #6b6b75;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12), 0 14px 34px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+html.mt-light .mt-opt.is-active { background: rgba(0, 0, 0, 0.07); }

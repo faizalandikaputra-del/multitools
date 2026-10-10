@@ -1,0 +1,24 @@
+/* Multi Tool - mt-dialog.css : themed text prompt (askText in js/main.js). Replaces window.prompt(), which opened the OS dialog. */
+.mt-dlg-back { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100001; display: grid; place-items: center; padding: 16px; box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45); opacity: 0; transition: opacity 0.18s ease; }
+.mt-dlg-back.is-open { opacity: 1; }
+.mt-dlg { width: min(320px, 100%); box-sizing: border-box; padding: 16px 16px 14px; border-radius: var(--radius-card, 12px); color: var(--text, #f0f0f0);
+  background: var(--surface-hover, #2d2d2d); box-shadow: inset 0 0 0 1px var(--border-strong, rgba(255, 255, 255, 0.14)), 0 22px 54px rgba(0, 0, 0, 0.55);
+  transform: translateY(8px) scale(0.96); transition: transform 0.26s cubic-bezier(0.05, 0.7, 0.1, 1); }
+.mt-dlg-back.is-open .mt-dlg { transform: none; }
+.mt-dlg h3 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 600; }
+.mt-dlg p { margin: 0 0 10px; font-size: 0.75rem; line-height: 1.4; color: var(--text-dim, #a0a0a0); }
+.mt-dlg input { display: block; width: 100%; box-sizing: border-box; margin: 0 0 14px; padding: 8px 10px; font: inherit; font-size: 0.8rem; color: inherit; outline: none;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.16)); border-radius: 8px; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.mt-dlg input:focus { border-color: var(--accent, #fff); box-shadow: 0 0 0 3px var(--accent-glow, rgba(255, 255, 255, 0.25)); }
+.mt-dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.mt-dlg-actions button { margin: 0; padding: 7px 14px; font: inherit; font-size: 0.76rem; font-weight: 600; color: inherit; cursor: pointer; border: 0; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1); transition: background-color 0.15s ease, transform 0.12s ease; }
+.mt-dlg-actions button:hover { background: rgba(255, 255, 255, 0.18); }
+.mt-dlg-actions button:active { transform: scale(0.96); }
+.mt-dlg-actions .mt-dlg-ok { background: var(--accent, #fff); color: var(--on-accent, #111); }
+.mt-dlg-actions .mt-dlg-ok:hover { background: var(--accent, #fff); filter: brightness(1.08); }
+.mt-dlg-actions button:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
+html[data-theme="light"] .mt-dlg input { background: rgba(0, 0, 0, 0.05); }
+html[data-theme="light"] .mt-dlg-actions button { background: rgba(0, 0, 0, 0.08); }
+:root[data-reduce-motion="true"] .mt-dlg-back, :root[data-reduce-motion="true"] .mt-dlg { transition: none; }

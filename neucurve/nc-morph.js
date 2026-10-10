@@ -65,13 +65,51 @@
     return pts;
   }
 
+  /* v26: analytic sampler for paths made of absolute M / L / C only (what Bezier "L" polylines and Custom "C" curves are).
+     Evaluates the cubics directly instead of asking the browser for getTotalLength + hundreds of getPointAtLength calls, which was
+     ~70 ms on every mode switch (and every Custom drag frame in nc-ball.js). Returns [[x,y], ...] or null for anything else
+     (relative commands, arcs, H / V ...) so the caller falls back to the geometric sampler. */
+  function sampleCubicPath(d) {
+    var re = /([MLCZ])|(-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)|([A-Za-z])/g, m, cmd = "", nums = [], out = [], cx = 0, cy = 0, bad = false;
+    function flush() {
+      var i, k, n, t, u, x, y, x0, y0, x1, y1, x2, y2, x3, y3, ch;
+      if (cmd === "M" || cmd === "L") {
+        for (i = 0; i + 1 < nums.length; i += 2) { cx = nums[i]; cy = nums[i + 1]; out.push([cx, cy]); }
+      } else if (cmd === "C") {
+        for (i = 0; i + 5 < nums.length; i += 6) {
+          x0 = cx; y0 = cy; x1 = nums[i]; y1 = nums[i + 1]; x2 = nums[i + 2]; y2 = nums[i + 3]; x3 = nums[i + 4]; y3 = nums[i + 5];
+          ch = Math.abs(x1 - x0) + Math.abs(y1 - y0) + Math.abs(x2 - x1) + Math.abs(y2 - y1) + Math.abs(x3 - x2) + Math.abs(y3 - y2);
+          n = Math.max(12, Math.min(96, Math.ceil(ch / 3)));
+          for (k = 1; k <= n; k++) {
+            t = k / n; u = 1 - t;
+            x = u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x3;
+            y = u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3;
+            out.push([x, y]);
+          }
+          cx = x3; cy = y3;
+        }
+      }
+      nums = [];
+    }
+    while ((m = re.exec(d)) !== null) {
+      if (m[3]) { bad = true; break; }
+      if (m[1]) { flush(); cmd = m[1]; if (cmd === "Z") { cmd = ""; } }
+      else { nums.push(parseFloat(m[2])); }
+    }
+    if (bad) { return null; }
+    flush();
+    return out.length > 1 ? out : null;
+  }
+
   function samplePath(d) {
+    var fast = sampleCubicPath(d);
+    if (fast) { return fast; }
     try {
       var p = document.createElementNS("http://www.w3.org/2000/svg", "path"), len, n, i, pt, out = [];
       p.setAttribute("d", d);
       len = p.getTotalLength();
       if (!(len > 0)) { return null; }
-      n = Math.min(1200, Math.max(60, Math.round(len / 1.5)));
+      n = Math.min(400, Math.max(60, Math.round(len / 2.5)));
       for (i = 0; i <= n; i++) { pt = p.getPointAtLength(len * i / n); out.push([pt.x, pt.y]); }
       return out;
     } catch (e) { return null; }

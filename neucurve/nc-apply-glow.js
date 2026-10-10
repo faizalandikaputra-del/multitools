@@ -87,7 +87,15 @@
     }
   }
 
+  var lastDraw = 0;
   function frame(now) {
+    /* v26: the APPLY glow is decoration. Skip it while the graph is being dragged (that is when every ms counts) and draw it at
+       ~30 fps otherwise: half the style writes + repaints, same look. */
+    if (now - lastDraw < 28 || document.documentElement.classList.contains("nc-graph-drag")) {
+      rafId = (window.__ncAway && window.__ncAway()) ? null : requestAnimationFrame(frame);
+      return;
+    }
+    lastDraw = now;
     if (startTime === null) { startTime = now; }
     var u = ((now - startTime) % DURATION) / DURATION;
     var D, O; // D: 0..1 fraction of the path that's "on", O: 0..1 fraction offset into the path

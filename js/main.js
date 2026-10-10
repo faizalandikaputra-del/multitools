@@ -403,6 +403,38 @@
 
   // ---------- Toast ----------
   var toastTimer = null;
+  // Themed text prompt (replaces window.prompt, which opened the operating system's dialog).
+  // askText({ title, hint, value, ok }, function (text) { ... }) : callback gets the trimmed text, or nothing happens on Cancel / Esc / empty.
+  function askText(opts, done) {
+    var back = document.createElement("div"), box = document.createElement("div"), h = document.createElement("h3"), inp = document.createElement("input"),
+        row = document.createElement("div"), cancel = document.createElement("button"), ok = document.createElement("button"), shut = false;
+    back.className = "mt-dlg-back"; box.className = "mt-dlg"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+    h.textContent = opts.title || "";
+    box.appendChild(h);
+    if (opts.hint) { var p = document.createElement("p"); p.textContent = opts.hint; box.appendChild(p); }
+    inp.type = "text"; inp.maxLength = opts.max || 60; inp.value = opts.value || ""; inp.setAttribute("aria-label", opts.title || "Name"); inp.autocomplete = "off"; inp.spellcheck = false;
+    row.className = "mt-dlg-actions";
+    cancel.type = "button"; cancel.textContent = "Cancel"; ok.type = "button"; ok.className = "mt-dlg-ok"; ok.textContent = opts.ok || "Save";
+    row.appendChild(cancel); row.appendChild(ok); box.appendChild(inp); box.appendChild(row); back.appendChild(box); document.body.appendChild(back);
+    function close(val) {
+      if (shut) { return; } shut = true;
+      document.removeEventListener("keydown", onKey, true);
+      back.classList.remove("is-open");
+      setTimeout(function () { if (back.parentNode) { back.parentNode.removeChild(back); } }, 200);
+      if (val) { done(val); }
+    }
+    function submit() { var t = inp.value.trim(); if (t) { close(t); } else { inp.focus(); } }
+    function onKey(e) {
+      if (e.key === "Escape" || e.keyCode === 27) { e.stopPropagation(); e.preventDefault(); close(""); }
+      else if ((e.key === "Enter" || e.keyCode === 13) && box.contains(e.target) && e.target !== cancel) { e.preventDefault(); submit(); }
+    }
+    document.addEventListener("keydown", onKey, true);
+    ok.addEventListener("click", submit); cancel.addEventListener("click", function () { close(""); });
+    back.addEventListener("mousedown", function (e) { if (e.target === back) { close(""); } });
+    void back.offsetWidth; back.classList.add("is-open");
+    setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) { } }, 30);
+  }
+
   function toast(message, isError) {
     var el = $("toast");
     el.textContent = message;
@@ -2865,16 +2897,14 @@
       refreshPresetList();
 
       wrap.querySelector("#tf-preset-save").addEventListener("click", function () {
-        var name = window.prompt("Preset name:", presetSelect.value || "");
-        if (!name) { return; }
-        name = name.trim();
-        if (!name) { return; }
-        var presets = self.readPresets();
-        presets[name] = collect();
-        self.writePresets(presets);
-        refreshPresetList();
-        presetSelect.value = name;
-        toast('Preset "' + name + '" saved.');
+        askText({ title: "Save preset", hint: "Give this preset a name. Using an existing name replaces it.", value: presetSelect.value || "", ok: "Save" }, function (name) {
+          var presets = self.readPresets();
+          presets[name] = collect();
+          self.writePresets(presets);
+          refreshPresetList();
+          presetSelect.value = name;
+          toast('Preset "' + name + '" saved.');
+        });
       });
 
       // Picking a preset in the dropdown loads it right away (there is no Load button any more).
@@ -3843,6 +3873,8 @@
       }
       main.classList.add("is-curve");
       document.documentElement.classList.add("mt-curve-open");
+      /* v27: a playing background video repaints under the NeuCurve iframe every frame - pause it while the Curve tab is open */
+      try { var bv = $("bg-motion-video"); if (bv && !bv.paused) { bv.pause(); this._bvPaused = true; } } catch (e0) { }
       main.scrollTop = 0;
       this.pane.classList.add("is-active");
       this.pane.setAttribute("aria-hidden", "false");
@@ -3854,6 +3886,7 @@
     hide: function () {
       $("main").classList.remove("is-curve");
       document.documentElement.classList.remove("mt-curve-open");
+      try { if (this._bvPaused) { this._bvPaused = false; var bv2 = $("bg-motion-video"); if (bv2 && bv2.play) { var pr = bv2.play(); if (pr && pr.catch) { pr.catch(function () { }); } } } } catch (e1) { }
       this.pane.classList.remove("is-active", "is-entering");
       this.pane.setAttribute("aria-hidden", "true");
     }
@@ -3881,10 +3914,21 @@
   var tabScroll = {};
   var scrollPending = null;
 
+  // .main has `scroll-behavior: smooth` (css/style.css), so every plain `scrollTop = n` becomes an animated scroll. A restore that is
+  // retried every 80 ms would restart that animation again and again, which is what made coming back to a tab (Animation presets)
+  // crawl down in jerks. Restores must jump: switch the behaviour off for the one assignment, then put it back.
+  function jumpScroll(el, top) {
+    if (!el) { return; }
+    var prev = el.style.scrollBehavior;
+    el.style.scrollBehavior = "auto";
+    el.scrollTop = top;
+    el.style.scrollBehavior = prev;
+  }
+
   function applyScrollRestore() {
     if (!scrollPending) { return; }
     var m = $("main");
-    m.scrollTop = scrollPending.top;
+    jumpScroll(m, scrollPending.top);
     if (Math.abs(m.scrollTop - scrollPending.top) <= 1) { scrollPending = null; }
   }
 
@@ -5399,7 +5443,7 @@
         var m = $("main");
         if (!m) { return; }
         var r = searchEl.getBoundingClientRect(), mr = m.getBoundingClientRect();
-        if (r.top < mr.top || r.bottom > mr.bottom) { m.scrollTop += r.top - mr.top - 8; }
+        if (r.top < mr.top || r.bottom > mr.bottom) { jumpScroll(m, m.scrollTop + r.top - mr.top - 8); }
       }
 
       function busy(btn, promise, done) {
@@ -5600,7 +5644,7 @@
           if (Presets.cache && Presets.cache.folder === folder && Presets.cache.sig === sig) { return; }   // unchanged: leave the DOM alone
           var m = $("main"), top = m ? m.scrollTop : 0;
           showList(pr);
-          if (m) { m.scrollTop = top; }
+          if (m) { jumpScroll(m, top); }
         });
       }
 
@@ -5945,6 +5989,7 @@
       // Extras so the screensaver never kicks in while you are clicking, scrolling or typing:
       document.addEventListener("mousedown", this.onActivity, true);
       document.addEventListener("wheel", this.onActivity, true);
+      window.addEventListener("mt-wheel-activity", this.onActivity);   // wheel over the tab bar (js/tab-wheel.js stops the real event)
       document.addEventListener("keydown", this.onActivity, true);
       // Esc always leaves Idle Mode .
       document.addEventListener("keydown", function (e) {
@@ -6127,7 +6172,7 @@
       var i, s;
       for (i = 0; i < this.savedScroll.length; i++) {
         s = this.savedScroll[i];
-        s[0].scrollTop = s[1]; s[0].scrollLeft = s[2];
+        s[0].style.scrollBehavior = "auto"; s[0].scrollTop = s[1]; s[0].scrollLeft = s[2]; s[0].style.scrollBehavior = "";   // jump, never animate
       }
       this.savedScroll = [];
     },

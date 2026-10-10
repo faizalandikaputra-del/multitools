@@ -10,7 +10,7 @@
   var APP_ID = "nc-settings";
   var DEF = {
     uiColor: "#FFFFFF", graphLineColor: "#FFFFFF", handleColor: "#FFFFFF",
-    autoApply: "false", overshoot: "true", keepMotion: "1", liveBall: "1", layoutMode: "auto",
+    autoApply: "false", overshoot: "true", liveBall: "1", layoutMode: "auto",
     bgImagePath: "", bgOpacity: "1",
     gradOn: "0", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", gradP: "bw",
     wgDir: "90", wgInt: "45", wgSize: "55",
@@ -418,7 +418,6 @@
     }
     toggle("settingsAutoApply", "autoApply", "true", "false", function () { return readBool("autoApply"); });
     toggle("settingsOvershoot", "overshoot", "true", "false", function () { return read("overshoot") !== "false"; });
-    toggle("settingsKeepMotion", "keepMotion", "1", "0", function () { return read("keepMotion") !== "0"; });
     toggle("settingsLiveBall", "liveBall", "1", "0", function () { return read("liveBall") !== "0"; });
     /* panel view: the two toggles exclude each other, so the Curve tab is never left empty */
     toggle("settingsHidePresets", "hidePresets", "true", "false", function () { return readBool("hidePresets"); });

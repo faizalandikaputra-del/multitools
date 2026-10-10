@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.26",
+    "latest_version":  "1.8.27",
     "changelog":  "- Fix Animation\r\n- Adding Note \u0026 To-Do\r\n- Fix Bug",
     "files":  [
                   {
@@ -24,7 +24,7 @@
                   },
                   {
                       "path":  "css/material-theme.css",
-                      "sha256":  "5ede6406eed97a5936ef5734169a992479abd15bf7c153280d22c289cbdc61c1"
+                      "sha256":  "7eb223c51968a944efcefb0df87c69a16b509bc189eace76316df8446ce81ef0"
                   },
                   {
                       "path":  "css/mt-ae-icons.css",
@@ -168,7 +168,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "1801587cbf4a39b1ad2f04dc197d9d7b325a5ed4a96a24718b821e1375dee2d6"
+                      "sha256":  "b0462301f0688ba11506f0136866fbc4ea79538726e93bd1965613362346a30f"
                   },
                   {
                       "path":  "html/settings.html",

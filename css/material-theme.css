@@ -336,3 +336,40 @@
 :root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-eye:hover { background: rgba(var(--accent-rgb), 0.22); color: var(--gc-text); }
 :root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-rgb label span,
 :root[data-ui-theme="material"][data-theme] .mt-cp .mt-cp-label { color: var(--gc-dim); }
+
+/* ---------- Quick Resolution Presets: selected tile (Material You) ----------
+   Bug: rule "5. Cards" above (specificity 0,4,0) forced every .qce-res-tile to --md-surface with
+   box-shadow:none, which beat style.css ".qce-res-tile.is-active" (0,2,0) - so the active tile looked
+   identical to the others. These rules sit at 0,5,0 and give the selected tile: solid --md-primary
+   fill, smaller corner radius (M3 shape morph), filled ratio glyph and a check badge (top-right).
+   Colours come only from --md-* so it follows the wallpaper palette in light and dark. */
+:root[data-ui-theme="material"][data-theme] .qce-res-tile {
+  transition: background-color 0.25s var(--mu-ease), border-radius 0.25s var(--mu-ease),
+              transform 0.15s var(--mu-ease), box-shadow 0.2s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-label { color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-shape { color: var(--md-on-surface-variant); opacity: 0.9; }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-corner { border-color: var(--md-outline); }
+
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active {
+  background: var(--md-primary); color: var(--md-on-primary);
+  border-radius: 16px;
+  box-shadow: 0 0 0 2px rgba(var(--md-primary-rgb), 0.35);
+  filter: none; transform: none;
+}
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active:hover { background: var(--md-primary); filter: brightness(1.08); transform: none; }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active:active { transform: scale(0.96); }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active .qce-res-label { color: var(--md-on-primary); font-weight: 800; }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active .qce-res-shape {
+  color: var(--md-on-primary); opacity: 1; background: var(--md-on-primary);
+}
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active .qce-res-corner { display: none; }
+/* check badge: circle in --md-on-primary with the tick cut out (shows tile fill through it) */
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active::after {
+  content: ""; position: absolute; top: 0.25rem; right: 0.25rem; width: 0.8rem; height: 0.8rem;
+  background: var(--md-on-primary); pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/></svg>") center / contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/></svg>") center / contain no-repeat;
+}
+:root[data-ui-theme="material"][data-theme] .qce-res-tile:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+:root[data-reduce-motion="true"][data-ui-theme="material"][data-theme] .qce-res-tile { transition: none; }

@@ -69,7 +69,8 @@
   document.addEventListener("input", function (e) { if (isFillRange(e.target)) { fillOf(e.target); } }, true);
   document.addEventListener("change", function (e) { if (isFillRange(e.target)) { fillOf(e.target); } }, true);
 
-  function swap() {
+  function swap(byUser) {
+    if (byUser) { root.classList.add("p-anim"); }   /* from now on a tab switch staggers the cards (css/mt-settings-pro.css) */
     var head = document.querySelector(".settings-workspace-header");
     if (!head) { return; }
     head.classList.remove("p-swap");
@@ -85,12 +86,12 @@
     if (title && typeof MutationObserver !== "undefined") {
       var last = title.textContent;
       new MutationObserver(function () {
-        if (title.textContent !== last) { last = title.textContent; swap(); }
+        if (title.textContent !== last) { last = title.textContent; swap(true); }
       }).observe(title, { childList: true, characterData: true, subtree: true });
     } else {
       document.addEventListener("click", function (e) {
         var n = e.target;
-        while (n && n !== document) { if (n.getAttribute && n.getAttribute("data-settings-tab")) { swap(); return; } n = n.parentNode; }
+        while (n && n !== document) { if (n.getAttribute && n.getAttribute("data-settings-tab")) { swap(true); return; } n = n.parentNode; }
       }, true);
     }
     /* values are also set from script (loading saved settings), which fires no event: re-check a few times a second */

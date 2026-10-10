@@ -1467,6 +1467,34 @@
     }
     function queueFill(hex) { live.pending = hex; pump(); }
 
+    // ---- pointer -> element coordinates, immune to CSS zoom ----
+    // ".app { zoom: var(--ui-scale) }" (css/style.css) scales the whole panel. Older Chromium/CEF builds (CEP hosts
+    // before ~Chrome 128) return getBoundingClientRect() already DIVIDED by that zoom while event.clientX/Y stay in real
+    // screen pixels, so with any UI scale other than 100% the picked point drifted away from the mouse (and the drift
+    // grew with distance from the top-left of the panel). Newer builds report both in screen pixels. pointerBox() finds
+    // out which convention this host uses (rect.width vs offsetWidth: ~1 = old, ~zoom = new) and always returns the
+    // rect in the same pixels as clientX/Y. At 100% scale it is a plain getBoundingClientRect().
+    function zoomOf(el) {
+      var z = 1, n, v;
+      for (n = el; n && n.nodeType === 1; n = n.parentElement) {
+        v = parseFloat(window.getComputedStyle(n).zoom);
+        if (v && v > 0 && v !== 1) { z *= v; }
+      }
+      if (z === 1) {
+        v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+        if (v && v > 0) { z = v; }
+      }
+      return z;
+    }
+    function pointerBox(el) {
+      var r = el.getBoundingClientRect(), z = zoomOf(el), k = 1, ratio;
+      if (Math.abs(z - 1) > 0.001 && el.offsetWidth > 0) {
+        ratio = r.width / el.offsetWidth;                       // old engines: ~1   new engines: ~z
+        if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
+      }
+      return { left: r.left * k, top: r.top * k, width: r.width * k, height: r.height * k };
+    }
+
     function create(opts) {
       opts = opts || {};
       var id = "cw-live-" + (++uid);
@@ -1557,7 +1585,7 @@
         el.addEventListener("lostpointercapture", end);
       }
       bindDrag(canvas, function (e) {
-        var r = canvas.getBoundingClientRect();
+        var r = pointerBox(canvas);
         if (!r.width) { return; }
         var x = (e.clientX - r.left) / r.width * N - N / 2, y = (e.clientY - r.top) / r.height * N - N / 2;
         var dist = Math.sqrt(x * x + y * y);
@@ -1566,7 +1594,7 @@
         changed(false);
       });
       bindDrag(valEl, function (e) {
-        var r = valEl.getBoundingClientRect();
+        var r = pointerBox(valEl);
         if (!r.height) { return; }
         st.v = 1 - clamp01((e.clientY - r.top) / r.height);
         changed(false);
@@ -4836,7 +4864,7 @@
       if (!list) { return; }
 
       var optionsHtml = '<option value="">None</option>' +
-        LAYER_LABELS.map(function (l) { return '<option value="' + l.index + '">' + l.name + "</option>"; }).join("");
+        LAYER_LABELS.map(function (l) { return '<option value="' + l.index + '" data-hex="' + l.hex + '">' + l.name + "</option>"; }).join("");
 
       list.innerHTML = TABS["easy-layer"].tools.map(function (tool) {
         var current = EasyLayerLabels.get(tool.id);

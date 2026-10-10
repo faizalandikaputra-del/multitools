@@ -94,7 +94,7 @@ html.is-offline .settings-workspace-kicker { color: #f5b14a; }
 
 .settings-workspace-header.p-swap h1 { animation: p-title-in 360ms var(--p-ease-out) backwards; }
 .settings-workspace-header.p-swap p { animation: p-fade-up 320ms var(--p-ease-out) 70ms backwards; }
-@keyframes p-title-in { from { letter-spacing: -0.005em; opacity: 0; transform: translateY(10px); } to { letter-spacing: -0.025em; opacity: 1; transform: none; } }
+@keyframes p-title-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }   /* no letter-spacing here: it re-lays out the text on every frame */
 @keyframes p-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* ---------- body, sections, groups ---------- */
@@ -104,13 +104,15 @@ html.is-offline .settings-workspace-kicker { color: #f5b14a; }
 .settings-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border: 2px solid transparent; background-clip: padding-box; border-radius: 999px; }
 .settings-body::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.26); background-clip: padding-box; }
 
-.settings-section.is-active .settings-group { animation: p-rise 340ms var(--p-ease-out) backwards; }
-.settings-section.is-active .settings-group:nth-child(1) { animation-delay: 30ms; }
-.settings-section.is-active .settings-group:nth-child(2) { animation-delay: 80ms; }
-.settings-section.is-active .settings-group:nth-child(3) { animation-delay: 130ms; }
-.settings-section.is-active .settings-group:nth-child(4) { animation-delay: 180ms; }
-.settings-section.is-active .settings-group:nth-child(5) { animation-delay: 230ms; }
-.settings-section.is-active .settings-group:nth-child(n+6) { animation-delay: 280ms; }
+/* The card stagger answers a tab click, so it only runs once the person has switched a tab (js/mt-settings-polish.js adds html.p-anim).
+   On the first open every card is simply there: with a delay of up to 280 ms the window looked half empty while it loaded. */
+html.p-anim .settings-section.is-active .settings-group { animation: p-rise 340ms var(--p-ease-out) backwards; }
+html.p-anim .settings-section.is-active .settings-group:nth-child(1) { animation-delay: 30ms; }
+html.p-anim .settings-section.is-active .settings-group:nth-child(2) { animation-delay: 80ms; }
+html.p-anim .settings-section.is-active .settings-group:nth-child(3) { animation-delay: 130ms; }
+html.p-anim .settings-section.is-active .settings-group:nth-child(4) { animation-delay: 180ms; }
+html.p-anim .settings-section.is-active .settings-group:nth-child(5) { animation-delay: 230ms; }
+html.p-anim .settings-section.is-active .settings-group:nth-child(n+6) { animation-delay: 280ms; }
 @keyframes p-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 .settings-group { background: none; border: 0; border-radius: 0; box-shadow: none; margin: 0; padding: 22px 0 8px; }
@@ -235,6 +237,6 @@ html.is-offline .settings-workspace-kicker { color: #f5b14a; }
 
 /* ---------- reduced motion / animations off ---------- */
 /* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
-html[data-reduce-motion="true"] .settings-section.is-active .settings-group,
+html[data-reduce-motion="true"] html.p-anim .settings-section.is-active .settings-group,
 html[data-reduce-motion="true"] .settings-workspace-header.p-swap h1,
 html[data-reduce-motion="true"] .settings-workspace-header.p-swap p { animation: none !important; }

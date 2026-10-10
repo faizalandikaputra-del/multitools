@@ -55,7 +55,6 @@
       <DispatchInfo>
         <Resources>
           <MainPath>./html/settings.html</MainPath>
-          <ScriptPath>./jsx/host.jsx</ScriptPath>
           <CEFCommandLine>
             <Parameter>--allow-file-access-from-files</Parameter>
             <Parameter>--enable-nodejs</Parameter>
@@ -80,7 +79,6 @@
       <DispatchInfo>
         <Resources>
           <MainPath>./neucurve/settings.html?ext=settings</MainPath>
-          <ScriptPath>./jsx/host.jsx</ScriptPath>
           <CEFCommandLine>
             <Parameter>--allow-file-access-from-files</Parameter>
             <Parameter>--enable-nodejs</Parameter>

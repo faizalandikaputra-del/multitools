@@ -73,6 +73,7 @@
   body.addEventListener("change", function (e) {
     var el = e.target, t = el.type, k = keyOf(el);
     if (!k) { return; }
+    if (el.tagName === "SELECT" && el.hasAttribute("data-label-select")) { paintLabelSwatch(el); }   // instant; the panel confirms later
     if (el.tagName === "INPUT" && t === "checkbox") { bus.send("act", { t: "check", k: k, c: el.checked }); }
     else if (el.tagName === "SELECT" || el.tagName === "INPUT" || el.tagName === "TEXTAREA") { sendValue(el, true); }
   });
@@ -87,6 +88,40 @@
   function playPreview(card) { card.classList.remove("is-play"); void card.offsetWidth; card.classList.add("is-play"); setTimeout(function () { card.classList.remove("is-play"); }, 1200); }
   var animCards = document.querySelectorAll(".mtx-anim-card");
   for (var a = 0; a < animCards.length; a++) { animCards[a].addEventListener("mouseenter", function (e) { playPreview(e.currentTarget); }); }
+
+  // ---------- Easy Layer label list ----------
+  // Bug (fixed): the whole list used to be skipped while one of its <select>s had focus - and a select keeps focus right
+  // after you pick an option - so the colour dot next to the tool name stayed on the OLD colour until you clicked
+  // somewhere else (it looked like a long delay). Now the rows are patched in place (dot colour only), which never
+  // touches the focused select; the list is rebuilt wholesale only when its rows really changed and nothing is focused.
+  var pendTool = {};   // tool id -> time of the last local pick; a state sent BEFORE the panel saw the pick must not repaint that dot
+  function syncLabelList(list, html) {
+    var tmp = document.createElement("div"), nr, or_, i, same = true, a, b, ae = document.activeElement;
+    tmp.innerHTML = html;
+    nr = tmp.querySelectorAll(".label-assign-row"); or_ = list.querySelectorAll(".label-assign-row");
+    if (nr.length !== or_.length) { same = false; }
+    else { for (i = 0; i < nr.length; i++) { if (nr[i].getAttribute("data-tool-id") !== or_[i].getAttribute("data-tool-id")) { same = false; break; } } }
+    if (same && nr.length) {
+      for (i = 0; i < nr.length; i++) {
+        a = nr[i].querySelector(".label-assign-swatch"); b = or_[i].querySelector(".label-assign-swatch");
+        if (Date.now() - (pendTool[nr[i].getAttribute("data-tool-id")] || 0) < 700) { continue; }
+        if (a && b && a.getAttribute("style") !== b.getAttribute("style")) { b.setAttribute("style", a.getAttribute("style") || ""); }
+      }
+      lastList = html;
+      return;
+    }
+    if (ae && ae.tagName === "SELECT" && list.contains(ae)) { return; }      // structure changed while a select is open: retry on the next state
+    list.innerHTML = html; lastList = html;
+  }
+  function paintLabelSwatch(sel) {
+    var row = sel.parentNode, sw, opt, hex = "transparent";
+    while (row && row !== body && !(row.classList && row.classList.contains("label-assign-row"))) { row = row.parentNode; }
+    sw = row && row.querySelector ? row.querySelector(".label-assign-swatch") : null;
+    if (row && row.getAttribute) { pendTool[row.getAttribute("data-tool-id")] = Date.now(); }
+    opt = sel.options && sel.options[sel.selectedIndex];
+    if (opt && opt.getAttribute("data-hex")) { hex = opt.getAttribute("data-hex"); }
+    if (sw) { sw.style.background = hex; }
+  }
 
   // ---------- apply the panel's state ----------
   var lastList = null;
@@ -104,10 +139,7 @@
       if (sw[key].scheme) { target.setAttribute("data-gp-scheme", sw[key].scheme); } else { target.removeAttribute("data-gp-scheme"); }
     }
     var list = document.getElementById("label-assign-list");
-    if (list && typeof s.list === "string" && s.list !== lastList && s.list.length) {
-      var openSel = document.activeElement && document.activeElement.tagName === "SELECT" && list.contains(document.activeElement);
-      if (!openSel) { list.innerHTML = s.list; lastList = s.list; }
-    }
+    if (list && typeof s.list === "string" && s.list !== lastList && s.list.length) { syncLabelList(list, s.list); }
     var k = s.k || {};
     for (key in k) {
       if (!k.hasOwnProperty(key)) { continue; }

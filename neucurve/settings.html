@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NeuCurve Settings</title>
   <script>if (typeof globalThis === 'undefined') { window.globalThis = window; }</script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Inter from Google Fonts: loaded WITHOUT blocking the first paint (a render-blocking stylesheet kept the window blank
+       until the request finished / timed out when offline). Falls back to Segoe UI until it arrives. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="./nc-settings.css?v=4">
   <link rel="stylesheet" href="./nc-settings-extra.css?v=3">
   <link rel="stylesheet" href="./nc-bg.css?v=14">
-  <link rel="stylesheet" href="../css/mt-settings-pro.css?v=2">
+  <link rel="stylesheet" href="../css/mt-settings-pro.css?v=3">
   <link rel="stylesheet" href="./nc-settings-pro.css?v=2">
   <link rel="stylesheet" href="./nc-settings-fit.css?v=2">
   <link rel="stylesheet" href="../css/mt-colorpicker.css?v=1">
@@ -226,7 +228,7 @@
 </div>
 <script src="../js/mt-colorpicker.js?v=1"></script>
 <script src="./nc-bg.js?v=15"></script>
-<script src="./nc-settings.js?v=12"></script>
-<script src="../js/mt-settings-polish.js?v=3"></script>
+<script src="./nc-settings.js?v=14"></script>
+<script src="../js/mt-settings-polish.js?v=4"></script>
 </body>
 </html>

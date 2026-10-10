@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.27",
+    "latest_version":  "1.8.28",
     "changelog":  "- Fix Animation\r\n- Adding Note \u0026 To-Do\r\n- Fix Bug",
     "files":  [
                   {
@@ -92,7 +92,7 @@
                   },
                   {
                       "path":  "css/mt-settings-pro.css",
-                      "sha256":  "45c5272246a415ea11b9472c91f66fa537abf88d5f7474aebe7c76a8e7d1ea62"
+                      "sha256":  "a6c4069e84a87024290da60b9fef61e08deb2f93980846464f2fff03adc55d69"
                   },
                   {
                       "path":  "css/mt-settings-window.css",
@@ -156,7 +156,7 @@
                   },
                   {
                       "path":  "CSXS/manifest.xml",
-                      "sha256":  "1a2601f159af485a0a3064a888f8d6c69acffd1041e75a25c7bc4523b6918545"
+                      "sha256":  "13ec7cf4f2bcf25419a872d86a029e0edeb11a2c41abd38a5ed0fb915bdd7833"
                   },
                   {
                       "path":  "desktop.ini",
@@ -168,11 +168,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "b0462301f0688ba11506f0136866fbc4ea79538726e93bd1965613362346a30f"
+                      "sha256":  "9f758cdd7b653ca7250cb0349eb4746088250387476725652450ca33a7d5f52a"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "38eddb53030b6c0428768f0e472cdfa59830a728f9ac9328a37d9223b3aa754a"
+                      "sha256":  "a74c419b6096f2dcd2f55329c14412919572eba1ed5c9db60eeb1ccd3e895f50"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -188,7 +188,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "f97624d049843a1e5991c54a9f8e296f077240a44d22a2a7a0bcd01a03fd6116"
+                      "sha256":  "3aa058fcc8cd6218bb20039a269867eeb7c1966b42989b9fc38df53ffd9f8658"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -232,19 +232,19 @@
                   },
                   {
                       "path":  "js/mt-settings-bus.js",
-                      "sha256":  "97e2a26eab7256a775eafaccc0b0d76ea328e332c2aa0b4a70dde14958a2be47"
+                      "sha256":  "1c9d2e7aa7884fb7c259918ba917e7d31444c5e0ecdf7bf73c7c5cb0401f8edb"
                   },
                   {
                       "path":  "js/mt-settings-polish.js",
-                      "sha256":  "934e767f64b673c18790517f82575b1da1df41166c692a25d1efa8ddade03052"
+                      "sha256":  "6c263571c4c0899774fba29fa6796a929b19eb170990308054009bf9cbffab7b"
                   },
                   {
                       "path":  "js/mt-settings-remote.js",
-                      "sha256":  "fac1060cbec7e011134eda3a07416c5924e09d3d4e987318eeea982d971c27cf"
+                      "sha256":  "7a0ac927d3e152d71f8b5a039e2e7a639ee24d3ba8727620b409b66be75e320a"
                   },
                   {
                       "path":  "js/mt-settings-window.js",
-                      "sha256":  "72a79c40029aa81615956f905e230049d1023002dc20aac62b3be38e3cd325c9"
+                      "sha256":  "c2dc24a1c0e52bb0f45a0e63e4f59a0513f8ef72e3403111f12d5ab14b3c6b40"
                   },
                   {
                       "path":  "js/mt-smooth.js",
@@ -500,7 +500,7 @@
                   },
                   {
                       "path":  "neucurve/nc-settings.js",
-                      "sha256":  "7ee66252be725446e0e73fb0c7d73838b35ee1aca0317723bf792a53f742dc68"
+                      "sha256":  "5dc4189fe239cf3ee0dd89dbc8346a2a9041f2c1f2f6ec75d6d837463763eeee"
                   },
                   {
                       "path":  "neucurve/nc-settings-controls.css",
@@ -544,11 +544,11 @@
                   },
                   {
                       "path":  "neucurve/settings.html",
-                      "sha256":  "f702e6aca7ea273409addfa15fe4fde2629b0f2e6137bcf27bf97391f519b43f"
+                      "sha256":  "8b2b3562c06714ba8d02cf85a67ec3a780ba5c6e6ffbbb21bdc93ab43b8081fc"
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "ac2010a1a82c2ea9bac0a723c855132c8170ee17251ea3a93da2fc748f086a65"
+                      "sha256":  "e31b98d4e587ce9fb5554d16de243a73b7b301cf6673361c2314b5125d0f394f"
                   }
               ]
 }

@@ -40,7 +40,7 @@
   function write(k, v) {
     try { if (v === "" && /^g[WH][pl]$/.test(k)) { localStorage.removeItem("neucurve_" + k); } else { localStorage.setItem("neucurve_" + k, String(v)); } } catch (e) { }
   }
-  function broadcast(k, v) {
+  function broadcastNow(k, v) {
     try {
       var CE = window.CSEvent || (typeof CSEvent !== "undefined" ? CSEvent : null);
       if (!CE || !window.CSInterface) { return; }
@@ -49,6 +49,19 @@
       new window.CSInterface().dispatchEvent(ev);
     } catch (e) { }
   }
+  /* Dragging a colour / slider fires "input" on every mouse move. localStorage is written immediately (other windows get a
+     "storage" event at once), but the CEP event - which every NeuCurve listener (graph, ball, background, extras ...) parses
+     and re-applies - is coalesced: latest value per key, at most one burst every 40 ms, always flushed at the end / on close. */
+  var bQueue = {}, bTimer = 0;
+  function flushBroadcast() {
+    var q = bQueue, key; bQueue = {}; if (bTimer) { clearTimeout(bTimer); bTimer = 0; }
+    for (key in q) { if (q.hasOwnProperty(key)) { broadcastNow(key, q[key]); } }
+  }
+  function broadcast(k, v) {
+    bQueue[k] = v;
+    if (!bTimer) { bTimer = setTimeout(flushBroadcast, 40); }
+  }
+  window.addEventListener("beforeunload", flushBroadcast);
   function set(k, v) { write(k, v); broadcast(k, v); }
   function readBool(k) { return read(k) === "true" || read(k) === true; }
 
@@ -142,6 +155,7 @@
       var h = Math.round(Math.max(420, Math.min(maxH, chrome + content)));
       if (Math.abs(h - lastFitH) < 4) { return; }
       lastFitH = h;
+      if (Math.abs(h - window.innerHeight) < 4 && Math.abs(window.innerWidth - 585) < 3) { return; }   // already that size: a native resize relayouts the whole window for nothing
       new window.CSInterface().resizeContent(585, h);
     } catch (e) { }
   }
@@ -576,9 +590,13 @@
      manifest (320 x 580 or the previous fixed 585 x 625) cannot win; the height is the last fitted one once there is one. */
   function resizeWindow(tries) {
     var w = 585, h = lastFitH || 625;
-    try { if (window.__adobe_cep__ && window.__adobe_cep__.resizeContent) { window.__adobe_cep__.resizeContent(w, h); } } catch (e) { }
-    try { if (window.CSInterface) { var cs = new window.CSInterface(); if (cs.resizeContent) { cs.resizeContent(w, h); } } } catch (e) { }
-    if (tries > 0) { setTimeout(function () { resizeWindow(tries - 1); }, 250); } else { scheduleFit(); }
+    /* Was: resizeContent called 3 times (0 / 250 / 500 ms) plus the fit = 4 native resizes while the window was still opening.
+       Now it resizes only when the window really is not that size (an old manifest), and stops as soon as it is. */
+    var off = Math.abs(window.innerWidth - w) > 2 || Math.abs(window.innerHeight - h) > 2;
+    if (off) {
+      try { if (window.__adobe_cep__ && window.__adobe_cep__.resizeContent) { window.__adobe_cep__.resizeContent(w, h); } else if (window.CSInterface) { var cs = new window.CSInterface(); if (cs.resizeContent) { cs.resizeContent(w, h); } } } catch (e) { }
+    }
+    if (off && tries > 0) { setTimeout(function () { resizeWindow(tries - 1); }, 250); } else { scheduleFit(); }
   }
   resizeWindow(2);
 

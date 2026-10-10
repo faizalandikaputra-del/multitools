@@ -15,6 +15,9 @@
   var VARS = ["--accent", "--accent-rgb", "--accent-strong", "--accent-soft", "--on-accent", "--gp-rgb", "--gp-bg", "--gp-accent", "--mtx-k",
     "--md-bg", "--md-bg-rgb", "--md-primary", "--md-primary-rgb", "--md-on-primary", "--md-secondary-container", "--md-on-secondary-container",
     "--md-surface", "--md-on-surface", "--md-on-surface-variant", "--md-outline-rgb", "--md-primary-container"];
+  // Controls that html/settings.html marks data-mirror-hidden: the only ones whose CSS display the window mirrors.
+  // getComputedStyle for every control (about 200, every 350 ms while the window is open) made the panel stutter.
+  var HIDE_CHECK = { "mu-palette-field": 1, "mu-mode-field": 1, "mt-update-install": 1 };
   var ROOT_ATTRS = ["data-ui-theme", "data-theme", "data-md-scheme", "data-reduce-motion", "data-anim-ease"];
 
   function keyOf(el) {
@@ -57,7 +60,7 @@
       else { o.t = (el.textContent || "").replace(/\s+/g, " ").replace(/^ | $/g, ""); }
       if (el.disabled) { o.d = 1; }
       var ar = el.getAttribute("aria-checked"); if (ar !== null) { o.a = ar; }
-      var hid = el.hidden; if (!hid) { try { hid = getComputedStyle(el).display === "none"; } catch (e) { } }
+      var hid = el.hidden; if (!hid && HIDE_CHECK[el.id]) { try { hid = getComputedStyle(el).display === "none"; } catch (e) { } }   // computed style only where the window reads it (data-mirror-hidden)
       if (hid) { o.h = 1; }
       k[key] = o;
     }
@@ -134,6 +137,7 @@
       fire(el, "input");
       if (m.f || el.tagName === "SELECT") { fire(el, "change"); }
     }
+    try { push(false); } catch (e) { }       // answer right away (was: only after 40 / 300 ms, which a busy or throttled panel stretched)
     soon();
   });
 })();

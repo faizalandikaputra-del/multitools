@@ -1349,3 +1349,21 @@ Svelte's hidden resize frame missed a change and nothing else fired, the stale p
   a 1px divider drag does. 3 tries, then a 2 s pause before it may try again (no loop).
 Tested in headless Chromium: 15/15 size x layout combos fit, 5 aggressive resize-timing scenarios fit, injected too-big / too-small SVG
 heals, 0 nudges in 6 s of idle. The exact host event that leaves the plot stale could not be reproduced outside After Effects.
+
+fix37: lag when opening the Multi Tool Settings window and the NeuCurve Settings window.
+Found by reading the code (not measured inside After Effects, which is not available here). Causes, biggest first:
+1) CSXS/manifest.xml: both Settings windows loaded jsx/host.jsx (357 KB) into their own ExtendScript engine on every open, on After
+   Effects' main thread. They never call ExtendScript, so <ScriptPath> is removed from com.ogatt.multitool.settings and
+   com.ogatt.multitool.curve.settings. The panel and the Graph Editor keep it. After Effects must be restarted once (CEP caches the manifest).
+2) neucurve/settings.html: the Google Fonts <link> blocked the first paint (blank window until the request finished or timed out offline).
+   It now loads with media="print" onload="this.media='all'": same Inter font when online, nothing blocked.
+3) neucurve/nc-settings.js: the window resized itself 4 times while opening (resizeContent at 0 / 250 / 500 ms + the fit). It now resizes
+   only when its size really differs from the wanted size (fitWindow and resizeWindow both check window.innerWidth / innerHeight).
+4) js/mt-settings-bus.js v3: the 250 ms mailbox poll parsed every stored message on every tick (a background image "bgsrc" is up to
+   400 KB of JSON). It now remembers the text it read and parses only when it changed. Delivery is identical.
+5) js/mt-settings-remote.js v3 (panel side): while the window is open the panel read getComputedStyle() for about 200 controls every
+   350 ms. Only the 3 controls the window mirrors as hidden/shown (data-mirror-hidden) are checked now.
+6) css/mt-settings-pro.css v3 + js/mt-settings-polish.js v4: the card stagger (up to 280 ms delay + 340 ms) ran on the first open, so the
+   window looked half empty while loading. It now runs only after a tab was clicked (html.p-anim). The title animation no longer animates
+   letter-spacing (re-laid out the text each frame); opacity + transform only.
+Not changed: CEFCommandLine flags (changing them could change how the windows share localStorage with the panel), the AE 2021 shim.

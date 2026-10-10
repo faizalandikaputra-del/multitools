@@ -11,7 +11,7 @@
   var cep = w.__adobe_cep__ || null;
   var host = "", extId = "", bc = null, PREFIX = "com.multitool.settings.", LS = "mtbus.";
   var uid = Math.random().toString(36).slice(2, 8), seq = 0;
-  var handlers = {}, last = {}, started = 0, pollTimer = 0;
+  var handlers = {}, last = {}, started = 0, pollTimer = 0, lastRaw = {};   // lastRaw: mailbox text seen at the last read, so the 250 ms poll parses only when it changed
   var BASELINE = { act: 1, hello: 1, bgreq: 1 };          // never replay old requests left over from an earlier session
   var KEEP_ONE = { state: 1, bgsrc: 1, bgview: 1 };       // big / "latest wins" messages
   if (cep) {
@@ -34,6 +34,8 @@
   function readLs(type, first) {
     var raw; try { raw = w.localStorage.getItem(LS + type); } catch (e) { return; }
     if (!raw) { return; }
+    if (!first && lastRaw[type] === raw) { return; }          // same text as last time: nothing new (a bgsrc can be 400 KB)
+    lastRaw[type] = raw;
     var arr; try { arr = JSON.parse(raw); } catch (e2) { return; }
     if (!arr || !arr.length) { return; }
     var i, env;

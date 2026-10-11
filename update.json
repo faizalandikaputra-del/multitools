@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.39",
-    "changelog":  "- Update 1.8.39",
+    "latest_version":  "1.8.40",
+    "changelog":  "- Update 1.8.40",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -60,7 +60,7 @@
                   },
                   {
                       "path":  "css/mt-idle-adjust.css",
-                      "sha256":  "b158305851cd33327026177d088035fa0bf76000400217427d4a9ba4dfff322c"
+                      "sha256":  "7538303be9eb037f4a566c3b44c772f6d2d3841e30a7c48b3fd30129486a165b"
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
@@ -176,11 +176,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "7294fe6e35a3d5ab08970c509e83467d2841e39f9b827ec50d076f626d329c55"
+                      "sha256":  "6f8ce7d2438634501b1c8aabaf2d8ef4e6e6f77a9f84ba30592e5f58293028dd"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "a74c419b6096f2dcd2f55329c14412919572eba1ed5c9db60eeb1ccd3e895f50"
+                      "sha256":  "375cc5b53e0e6926525d0beca7fe4d17671fd8f6f6b5be8be470c8d58ef4549b"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -196,7 +196,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "5a4794cb858f4204ddd3d158bb81e572c7bd14e28dd894b58068430b14c3cbc9"
+                      "sha256":  "823f0c641c986724ce0da2ad81edbc2034fce26039ad6153c5ab3ec1eca4bed4"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -220,11 +220,11 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "416341dbb2fb412e79ce177935b3e8d661c31f9ff4e053d69d3bfdca462ce2ca"
+                      "sha256":  "64ae3d5ae8f2f743240f9ca9379be93eae80d3db4d3ae7a73d8dc9d423ca8195"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
-                      "sha256":  "8fd728d8219e8e6040ff21e0f30f69282d832260b31c315bbc3ed345492073be"
+                      "sha256":  "ce3b92099e0b7b84e1fb448010b94d9344097eb66cf4bbaa2ee3e567cf7cf826"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -568,7 +568,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "26e2ff491b49c5b895914ef0df4ec5a000a5e01dc6a1473ff5c2e0f2418d65a1"
+                      "sha256":  "691828d10fb93c5aee05f4f7f2b1aade16dc8c1b0295e4bce0ad434347e4ea20"
                   }
               ]
 }

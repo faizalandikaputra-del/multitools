@@ -6059,7 +6059,7 @@
       this.enabled = Store.get(this.enabledKey) === "1";
       this.seconds = this.clamp(Store.get(this.timeoutKey));
       this.position = this.clampPosition(Store.get(this.positionKey));
-      this.scale = this.clampScale(Store.get(this.scaleKey) || this.DEFAULT_SCALE);
+      this.scale = this.DEFAULT_SCALE; Store.remove(this.scaleKey);   // the Clock Scale slider is gone: size is set with the Adjust button (js/mt-idle-adjust.js)
       this.exitMode = this.clampExit(Store.get(this.exitKey));
       this.lastActive = Date.now();
       this.syncControls();

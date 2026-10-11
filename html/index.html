@@ -67,7 +67,7 @@
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
   <link rel="stylesheet" href="../css/mt-idle-focus.css?v=14">
-  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=7">
+  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=8">
   <!-- Idle enter / exit motion + the "squashed widgets on exit" fix (loads after mt-idle-adjust.css) -->
   <link rel="stylesheet" href="../css/mt-idle-motion.css?v=1">
   <!-- Idle icon motion: swap / hover / ambient (loads after mt-idle-motion.css) -->
@@ -191,10 +191,13 @@
   <!-- Idle Screensaver clock: sits above the background layers, only visible in Idle Mode (body.is-idle).
        Style this block freely in css/style.css > "Idle Screensaver". -->
   <div id="idle-clock" class="idle-clock" aria-hidden="true">
-    <div class="idle-date" id="idle-date"></div>
-    <div class="idle-time" id="idle-time"></div>
-    <div class="idle-session" id="idle-session" aria-hidden="true"></div>
-    <div class="idle-message" id="idle-message-el" aria-hidden="true"></div>
+    <!-- The clock block is one widget (#idle-hero): move / resize / hide it with the Adjust button like the cards (js/mt-idle-adjust.js). -->
+    <div class="idle-hero" id="idle-hero">
+      <div class="idle-date" id="idle-date"></div>
+      <div class="idle-time" id="idle-time"></div>
+      <div class="idle-session" id="idle-session" aria-hidden="true"></div>
+      <div class="idle-message" id="idle-message-el" aria-hidden="true"></div>
+    </div>
     <!-- Status chips side by side: time in After Effects (live) + the countdown timer from Settings (js/mt-idle-focus.js) -->
     <div class="idle-chips">
       <div class="idle-elapsed" id="idle-elapsed" hidden>
@@ -496,16 +499,6 @@
             <option value="bottom-right">Bottom Right</option>
             <option value="center">Center</option>
           </select>
-        </div>
-        <div class="bg-editor-row idle-scale-row" id="idle-scale-row">
-          <label for="idle-scale">Clock Scale</label>
-          <input type="range" id="idle-scale" min="60" max="160" step="1" value="100" aria-label="Idle clock text scale">
-          <output class="field-row-value" id="idle-scale-val" for="idle-scale">100%</output>
-        </div>
-        <div class="bg-editor-row idle-scale-row" id="idle-card-scale-row">
-          <label for="idle-card-scale">Card Scale</label>
-          <input type="range" id="idle-card-scale" min="60" max="140" step="1" value="100" aria-label="Idle screen card scale">
-          <output class="field-row-value" id="idle-card-scale-val" for="idle-card-scale">100%</output>
         </div>
         <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Slide or tap the bar at the bottom to bring it back (Esc or a click on an empty spot also works). With Mouse move, any cursor movement leaves at once, so notes and tasks cannot be edited on the idle screen.</p>
       </div>

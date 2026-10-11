@@ -2,7 +2,10 @@
    Idle screen: resize every widget, show / hide each one without opening Settings, all from the "Adjust widgets"
    button at the bottom right of the idle screen (#ia-btn).
 
-   Widgets: Time in After Effects, Timer, Stopwatch, Alarms, Notes and to-do.
+   Widgets: Clock (date, time, session, message), Time in After Effects, Timer, Stopwatch, Alarms, Notes and to-do.
+   - Clock: moves like a card; its grip changes the TEXT SCALE (50 - 220 %, grows away from the edge it is anchored to, arrow keys 5 %,
+     double-click the grip = 100 %). Replaces the old Settings > Clock Scale / Card Scale sliders. Layout key: "clock":{"s":1.3,"x":..,"y":..}.
+     The eye hides the clock (key mtx.showClock).
    - Move: while adjusting, drag any box anywhere (it follows the pointer with a little easing, lifts, snaps softly to the
      other boxes and back to its own place, with guide lines). It is stored as an offset from its grid place (relative left / top,
      px), so the grid and every transform stay untouched. Double-click a box = back to its place; arrow keys nudge a focused
@@ -29,11 +32,12 @@
    Load AFTER js/mt-idle-focus.js. ES5, Chromium-74 safe. */
 (function () {
   "use strict";
-  var P = "mtx.", LAYOUT_KEY = P + "wLayout", TIMER_KEY = P + "showTimer";
-  var COLS = 12, MIN_SPAN = 4, MAX_H = 1200, S_MIN = 0.68, S_MAX = 1.3, MAX_OFF = 4000, SNAP = 8, KEEP = 48;
+  var P = "mtx.", LAYOUT_KEY = P + "wLayout", TIMER_KEY = P + "showTimer", CLOCK_KEY = P + "showClock";
+  var SC_MIN = 0.5, SC_MAX = 2.2, COLS = 12, MIN_SPAN = 4, MAX_H = 1200, S_MIN = 0.68, S_MAX = 1.3, MAX_OFF = 4000, SNAP = 8, KEEP = 48;
   var WIDGETS = [
+    { id: "clock", el: "idle-hero", clock: true, key: CLOCK_KEY, name: "Clock", noun: "clock" },
     { id: "elapsed", el: "idle-elapsed", span: 6, name: "Time in After Effects", noun: "time in After Effects", box: "idle-show-elapsed" },
-    { id: "timer", el: "idle-timer", span: 6, name: "Timer", noun: "timer", own: true },
+    { id: "timer", el: "idle-timer", span: 6, name: "Timer", noun: "timer", own: true, key: TIMER_KEY },
     { id: "sw", el: "idle-sw", span: 6, name: "Stopwatch", noun: "stopwatch", box: "idle-show-sw" },
     { id: "al", el: "idle-alarms", span: 6, name: "Alarms", noun: "alarms", box: "idle-show-al" },
     { id: "tabs", el: "idle-tabs", span: 12, name: "Notes and to-do", noun: "notes and to-do", box: "idle-show-tabs" }
@@ -62,12 +66,14 @@
     WIDGETS.forEach(function (w) {
       var s = o[w.id]; if (!s || typeof s !== "object") { return; }
       var sp = parseInt(s.span, 10), hh = parseFloat(s.h), out = {};      // (an older px "w" is ignored on purpose)
-      if (isFinite(sp) && sp >= MIN_SPAN && sp <= COLS && sp !== w.span) { out.span = sp; }
-      if (isFinite(hh) && hh > 0) { out.h = Math.min(MAX_H, Math.round(hh)); }
+      if (!w.clock && isFinite(sp) && sp >= MIN_SPAN && sp <= COLS && sp !== w.span) { out.span = sp; }
+      if (!w.clock && isFinite(hh) && hh > 0) { out.h = Math.min(MAX_H, Math.round(hh)); }
       var xx = parseFloat(s.x), yy = parseFloat(s.y);
       if (isFinite(xx) && Math.abs(xx) >= 1 && Math.abs(xx) <= MAX_OFF) { out.x = Math.round(xx); }
       if (isFinite(yy) && Math.abs(yy) >= 1 && Math.abs(yy) <= MAX_OFF) { out.y = Math.round(yy); }
-      if (out.span || out.h || out.x || out.y) { layout[w.id] = out; }
+      var sc = parseFloat(s.s);                                              // the clock: a scale (0.5 - 2.2) instead of a column span
+      if (w.clock && isFinite(sc) && sc >= SC_MIN && sc <= SC_MAX && Math.abs(sc - 1) >= 0.01) { out.s = Math.round(sc * 100) / 100; }
+      if (out.span || out.h || out.x || out.y || out.s) { layout[w.id] = out; }
     });
   }
   function saveLayout() {
@@ -111,6 +117,12 @@
   function spanOf(w) { var s = layout[w.id]; return s && s.span ? s.span : w.span; }
   function applySize(w) {
     var el = $(w.el), s = layout[w.id]; if (!el) { return; }
+    if (w.clock) {                                                         // the clock block: text scale (--wa-s) + offset, no grid span
+      if (s && s.s) { el.style.setProperty("--wa-s", String(s.s)); el.classList.add("wa-scaled"); }
+      else { el.style.removeProperty("--wa-s"); el.classList.remove("wa-scaled"); }
+      el.style.left = s && s.x ? s.x + "px" : ""; el.style.top = s && s.y ? s.y + "px" : "";
+      return;
+    }
     if (s && s.span) {
       el.style.gridColumn = "span " + s.span;
       el.style.setProperty("--wa-s", String(Math.round(clamp(s.span / w.span, S_MIN, S_MAX) * 100) / 100));
@@ -139,7 +151,15 @@
     span = clamp(span, MIN_SPAN, COLS);
     if (span !== w.span) { s.span = span; } else { delete s.span; }
     if (nh > (nat || 0) + 4) { s.h = Math.round(clamp(nh, 0, MAX_H)); } else { delete s.h; }
-    if (!s.span && !s.h && !s.x && !s.y) { delete layout[w.id]; }
+    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
+    applySize(w);
+  }
+  function scaleOf(w) { var s = layout[w.id]; return s && s.s ? s.s : 1; }
+  function setScale(w, v) {                    // clock only; within 3 % of 100 % it snaps to "default"
+    var s = layout[w.id] || (layout[w.id] = {});
+    v = clamp(Math.round(v * 100) / 100, SC_MIN, SC_MAX);
+    if (Math.abs(v - 1) < 0.03) { delete s.s; } else { s.s = v; }
+    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
     applySize(w);
   }
   function naturalHeight(el) {
@@ -147,13 +167,20 @@
   }
   function readout(w) {
     var el = $(w.el), name = el && el.querySelector(".wa-name"); if (!el || !name) { return; }
-    name.textContent = drag && drag.w === w ? spanOf(w) + "/" + COLS + " \u00d7 " + Math.round(el.offsetHeight) : w.name;
+    name.textContent = drag && drag.w === w ? (w.clock ? Math.round(scaleOf(w) * 100) + "%" : spanOf(w) + "/" + COLS + " \u00d7 " + Math.round(el.offsetHeight)) : w.name;
   }
 
   function onDown(w, e) {
     if (e.button !== undefined && e.button !== 0) { return; }
     var el = $(w.el), grid = el && el.parentNode; if (!el || !grid) { return; }
     e.preventDefault(); e.stopPropagation();
+    if (w.clock) {                                       // clock: dragging the grip changes the scale; it grows away from its anchored edge
+      var pos = (($("idle-clock") && $("idle-clock").getAttribute("data-position")) || ""), r0 = el.getBoundingClientRect();
+      drag = { w: w, clock: true, id: e.pointerId, x: e.clientX, y: e.clientY, s0: scaleOf(w), w0: Math.max(40, r0.width), dir: /right$/.test(pos) ? -1 : (pos === "center" ? 2 : 1), grip: e.currentTarget };
+      el.classList.add("wa-drag");
+      try { drag.grip.setPointerCapture(e.pointerId); } catch (e3) { }
+      readout(w); return;
+    }
     var k = pxRatio(grid), cs = null, gap = 0;
     try { cs = window.getComputedStyle(grid); gap = (parseFloat(cs.columnGap) || parseFloat(cs.gridColumnGap) || 0) * k; } catch (e0) { gap = 0; }
     drag = {
@@ -167,6 +194,7 @@
   }
   function onMove(e) {
     if (!drag || (drag.id !== undefined && e.pointerId !== drag.id)) { return; }
+    if (drag.clock) { setScale(drag.w, drag.s0 * (drag.w0 + drag.dir * (e.clientX - drag.x)) / drag.w0); readout(drag.w); return; }
     var cols = Math.round((e.clientX - drag.x) / drag.pitch), dy = (e.clientY - drag.y) / drag.k;
     var el = $(drag.w.el);
     // the height is only touched when the pointer really moved up / down; a width-only drag keeps the stored height (or "natural")
@@ -184,6 +212,12 @@
   }
   function onKey(w, e) {
     var key = e.key, step = e.shiftKey ? 40 : 10, dc = 0, dy = 0;
+    if (w.clock) {                                       // clock: arrows change the scale (5 %, Shift 10 %)
+      var d = 0, q = e.shiftKey ? 0.1 : 0.05;
+      if (key === "ArrowRight" || key === "ArrowUp") { d = q; } else if (key === "ArrowLeft" || key === "ArrowDown") { d = -q; } else { return; }
+      e.preventDefault(); e.stopPropagation();
+      flip(function () { setScale(w, scaleOf(w) + d); resolveAll(w); }); saveLayout(); return;
+    }
     if (key === "ArrowLeft") { dc = -1; } else if (key === "ArrowRight") { dc = 1; }
     else if (key === "ArrowUp") { dy = -step; } else if (key === "ArrowDown") { dy = step; } else { return; }
     var el = $(w.el); if (!el) { return; }
@@ -193,14 +227,14 @@
     saveLayout();
   }
   function resetOne(w) {      // the grip: size only
-    flip(function () { var s = layout[w.id]; if (s) { delete s.span; delete s.h; if (!s.x && !s.y) { delete layout[w.id]; } } applySize(w); resolveAll(w); });
+    flip(function () { var s = layout[w.id]; if (s) { delete s.span; delete s.h; delete s.s; if (!s.x && !s.y) { delete layout[w.id]; } } applySize(w); resolveAll(w); });
     saveLayout(); readout(w);
   }
   function resetPos(w) {      // double-click on the box: position only
-    flip(function () { var s = layout[w.id]; if (s) { delete s.x; delete s.y; if (!s.span && !s.h) { delete layout[w.id]; } } applySize(w); resolveAll(); });
+    flip(function () { var s = layout[w.id]; if (s) { delete s.x; delete s.y; if (!s.span && !s.h && !s.s) { delete layout[w.id]; } } applySize(w); resolveAll(); });
     saveLayout();
   }
-  function resetAll() { flip(function () { layout = {}; applyAll(); }); saveLayout(); }
+  function resetAll() { lsDel(CLOCK_KEY); flip(function () { layout = {}; applyAll(); refresh(); }); saveLayout(); }
 
   // ---------- no stacking ----------
   function hits(R, others) {
@@ -244,7 +278,7 @@
     if (Math.abs(nx) < 2) { nx = 0; } if (Math.abs(ny) < 2) { ny = 0; }
     if (nx) { st.x = nx; } else { delete st.x; }
     if (ny) { st.y = ny; } else { delete st.y; }
-    if (!st.span && !st.h && !st.x && !st.y) { delete layout[w.id]; }
+    if (!st.span && !st.h && !st.x && !st.y && !st.s) { delete layout[w.id]; }
     applySize(w);
     return true;
   }
@@ -262,7 +296,7 @@
     if (Math.abs(nx) < 2) { nx = 0; } if (Math.abs(ny) < 2) { ny = 0; }
     if (nx) { s.x = nx; } else { delete s.x; }
     if (ny) { s.y = ny; } else { delete s.y; }
-    if (!s.span && !s.h && !s.x && !s.y) { delete layout[w.id]; }
+    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
     applySize(w);
     return true;
   }
@@ -371,7 +405,7 @@
     var w = mv.w, el = $(w.el), x = Math.round(mv.tx), y = Math.round(mv.ty), s = layout[w.id] || (layout[w.id] = {});
     if (x) { s.x = x; } else { delete s.x; }
     if (y) { s.y = y; } else { delete s.y; }
-    if (!s.span && !s.h && !s.x && !s.y) { delete layout[w.id]; }
+    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
     if (el) { el.classList.remove("wa-drag", "wa-lift", "wa-clash"); }
     mv = null; applySize(w); saveLayout(); readout(w); settle(w);      // dropped on another box? it glides to the nearest free spot
   }
@@ -384,7 +418,7 @@
       var s = layout[w.id] || (layout[w.id] = {}), x = clamp((s.x || 0) + dx, -MAX_OFF, MAX_OFF), y = clamp((s.y || 0) + dy, -MAX_OFF, MAX_OFF);
       if (x) { s.x = x; } else { delete s.x; }
       if (y) { s.y = y; } else { delete s.y; }
-      if (!s.span && !s.h && !s.x && !s.y) { delete layout[w.id]; }
+      if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
       applySize(w); resolveAll(w);
     });
     saveLayout();
@@ -392,13 +426,13 @@
 
   // ---------- show / hide ----------
   function isOn(w) {
-    if (w.own) { return lsGet(TIMER_KEY) !== "0"; }
+    if (w.key) { return lsGet(w.key) !== "0"; }
     var c = $(w.box);
     if (c) { return !!c.checked; }
     return true;
   }
   function setOn(w, on) {
-    if (w.own) { lsSet(TIMER_KEY, on ? "1" : "0"); refresh(); return; }
+    if (w.key) { lsSet(w.key, on ? "1" : "0"); refresh(); return; }
     var c = $(w.box);
     if (!c) { return; }
     c.checked = !!on;
@@ -410,7 +444,7 @@
       var el = $(w.el); if (!el) { return; }
       var on = isOn(w), eye = el.querySelector(".wa-eye");
       el.classList.toggle("wa-ghost", !on);
-      if (w.own) { el.classList.toggle("wa-off", !on); }
+      if (w.own || w.clock) { el.classList.toggle("wa-off", !on); }
       if (eye) {
         eye.setAttribute("aria-pressed", on ? "true" : "false");
         eye.setAttribute("aria-label", (on ? "Hide " : "Show ") + w.noun);
@@ -601,7 +635,7 @@
     window.addEventListener("resize", function () { if (!isIdle()) { return; } clearTimeout(rzT); rzT = setTimeout(function () { settle(); }, 160); });
     // "Reset everything" in Settings
     var rs = $("settings-reset");
-    if (rs) { rs.addEventListener("click", function () { lsDel(LAYOUT_KEY); lsDel(TIMER_KEY); lsDel(AH_KEY); layout = {}; loadAH(); if (ui.auto) { ui.auto.textContent = ahLabel(); } applyAll(); refresh(); }); }
+    if (rs) { rs.addEventListener("click", function () { lsDel(LAYOUT_KEY); lsDel(TIMER_KEY); lsDel(CLOCK_KEY); lsDel(AH_KEY); layout = {}; loadAH(); if (ui.auto) { ui.auto.textContent = ahLabel(); } applyAll(); refresh(); }); }
   }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

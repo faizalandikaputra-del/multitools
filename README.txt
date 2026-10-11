@@ -1493,3 +1493,14 @@ Pressing Done removes the ghosts, the grid reflows, and a moved box (stored as a
 Nothing re-checked the layout at that moment.
 Fix (js/mt-idle-adjust.js, setAdjust): when adjust mode ends, settle() runs once (resolveAll + FLIP glide + save), so no box stays stacked.
 Not run inside AE (no AE / CEF here): syntax-checked only (node --check). If boxes still overlap, tell me which widgets were hidden / moved.
+
+fix28 (idle screen): the CLOCK and the cards are now set only with the Adjust button; Settings > Clock Scale and Card Scale are removed.
+- html/index.html: date, time, session chip and message are wrapped in #idle-hero (one widget). html/settings.html: both sliders removed.
+- js/mt-idle-adjust.js: new widget "clock" (first in WIDGETS). Move = drag (snap, guides, never stacked, like the cards). Resize = the grip, which
+  changes the TEXT SCALE 50 - 220 % (it grows away from the edge the clock is anchored to; a readout shows the %; arrow keys 5 %, Shift 10 %;
+  double-click the grip = 100 %; near 100 % it snaps). The eye hides the clock (key mtx.showClock). "Reset layout" brings it back.
+  Layout key mtx.wLayout gets "clock":{"s":scale,"x":..,"y":..}. The cards keep their own resize (columns + height) and move.
+- css/mt-idle-adjust.css v8: .idle-hero (inherits the Clock Position alignment) + the adjust outline / ghost styles.
+- js/main.js: a saved idleScale is ignored and removed (no slider to change it any more). js/mt-idle-focus.js: cardScale() is fixed at 100.
+Clock Position (Settings) stays: it picks the corner the clock is anchored to; Adjust then moves / sizes it from there.
+Not run inside AE (no AE / CEF here): syntax-checked only (node --check). If the clock jumps when resized, tell me the Clock Position.

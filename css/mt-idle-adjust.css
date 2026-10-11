@@ -269,3 +269,24 @@ body.is-adjusting .idle-chips > .wa-clash, body.is-adjusting .idle-dash > .wa-cl
    moved or widened past that narrow box was clipped (the Timer cut off at the right edge). In the idle screen the box now
    covers the whole panel; align-items / justify-content / margin-top:auto still put the content in the chosen corner. */
 body.is-idle .idle-clock[data-position] { top: 0; right: 0; bottom: 0; left: 0; width: auto; height: auto; max-width: none; max-height: none; }
+
+/* ---------- the clock block as a widget (#idle-hero: date, time, session chip, message) ----------
+   Same adjust chrome as the cards (js/mt-idle-adjust.js, id "clock"): move, resize (= text scale via --wa-s, see .wa-scaled above), hide.
+   The block keeps the alignment of the chosen Clock Position: it inherits align-items / text-align from .idle-clock[data-position]. */
+.idle-hero {
+  position: relative; display: flex; flex-direction: column; align-items: inherit; justify-content: flex-start; flex: 0 0 auto;
+  box-sizing: border-box; min-width: 0; max-width: 100%; margin: 0; padding: 0.1rem 0.4rem 0.3rem; border-radius: 1rem;
+  outline: 1px dashed transparent; outline-offset: 4px;
+}
+.idle-hero.wa-off { display: none !important; }
+body.is-adjusting .idle-hero.wa-off { display: flex !important; }
+body.is-adjusting .idle-hero { outline-color: rgba(var(--accent-rgb, 91, 140, 255), 0.7); transition: transform 0.3s var(--ia-in), outline-color 0.25s ease, opacity 0.25s var(--ia-std); }
+body.is-adjusting .idle-hero:hover, body.is-adjusting .idle-hero.wa-drag { outline-color: var(--accent, #5b8cff); }
+body.is-adjusting .idle-hero.wa-drag { outline-style: solid; z-index: 4; }
+body.is-adjusting .idle-hero.wa-lift { box-shadow: none; }
+body.is-adjusting .idle-hero.wa-clash { outline-style: solid; outline-color: rgba(255, 107, 107, 0.95); }
+body.is-adjusting .idle-hero.wa-ghost { opacity: 0.4; }
+body.is-adjusting .idle-hero.wa-ghost:hover, body.is-adjusting .idle-hero.wa-ghost:focus-within { opacity: 0.75; }
+body.is-adjusting .idle-hero:hover .wa-name { opacity: 1; transform: none; }
+:root[data-reduce-motion="true"] body.is-adjusting .idle-hero { transition: none !important; }
+@media (prefers-reduced-motion: reduce) { body.is-adjusting .idle-hero { transition: none !important; } }

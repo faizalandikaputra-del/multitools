@@ -835,7 +835,7 @@
     btn.addEventListener("click", function () { set("foldHidden", folded() ? "0" : "1"); applyFold(true); fitAllNotes(); });
     applyFold(false);
   }
-  function cardScale() { return num(get("cardScale"), 60, 140, 100); }
+  function cardScale() { return 100; }   // the Card Scale slider is gone: every card is resized with the Adjust button
   function applyCardScale() {
     var box = $("idle-clock"), v = cardScale(), out = $("idle-card-scale-val"), inp = $("idle-card-scale");
     if (box) { box.style.setProperty("--idle-card-scale", v / 100); }

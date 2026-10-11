@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.37",
-    "changelog":  "- Fix Animation\r\n- Fix Idle Screensaver\r\n- Fix Bug",
+    "latest_version":  "1.8.38",
+    "changelog":  "- Update 1.8.38",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -564,7 +564,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "0cfdb54514dc8b8aa770467d6901d20b8a0ed8918be521b80c7717832ce4f49d"
+                      "sha256":  "468db6a0df090726c8ef97186ebd404838080777a17c814305ca06d8ea742d66"
                   }
               ]
 }

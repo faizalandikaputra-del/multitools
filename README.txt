@@ -1,6 +1,36 @@
 Multi Tool - After Effects CEP panel
 ====================================
 
+HAND-OFF RULES FOR ANY AI (Claude, Gemini, ChatGPT, ...)  -  READ THIS FIRST
+----------------------------------------------------------------------------
+The owner may switch between AI assistants at any time. Whoever you are, follow these rules so the owner's
+release scripts keep working.
+1. ZIP NAME: deliver the result as ONE zip named exactly   Multi_Tool.zip
+   Never add the AI name, a version, a fix name or a date (no Multi_Tool_Gemini.zip, Multi_Tool_v1.9.zip,
+   MultiTool_Fix.zip, Multi_Tool (1).zip). The name stays Multi_Tool.zip no matter which AI made it.
+2. ZIP CONTENT: the COMPLETE extension, not only the changed files. Put CSXS/, html/, css/, js/, jsx/, neucurve/,
+   README.txt (and every other extension file) at the top level of the zip. One wrapper folder is also accepted.
+   Do NOT include: .git, update.json, version.json, changelog.txt, any .bat, make-update.ps1. Those belong to the
+   owner's work folder and are handled by the scripts. The release script refuses a zip that has far fewer files
+   than the repo, so nothing gets deleted by accident.
+3. VERSION: do not bump or edit version numbers. Update.bat asks the owner (continue from the previous version, or
+   type one).
+4. README.txt: always ship the full, updated README.txt in the zip. Append what you changed at the END, in the
+   existing style ("fixN (version): what / cause / fix"), and keep this section at the top.
+5. Do not write new release / update / zip scripts. They already exist (see below).
+
+OWNER'S WORK FOLDER (not part of the extension; lives next to the repo clone)
+  Update.bat      drop Multi_Tool.zip in the folder, double-click. It unpacks the zip into the repo clone ("repo"),
+                  shows the current version, lets the owner choose [1] continue (+1 on the last number) or
+                  [2] type a version, asks for a one-line changelog, builds update.json and pushes to GitHub.
+                  Nothing changed in the zip = nothing is released. The used zip is renamed terpakai.zip.
+  Install.bat     installs into After Effects (registry + copy to %APPDATA%\Adobe\CEP\extensions\MultiTool).
+                  Uses Multi_Tool.zip if it is in the folder (test before releasing), otherwise the repo clone.
+  Downgrade.bat   puts the files of an older release back and publishes them as a NEW, higher version.
+  Share-Zip.bat   makes MultiTool-Share-<version>.zip (Install.bat + MultiTool folder) in Downloads for friends.
+  make-update.ps1 helper used by Update.bat and Downgrade.bat. Not run by hand.
+  config.txt      GitHub repo URL (asked once). repo\ is the clone, tmp\ is a temporary unpack folder.
+
 INSTALL
 1. Copy the whole "MultiTool" folder to:
    Windows: C:\Users\<you>\AppData\Roaming\Adobe\CEP\extensions\
@@ -10,6 +40,7 @@ INSTALL
    macOS: defaults write com.adobe.CSXS.<version> PlayerDebugMode 1
    (CSXS version: 10 for After Effects 2021, 9 for 2019-2020, 11 for 2022+)
 3. Restart After Effects -> Window > Extensions > Multi Tool.
+   (Shortcut for steps 1-2 on Windows: run Install.bat.)
 
 DEBUG: open http://localhost:8088 in Chrome (port set in .debug).
 
@@ -929,10 +960,10 @@ js/mt-updater.js now updates with plain fetch() + cep.fs.writeFile, exactly like
 - Update Now: downloads every file listed in update.json (raw.githubusercontent.com, then jsDelivr), verifies each SHA-256, and only
   when ALL files are downloaded and verified writes the changed ones. If a write fails, the old files are restored. version.json is
   written last. If CSXS/manifest.xml changed in a way that matters, After Effects must be restarted.
-- Publisher steps: 1) edit changelog.txt, 2) run Make-Update.bat (asks for the new version, writes update.json + version.json),
-  3) push the whole folder (including update.json) to the PUBLIC repo in version.json ("repo", optional "branch", default "main").
+- Publisher steps: put Multi_Tool.zip in the work folder and run Update.bat (see HAND-OFF RULES at the top). It writes
+  update.json + version.json and pushes everything to the PUBLIC repo in version.json ("repo", optional "branch", default "main").
   update.json may also contain "remove": ["old/file.js"] to delete files, and "ref" (a commit/tag) to pin the download source.
-- Install / manual update on a PC: Auto-Install.bat (copies the folder into %APPDATA%\Adobe\CEP\extensions\MultiTool).
+- Install / manual update on a PC: Install.bat (copies the extension into %APPDATA%\Adobe\CEP\extensions\MultiTool).
 - Safety: HTTPS only; paths in the feed must be plain relative paths (no "..", no drive letters); hashes are checked; no token is
   needed or stored. Whoever controls the repo controls what runs in the panel, so keep the GitHub account protected (2FA).
 

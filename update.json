@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.31",
+    "latest_version":  "1.8.32",
     "changelog":  "- Fix Animation\r\n- Fix Idle Screensaver\r\n- Fix Bug",
     "files":  [
                   {
@@ -304,7 +304,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "fc10366ba53e89afe3a5131d251a4ff7bb73a52cc21208285afadb913cad15c2"
+                      "sha256":  "a028eb3bffbd58bb77fdb063d794ec0366eb14fe21031ce4abebce86bff33364"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -312,7 +312,7 @@
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.js",
-                      "sha256":  "badfed477406371282df26aa323b902835bffdd9a0809ba04c81404727091724"
+                      "sha256":  "a14ce6f78d549a46820e4bf427c0ad2d991fb5d42b4150d6bd983c203dd8c601"
                   },
                   {
                       "path":  "neucurve/nc-away.css",
@@ -328,7 +328,7 @@
                   },
                   {
                       "path":  "neucurve/nc-ball.js",
-                      "sha256":  "e99ba8061ab680dad4cc20374467b50f313b84afe01d316b8e449e7ef97ae03b"
+                      "sha256":  "b8910fbbf72f54ad09c8de93c996bb70e40e68416b9f572348e87da7a4dca24a"
                   },
                   {
                       "path":  "neucurve/nc-bg.css",
@@ -420,7 +420,7 @@
                   },
                   {
                       "path":  "neucurve/nc-glow.js",
-                      "sha256":  "bfd5e848a8723d73183de4346f6cca1be1b253b8aa78e76685b3ed625fb85aaa"
+                      "sha256":  "1567d6c3534396aed4e5a0c235890163c3ec3d262bad86111b247503368627ca"
                   },
                   {
                       "path":  "neucurve/nc-grad.css",
@@ -468,11 +468,11 @@
                   },
                   {
                       "path":  "neucurve/nc-morph.css",
-                      "sha256":  "fc84a9d77d03c5e936b7081a980d0ba057ae4acc441a484fefe6e4cd7f97df19"
+                      "sha256":  "2afc12d1f245d260c56430a3d022603d22152eee825dd7612a2a98311e4c4348"
                   },
                   {
                       "path":  "neucurve/nc-morph.js",
-                      "sha256":  "aee8ab465c2c7fdf202b6a86cccf97f9c93534752acea46c6efc566790d0baff"
+                      "sha256":  "a6861cc196f4cdebae6ca393b33845576ece0c52391a784767eea5f2dbd8ee63"
                   },
                   {
                       "path":  "neucurve/nc-overshoot-fx.css",
@@ -548,7 +548,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "e31b98d4e587ce9fb5554d16de243a73b7b301cf6673361c2314b5125d0f394f"
+                      "sha256":  "112d012eb37e5c1ef87e8d3563033791fd9ebb4970c6000a981a4719f9a51b4f"
                   }
               ]
 }

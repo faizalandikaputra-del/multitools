@@ -12,13 +12,20 @@
    Any real change from the app while morphing (dragging, loading a preset, switching tab again) cancels the running
    morph; a second tab switch mid-morph continues from the current in-between shape.
    Respects Settings > Animations (html[data-reduce-motion="true"] = no morph).
+   v22 (RE-Faster logic): ease-out-expo over 500 ms (same curve + duration as RE-Faster's category morph, no overshoot), the
+   shape is blended from wherever the curve is on screen right now (interrupting never snaps), and the same "is-morphing"
+   frame-drop guard: while a morph runs the glow stack, handle halos and the live ball are not drawn / updated
+   (window.__ncMorphUntil, read by nc-glow.js / nc-ball.js / nc-apply-glow.js; svg.nc-morphing in nc-morph.css), then the
+   glow fades back in. One render per frame (the observer render and the rAF render no longer double up) and a idle-time warm-up
+   so the very first mode switch after AE starts runs on already-optimised code.
    Plain ES5 for old CEF (AE 2019/2021).  Off switch: remove <script src="./nc-morph.js"> and <link href="./nc-morph.css">. */
 (function () {
   "use strict";
 
-  var DURATION = 380;       // ms
-  var GRID = 420;           // samples along X while morphing
+  var DURATION = 500;       // ms (RE-Faster: 500)
+  var GRID = 200;           // samples along X while morphing (420 before; the glow is off while morphing so fewer points are plenty)
   var MORPH_CLASS = "nc-morphing";
+  var OUT_CLASS = "nc-morph-out";
   /* Mode tabs come in TWO markups in the compiled bundle: portrait = ".mtab" buttons inside ".model-tabs-horizontal",
      landscape = ".nav-tab" buttons inside ".model-nav-strip" (nc-flow.js turns that into the pill bar). Everything
      below (morph trigger + wheel switching) must know both, otherwise landscape gets neither. */
@@ -152,10 +159,9 @@
     return { at: at, minX: minX, maxX: maxX };
   }
 
-  /* ---------- easing (same shape as Flow's easeGraphTransition) ---------- */
+  /* ---------- easing: RE-Faster category morph = ease-out-expo (1 - 2^(-10 t)), no overshoot ---------- */
   function ease(t) {
-    var e = 1 - Math.pow(1 - t, 3) + Math.sin(t * Math.PI) * 0.035;
-    return e < 0 ? 0 : (e > 1 ? 1 : e);
+    return t >= 1 ? 1 : (t <= 0 ? 0 : 1 - Math.pow(2, -10 * t));
   }
 
   function fmt(v) { return (Math.round(v * 100) / 100).toString(); }
@@ -183,8 +189,12 @@
   function finish(a, writeTarget) {
     if (anim !== a) { return; }
     anim = null;
+    window.__ncMorphUntil = 0;                        // glow / ball / apply-glow may draw again (their next frame sees this)
     if (a.frame) { caf(a.frame); a.frame = 0; }
-    if (a.svg && a.svg.classList) { a.svg.classList.remove(MORPH_CLASS); }
+    if (a.svg && a.svg.classList) {
+      a.svg.classList.remove(MORPH_CLASS);
+      if (writeTarget) { fadeBack(a.svg); }
+    }
     clearHandleOffsets(a);
     if (writeTarget && a.path.parentNode) {
       a.path.setAttribute("d", a.toD);
@@ -192,6 +202,16 @@
     }
     lastD = a.toD;
     lastH = takeHandles();
+  }
+
+  /* glow stack comes back with a short fade (nc-morph.css, .nc-morph-out) instead of popping in */
+  var outTimer = 0, outSvg = null;
+  function fadeBack(svg) {
+    if (outTimer) { clearTimeout(outTimer); }
+    if (outSvg && outSvg !== svg && outSvg.classList) { outSvg.classList.remove(OUT_CLASS); }
+    outSvg = svg;
+    svg.classList.add(OUT_CLASS);
+    outTimer = setTimeout(function () { outTimer = 0; if (outSvg && outSvg.classList) { outSvg.classList.remove(OUT_CLASS); } outSvg = null; }, 360);
   }
 
   function clearHandleOffsets(a) {
@@ -232,11 +252,8 @@
      lerp(oldPoint, newPoint, ease). Before, one fixed X grid (old range joined with new range) was used, so a curve that is narrower
      than the other (Elastic / Bounce / Wave sit inside a zoomed-out box, Bezier fills it) kept flat "tails" running to the box edge during
      the whole morph and lost them in one frame at the end: the line visibly popped / stretched when switching modes. */
-  function render(a) {
-    var lin = (now() - a.t0) / DURATION, e, k, parts, n = GRID, yb = a.sb, u, xa, xb, x, y, ya = a.ya, y2;
-    if (lin >= 1) { finish(a, true); return; }
-    e = ease(lin < 0 ? 0 : lin);
-    parts = new Array(n + 1);
+  function buildD(a, e) {
+    var n = GRID, yb = a.sb, ya = a.ya, parts = a.parts, k, u, xa, xb, x, y, y2;
     for (k = 0; k <= n; k++) {
       u = k / n;
       xa = a.ax0 + (a.ax1 - a.ax0) * u;
@@ -246,7 +263,16 @@
       y = ya[k] + (y2 - ya[k]) * e;
       parts[k] = (k === 0 ? "M" : "L") + fmt(x) + "," + fmt(y);
     }
-    a.written = parts.join(" ");
+    return parts.join(" ");
+  }
+
+  function render(a) {
+    var t = now(), lin = (t - a.t0) / DURATION, e;
+    if (lin >= 1) { finish(a, true); return; }
+    a.tr = t;
+    window.__ncMorphUntil = Date.now() + 250;        // refreshed every frame: a stuck flag (hidden frame, no rAF) clears itself
+    e = ease(lin < 0 ? 0 : lin);
+    a.written = buildD(a, e);
     a.path.setAttribute("d", a.written);
     moveHandles(a, e);
     try { mo.takeRecords(); } catch (err) { }       // our own write must not look like an app update
@@ -258,8 +284,8 @@
     sa = makeSampler(A);
     if (anim) { finish(anim, false); }
     svg = path.parentNode;
-    a = { path: path, svg: svg, frame: 0, t0: now(), xs: [], ya: [], sb: null, toD: toD, written: fromD,
-          hEls: handleEls(svg), hFrom: [], hNow: [] };
+    a = { path: path, svg: svg, frame: 0, t0: now(), tr: 0, xs: [], ya: [], sb: null, toD: toD, written: fromD,
+          appT: -1e9, parts: new Array(GRID + 1), hEls: handleEls(svg), hFrom: [], hNow: [] };
     for (i = 0; i < a.hEls.length; i++) {
       a.hFrom.push(fromH && fromH.length ? (fromH[i] || fromH[fromH.length - 1]) : null);   // extra handles sprout from the last old one
     }
@@ -268,12 +294,14 @@
     a.ax0 = sa.minX; a.ax1 = sa.maxX;
     for (i = 0; i <= GRID; i++) { a.ya.push(sa.at(a.ax0 + (a.ax1 - a.ax0) * i / GRID)); }
     anim = a;
+    if (outTimer) { clearTimeout(outTimer); outTimer = 0; }
+    if (outSvg && outSvg.classList) { outSvg.classList.remove(OUT_CLASS); outSvg = null; }
     svg.classList.add(MORPH_CLASS);
     render(a);                                       // first frame in the same task as the switch: no flash of the new curve
     if (anim === a) {
       (function loop() {
         if (anim !== a) { return; }
-        a.frame = raf(function () { if (anim !== a) { return; } render(a); if (anim === a) { loop(); } });
+        a.frame = raf(function () { if (anim !== a) { return; } if (now() - a.tr >= 8 && now() - a.appT > 20) { render(a); }   /* the app is rewriting "d" every frame: the observer render below already covers it */ if (anim === a) { loop(); } });
       })();
     }
   }
@@ -323,7 +351,7 @@
 
     if (anim && firstPath && anim.path === firstPath && curD) {
       /* the app moved the curve (viewport easing, drag ...): keep morphing towards its newest shape */
-      if (setTarget(anim, curD)) { render(anim); }
+      if (setTarget(anim, curD)) { anim.appT = now(); render(anim); }
       return;
     }
 
@@ -358,7 +386,44 @@
     }, { passive: false });
   })();
 
+  /* ---------- warm-up ----------
+     "Lag only on the first mode switches after AE starts, gone after a few switches" = cold JS engine (the parser, sampler and
+     frame builder run unoptimised the first times). Run the exact same code on synthetic curves in 3 short idle slices
+     (~2-4 ms each) shortly after the tab loads, so the first real switch already hits optimised code. Touches no DOM and no app state. */
+  function synth(kind, i) {
+    var d = "M0,300", k, t, y;
+    if (kind === 0) { return "M0,300 C" + (110 + i) + ",300 " + (160 + i) + ",20 500,20"; }                 // Custom style (C)
+    for (k = 1; k <= 100; k++) {                                                                               // Bezier / Elastic / Bounce style (L)
+      t = k / 100;
+      y = kind === 1 ? 300 - 280 * (1 - Math.cos(t * Math.PI * (3.5 + i % 4)) * Math.pow(1 - t, 2.2))
+                     : 300 - 280 * (1 - Math.pow(1 - t, 3 + i % 3));
+      d += " L" + (t * 500).toFixed(2) + "," + y.toFixed(2);
+    }
+    return d;
+  }
+  function warmRound(round) {
+    var i, j, A, B, sa, sb, a, e, ds = [synth(0, round), synth(1, round), synth(2, round)];
+    for (j = 0; j < 3; j++) {
+      A = parsePolyline(ds[j]); B = parsePolyline(ds[(j + 1) % 3]);
+      if (!A || !B) { continue; }
+      sa = makeSampler(A); sb = makeSampler(B);
+      a = { ax0: sa.minX, ax1: sa.maxX, sb: sb, ya: [], parts: new Array(GRID + 1) };
+      for (i = 0; i <= GRID; i++) { a.ya.push(sa.at(a.ax0 + (a.ax1 - a.ax0) * i / GRID)); }
+      for (i = 0; i < 8; i++) { e = ease(i / 8); buildD(a, e); }
+    }
+  }
+  function warmUp() {
+    var n = 0, slice = function () {
+      try { warmRound(n); } catch (e) { }
+      if (++n < 3) { setTimeout(idle, 500); }
+    }, idle = function () {
+      if (window.requestIdleCallback) { window.requestIdleCallback(slice, { timeout: 1200 }); } else { setTimeout(slice, 0); }
+    };
+    setTimeout(idle, 1200);
+  }
+
   function boot() {
+    warmUp();
     var p = findMainPath();
     if (p) { lastD = p.getAttribute("d"); lastH = takeHandles(); }
     mo.observe(document.documentElement, {

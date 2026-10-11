@@ -21,3 +21,14 @@ html[data-reduce-motion="true"] .curve-svg > g.handles > line {
 @keyframes nc-area-in { from { opacity: 0; } }
 .curve-svg > path[fill]:not([fill="none"]):not([stroke]) { animation: nc-area-in .38s ease-out both; }
 html[data-reduce-motion="true"] .curve-svg > path[fill]:not([fill="none"]):not([stroke]) { animation: none; }
+
+/* v22 frame-drop guard (same idea as RE-Faster's body.is-morphing): while the curve morphs, the 8-stroke glow stack, the handle
+   halos and the live ball are not painted - they are the heaviest things on screen and would be re-stroked ~60x per second
+   along a moving shape. The glow fades back in once the morph is done (.nc-morph-out is on for ~360 ms). Scoped to the svg, so
+   toggling the class restyles one subtree, not the whole document. */
+.curve-svg.nc-morphing > g.nc-glow,
+.curve-svg.nc-morphing .nc-hglow { display: none; }
+.curve-svg.nc-morphing > g.nc-ball { visibility: hidden; }
+@keyframes nc-glow-in { from { opacity: 0; } }
+.curve-svg.nc-morph-out > g.nc-glow { animation: nc-glow-in .3s ease-out both; }
+html[data-reduce-motion="true"] .curve-svg.nc-morph-out > g.nc-glow { animation: none; }

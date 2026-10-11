@@ -91,7 +91,7 @@
   function frame(now) {
     /* v26: the APPLY glow is decoration. Skip it while the graph is being dragged (that is when every ms counts) and draw it at
        ~30 fps otherwise: half the style writes + repaints, same look. */
-    if (now - lastDraw < 28 || document.documentElement.classList.contains("nc-graph-drag")) {
+    if (now - lastDraw < 28 || document.documentElement.classList.contains("nc-graph-drag") || (window.__ncMorphUntil || 0) > Date.now()) {
       rafId = (window.__ncAway && window.__ncAway()) ? null : requestAnimationFrame(frame);
       return;
     }

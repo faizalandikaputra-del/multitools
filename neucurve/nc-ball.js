@@ -156,7 +156,7 @@
     raf = 0;
     if (!on()) { stop(); return; }
     /* no writes while the graph is being dragged (nc-glow.css hides the ball for that time) */
-    if (root.classList.contains("nc-graph-drag")) { raf = requestAnimationFrame(frame); return; }
+    if (root.classList.contains("nc-graph-drag") || (window.__ncMorphUntil || 0) > Date.now()) { raf = requestAnimationFrame(frame); return; }   // v28: no parse / writes while the curve morphs (the ball is hidden by nc-morph.css)
     var svg = document.querySelector("svg.curve-svg"), path = svg && mainPath(svg), t, p, o, pt, i, tp, tt, hs, d, s2, o2, rest, st = still();
     if (svg && path) { watchSize(svg); }
     if (svg && path && shown) {

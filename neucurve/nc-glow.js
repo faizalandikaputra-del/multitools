@@ -116,7 +116,7 @@
   var colorCache = "", colorFor = "";
   function sync(light) {
     scheduled = false;
-    var dragging = document.documentElement.classList.contains("nc-graph-drag");
+    var dragging = document.documentElement.classList.contains("nc-graph-drag") || (window.__ncMorphUntil || 0) > Date.now();   // v28: also idle while nc-morph.js morphs the curve (glow is hidden then, redrawn at the end)
     var svgs = document.querySelectorAll("svg.curve-svg"), i, j;
     for (i = 0; i < svgs.length; i++) {
       var path = mainPath(svgs[i]);

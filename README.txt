@@ -1367,3 +1367,20 @@ Found by reading the code (not measured inside After Effects, which is not avail
    window looked half empty while loading. It now runs only after a tab was clicked (html.p-anim). The title animation no longer animates
    letter-spacing (re-laid out the text each frame); opacity + transform only.
 Not changed: CEFCommandLine flags (changing them could change how the windows share localStorage with the panel), the AE 2021 shim.
+
+fix3 (1.8.30): CURVE TAB - graph mode switch now morphs with RE-Faster's logic, and no lag on the first switches.
+Source of the logic: RE-Faster's category morph (updateGraphCategoryUI): 500 ms, ease-out-expo (1 - 2^(-10 t)), no overshoot, the shape
+is always blended from what is on screen right now (so switching again mid-morph never snaps), plus its "is-morphing" frame-drop guard.
+- neucurve/nc-morph.js v22: DURATION 380 -> 500 ms, ease = ease-out-expo (was cubic + small overshoot), GRID 420 -> 200 points.
+  One render per frame: the observer render (needed so the app's own "d" write never reaches the screen) and the rAF render used to run
+  twice per frame while the app eases its Y viewport; the rAF render now steps aside while the app is writing.
+  Idle-time warm-up (3 slices of ~2-4 ms, 1.2 s after load, no DOM, no app state): runs the parser / sampler / frame builder on
+  synthetic Bezier / Custom / Elastic-like curves so the first real switch after AE starts already hits optimised code.
+- Frame-drop guard (RE-Faster's body.is-morphing): while a morph runs, the 8-stroke glow, the handle halos and the live ball are not
+  painted or updated (nc-morph.css on svg.curve-svg.nc-morphing; window.__ncMorphUntil read by nc-glow.js, nc-ball.js,
+  nc-apply-glow.js). The glow fades back in over 0.3 s at the end (.nc-morph-out). The flag expires by itself (250 ms, refreshed
+  every frame), so a hidden frame can never leave the glow switched off.
+- Not ported: RE-Faster's fake motion blur (blur() on the whole svg). It re-rasterises the graph every frame, which is the opposite of
+  this fix. Off-switches: DURATION / GRID at the top of nc-morph.js; delete the "html.nc-morph..." block at the end of nc-morph.css to keep
+  the glow during morphs.
+Cache-bust: nc-morph.js ?v=22, nc-morph.css ?v=16, nc-glow.js ?v=4, nc-ball.js ?v=4, nc-apply-glow.js ?v=3 (neucurve/index.html).

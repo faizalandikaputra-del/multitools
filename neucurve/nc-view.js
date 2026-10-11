@@ -36,7 +36,15 @@
     }
   }
 
+  /* Settings > Behavior > "Show Preset Names": "false" hides the name under each preset tile (class nc-hide-pnames on <html>) */
+  function applyNames() {
+    var off = false;
+    try { off = localStorage.getItem("neucurve_showPresetNames") === "false"; } catch (e) { }
+    root.classList.toggle("nc-hide-pnames", off);
+  }
+
   function apply() {
+    applyNames();
     var hp = on("hidePresets"), hg = on("hideGraph");
     if (hp && hg) { hg = false; }
     var wasG = root.classList.contains("nc-view-graph"), wasP = root.classList.contains("nc-view-presets");
@@ -79,7 +87,7 @@
   function onSync(ev) {
     try {
       var d = ev && ev.data; if (typeof d === "string") { d = JSON.parse(d); }
-      if (d && (d.key === "hidePresets" || d.key === "hideGraph")) {
+      if (d && (d.key === "hidePresets" || d.key === "hideGraph" || d.key === "showPresetNames")) {
         localStorage.setItem("neucurve_" + d.key, String(d.val));
         apply();
       }
@@ -87,7 +95,7 @@
   }
 
   apply();   /* before first paint of the bundle: no flash of the hidden column */
-  window.addEventListener("storage", function (e) { if (!e.key || e.key === "neucurve_hidePresets" || e.key === "neucurve_hideGraph") { apply(); } });
+  window.addEventListener("storage", function (e) { if (!e.key || e.key === "neucurve_hidePresets" || e.key === "neucurve_hideGraph" || e.key === "neucurve_showPresetNames") { apply(); } });
   try { if (window.CSInterface) { new window.CSInterface().addEventListener("com.neucurve.sync", onSync); } } catch (e) { }
   window.__ncView = { apply: apply };
   /* the bundle builds its DOM after this script: keep docking until the strip exists, then only when the layout changes */

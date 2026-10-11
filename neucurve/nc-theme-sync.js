@@ -211,7 +211,11 @@
       if (v === last) { return; }
       last = v;
       var rgb = hexToRgb(v);
-      if (rgb) { root.style.setProperty("--nc-ui-rgb", rgb.join(",")); }
+      if (rgb) {
+        root.style.setProperty("--nc-ui-rgb", rgb.join(","));
+        /* readable text on top of the theme color (Save / Buy buttons): dark on light colors, white on dark ones */
+        root.style.setProperty("--nc-on-ui", (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) > 160 ? "#111" : "#fff");
+      }
     }
     try { new MutationObserver(upd).observe(root, { attributes: true, attributeFilter: ["style"] }); } catch (e) { }
     window.addEventListener("storage", upd);

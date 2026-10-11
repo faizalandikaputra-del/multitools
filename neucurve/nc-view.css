@@ -53,3 +53,6 @@ html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .tr
   background: rgba(255, 255, 255, .22); border-radius: 3px;
 }
 html.nc-view-graph body .shell.shell .canvas-area > .preview-strip-container .progress { background: rgba(255, 255, 255, .14); height: 4px; top: 50%; margin-top: -2px; border-radius: 3px; }
+
+/* ---- PRESET NAMES OFF: the name line under each preset tile is removed (tile stays a square) ---- */
+html.nc-hide-pnames body .shell.shell .preset-item .preset-name { display: none !important; }

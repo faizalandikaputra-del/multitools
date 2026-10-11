@@ -1,0 +1,28 @@
+/* NeuCurve - nc-theme-fix.css (v1)  THEME COLOR for the last hard-coded blues of the Curve tab.
+   These come from the Svelte bundle (assets/index.js) with fixed blue values instead of var(--ui-color):
+     - "+" Add Preset tile hover (dashed border, plus sign, tint)   #3b82f6
+     - Save Preset dialog: input focus border + Save button         #36f
+     - Library "copy" button hover, lock-screen title + "Buy" button #36f
+   Everything now follows --ui-color / --nc-ui-rgb (set from Settings > Appearance). Loaded last. Chromium 74 safe. */
+html body .shell.shell .add-preset-btn:hover {
+  color: var(--ui-color, #fff) !important;
+  border-color: var(--ui-color, #fff) !important;
+  background: rgba(var(--nc-ui-rgb, 255, 255, 255), .06) !important;
+}
+html body .modal-input:focus { border-color: var(--ui-color, #fff) !important; }
+html body .modal-save { background: var(--ui-color, #fff) !important; color: var(--nc-on-ui, #111) !important; }
+html body .copy-btn:hover { background: var(--ui-color, #fff) !important; border-color: var(--ui-color, #fff) !important; color: var(--nc-on-ui, #111) !important; }
+html body .lock-content h2 { color: var(--ui-color, #fff) !important; }
+html body .buy-pro-btn { background: var(--ui-color, #fff) !important; color: var(--nc-on-ui, #111) !important; }
+
+/* ---- v2: every remaining bundle rule that falls back to blue through var(--accent, #3b82f6) or a fixed #3b82f6 ----
+   "Card Size" slider thumb (options menu), options gear hover, right-click menu icons / drag border, drag-over tile border,
+   scrub ball. --accent was never defined on the page root, so those rules always showed the blue fallback. */
+html body { --accent: var(--ui-color, #fff); }
+html body .dropdown-zoom-slider::-webkit-slider-thumb:hover,
+html body .dropdown-zoom-slider:active::-webkit-slider-thumb { background: var(--ui-color, #fff) !important; }
+html body .lib-icon-btn.options-toggle-btn:hover { color: var(--ui-color, #fff) !important; }
+html body .ctx-menu.dragging { border-color: var(--ui-color, #fff) !important; }
+html body .ctx-item:hover svg { color: var(--ui-color, #fff) !important; }
+html body .preset-item.drag-over .preset-thumbnail { border-color: var(--ui-color, #fff) !important; }
+html body .ball { background: var(--ui-color, #fff) !important; }

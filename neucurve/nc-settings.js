@@ -17,7 +17,7 @@
     hStyle: "circle", hSize: "4.5", hLine: "1.2", hImg: "",
     pEffect: "particles", pColor: "#ffffff", pAlpha: "100",
     gWp: "", gHp: "", gWl: "", gHl: "", bgOrig: "false",
-    hidePresets: "false", hideGraph: "false"
+    hidePresets: "false", hideGraph: "false", showPresetNames: "true"
   };
   var COLORS = ["#3366FF", "#ff2a2a", "#00a8ff", "#2ecc71", "#f1c40f", "#9b59b6", "#ff9f43", "#ffffff"];
   var PROFILE_KEY = "neucurve_profile";
@@ -438,6 +438,7 @@
     toggle("settingsHideGraph", "hideGraph", "true", "false", function () { return readBool("hideGraph"); });
     $("settingsHidePresets").addEventListener("change", function () { if (this.checked && readBool("hideGraph")) { set("hideGraph", "false"); refreshAll(); } });
     $("settingsHideGraph").addEventListener("change", function () { if (this.checked && readBool("hidePresets")) { set("hidePresets", "false"); refreshAll(); } });
+    toggle("settingsShowPresetNames", "showPresetNames", "true", "false", function () { return read("showPresetNames") !== "false"; });
     toggle("settingsBgOriginal", "bgOrig", "true", "false", function () { return readBool("bgOrig"); });
     toggle("settingsGradOn", "gradOn", "1", "0", function () { return read("gradOn") === "1"; });
 

@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.35",
+    "latest_version":  "1.8.36",
     "changelog":  "- Fix Animation\r\n- Fix Idle Screensaver\r\n- Fix Bug",
     "files":  [
                   {
@@ -308,7 +308,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "ffd964cc005482e920c84302445f643412e5300359045a4fca56bfdab6082b9c"
+                      "sha256":  "5dc70ad540c1f1e79e769d6a7202a0b2727a7bceafda4ea8fadad4db462a4979"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -504,7 +504,7 @@
                   },
                   {
                       "path":  "neucurve/nc-settings.js",
-                      "sha256":  "5dc4189fe239cf3ee0dd89dbc8346a2a9041f2c1f2f6ec75d6d837463763eeee"
+                      "sha256":  "998322d90a7e1e07fb9636f0962296cb950fd18163b5f9000a1ac5729bdc893a"
                   },
                   {
                       "path":  "neucurve/nc-settings-controls.css",
@@ -531,20 +531,24 @@
                       "sha256":  "fe207f1a942ed75cc6aa460b63c284073238096bfcdfaa112de09b7f94a163b9"
                   },
                   {
+                      "path":  "neucurve/nc-theme-fix.css",
+                      "sha256":  "f927a966a02ae26916f0d0e9e64c76a12f21dfa235949830669ca1b26c2aaffe"
+                  },
+                  {
                       "path":  "neucurve/nc-theme-sync.css",
                       "sha256":  "10243f0e07b2222cbdd03c3ad1534f8cb44251102e65b20913bf2b9367f97b79"
                   },
                   {
                       "path":  "neucurve/nc-theme-sync.js",
-                      "sha256":  "5c4feb6b3e043f9b43cb9a8ed3823747ef76888cef94d62b437777c1c71fbce9"
+                      "sha256":  "a690b3b1525ead4d2c9196fc12ce8195ec5d576858b75d464390f9a21dd8174d"
                   },
                   {
                       "path":  "neucurve/nc-view.css",
-                      "sha256":  "43cb585a3d7b8bfd0a5e8ce509ba3aa29ff657f79c0edbbb73a80d433d59b73e"
+                      "sha256":  "96c447d35133624b9a425ebf9cde58c39f5b4075dc1299ea1d9574a1db2edefd"
                   },
                   {
                       "path":  "neucurve/nc-view.js",
-                      "sha256":  "289f0ab62db58a7fabe941dd939dccb65b84000aa488f11f14645115f8ae99f5"
+                      "sha256":  "f71da1539a6d68f7392234fa8c3f5fa71eee933c920d03ddff50ec687ca89bff"
                   },
                   {
                       "path":  "neucurve/nc-warm.css",
@@ -556,7 +560,7 @@
                   },
                   {
                       "path":  "neucurve/settings.html",
-                      "sha256":  "8b2b3562c06714ba8d02cf85a67ec3a780ba5c6e6ffbbb21bdc93ab43b8081fc"
+                      "sha256":  "9494394896efbbe005fcfce15ab619d7bee376f7c3622d1ea1a80c07675ec9c6"
                   },
                   {
                       "path":  "README.txt",

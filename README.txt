@@ -1504,3 +1504,12 @@ fix28 (idle screen): the CLOCK and the cards are now set only with the Adjust bu
 - js/main.js: a saved idleScale is ignored and removed (no slider to change it any more). js/mt-idle-focus.js: cardScale() is fixed at 100.
 Clock Position (Settings) stays: it picks the corner the clock is anchored to; Adjust then moves / sizes it from there.
 Not run inside AE (no AE / CEF here): syntax-checked only (node --check). If the clock jumps when resized, tell me the Clock Position.
+
+fix29 (settings > Background): "Background image" and "Animated background" are now ONE row "Background": a single Choose file + Remove.
+- html/index.html + html/settings.html: ids bg-media-set / bg-media-clear / bg-media-file (replace bg-image-set / -clear, bg-motion-set / -clear, bg-file,
+  bg-motion-file). The hint line (#bg-motion-note) stays under it.
+- js/main.js: the picker accepts image, GIF, MP4 and WebM. The type decides the layer (still image = #bg-layer, GIF / video = #bg-motion-layer).
+  Picking one now clears the other, so only one background is ever active; Remove clears both. The save / backup logic of each type is unchanged
+  (loadImageFile / loadMotionFile / clearImageMedia / clearMotionMedia).
+- Tested in headless Chromium: png -> gif -> png -> Remove switch layers correctly, no JS error. Not run inside AE.
+Note: an image and a GIF can no longer be shown together (the GIF used to sit on top of the image).

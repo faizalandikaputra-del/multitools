@@ -5144,11 +5144,10 @@
         self.applyColor(Store.get("bgColor") || null);
       });
 
-      $("bg-image-set").addEventListener("click", function () { $("bg-file").click(); });
-      $("bg-file").addEventListener("change", function (e) {
-        var file = e.target.files && e.target.files[0];
-        e.target.value = "";
-        if (!file) { return; }
+      // ONE "Background" picker (Settings > Background): image, GIF, MP4 or WebM through the same button. The file type decides which
+      // layer shows it (still image = #bg-layer, GIF / video = #bg-motion-layer); picking one clears the other, Remove clears both.
+      var loadImageFile = function (file) {
+        clearMotionMedia();
 
         if (Node && file.path) { Node.backupMedia(file.path); }   // safety-net copy, original name, ~/Documents/MultiTools
 
@@ -5167,23 +5166,16 @@
           self.applyImage(url);
           if (!Store.set("bgImage", url)) { toast("Storage is full. The image will not be kept after closing.", true); }
         }).catch(function () { toast("Could not read that image.", true); });
-      });
-      $("bg-image-clear").addEventListener("click", function () {
+      };
+      var clearImageMedia = function () {
         Store.remove("bgImage"); Store.remove("bgImagePath");
         if (Node) { Node.clearSlot("bg-image"); }
         self.applyImage(null);
-      });
+      };
 
-      $("bg-motion-set").addEventListener("click", function () { $("bg-motion-file").click(); });
-
-      $("bg-motion-file").addEventListener("change", function (e) {
-        var file = e.target.files && e.target.files[0];
-        e.target.value = "";
-        if (!file) { return; }
-
+      var loadMotionFile = function (file) {
+        clearImageMedia();
         var isVideo = /^video\//.test(file.type) || /\.(mp4|webm)$/i.test(file.name);
-        var isGif = file.type === "image/gif" || /\.gif$/i.test(file.name);
-        if (!isVideo && !isGif) { toast("Choose a GIF, MP4, or WebM file.", true); return; }
 
         if (Node && file.path) { Node.backupMedia(file.path); }   // safety-net copy, original name, ~/Documents/MultiTools
 
@@ -5219,7 +5211,19 @@
             $("bg-motion-note").textContent = saved ? "" : "Storage is full - this GIF won't be kept after closing.";
           }).catch(function () { toast("Could not read that file.", true); });
         }
+      };
+
+      $("bg-media-set").addEventListener("click", function () { $("bg-media-file").click(); });
+      $("bg-media-file").addEventListener("change", function (e) {
+        var file = e.target.files && e.target.files[0];
+        e.target.value = "";
+        if (!file) { return; }
+        var isMotion = /^video\//.test(file.type) || /\.(mp4|webm|gif)$/i.test(file.name) || file.type === "image/gif";
+        if (isMotion) { loadMotionFile(file); }
+        else if (/^image\//.test(file.type) || /\.(png|jpe?g|webp|bmp|avif|svg)$/i.test(file.name)) { loadImageFile(file); }
+        else { toast("Choose an image, GIF, MP4 or WebM file.", true); }
       });
+      $("bg-media-clear").addEventListener("click", function () { clearImageMedia(); clearMotionMedia(); });
 
       // Real-time, global background opacity. `input` fires continuously
       // while the thumb is dragged (unlike `change`, which only fires on
@@ -5238,7 +5242,7 @@
         Store.set(self.opacityKey, String(self.clampOpacity(e.target.value)));
       });
 
-      $("bg-motion-clear").addEventListener("click", function () {
+      var clearMotionMedia = function () {
         if (self.motionObjectUrl) { URL.revokeObjectURL(self.motionObjectUrl); self.motionObjectUrl = null; }
         Store.remove("bgMotionGif");
         Store.remove("bgMotionType");
@@ -5246,7 +5250,7 @@
         if (Node) { Node.clearSlot("bg-motion-video"); }
         self.applyMotion(null, null);
         $("bg-motion-note").textContent = "";
-      });
+      };
 
       $("reset-tool-images").addEventListener("click", function () {
         Store.removeMatching("toolImg.");

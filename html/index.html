@@ -349,19 +349,11 @@
         </div>
       </div>
 
-      <div class="field">
-        <span class="field-label">Background image</span>
-        <div class="field-actions">
-          <button class="btn" id="bg-image-set">Choose image</button>
-          <button class="btn btn-ghost" id="bg-image-clear">Remove</button>
-        </div>
-      </div>
-
       <div class="field field-column">
-        <span class="field-label">Animated background (GIF / MP4 / WebM)</span>
+        <span class="field-label">Background (image, GIF, MP4 or WebM)</span>
         <div class="field-actions">
-          <button class="btn" id="bg-motion-set">Choose file</button>
-          <button class="btn btn-ghost" id="bg-motion-clear">Remove</button>
+          <button class="btn" id="bg-media-set">Choose file</button>
+          <button class="btn btn-ghost" id="bg-media-clear">Remove</button>
         </div>
         <p class="field-note" id="bg-motion-note"></p>
       </div>
@@ -695,9 +687,8 @@
   </div>
 
   <input type="file" id="tool-file" accept="image/*" hidden>
-  <input type="file" id="bg-file" accept="image/*" hidden>
   <input type="file" id="idle-timer-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" hidden>
-  <input type="file" id="bg-motion-file" accept=".gif,.mp4,.webm,image/gif,video/mp4,video/webm" hidden>
+  <input type="file" id="bg-media-file" accept="image/*,.gif,.mp4,.webm,video/mp4,video/webm" hidden>
 
   <script src="../js/CSInterface.js?v=9"></script>
   <!-- Wheel over the left tab bar switches tabs. Loaded BEFORE main.js / smooth-scroll.js on purpose. -->

@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.34",
+    "latest_version":  "1.8.35",
     "changelog":  "- Fix Animation\r\n- Fix Idle Screensaver\r\n- Fix Bug",
     "files":  [
                   {
@@ -296,7 +296,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "941d151d8541faecb117f266255bc8040701c25f7b8d8f173cf12c8a0265792f"
+                      "sha256":  "ee7e40b31f04392a55e946e6d9095f11e7e0eb6a20ef11467af383bed8b1837a"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -308,7 +308,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "aa3ce1f7de7848ac7d5170a7849f953405efa9929d31680d39b4cdc8e3fd63ab"
+                      "sha256":  "ffd964cc005482e920c84302445f643412e5300359045a4fca56bfdab6082b9c"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -476,7 +476,7 @@
                   },
                   {
                       "path":  "neucurve/nc-morph.js",
-                      "sha256":  "74784c264372acfa17b64fb421477389c149ad41022cb44f516e91fdf00fa533"
+                      "sha256":  "d1e5d121bec044e0d82077f841f62e99398d8146036276da9d148347ba3853c1"
                   },
                   {
                       "path":  "neucurve/nc-overshoot-fx.css",
@@ -548,11 +548,11 @@
                   },
                   {
                       "path":  "neucurve/nc-warm.css",
-                      "sha256":  "2e5d638e56503dac7f1a522b05f3973c386e3d2f4f35d1d9d784d81b964919a7"
+                      "sha256":  "13b20f3bc5a684ac812abf1eba27af5e4010766753c2d020ae58e77a425d8120"
                   },
                   {
                       "path":  "neucurve/nc-warm.js",
-                      "sha256":  "2dbce5c0af1d5de28956cb0ba3f8a1faf533fde0bdc8db1cd542b05be9ea6e89"
+                      "sha256":  "ddcc17404b331b31b24c392138cb25db744555ee2817b8cbf7b31ead2a4c0724"
                   },
                   {
                       "path":  "neucurve/settings.html",
@@ -560,7 +560,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "357f250731edda301032b0fcc93a3b37d6d747058932ad968e0fa9e135c6364e"
+                      "sha256":  "0cfdb54514dc8b8aa770467d6901d20b8a0ed8918be521b80c7717832ce4f49d"
                   }
               ]
 }

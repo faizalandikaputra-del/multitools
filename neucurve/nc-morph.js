@@ -19,13 +19,13 @@
    glow fades back in. One render per frame (the observer render and the rAF render no longer double up) and a idle-time warm-up
    so the very first mode switch after AE starts runs on already-optimised code.
    v24: the hidden mode warm-up (nc-warm.js) no longer disables the morph: it runs start() / render() / moveHandles() / fadeBack() and the
-   .nc-morphing / .nc-morph-out style changes for real, with a 70 ms duration (WARM_DURATION), so the first real mode switch in AE is not cold.
+   .nc-morphing / .nc-morph-out style changes for real, with a 120 ms duration (WARM_DURATION), so the first real mode switch in AE is not cold.
    Plain ES5 for old CEF (AE 2019/2021).  Off switch: remove <script src="./nc-morph.js"> and <link href="./nc-morph.css">. */
 (function () {
   "use strict";
 
   var DURATION = 500;       // ms (RE-Faster: 500)
-  var WARM_DURATION = 70;   // ms: morph length while nc-warm.js cycles the modes behind the spinner (page hidden, only the code path matters)
+  var WARM_DURATION = 120;  // ms: morph length while nc-warm.js cycles the modes behind the spinner (page hidden, only the code path matters)
   var GRID = 200;           // samples along X while morphing (420 before; the glow is off while morphing so fewer points are plenty)
   var MORPH_CLASS = "nc-morphing";
   var OUT_CLASS = "nc-morph-out";

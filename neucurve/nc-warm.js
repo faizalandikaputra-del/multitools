@@ -58,6 +58,7 @@
     origin = list[o];
     for (i = 0; i < list.length; i++) { if (i !== o) { order.push(list[i]); } }
     order.push(origin);                                     // end on the mode you were on
+    order = order.concat(order);                            // v3: two passes - the second one runs on code the engine has already started to optimise, and repaints what the first pass painted
     (function next() {
       if (finished) { return; }
       if (k >= order.length) { setTimeout(function () { if (!finished) { done(true); } }, SETTLE); return; }
@@ -78,7 +79,7 @@
 
   if (!WARM || !inFrame) { return; }
   try { if (window.localStorage && localStorage.getItem("neucurve_noWarm") === "1") { return; } } catch (e) { }
-  window.__ncWarm = 1;                                      // nc-morph.js: morphs run for real while warming, but only 70 ms long (warms the morph path too)
+  window.__ncWarm = 1;                                      // nc-morph.js: morphs run for real while warming, but only 120 ms long (warms the morph path too)
   root.classList.add("nc-warming");
   failsafe = setTimeout(function () { done(true); }, GIVE_UP + 4000);   // whatever happens, the panel is never left hidden
   window.addEventListener("pointerdown", stop, true); window.addEventListener("mousedown", stop, true);

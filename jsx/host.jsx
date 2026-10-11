@@ -7370,6 +7370,7 @@ function _ncCollectSel(comp) {
     var items = [];
     var total = 0;
     var props = [];
+    var propRefs = [];   // the Property objects behind items (same order): live apply works on these only, never stored between calls
     try { props = comp.selectedProperties; } catch (e0) { props = []; }
     for (var i = 0; i < props.length; i++) {
         var p = props[i];
@@ -7382,10 +7383,11 @@ function _ncCollectSel(comp) {
             if (keys.length === 0) { continue; }
             var lyr = p.propertyGroup(p.propertyDepth);
             items.push({ layer: lyr.index, lname: lyr.name, path: _ncPropPath(p), name: p.name, keys: keys });
+            propRefs.push(p);
             total += keys.length;
         } catch (e1) { }
     }
-    return { items: items, total: total };
+    return { items: items, total: total, props: propRefs };
 }
 
 function _ncSelSig(items) {
@@ -7442,6 +7444,23 @@ function _ncRestoreSel(comp, last) {
     return restored;
 }
 
+// Same as applyCubicBezier, but ONLY on the given properties (the ones with selected keyframes). applyCubicBezier walks every layer
+// and every property of the comp, which in a busy comp is thousands of AE DOM calls per apply: while dragging the graph that kept
+// AE's main thread busy and made the panel graph heavy. Properties without a selected key were skipped anyway, so the result is the same.
+function applyCubicBezierProps(jsonParams, props) {
+    var p = JSON.parse(jsonParams);
+    var group = { numProperties: props.length, property: function (i) { return props[i - 1]; } };
+    app.beginUndoGroup("Curve Editor: Apply Cubic Bezier");
+    try {
+        var count = applyBezierSimple(group, p);
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, keyframesModified: count });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ error: e.toString() });
+    }
+}
+
 function NC_liveStatus() {
     try {
         var comp = app.project.activeItem;
@@ -7469,9 +7488,11 @@ function NC_liveRun(fnName, jsonParams) {
         var live = $.global.__NC_LIVE;
         var s = _ncCollectSel(comp);
         var items = null;
+        var propsList = null;
         if (s.total > 0) {
             live.last = { compId: comp.id, items: s.items, total: s.total };
             items = s.items;
+            propsList = s.props;
         } else if (fnName === "applyCubicBezier" && live.last && live.last.compId === comp.id) {
             // Nothing is selected right now: go back to the keyframes that were clicked last.
             if (_ncRestoreSel(comp, live.last) === 0) {
@@ -7479,13 +7500,24 @@ function NC_liveRun(fnName, jsonParams) {
                 return JSON.stringify({ error: "Keyframe terakhir yang dipilih sudah tidak ditemukan. Klik keyframe lagi." });
             }
             items = live.last.items;
+            propsList = _ncCollectSel(comp).props;   // the keyframes are selected again now: take the live Property objects
         } else {
             return JSON.stringify({ error: "Klik sebuah keyframe di timeline dulu." });
         }
         // Identical request on identical keyframes: nothing to change, so skip it (no extra undo steps).
         var sig = fnName + "#" + jsonParams + "#" + comp.id + "#" + _ncSelSig(items);
         if (sig === live.sig) { return JSON.stringify({ success: true, keyframesModified: 1, unchanged: true }); }
-        var res = eval(fnName + "(jsonParams)");
+        var res = null;
+        if (fnName === "applyCubicBezier" && propsList && propsList.length) {
+            // Fast path: only the properties with selected keyframes. Anything unexpected (error, 0 keyframes) falls back to the
+            // full walk below, so the result is never worse than before.
+            res = applyCubicBezierProps(jsonParams, propsList);
+            try {
+                var o0 = JSON.parse(res);
+                if (!o0 || o0.error || !(o0.keyframesModified > 0)) { res = null; }
+            } catch (e3) { res = null; }
+        }
+        if (res === null) { res = eval(fnName + "(jsonParams)"); }
         try {
             var o = JSON.parse(res);
             if (o && !o.error) { live.sig = sig; }

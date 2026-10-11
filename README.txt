@@ -1420,3 +1420,27 @@ fix5 (1.8.30): IDLE SCREENSAVER enter / exit smooth + squashed widgets on exit; 
    nc-morph.js ?v=24, nc-warm.js ?v=2. Adds well under a second to the first-open spinner; the 4 s safety timeout is unchanged.
 Not measured inside AE (no AE / CEF here): syntax-checked only (node --check). If a widget still looks off on exit, tell me the idle position
 (Settings > Clock Position) and whether Auto-hide was on at that moment.
+
+fix6 (1.8.30): CURVE TAB - the graph got heavy while changing the curve on a layer (Auto Apply / live).
+Cause: every live apply ran applyCubicBezier, which walks EVERY layer and EVERY property of the comp (thousands of After Effects DOM calls
+in a busy comp) and checks keySelected on each key, only to skip everything that has no selected keyframe. While dragging, that ran every
+500 ms (Bezier) and kept AE's main thread busy, so AE and the panel graph stuttered.
+Fix (jsx/host.jsx only):
+- _ncCollectSel() now also returns the Property objects it already found (transient, never stored in __NC_LIVE).
+- applyCubicBezierProps(jsonParams, props) (new): same undo group + the same applyBezierSimple() code, but only on those properties.
+- NC_liveRun(): Bezier live apply uses the fast path. If it errors or modifies 0 keyframes it falls back to the old full walk, so the
+  result is never worse than before. The manual APPLY button and the other models (Elastic / Bounce / Wave / Steps / Custom) are unchanged.
+- The mock test (stubbed AE objects) covered: fast path, identical-request skip, new params, zero-keyframe fallback.
+host.jsx is read when the panel loads: close and reopen the MultiTool panel (or restart AE) after installing.
+Not measured inside AE. If it is still heavy, tell me: comp size (layers), how many keyframes are selected, and whether the lag is in the
+graph itself or in AE's timeline.
+
+fix7 (1.8.30): CURVE TAB - the first mode switch (e.g. Bezier -> Custom) after the warm-up spinner still lagged once.
+Cause: during the warm-up the page was visibility:hidden. A hidden page is not painted, so paint / raster of the morphing curve stayed
+cold and the first REAL switch paid for it. The morph code itself was already warmed (fix5), only 70 ms long.
+- neucurve/nc-warm.css v2: while warming, body is opacity 0.01 (invisible, but still painted) instead of visibility:hidden.
+- neucurve/nc-warm.js v3: the mode cycle runs twice (2nd pass runs on code the engine has started to optimise). Still ends on your mode.
+- neucurve/nc-morph.js v25: WARM_DURATION 70 -> 120 ms (more frames per warm-up morph).
+Cost: the first-open spinner is a little longer (about 0.3 - 0.5 s). Touching the panel still stops it at once.
+Off: WARM = false at the top of nc-warm.js, or localStorage neucurve_noWarm = "1".
+Not measured inside AE. If the first switch still lags, tell me which mode pair (from -> to) and whether it is every time or once.

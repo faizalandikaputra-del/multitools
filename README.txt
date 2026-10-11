@@ -1397,3 +1397,26 @@ in (opacity only). Touching the panel (mouse, key, wheel, touch) stops it at onc
 - nc-morph.js v23: no morph while warming. Cost: about a second of spinner the first time the Curve tab is opened in a session.
 - Off: WARM = false at the top of nc-warm.js, or localStorage neucurve_noWarm = "1", or delete the nc-warm lines in neucurve/index.html.
 Not measured inside AE (no AE / CEF here): the warm-up logic itself was tested with stubs (order, restore, flags, failsafe).
+
+fix5 (1.8.30): IDLE SCREENSAVER enter / exit smooth + squashed widgets on exit; CURVE TAB first mode switch lag.
+1) Squashed widgets when leaving idle. Cause: .idle-clock only had its full-screen box (top/right/bottom/left: 0) while body.is-idle was set.
+   When is-idle was removed the box collapsed to hug its content while it was still fading out (0.25 s); the widget grids use
+   width: min(100%, 36rem) (a percentage of a shrink-to-fit parent), so they were re-laid out narrow and short = "gepeng".
+   Fix: css/mt-idle-motion.css (new) keeps the SAME full-screen geometry in both states. Nothing resizes, only opacity + transform move.
+2) Idle enter / exit motion (motion-design: calm / premium, same curves as css/mt-idle-adjust.css --ia-in / --ia-out):
+   - enter: panel fades + sinks 0.5 rem (300 ms accelerate), clock arrives 120 ms later (480 ms decelerate); date, time, then the five boxes
+     rise in one after the other (45 ms apart, 225 ms total). Panel is parked after the fade (PARK_DELAY_MS 450 > 300).
+   - leave: clock fades + sinks (220 ms accelerate); the panel rises + fades in (360 ms decelerate, 60 ms delay). It no longer pops in.
+   - js/main.js v30 Idle.exit(): .app is un-parked with transitions switched off for one frame, so it never slides in from -200vw; the
+     message card keeps its "is-in" class until the clock has faded (was removed on the first frame = it vanished at once).
+   - js/mt-idle-adjust.js v8: the auto-hide state (is-quiet) is cleared 420 ms AFTER leaving idle (was at once): hidden boxes no longer
+     jump back to visible, nor replay their entrance, while the clock is still fading out. Cleared again at once on the next entry.
+   - prefers-reduced-motion and Settings > Animations OFF: no transform, no stagger, instant.
+   Cache-bust: css/mt-idle-motion.css ?v=1 (new), js/main.js ?v=30, js/mt-idle-adjust.js ?v=8 (html/index.html).
+3) Curve tab: first graph mode switch after opening AE lagged. Cause: nc-warm.js (fix4) cycled every mode behind the spinner, but nc-morph.js
+   was switched OFF while warming, so the morph itself (start / render / moveHandles / fadeBack and the .nc-morphing / .nc-morph-out style
+   changes) was still cold on the first real switch.
+   Fix: nc-morph.js v24 runs the real morph while warming, 70 ms long (WARM_DURATION). nc-warm.js v2 (comment only). neucurve/index.html:
+   nc-morph.js ?v=24, nc-warm.js ?v=2. Adds well under a second to the first-open spinner; the 4 s safety timeout is unchanged.
+Not measured inside AE (no AE / CEF here): syntax-checked only (node --check). If a widget still looks off on exit, tell me the idle position
+(Settings > Clock Position) and whether Auto-hide was on at that moment.

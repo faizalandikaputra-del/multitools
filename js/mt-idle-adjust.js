@@ -570,20 +570,26 @@
     }
     // The idle screen opening / closing. Only a real change of body.is-idle is handled: this observer sees every class write on
     // <body>, including our own (is-adjusting, is-quiet, is-ia-quiet), so reacting to each of them would loop forever.
-    var wasIdle = isIdle();
+    var wasIdle = isIdle(), qT = 0;
     try {
       new MutationObserver(function () {
         var now = isIdle();
         if (now === wasIdle) { return; }
         wasIdle = now;
         if (now) {
+          if (qT) { clearTimeout(qT); qT = 0; }
+          setClass("is-ia-quiet", false); setQuiet(false);   // a late clear from the last exit must not hide this entry
           ahArm(); iaWake();
           requestAnimationFrame(function () { if (isIdle()) { resolveAll(); saveLayout(); } });   // a saved layout never opens stacked
         } else {
           if (adjusting) { setAdjust(false); }
           if (ahTimer) { clearTimeout(ahTimer); ahTimer = 0; }
           if (iaTimer) { clearTimeout(iaTimer); iaTimer = 0; }
-          setClass("is-ia-quiet", false); setQuiet(false); swallowClick = false;
+          swallowClick = false;
+          // Auto-hide state is cleared only AFTER the clock has faded out (css/mt-idle-motion.css, 0.22 s). Cleared at once, the hidden
+          // boxes jumped back to visible while the clock was still on screen = a pop at the start of every exit from auto-hide.
+          if (qT) { clearTimeout(qT); }
+          qT = setTimeout(function () { qT = 0; if (!isIdle()) { setClass("is-ia-quiet", false); setQuiet(false); } }, 420);
         }
       }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     } catch (e2) { }

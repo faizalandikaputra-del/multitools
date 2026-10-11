@@ -18,11 +18,14 @@
    (window.__ncMorphUntil, read by nc-glow.js / nc-ball.js / nc-apply-glow.js; svg.nc-morphing in nc-morph.css), then the
    glow fades back in. One render per frame (the observer render and the rAF render no longer double up) and a idle-time warm-up
    so the very first mode switch after AE starts runs on already-optimised code.
+   v24: the hidden mode warm-up (nc-warm.js) no longer disables the morph: it runs start() / render() / moveHandles() / fadeBack() and the
+   .nc-morphing / .nc-morph-out style changes for real, with a 70 ms duration (WARM_DURATION), so the first real mode switch in AE is not cold.
    Plain ES5 for old CEF (AE 2019/2021).  Off switch: remove <script src="./nc-morph.js"> and <link href="./nc-morph.css">. */
 (function () {
   "use strict";
 
   var DURATION = 500;       // ms (RE-Faster: 500)
+  var WARM_DURATION = 70;   // ms: morph length while nc-warm.js cycles the modes behind the spinner (page hidden, only the code path matters)
   var GRID = 200;           // samples along X while morphing (420 before; the glow is off while morphing so fewer points are plenty)
   var MORPH_CLASS = "nc-morphing";
   var OUT_CLASS = "nc-morph-out";
@@ -43,7 +46,7 @@
   var lastD = null;         // last "d" seen on the main path (not written by us)
   var lastH = null;         // last handle positions seen (screen px) - the "from" side of the handle motion
 
-  function reduced() { return window.__ncWarm === 1 || document.documentElement.getAttribute("data-reduce-motion") === "true"; }   // v23: also off during the hidden mode warm-up (nc-warm.js)
+  function reduced() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }   // v24: the hidden mode warm-up (nc-warm.js) now runs the REAL morph too, just short (WARM_DURATION), so its code path is not cold on the first real switch
 
   function isMainPath(n) {
     return !!n && n.nodeType === 1 && n.tagName && n.tagName.toLowerCase() === "path" &&
@@ -267,7 +270,7 @@
   }
 
   function render(a) {
-    var t = now(), lin = (t - a.t0) / DURATION, e;
+    var t = now(), lin = (t - a.t0) / (a.dur || DURATION), e;
     if (lin >= 1) { finish(a, true); return; }
     a.tr = t;
     window.__ncMorphUntil = Date.now() + 250;        // refreshed every frame: a stuck flag (hidden frame, no rAF) clears itself
@@ -284,7 +287,7 @@
     sa = makeSampler(A);
     if (anim) { finish(anim, false); }
     svg = path.parentNode;
-    a = { path: path, svg: svg, frame: 0, t0: now(), tr: 0, xs: [], ya: [], sb: null, toD: toD, written: fromD,
+    a = { path: path, svg: svg, frame: 0, t0: now(), tr: 0, dur: window.__ncWarm === 1 ? WARM_DURATION : DURATION, xs: [], ya: [], sb: null, toD: toD, written: fromD,
           appT: -1e9, parts: new Array(GRID + 1), hEls: handleEls(svg), hFrom: [], hNow: [] };
     for (i = 0; i < a.hEls.length; i++) {
       a.hFrom.push(fromH && fromH.length ? (fromH[i] || fromH[fromH.length - 1]) : null);   // extra handles sprout from the last old one

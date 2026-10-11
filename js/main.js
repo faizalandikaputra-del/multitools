@@ -5987,7 +5987,7 @@
     MIN_SCALE: 60,
     MAX_SCALE: 160,
     MOVE_THRESHOLD: 2,       // px - smaller moves count as jitter / browser-synthesized mouse events
-    PARK_DELAY_MS: 450,      // > the .app fade-out in style.css (0.35s): display:none only after the fade
+    PARK_DELAY_MS: 450,      // > the .app fade-out in css/mt-idle-motion.css (0.3s): parked (off-screen) only after the fade
     CLOCK_24H: true,         // false = 12-hour clock without AM/PM (like the iPhone)
     DAYS: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     MONTHS: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -6001,6 +6001,7 @@
     checkTimer: 0,
     clockTimer: 0,
     parkTimer: 0,
+    msgTimer: 0,             // delayed removal of the message card class after the exit fade
     savedScroll: [],
     SESSION_START_KEY: "sessionStart",   // epoch ms - mulai sesi editing (disimpan, bertahan walau panel ditutup sebentar)
     SESSION_BEAT_KEY: "sessionBeat",     // epoch ms - detak terakhir panel hidup
@@ -6222,7 +6223,8 @@
       this.startClock();                                   // text is ready before the fade-in
       this.showMessage();
       this.clockEl.setAttribute("aria-hidden", "false");
-      document.body.classList.add("is-idle");              // CSS: UI fades out, clock fades in
+      clearTimeout(this.msgTimer);                         // a late "message out" from the previous exit must not hit this entry
+      document.body.classList.add("is-idle");              // CSS (css/mt-idle-motion.css): panel leaves, clock + widgets arrive
       clearTimeout(this.parkTimer);
       this.parkTimer = setTimeout(function () {
         self.saveScroll();                                 // belt and braces: scroll offsets are restored on exit
@@ -6231,13 +6233,23 @@
     },
 
     exit: function () {
+      var self = this;
       if (!this.isIdle) { return; }
       this.isIdle = false;
       clearTimeout(this.parkTimer);
       this.stopClock();
-      if (this.messageEl) { this.messageEl.classList.remove("is-in"); }
-      document.body.classList.remove("is-idle-parked");    // the UI comes back on-screen first...
-      void this.appEl.offsetWidth;                         // ...is committed here, so the fade-in can run
+      // The message card leaves WITH the clock (css fade, 0.22 s) instead of vanishing on the first frame: its "is-in" class is
+      // dropped only after the fade. showMessage() restarts the animation on the next entry anyway.
+      if (this.messageEl) {
+        clearTimeout(this.msgTimer);
+        this.msgTimer = setTimeout(function () { if (!self.isIdle && self.messageEl) { self.messageEl.classList.remove("is-in"); } }, 360);
+      }
+      // Un-park WITHOUT a transition: .app jumps from far off-screen to its hidden rest spot (still opacity 0), and only then
+      // do the transitions come back, so the panel rises + fades in from where it left instead of sliding in from -200vw.
+      this.appEl.style.transition = "none";
+      document.body.classList.remove("is-idle-parked");
+      void this.appEl.offsetWidth;                         // committed here, with transitions off
+      this.appEl.style.transition = "";
       document.body.classList.remove("is-idle");
       this.clockEl.setAttribute("aria-hidden", "true");
       if (this.unlockEl) { this.unlockEl.setAttribute("aria-hidden", "true"); }

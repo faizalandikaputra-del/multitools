@@ -1,0 +1,79 @@
+/* Multi Tool - mt-idle-motion.css (v1)
+   Smooth enter / exit of the idle screen + the "squashed widgets on exit" fix.
+   Load AFTER css/mt-idle-adjust.css (uses its --ia-in / --ia-out curves) and BEFORE css/material-theme.css.
+   Chromium-74 safe: no inset shorthand, no gap on flex, no clamp()/min() added here.
+
+   BUG (squashed widgets when leaving idle)
+     The clock box only got its full-screen geometry (top / right / bottom / left: 0) while body.is-idle was set
+     (css/mt-idle-adjust.css, end of file). The moment is-idle was removed the box collapsed to hug its content while it
+     was still fading out (0.25 s). The widget grids use  width: min(100%, 36rem)  -> a percentage of a shrink-to-fit parent
+     -> they were re-laid out narrow and short, so the widgets looked flattened for a quarter of a second.
+     Fix: the box keeps the SAME full-screen geometry in both states. Nothing changes size when idle starts or ends,
+     only opacity + transform move. (Position of the clock inside the box is alignment only, see style.css.)
+
+   MOTION (same personality as the rest of the idle UI: calm / premium glass)
+     ENTER idle   panel   accelerate  --ia-out  300 ms   fades + sinks 0.5 rem, then is parked (JS PARK_DELAY_MS 450 > 300)
+                  clock   decelerate  --ia-in   480 ms   starts 120 ms after the panel starts leaving (overlap, no empty beat)
+                  hero    date, time first; boxes follow, 45 ms apart (5 boxes = 225 ms stagger, < 500 ms budget)
+     LEAVE idle   clock   accelerate  --ia-out  220 ms   (leaving is shorter than arriving)
+                  panel   decelerate  --ia-in   360 ms   starts 60 ms in, rises from 0.5 rem
+     Never opacity alone: every fade also moves. prefers-reduced-motion / the app's Animations switch turn it all off. */
+
+/* ---------- 1. the clock box: same geometry in both states ---------- */
+html body .idle-clock[data-position] {
+  top: 0; right: 0; bottom: 0; left: 0;
+  width: auto; height: auto; max-width: none; max-height: none;
+}
+
+/* ---------- 2. the clock box: leave = fast accelerate, enter = slower decelerate ---------- */
+html body .idle-clock {
+  transform: translate3d(0, 0.5rem, 0);
+  transition: opacity 0.22s var(--ia-out), transform 0.22s var(--ia-out), visibility 0s linear 0.22s;
+}
+html body.is-idle .idle-clock {
+  transform: none;
+  transition: opacity 0.48s var(--ia-in) 0.12s, transform 0.48s var(--ia-in) 0.12s, visibility 0s;
+}
+
+/* ---------- 3. the panel (.app) ----------
+   Default = coming back (leaving idle). body.is-idle = going away. body.is-idle-parked = far off-screen (instant: JS parks it
+   after the fade, and js/main.js un-parks it with transitions switched off before the fade-in starts). */
+.app {
+  opacity: 1; transform: none;
+  transition: opacity 0.36s var(--ia-in) 0.06s, transform 0.36s var(--ia-in) 0.06s;
+}
+body.is-idle .app {
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translate3d(0, 0.5rem, 0);
+  transition: opacity 0.3s var(--ia-out), transform 0.3s var(--ia-out), visibility 0s linear 0.3s;   /* JS PARK_DELAY_MS must stay > 0.3 s */
+}
+body.is-idle-parked .app { transform: translate3d(-200vw, 0, 0); transition: none; }
+
+/* ---------- 4. entrance choreography (hero first, boxes after) ---------- */
+@keyframes im-rise {
+  from { opacity: 0; transform: translate3d(0, 0.7rem, 0); }
+}
+body.is-idle .idle-date { animation: im-rise 0.5s var(--ia-in) 0.14s backwards; }
+body.is-idle .idle-time { animation: im-rise 0.5s var(--ia-in) 0.2s backwards; }
+body.is-idle .idle-chips > *, body.is-idle .idle-dash > * {
+  animation: im-rise 0.48s var(--ia-in) calc(0.28s + var(--qi, 0) * 45ms) backwards;
+}
+
+/* ---------- 5. leaving idle: the boxes must not replay their own entrance while the clock is still fading ----------
+   body.is-quiet (auto-hide) is cleared by js/mt-idle-adjust.js only AFTER the clock is hidden; this keeps that late clear silent. */
+body:not(.is-idle) .idle-chips > *, body:not(.is-idle) .idle-dash > * { transition: none; }
+
+/* ---------- reduced motion ---------- */
+:root[data-reduce-motion="true"] .app,
+:root[data-reduce-motion="true"] body.is-idle .app,
+:root[data-reduce-motion="true"] body .idle-clock,
+:root[data-reduce-motion="true"] body.is-idle .idle-clock { transform: none; transition-duration: 0.01ms; transition-delay: 0s; }
+:root[data-reduce-motion="true"] body.is-idle-parked .app { transform: translate3d(-200vw, 0, 0); }
+:root[data-reduce-motion="true"] body.is-idle .idle-date,
+:root[data-reduce-motion="true"] body.is-idle .idle-time,
+:root[data-reduce-motion="true"] body.is-idle .idle-chips > *,
+:root[data-reduce-motion="true"] body.is-idle .idle-dash > * { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .app, body.is-idle .app, html body .idle-clock, html body.is-idle .idle-clock { transform: none; transition-duration: 0.01ms; transition-delay: 0s; }
+  body.is-idle-parked .app { transform: translate3d(-200vw, 0, 0); }
+  body.is-idle .idle-date, body.is-idle .idle-time, body.is-idle .idle-chips > *, body.is-idle .idle-dash > * { animation: none; }
+}

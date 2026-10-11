@@ -1,5 +1,5 @@
 {
-    "latest_version":  "1.8.33",
+    "latest_version":  "1.8.34",
     "changelog":  "- Fix Animation\r\n- Fix Idle Screensaver\r\n- Fix Bug",
     "files":  [
                   {
@@ -65,6 +65,10 @@
                   {
                       "path":  "css/mt-idle-focus.css",
                       "sha256":  "bdd9b6c5984744ad6ee6d21acf78edefa14699b84ab190ec1defe12d7870d4d5"
+                  },
+                  {
+                      "path":  "css/mt-idle-motion.css",
+                      "sha256":  "cc526b8ce25fb2ba0d673cfc72c4f32e8910b3826dabf328cc47a29fa8d3a03f"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -168,7 +172,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "9a34f426751768066a98dab75806d0ec542c09b1d39938692ff0f75206efe183"
+                      "sha256":  "00edd1e7ccd73ad803436cc23fedf4336e665083bf11a540e12827447d3e6bf7"
                   },
                   {
                       "path":  "html/settings.html",
@@ -188,7 +192,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "a067202b7648ab41cfb027debbb6a0cfbd7a96f3d92f77eecd1e3ed770355db6"
+                      "sha256":  "5a4794cb858f4204ddd3d158bb81e572c7bd14e28dd894b58068430b14c3cbc9"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -212,7 +216,7 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "e83e09a3d7e6da26bad325af2dbb19501626a8e2817b8ee25bc84fd554cefb36"
+                      "sha256":  "ec26d27c310d8f64917374008b8381c3cf052c694cf3a9f6209b6b5afc5af286"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
@@ -304,7 +308,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "99843399404be88a870d0e51b953b6e35ed21216b49253585e145c1ad8da09a7"
+                      "sha256":  "aa3ce1f7de7848ac7d5170a7849f953405efa9929d31680d39b4cdc8e3fd63ab"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -472,7 +476,7 @@
                   },
                   {
                       "path":  "neucurve/nc-morph.js",
-                      "sha256":  "f93c9e6a9fd6316a03fb0a17027f952cab58c05f016ec724936804f8d2e0c7fe"
+                      "sha256":  "74784c264372acfa17b64fb421477389c149ad41022cb44f516e91fdf00fa533"
                   },
                   {
                       "path":  "neucurve/nc-overshoot-fx.css",
@@ -548,7 +552,7 @@
                   },
                   {
                       "path":  "neucurve/nc-warm.js",
-                      "sha256":  "38097a1ad17bcd66e58f98b5cd9e11075deea28ca3adb981d80242cbe912d4b4"
+                      "sha256":  "2dbce5c0af1d5de28956cb0ba3f8a1faf533fde0bdc8db1cd542b05be9ea6e89"
                   },
                   {
                       "path":  "neucurve/settings.html",
@@ -556,7 +560,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "e6d6eb977fadaaa39c41b7841a5115ee139f7822acbb4f03fbfd1dab602bced9"
+                      "sha256":  "357f250731edda301032b0fcc93a3b37d6d747058932ad968e0fa9e135c6364e"
                   }
               ]
 }

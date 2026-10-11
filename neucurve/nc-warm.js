@@ -78,7 +78,7 @@
 
   if (!WARM || !inFrame) { return; }
   try { if (window.localStorage && localStorage.getItem("neucurve_noWarm") === "1") { return; } } catch (e) { }
-  window.__ncWarm = 1;                                      // nc-morph.js: no morph while warming
+  window.__ncWarm = 1;                                      // nc-morph.js: morphs run for real while warming, but only 70 ms long (warms the morph path too)
   root.classList.add("nc-warming");
   failsafe = setTimeout(function () { done(true); }, GIVE_UP + 4000);   // whatever happens, the panel is never left hidden
   window.addEventListener("pointerdown", stop, true); window.addEventListener("mousedown", stop, true);

@@ -3947,7 +3947,8 @@
       if (!this.started) {
         this.started = true;
         this.pane.classList.add("is-loading");
-        this.frame.addEventListener("load", function () { self.pane.classList.remove("is-loading"); self.sync(true); });
+        /* v28: keep the spinner until the frame says its modes are warmed up ({mtCurveReady}, see neucurve/nc-warm.js); 4 s safety net */
+        this.frame.addEventListener("load", function () { self.sync(true); setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000); });
         this.frame.src = this.frame.getAttribute("data-src");
       }
       main.classList.add("is-curve");
@@ -3975,6 +3976,7 @@
 
   window.addEventListener("message", function (e) {
     if (e.data && e.data.mtBgRequest && e.source === Curve.frame.contentWindow) { Curve.sync(true); }
+    if (e.data && e.data.mtCurveReady && e.source === Curve.frame.contentWindow) { Curve.pane.classList.remove("is-loading"); }
   });
 
   // A separate NeuCurve window (Large Graph Editor / Settings) announces itself on load and asks for the current theme.

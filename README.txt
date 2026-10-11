@@ -1384,3 +1384,16 @@ is always blended from what is on screen right now (so switching again mid-morph
   this fix. Off-switches: DURATION / GRID at the top of nc-morph.js; delete the "html.nc-morph..." block at the end of nc-morph.css to keep
   the glow during morphs.
 Cache-bust: nc-morph.js ?v=22, nc-morph.css ?v=16, nc-glow.js ?v=4, nc-ball.js ?v=4, nc-apply-glow.js ?v=3 (neucurve/index.html).
+
+fix4 (1.8.30): CURVE TAB - first mode switches heavy in After Effects only (fine in a browser tab).
+Cause: cold engine. The first time each mode is shown, the bundle builds that mode's UI, the stylesheets resolve for it and every helper
+script (nc-flow, nc-gsize, nc-icons-pro, nc-extras ...) runs its mutation handlers for the first time on unoptimised code in a
+software-rendered CEF. A desktop browser hides this; AE shows it until each mode has been used a few times.
+Fix: neucurve/nc-warm.js + nc-warm.css (new). Right after the graph is up, the Curve frame clicks through every mode tab once and ends on
+the mode you were on (the app only stores the active mode), while the page is hidden. The host keeps its existing loading spinner
+meanwhile (js/main.js, Curve.show / message handler: removed on {mtCurveReady} from the frame, 4 s safety timeout). The page then fades
+in (opacity only). Touching the panel (mouse, key, wheel, touch) stops it at once and restores the mode.
+- Only inside the Curve tab frame. The Large Graph Editor and Settings windows are never cycled (they are synced with the main panel).
+- nc-morph.js v23: no morph while warming. Cost: about a second of spinner the first time the Curve tab is opened in a session.
+- Off: WARM = false at the top of nc-warm.js, or localStorage neucurve_noWarm = "1", or delete the nc-warm lines in neucurve/index.html.
+Not measured inside AE (no AE / CEF here): the warm-up logic itself was tested with stubs (order, restore, flags, failsafe).

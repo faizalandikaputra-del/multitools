@@ -1,0 +1,6 @@
+/* NeuCurve - nc-warm.css (companion of nc-warm.js): the page stays hidden (layout still runs) while the modes are warmed up
+   behind the host's loading spinner, then fades in. opacity only. */
+html.nc-warming body { visibility: hidden !important; }
+@keyframes nc-warm-in { from { opacity: 0; } }
+html.nc-warm-out body { animation: nc-warm-in .28s ease-out both; }
+html[data-reduce-motion="true"].nc-warm-out body { animation: none; }

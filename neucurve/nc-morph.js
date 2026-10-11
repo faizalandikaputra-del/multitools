@@ -43,7 +43,7 @@
   var lastD = null;         // last "d" seen on the main path (not written by us)
   var lastH = null;         // last handle positions seen (screen px) - the "from" side of the handle motion
 
-  function reduced() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
+  function reduced() { return window.__ncWarm === 1 || document.documentElement.getAttribute("data-reduce-motion") === "true"; }   // v23: also off during the hidden mode warm-up (nc-warm.js)
 
   function isMainPath(n) {
     return !!n && n.nodeType === 1 && n.tagName && n.tagName.toLowerCase() === "path" &&

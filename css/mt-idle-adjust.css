@@ -275,7 +275,7 @@ body.is-idle .idle-clock[data-position] { top: 0; right: 0; bottom: 0; left: 0; 
    The block keeps the alignment of the chosen Clock Position: it inherits align-items / text-align from .idle-clock[data-position]. */
 .idle-hero {
   position: relative; display: flex; flex-direction: column; align-items: inherit; justify-content: flex-start; flex: 0 0 auto;
-  box-sizing: border-box; min-width: 0; max-width: 100%; margin: 0; padding: 0.1rem 0.4rem 0.3rem; border-radius: 1rem;
+  box-sizing: border-box; min-width: 0; max-width: 100%; margin: 0; padding: 0.1rem 0 0.3rem; border-radius: 1rem;   /* no side padding: the clock edge = the card edge */
   outline: 1px dashed transparent; outline-offset: 4px;
 }
 .idle-hero.wa-off { display: none !important; }
@@ -290,3 +290,19 @@ body.is-adjusting .idle-hero.wa-ghost:hover, body.is-adjusting .idle-hero.wa-gho
 body.is-adjusting .idle-hero:hover .wa-name { opacity: 1; transform: none; }
 :root[data-reduce-motion="true"] body.is-adjusting .idle-hero { transition: none !important; }
 @media (prefers-reduced-motion: reduce) { body.is-adjusting .idle-hero { transition: none !important; } }
+
+/* optical alignment: the big digits have a side bearing, so the time looks inset next to the cards' edge. Pull it out by that bearing. */
+.idle-clock[data-position$="left"] .idle-time { margin-left: -0.05em; }
+.idle-clock[data-position$="right"] .idle-time { margin-right: -0.05em; }
+
+/* ---------- adjust mode: hidden widgets (ghosts) never push the visible ones ----------
+   Opening Adjust shows every hidden widget as a dimmed ghost so it can be switched back on. They used to sit in their normal place in the
+   flow, so a visible widget (e.g. the stopwatch, when Time in After Effects and Timer are hidden) jumped down by the height of the ghosts.
+   Now: ghosts of the chips row live in #idle-ghost-tray (a second .idle-chips row, built by js/mt-idle-adjust.js ghostsApart()) BELOW the
+   dashboard; a ghost inside the dashboard is ordered AFTER the visible boxes; a dashboard made only of ghosts goes after the fold;
+   the hidden clock block goes last. Flex order on .idle-clock, grid order on the dashboard. */
+body.is-adjusting .idle-dash > .wa-ghost { order: 2; }
+body.is-adjusting .idle-fold.wa-allghost { order: 2; }
+body.is-adjusting #idle-ghost-tray { order: 3; }
+body.is-adjusting .idle-hero.wa-off { order: 4; }
+#idle-ghost-tray:empty { display: none; }

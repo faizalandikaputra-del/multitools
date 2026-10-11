@@ -239,6 +239,8 @@
   // ================= idle screen rendering =================
   function isIdle() { return document.body.classList.contains("is-idle"); }
   function setText(node, t) { if (node && node.textContent !== t) { node.textContent = t; } }
+  // Live numbers: changed digits roll (js/mt-idle-roll.js). mode "fast" = counters that tick every second. Falls back to a plain write.
+  function rollText(node, t, mode) { if (!node) { return; } if (window.MTRoll) { window.MTRoll.set(node, t, mode); } else { setText(node, t); } }
 
   function renderElapsed() {
     var show = get("showElapsed") !== "0", box = el.elapsed;
@@ -248,7 +250,7 @@
     var start = parseInt(get("sessionStart"), 10), now = Date.now();
     if (!isFinite(start) || start > now) { start = now; }
     var t = split(now - start);
-    setText(el.eh, pad(t.h)); setText(el.em, pad(t.m)); setText(el.es, pad(t.s));
+    rollText(el.eh, pad(t.h), "fast"); rollText(el.em, pad(t.m), "fast"); rollText(el.es, pad(t.s), "fast");
   }
   var tIcon = "";
   function renderTimerChip() {
@@ -258,7 +260,7 @@
     box.classList.toggle("is-done", state === "done");
     var left = leftMs(), total = num0(get("tTotal")) || 1;
     setText(el.timerLabel, state === "done" ? "Time is up" : (state === "paused" ? "Timer paused" : "Timer"));
-    setText(el.timerTime, state === "done" ? "00:00:00" : clock(left));
+    rollText(el.timerTime, state === "done" ? "00:00:00" : clock(left), "fast");
     el.timerFill.style.width = (state === "idle" ? 0 : state === "done" ? 100 : Math.max(0, Math.min(100, (1 - left / total) * 100))) + "%";
     if (el.timerGo) {
       var ico = state === "running" ? "pause" : "play";
@@ -329,7 +331,7 @@
     if (!el.missed) { return; }
     el.missed.hidden = !n;
     if (!n) { missedOpen = false; }
-    setText(el.missedLabel, "Unfinished (" + n + ")");
+    rollText(el.missedLabel, "Unfinished (" + n + ")");
     el.missed.classList.toggle("is-open", missedOpen);
     el.missedToggle.setAttribute("aria-expanded", missedOpen ? "true" : "false");
     el.missedList.hidden = !(missedOpen && n);
@@ -352,7 +354,7 @@
     var items = slots(), n = 0, done = 0, i;
     for (i = 0; i < items.length; i++) { if (items[i].t.trim()) { n++; if (items[i].d) { done++; } } }
     if (el.todoList) { renderRows(items); }
-    setText(el.todoCount, n ? done + " of " + n + " done" : "");
+    rollText(el.todoCount, n ? done + " of " + n + " done" : "");
     setProgress(n, done);
     if (el.todoAdd) { el.todoAdd.disabled = items.length >= TODOS && !draft; }
     renderNotes();
@@ -419,7 +421,7 @@
         if (!inp.value.trim()) { del("todoDone" + slot); inp.parentNode.classList.remove("is-done"); }
         persist(); syncModal();
         var n = 0, d = 0, i; for (i = 1; i <= TODOS; i++) { if ((get("todo" + i) || "").trim()) { n++; if (get("todoDone" + i) === "1") { d++; } } }
-        setText(el.todoCount, n ? d + " of " + n + " done" : "");
+        rollText(el.todoCount, n ? d + " of " + n + " done" : "");
         setProgress(n, d);
       });
       el.todoList.addEventListener("keydown", function (e) {
@@ -590,7 +592,7 @@
   function renderStopwatch() {
     if (!el.sw) { return; }
     var st = swState(), hidden = get("swHidden") === "1", ico = st === "running" ? "pause" : "play";
-    setText(el.swTime, hidden ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()));
+    rollText(el.swTime, hidden ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), "fast");
     el.sw.classList.toggle("is-hidden", hidden);
     el.sw.classList.toggle("is-running", st === "running");
     if (ico !== swIcon) { el.swToggle.innerHTML = ico === "pause" ? ICON_PAUSE : ICON_PLAY; swIcon = ico; }

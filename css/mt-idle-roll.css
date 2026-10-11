@@ -1,0 +1,29 @@
+/* Multi Tool - mt-idle-roll.css (v1)
+   Digit roll for the live numbers of the idle screen: date, Time in After Effects (h / m / s), Timer, Stopwatch, To-Do count, Unfinished count.
+   Markup is built by MTRoll (js/mt-idle-roll.js): node > .mr-c (one slot per digit) > .mr-n (current) [+ .mr-o (leaving) while rolling]; .mr-s = the words around the numbers.
+   Same motion language as the big clock (css/mt-idle-time.css): old digit up and out (accelerate), new digit up from below (decelerate), no overshoot.
+     standard (date, counts)    out 380 ms / in 520 ms, travel 85 %, 60 ms apart
+     .mr-fast (ticking counters) out 180 ms / in 260 ms, travel 60 %, 35 ms apart - a number that changes every second must not stay in motion longer than it rests.
+   Load AFTER css/mt-idle-time.css (uses --ia-in / --ia-out from mt-idle-adjust.css). Chromium-74 safe. */
+[data-mr] { white-space: nowrap; }
+.mr-c { position: relative; display: inline-block; }
+.mr-c.is-roll { clip-path: inset(0 -0.25em); }          /* clipped ONLY while rolling: the resting digit keeps its text-shadow and its baseline */
+.mr-o { position: absolute; left: 0; top: 0; }
+@keyframes mr-out   { to { opacity: 0; transform: translate3d(0, -85%, 0); } }
+@keyframes mr-in    { from { opacity: 0; transform: translate3d(0, 85%, 0); } }
+@keyframes mr-out-f { to { opacity: 0; transform: translate3d(0, -60%, 0); } }
+@keyframes mr-in-f  { from { opacity: 0; transform: translate3d(0, 60%, 0); } }
+.mr-c.is-roll .mr-o { animation: mr-out 0.38s var(--ia-out, cubic-bezier(0.3, 0, 1, 1)) both; }
+.mr-c.is-roll .mr-n { animation: mr-in 0.52s var(--ia-in, cubic-bezier(0.05, 0.7, 0.1, 1)) backwards; }
+.mr-c.is-roll.mr-fast .mr-o { animation-name: mr-out-f; animation-duration: 0.18s; }
+.mr-c.is-roll.mr-fast .mr-n { animation-name: mr-in-f; animation-duration: 0.26s; }
+/* the delays (stagger + the offset of the new digit) are set inline by MTRoll */
+
+:root[data-reduce-motion="true"] .mr-o { display: none; }
+:root[data-reduce-motion="true"] .mr-c.is-roll { clip-path: none; }
+:root[data-reduce-motion="true"] .mr-c.is-roll .mr-n { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .mr-o { display: none; }
+  .mr-c.is-roll { clip-path: none; }
+  .mr-c.is-roll .mr-n { animation: none; }
+}

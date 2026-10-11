@@ -6288,13 +6288,47 @@
     // ----- clock (runs ONLY while idle; re-arms itself for the next minute boundary) -----
     pad: function (n) { return n < 10 ? "0" + n : String(n); },
 
+    // The time is drawn as one slot per character (.it-c). When a character changes while the idle screen is on, the old one rolls
+    // up and out and the new one rises in from below (css/mt-idle-time.css). The text is kept in this._timeStr, not read back from the DOM
+    // (during the roll a slot holds both the old and the new character).
+    renderTime: function (time) {
+      var el = this.timeEl, prev = this._timeStr, i, k = 0, slot, o, n, kids;
+      if (!el || prev === time) { return; }
+      this._timeStr = time;
+      kids = el.children;
+      if (!prev || prev.length !== time.length || kids.length !== time.length) {          // first draw (or a different length): plain, no motion
+        el.textContent = "";
+        for (i = 0; i < time.length; i++) {
+          slot = document.createElement("span"); slot.className = "it-c" + (time.charAt(i) === ":" ? " it-colon" : "");
+          n = document.createElement("span"); n.className = "it-n"; n.textContent = time.charAt(i);
+          slot.appendChild(n); el.appendChild(slot);
+        }
+        return;
+      }
+      var self = this;
+      for (i = 0; i < time.length; i++) {
+        if (prev.charAt(i) === time.charAt(i)) { continue; }
+        slot = kids[i];
+        if (slot._rt) { clearTimeout(slot._rt); slot._rt = 0; }
+        slot.textContent = "";
+        o = document.createElement("span"); o.className = "it-o"; o.textContent = prev.charAt(i);
+        n = document.createElement("span"); n.className = "it-n"; n.textContent = time.charAt(i);
+        o.style.animationDelay = (k * 70) + "ms"; n.style.animationDelay = (k * 70 + 60) + "ms";   // changed digits follow each other, left to right; the new one starts 60 ms after the old one
+        slot.appendChild(o); slot.appendChild(n);
+        slot.classList.remove("is-roll"); void slot.offsetWidth; slot.classList.add("is-roll");
+        slot._rt = setTimeout((function (sl) { return function () { sl._rt = 0; if (sl.firstChild && sl.firstChild.className === "it-o") { sl.removeChild(sl.firstChild); } sl.classList.remove("is-roll"); }; })(slot), 900 + k * 70);
+        k++;
+      }
+    },
+
     updateClock: function () {
       var d = new Date(), h = d.getHours();
       if (!this.CLOCK_24H) { h = h % 12 || 12; }
       var time = (this.CLOCK_24H ? this.pad(h) : String(h)) + ":" + this.pad(d.getMinutes());
       var date = this.DAYS[d.getDay()] + ", " + d.getDate() + " " + this.MONTHS[d.getMonth()];
-      if (this.timeEl.textContent !== time) { this.timeEl.textContent = time; }   // no DOM write unless it changed
-      if (this.dateEl.textContent !== date) { this.dateEl.textContent = date; }
+      this.renderTime(time);                                                      // no DOM write unless it changed
+      if (window.MTRoll) { window.MTRoll.set(this.dateEl, date); }                   // changed digits of the date roll (js/mt-idle-roll.js)
+      else if (this.dateEl.textContent !== date) { this.dateEl.textContent = date; }
       if (this.sessionEl) {
         var sess = "You've been in After Effects for " + this.formatSession(d.getTime() - this.sessionStart);
         if (this.sessionEl.textContent !== sess) { this.sessionEl.textContent = sess; }
@@ -6309,7 +6343,7 @@
       this.clockTimer = setTimeout(function () { self.startClock(); }, 60000 - (d.getSeconds() * 1000 + d.getMilliseconds()) + 30);
     },
 
-    stopClock: function () { clearTimeout(this.clockTimer); this.clockTimer = 0; },
+    stopClock: function () { clearTimeout(this.clockTimer); this.clockTimer = 0; this._timeStr = ""; if (window.MTRoll) { window.MTRoll.reset(this.dateEl); } },   // next idle start draws the time plain, without a roll
 
     // Reads the saved custom message and (re)plays its slide-up/fade-in animation.
     // Removing the class, forcing a reflow, then re-adding it is the same trick

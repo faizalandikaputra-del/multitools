@@ -1513,3 +1513,41 @@ fix29 (settings > Background): "Background image" and "Animated background" are 
   (loadImageFile / loadMotionFile / clearImageMedia / clearMotionMedia).
 - Tested in headless Chromium: png -> gif -> png -> Remove switch layers correctly, no JS error. Not run inside AE.
 Note: an image and a GIF can no longer be shown together (the GIF used to sit on top of the image).
+
+fix30 (idle screen): the clock sat slightly to the right of the widgets (date, time and message did not line up with the cards' edge).
+Cause: fix28 gave the clock block (#idle-hero) 0.4 rem of side padding (room for the adjust outline), pushing the text in.
+Fix (css/mt-idle-adjust.css v9): no side padding on .idle-hero; the big time digits are pulled out by their side bearing (-0.05em) so the ink lines up too.
+Measured in headless Chromium: date, message chip and the Time-in-After-Effects card share the same left edge (16 px) for Top left, and the same right edge for Top right.
+
+fix31 (idle clock): when the time changes, each changed digit now rolls: the old digit moves UP and fades out, the new digit rises in FROM BELOW.
+- js/main.js: Idle.renderTime() draws #idle-time as one slot per character (.it-c > .it-n, plus .it-o while rolling). The text is compared with
+  this._timeStr (not read back from the DOM). First draw after the idle screen opens is plain; only a real change while idle rolls.
+- css/mt-idle-time.css v1 (new, linked after mt-idle-icons.css): out 380 ms accelerate (--ia-out), in 520 ms decelerate (--ia-in) starting 60 ms later,
+  several digits (18:59 -> 19:00) follow 70 ms apart, left to right. Slot is clipped (clip-path) only while rolling, so the resting text-shadow is
+  never cut and the baseline never moves. prefers-reduced-motion / the Animations switch: the digit just changes.
+- Tested in headless Chromium with a fake clock (18:59 -> 19:00): 3 digits rolled with the right stagger, slots collapsed to plain text afterwards, no JS error. Not run inside AE.
+
+fix32 (idle screen): the digit roll of the clock (fix31) now also runs on every other live number of the idle screen.
+Numbers: date (day number), Time in After Effects (hours / minutes / seconds), Timer, Stopwatch, To-Do count ("3 of 8 done"), "Unfinished (n)".
+- js/mt-idle-roll.js (new, loaded before main.js): MTRoll.set(node, text [, "fast"]) / MTRoll.reset(node). One slot per digit (.mr-c > .mr-n, + .mr-o while rolling),
+  words around the numbers (.mr-s) just change. First draw of every idle session is plain; a change in the number of digits (9 -> 10) is drawn plain;
+  outside idle mode it is always plain. The text is kept in node._mr, never read back from the DOM.
+- css/mt-idle-roll.css (new, linked after mt-idle-time.css): same motion as the clock. Standard (date, counts): out 380 ms / in 520 ms, travel 85 %, 60 ms apart.
+  "fast" (stopwatch, timer, time in AE; they tick every second): out 180 ms / in 260 ms, travel 60 %, 35 ms apart. No overshoot. Clip only while rolling.
+  Animations switch / prefers-reduced-motion: the digit just changes.
+- js/mt-idle-focus.js: rollText() helper; renderElapsed, renderTimerChip, renderStopwatch, the To-Do count and the Unfinished label use it (v=15).
+- js/main.js: Idle.updateClock() draws the date with MTRoll; Idle.stopClock() resets it (v=31). html/index.html: new link + script, cache versions bumped.
+- Not changed: the big clock (Idle.renderTime, css/mt-idle-time.css), alarm times (static), Settings readouts (not on the idle screen).
+- Tested in headless Chromium (MTRoll alone): plain when not idle / first draw, 1 and 2 digits roll with the right delays, slots collapse afterwards, words change in place,
+  digit-count change and reset draw plain, no JS error. node --check on all changed JS. Not run inside AE.
+
+fix33 (idle screen > Adjust): opening Adjust made visible widgets jump (e.g. the stopwatch moved down ~200 px).
+Cause: Adjust shows every hidden widget (Time in After Effects, Timer, ...) as a dimmed ghost IN its normal place in the flow, so the ghosts pushed the visible widgets down.
+Fix: ghosts never take space above a visible widget.
+- js/mt-idle-adjust.js (v9): ghostsApart() (called from refresh() and when Adjust closes). While adjusting, ghosts of the chips row (#idle-elapsed, #idle-timer) are moved into
+  #idle-ghost-tray (a second .idle-chips row built on demand, below the dashboard); they go back to .idle-chips when switched on (eye) or when Adjust closes.
+  A dashboard made only of ghosts gets .wa-allghost.
+- css/mt-idle-adjust.css (v10): ghosts inside the dashboard get order 2 (after the visible boxes); .idle-fold.wa-allghost, #idle-ghost-tray and the hidden clock block (.idle-hero.wa-off) are ordered after the visible blocks.
+- Tested in headless Chromium (312 px wide, real html/index.html): elapsed+timer hidden / only one hidden / all shown / stopwatch+alarms hidden too: no visible widget moves when Adjust opens;
+  eye on a ghost moves it into its row (the widgets below make room, as intended); Done puts every ghost back. No JS error. Not run inside AE.
+Not reproduced: the clock block shifting ~15 px sideways in the screenshot (the hero stays at the same x in both modes here). If it still happens, send the Clock Position setting.

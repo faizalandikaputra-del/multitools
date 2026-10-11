@@ -1,0 +1,28 @@
+/* Multi Tool - mt-idle-time.css (v1)
+   Idle screen clock: when the minute (or hour) changes, the old digit rolls UP and out, the new digit rises in FROM BELOW.
+   Markup is built by Idle.renderTime() in js/main.js: #idle-time > .it-c (one slot per character) > .it-n (current) [+ .it-o (leaving) while rolling].
+   Load AFTER css/mt-idle-adjust.css (uses --ia-in / --ia-out). Chromium-74 safe.
+
+   Motion: emotion = calm, elegant (premium archetype, no overshoot).
+     out  accelerate --ia-out  380 ms   up 0.85 em-height + fade (leaves first)
+     in   decelerate --ia-in   520 ms   from 0.85 below, starts 60 ms after the old one starts leaving (overlap, no empty beat)
+     several digits changing (e.g. 18:59 -> 19:00): 70 ms apart, left to right.
+   Tabular digits: every slot keeps its width, so the neighbours never shift. The slot is only clipped (clip-path) WHILE rolling,
+   so the text-shadow of a resting digit is never cut off and the baseline never moves. */
+.idle-time .it-c { position: relative; display: inline-block; }
+.idle-time .it-c.is-roll { clip-path: inset(0 -0.25em); }
+.idle-time .it-o { position: absolute; left: 0; top: 0; }
+@keyframes it-out { to { opacity: 0; transform: translate3d(0, -85%, 0); } }
+@keyframes it-in  { from { opacity: 0; transform: translate3d(0, 85%, 0); } }
+.idle-time .it-c.is-roll .it-o { animation: it-out 0.38s var(--ia-out, cubic-bezier(0.3, 0, 1, 1)) both; }
+.idle-time .it-c.is-roll .it-n { animation: it-in 0.52s var(--ia-in, cubic-bezier(0.05, 0.7, 0.1, 1)) backwards; }
+/* the delays (stagger + the 60 ms offset of the new digit) are set inline by Idle.renderTime() */
+
+:root[data-reduce-motion="true"] .idle-time .it-o { display: none; }
+:root[data-reduce-motion="true"] .idle-time .it-c.is-roll { clip-path: none; }
+:root[data-reduce-motion="true"] .idle-time .it-c.is-roll .it-n { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .idle-time .it-o { display: none; }
+  .idle-time .it-c.is-roll { clip-path: none; }
+  .idle-time .it-c.is-roll .it-n { animation: none; }
+}

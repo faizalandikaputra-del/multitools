@@ -451,6 +451,36 @@
         eye.setAttribute("title", (on ? "Hide " : "Show ") + w.noun);
       }
     });
+    ghostsApart();
+  }
+
+  // Hidden widgets (ghosts) are shown while adjusting so they can be switched back on. They must NEVER push a visible widget:
+  //  - ghosts of the chips row (Time in After Effects, Timer) move into a second row (#idle-ghost-tray, same classes as .idle-chips)
+  //    that sits BELOW the dashboard; they go back to their own row when they are switched on or when Adjust closes.
+  //  - ghosts inside the dashboard are ordered after the visible boxes (css), and a dashboard made only of ghosts is marked (.wa-allghost).
+  var CHIP_IDS = ["idle-elapsed", "idle-timer"];
+  function ghostTray(make) {
+    var t = $("idle-ghost-tray"), clock = $("idle-clock");
+    if (!t && make && clock) { t = document.createElement("div"); t.id = "idle-ghost-tray"; t.className = "idle-chips wa-tray"; clock.appendChild(t); }
+    return t;
+  }
+  function ghostsApart() {
+    var chips = document.querySelector(".idle-chips:not(.wa-tray)"), tray, i, el, dash = $("idle-dash"), kids, all, fold;
+    if (chips) {
+      tray = ghostTray(adjusting);
+      for (i = 0; i < CHIP_IDS.length; i++) {
+        el = $(CHIP_IDS[i]); if (!el) { continue; }
+        if (adjusting && el.classList.contains("wa-ghost")) { if (el.parentNode !== tray) { tray.appendChild(el); } }
+        else if (el.parentNode !== chips) { chips.insertBefore(el, CHIP_IDS[i] === "idle-elapsed" ? chips.firstChild : null); }
+      }
+    }
+    if (dash) {
+      kids = dash.children; all = kids.length > 0;
+      for (i = 0; i < kids.length; i++) { if (!kids[i].classList.contains("wa-ghost")) { all = false; break; } }
+      dash.classList.toggle("wa-allghost", all);
+      fold = dash.parentNode;
+      if (fold && fold.classList && fold.classList.contains("idle-fold")) { fold.classList.toggle("wa-allghost", all); }
+    }
   }
 
   // ---------- chrome on each widget ----------
@@ -557,6 +587,7 @@
     if (on === adjusting) { return; }
     adjusting = on;
     setClass("is-adjusting", on);
+    if (!on) { ghostsApart(); }                                    // ghosts of the chips row go home before the layout is settled
     if (ui.btn) {
       ui.btn.setAttribute("aria-pressed", on ? "true" : "false");
       ui.btn.setAttribute("aria-label", on ? "Done adjusting" : "Adjust widgets");

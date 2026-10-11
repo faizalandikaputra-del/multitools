@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.30",
-    "changelog":  "- Fix Animation\r\n- Adding Note \u0026 To-Do\r\n- Fix Bug",
+    "latest_version":  "1.8.31",
+    "changelog":  "- Fix Animation\r\n- Fix Idle Screensaver\r\n- Fix Bug",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -60,7 +60,7 @@
                   },
                   {
                       "path":  "css/mt-idle-adjust.css",
-                      "sha256":  "8599325d67129fe1e19a39b00b5c23f12fd94ab9c6e7419c290f47eb281657f0"
+                      "sha256":  "b158305851cd33327026177d088035fa0bf76000400217427d4a9ba4dfff322c"
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
@@ -168,7 +168,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "9f758cdd7b653ca7250cb0349eb4746088250387476725652450ca33a7d5f52a"
+                      "sha256":  "9a34f426751768066a98dab75806d0ec542c09b1d39938692ff0f75206efe183"
                   },
                   {
                       "path":  "html/settings.html",
@@ -304,7 +304,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "c4126e597f850eb1fe45004765200d2c1d50a172410c4172a4e48a3cca3007d6"
+                      "sha256":  "fc10366ba53e89afe3a5131d251a4ff7bb73a52cc21208285afadb913cad15c2"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -392,7 +392,7 @@
                   },
                   {
                       "path":  "neucurve/nc-flow.js",
-                      "sha256":  "33a65f4acde77955b0ac99e7cc287cab90513ba051fb9af791abeb3d8b670e5a"
+                      "sha256":  "acade955fc734a8353d4abc3f75bad8a9b2fcf35a2b93b281b2a907903638296"
                   },
                   {
                       "path":  "neucurve/nc-flowfx.css",
@@ -404,7 +404,7 @@
                   },
                   {
                       "path":  "neucurve/nc-gbox.css",
-                      "sha256":  "bc4f1103089a7a5067ed86deb5fdf0e7505c97b2bb4b1edfb5d6c91be16d88f2"
+                      "sha256":  "24d3aecc8c26f0c77b36482487a75cef3f2227a91dcb7d6349df940fdbaa0a4d"
                   },
                   {
                       "path":  "neucurve/nc-gfill.js",
@@ -428,7 +428,7 @@
                   },
                   {
                       "path":  "neucurve/nc-gsize.js",
-                      "sha256":  "1af3d29d75076a2ca00833f1e72316c130e9bdae2906eef8825b01c623ea7c61"
+                      "sha256":  "fe1ca5e2b80a06d805faaed86f989daf63f0e8d6b7e940c1a3c1ec272a042d8f"
                   },
                   {
                       "path":  "neucurve/nc-handle.css",

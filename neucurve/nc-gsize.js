@@ -64,6 +64,17 @@
 
   var grip = null, dragging = false;
   function q(sel) { return document.querySelector(sel); }
+  /* v27: the grip no longer sits in the graph's corner (it got dragged by accident while setting the curve). It is parked in .fl-gtools,
+     the last item of the tab bar, next to the "Open Large Graph Editor" button. Same helper as in nc-flow.js: whoever runs first creates it.
+     No tab bar (nc-flow.js removed) = the old corner placement below. */
+  function gTools() {
+    var bar = q(".model-tabs-horizontal") || q(".model-nav-strip");
+    if (!bar) { return null; }
+    var t = q(".fl-gtools");
+    if (!t) { t = document.createElement("div"); t.className = "fl-gtools"; }
+    if (t.parentNode !== bar) { bar.appendChild(t); }
+    return t;
+  }
 
   /* v22 SQUARE BOX: the box width is capped to the box height and centred, so it never turns into a flat strip.
      v24 FIX (grip bug): the cap now stays ON while you drag / after you set a custom size. Before, the first drag step switched the
@@ -140,9 +151,17 @@
     fitCheck(area, svg);
     if (!grip) {
       grip = document.createElement("div"); grip.id = "nc-gsize"; grip.title = "Drag to resize the graph (Shift = keep proportions, double-click = auto)";
-      grip.innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M10 3 3 10M10 7 7 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+      grip.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3.5" stroke-dasharray="3.2 3.2" stroke-opacity=".75"/><path d="M20 13.5 13.5 20M20 17.5 17.5 20"/></svg>';
       grip.addEventListener("pointerdown", down);
       grip.addEventListener("dblclick", function () { setSize(!!(window.__ncGPlot && window.__ncGPlot().land), null, null); });
+    }
+    var tools = gTools();
+    if (tools) {      /* guards: a same-value write still wakes the MutationObserver (endless rAF loop) */
+      if (grip.parentNode !== tools) { tools.insertBefore(grip, tools.firstChild); }
+      if (grip.style.left) { grip.style.left = ""; }
+      if (grip.style.top) { grip.style.top = ""; }
+      if (grip.style.display !== "flex") { grip.style.display = "flex"; }
+      return;
     }
     if (grip.parentNode !== area) { area.appendChild(grip); }
     var ar = area.getBoundingClientRect(), sr = svg.getBoundingClientRect();

@@ -35,3 +35,34 @@ html body #nc-gsize svg { width: 10px; height: 10px; }
 html body #nc-gsize:hover, html.nc-gsize-drag body #nc-gsize { opacity: 1; background: none !important; transform: none; }
 html.mt-light body #nc-gsize, html.mt-light body #nc-gsize:hover { background: none !important; border: 0 !important; }
 /* (OS "reduce motion" media query removed on purpose: Windows "Show animations" off must not freeze the UI. Use Settings > Enable animations.) */
+
+/* v22 GRAPH TOOLS LIVE IN THE TAB BAR (nc-flow.js / nc-gsize.js build .fl-gtools as the last item of the tab bar).
+   Before, the resize grip and the "Open Large Graph Editor" icon sat in the graph's bottom-right corner, over the plot, and were hit
+   by accident while dragging a handle. Now they are outside the plot, behind a hairline, same size and tone as the tabs. */
+html body .shell.shell .fl-gtools {
+  flex: 0 0 auto; align-self: stretch; display: flex; align-items: center; gap: 2px;
+  margin: 0 0 0 2px; padding: 0 0 0 6px; border-left: 1px solid #2c2c2c;
+}
+html body .shell.shell .fl-gtools .fl-expand,
+html body .shell.shell .fl-gtools #nc-gsize {
+  position: static; right: auto; bottom: auto; flex: 0 0 auto; width: 28px; height: 30px; margin: 0; padding: 0;
+  display: flex; align-items: center; justify-content: center; border: 0 !important; border-radius: 9px;
+  background: transparent !important; color: #6f6f6f; opacity: 1; box-shadow: none; transform: none; cursor: pointer;
+}
+html body .shell.shell .fl-gtools #nc-gsize { cursor: nwse-resize; }
+html body .shell.shell .fl-gtools #nc-gsize svg { width: 16px; height: 16px; }
+html body .shell.shell .fl-gtools .fl-expand:hover,
+html body .shell.shell .fl-gtools #nc-gsize:hover {
+  color: #cfcfcf; background: rgba(255, 255, 255, .04) !important; box-shadow: none; transform: none;
+}
+html.nc-gsize-drag body .shell.shell .fl-gtools #nc-gsize { color: var(--fl-accent, #fff); background: rgba(255, 255, 255, .08) !important; }
+html.mt-light body .shell.shell .fl-gtools { border-left-color: rgb(211, 211, 211); }
+html.mt-light body .shell.shell .fl-gtools .fl-expand,
+html.mt-light body .shell.shell .fl-gtools #nc-gsize { color: rgb(118, 118, 118) !important; background: transparent !important; }
+html.mt-light body .shell.shell .fl-gtools .fl-expand:hover,
+html.mt-light body .shell.shell .fl-gtools #nc-gsize:hover,
+html.mt-light.nc-gsize-drag body .shell.shell .fl-gtools #nc-gsize { color: rgb(39, 39, 39) !important; background: rgba(0, 0, 0, .05) !important; box-shadow: none !important; }
+@media (max-width: 290px) {      /* near the 240px minimum panel width: tighter, the tabs keep their room */
+  html body .shell.shell .fl-gtools { margin-left: 0; padding-left: 2px; }
+  html body .shell.shell .fl-gtools .fl-expand, html body .shell.shell .fl-gtools #nc-gsize { width: 24px; }
+}

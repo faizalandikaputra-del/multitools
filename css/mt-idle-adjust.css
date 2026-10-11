@@ -22,13 +22,16 @@
      default   Time in After Effects 6 | Timer 6
                Stopwatch 6            | Alarms 6
                Notes and to-do 12
-   Boxes in one row stretch to the same height. js/mt-idle-adjust.js writes an inline  grid-column: span N  for a resized box. */
+   Chips in one row stretch to the same height; dashboard boxes keep their own. js/mt-idle-adjust.js writes an inline  grid-column: span N  for a resized box. */
 .idle-chips, .idle-dash {
   display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-flow: row dense; align-items: stretch;
   gap: 0.7rem; width: min(100%, 36rem); max-width: 100%; margin-right: 0; margin-bottom: 0; text-align: left;
 }
 .idle-chips { margin-top: var(--space-2); }
 .idle-fold .idle-dash { margin-top: 0.7rem; }
+/* each dashboard box keeps its OWN height: Notes / To-Do grow or shrink (tab switch, add / delete, Unfinished list)
+   without stretching the stopwatch / alarms beside them. A height set by hand (min-height from the resize handle) still applies. */
+.idle-dash { align-items: start; }
 .idle-chips > #idle-elapsed, .idle-chips > #idle-timer, .idle-dash > .idle-card {
   position: relative; box-sizing: border-box; min-width: 0; width: auto; max-width: none; margin: 0; text-align: left;
   border-radius: 1.1rem; padding: 0.7rem 0.9rem 0.75rem;

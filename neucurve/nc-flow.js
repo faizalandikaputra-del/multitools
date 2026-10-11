@@ -66,6 +66,17 @@
   function btnByTitle(title) { return q('button[title="' + title + '"]'); }
   function addCls(n, c) { if (n && n.className.indexOf(c) < 0) { n.className += " " + c; } }
 
+  /* v25: the two graph-frame buttons (resize grip from nc-gsize.js + Open Large Graph Editor) live in .fl-gtools, the last item of the
+     tab bar (portrait: .model-tabs-horizontal, landscape: .model-nav-strip). Same helper in nc-gsize.js; whoever runs first creates it. */
+  function gTools() {
+    var bar = q(".model-tabs-horizontal") || q(".model-nav-strip");
+    if (!bar) { return null; }
+    var t = q(".fl-gtools");
+    if (!t) { t = el("div", "fl-gtools"); }
+    if (t.parentNode !== bar) { bar.appendChild(t); }
+    return t;
+  }
+
   /* Moves an original button into `parent` (once), tags it with `cls`, optionally swaps its icon. */
   function place(btn, parent, cls, icon, before) {
     if (!btn) { return; }
@@ -214,11 +225,12 @@
       if (modes.parentNode !== fixed) { fixed.insertBefore(modes, fixed.firstChild); }
     }
 
-    /* large graph editor -> corner of the graph */
-    var area = q(".canvas-area");
+    /* large graph editor -> the tab bar on top (v25). It used to sit in the graph's bottom-right corner, on top of the plot, and was
+       clicked by accident while dragging handles. The tab bar is outside the plot. nc-gsize.js parks its resize grip next to it. */
     var big = btnByTitle("Open Large Graph Editor");
-    if (big && area) {
-      if (big.parentNode !== area) { area.appendChild(big); }
+    var gt = gTools();
+    if (big && gt) {
+      if (big.parentNode !== gt) { gt.appendChild(big); }
       if (big.className !== "fl-expand") { big.className = "fl-expand"; }   /* same-value writes still fire the observer -> endless rAF loop */
     }
 

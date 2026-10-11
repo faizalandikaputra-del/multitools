@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.38",
-    "changelog":  "- Update 1.8.38",
+    "latest_version":  "1.8.39",
+    "changelog":  "- Update 1.8.39",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -24,7 +24,7 @@
                   },
                   {
                       "path":  "css/material-theme.css",
-                      "sha256":  "7eb223c51968a944efcefb0df87c69a16b509bc189eace76316df8446ce81ef0"
+                      "sha256":  "843bcffc84b6a931b82349cb005111f0f28fab516b14e4f44e0ab3a008f2f114"
                   },
                   {
                       "path":  "css/mt-ae-icons.css",
@@ -67,12 +67,16 @@
                       "sha256":  "bdd9b6c5984744ad6ee6d21acf78edefa14699b84ab190ec1defe12d7870d4d5"
                   },
                   {
+                      "path":  "css/mt-idle-icons.css",
+                      "sha256":  "cb9c71e19c5387420468f0f923c794d8e04045e7e253498ad58d0105f19143dd"
+                  },
+                  {
                       "path":  "css/mt-idle-motion.css",
                       "sha256":  "cc526b8ce25fb2ba0d673cfc72c4f32e8910b3826dabf328cc47a29fa8d3a03f"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
-                      "sha256":  "af7ad0ef1354033e725a0df1a2670cb6308087676edd5aea43af693244eb1cbf"
+                      "sha256":  "6724370b64ab6f5ece6425f456381b6f10fd9f91131e5570ac8f875f397e688a"
                   },
                   {
                       "path":  "css/mt-scrub.css",
@@ -172,7 +176,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "00edd1e7ccd73ad803436cc23fedf4336e665083bf11a540e12827447d3e6bf7"
+                      "sha256":  "7294fe6e35a3d5ab08970c509e83467d2841e39f9b827ec50d076f626d329c55"
                   },
                   {
                       "path":  "html/settings.html",
@@ -184,7 +188,7 @@
                   },
                   {
                       "path":  "js/ambient-orbs.js",
-                      "sha256":  "5c4805d760aff34230e5dfffbd83e95090cc3c3af688f6a8af9765b586c19d29"
+                      "sha256":  "053f7da336228cec1b2148d9cee066671a23e961ac808df2bd200c845a65cf38"
                   },
                   {
                       "path":  "js/CSInterface.js",
@@ -216,7 +220,7 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "ec26d27c310d8f64917374008b8381c3cf052c694cf3a9f6209b6b5afc5af286"
+                      "sha256":  "416341dbb2fb412e79ce177935b3e8d661c31f9ff4e053d69d3bfdca462ce2ca"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
@@ -564,7 +568,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "468db6a0df090726c8ef97186ebd404838080777a17c814305ca06d8ea742d66"
+                      "sha256":  "26e2ff491b49c5b895914ef0df4ec5a000a5e01dc6a1473ff5c2e0f2418d65a1"
                   }
               ]
 }

@@ -1475,3 +1475,21 @@ cold and the first REAL switch paid for it. The morph code itself was already wa
 Cost: the first-open spinner is a little longer (about 0.3 - 0.5 s). Touching the panel still stops it at once.
 Off: WARM = false at the top of nc-warm.js, or localStorage neucurve_noWarm = "1".
 Not measured inside AE. If the first switch still lags, tell me which mode pair (from -> to) and whether it is every time or once.
+
+fix26 (idle icons): IDLE SCREENSAVER - icons had no motion (they just appeared / swapped / jumped).
+New css/mt-idle-icons.css v1 (CSS only, linked in html/index.html after mt-idle-motion.css; no JS touched). Calm / premium, light-icon timing.
+- Play <-> pause (stopwatch + timer): new icon pops in with a small turn (0.34 s). Hover leans the icon forward, press sinks it.
+- "+" (alarm / note / task): turns 90 deg on hover. Alarm "+" turns into "x" (135 deg) and takes the accent colour while the form is open.
+- Delete "x": turns 90 deg on hover. Task check: pops when ticked. "Unfinished" chevron: premium curve.
+- Adjust button: grid leans on hover, the check draws itself when Adjust is on.
+- Unlock arrow: leans on hover, glides gently while idle (slide / both mode).
+- Running stopwatch / timer button: soft ring breathes (2.6 s), only while idle. Round buttons pop in 0.6 s after idle starts.
+- Off: prefers-reduced-motion and the app's Animations switch (data-reduce-motion) disable all of it. To remove: delete the <link> line.
+Not run inside AE (no AE / CEF here): CSS only, Chromium-74 safe syntax. If an icon looks off, tell me which one.
+
+fix27 (idle adjust): IDLE SCREEN - after moving widgets and pressing Done, boxes ended up on top of each other (e.g. Alarms over Time in After Effects).
+Cause: while adjusting, hidden widgets stay on screen as dimmed ghosts, and the no-stacking check (resolveAll) ran with the ghosts present.
+Pressing Done removes the ghosts, the grid reflows, and a moved box (stored as an offset from its old grid place) landed on another box.
+Nothing re-checked the layout at that moment.
+Fix (js/mt-idle-adjust.js, setAdjust): when adjust mode ends, settle() runs once (resolveAll + FLIP glide + save), so no box stays stacked.
+Not run inside AE (no AE / CEF here): syntax-checked only (node --check). If boxes still overlap, tell me which widgets were hidden / moved.

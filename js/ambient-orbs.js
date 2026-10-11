@@ -28,7 +28,7 @@
 
   function rand(a, b) { return a + Math.random() * (b - a); }
   function reduced() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
-  function away() { return /(^|\s)mt-away(\s|$)/.test(document.documentElement.className); }   // js/mt-away.js
+  function away() { return !!document.hidden; }   // only a really hidden panel waits; the cursor being outside the panel does NOT stop the glide
 
   function place(o, animateSeconds) {
     var x = o.fx * W - D / 2, y = o.fy * H - D / 2;
@@ -62,7 +62,7 @@
 
   function step(o) {
     if (window.__mtMoving) { schedule(o, 1500); return; }                    // user is working: rest
-    if (reduced() || away() || !W || !H) { schedule(o, 4000); return; }   // wait until the panel has a size / motion is allowed
+    if (reduced() || away() || !W || !H) { schedule(o, 4000); return; }   // wait until the panel has a size / motion is allowed / is visible
     var secs = rand(MOVE_MIN_S, MOVE_MAX_S);
     pickTarget(o);
     place(o, secs);

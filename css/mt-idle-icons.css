@@ -1,0 +1,96 @@
+/* Multi Tool - mt-idle-icons.css (v1)
+   Smooth icon motion for the Idle Screensaver. Pure CSS, no JS change. Load AFTER css/mt-idle-motion.css.
+   Chromium-74 safe: no inset shorthand, no gap on flex, no clamp()/min(), no individual rotate/scale properties.
+
+   Personality: same calm / premium glass as the rest of the idle UI. Light icons (80-250 ms, tiny 5 % overshoot).
+   Curves: --ia-in (decelerate, from mt-idle-adjust.css) for arrivals, --ii-soft (sine) for looping ambient.
+
+   Three layers
+     PRIMARY    play <-> pause swaps (pop + turn), "+" turns into "x" while the alarm form is open, the idle-screen check
+                of the adjust button draws itself, task check pops when ticked.
+     SECONDARY  hover: "+" turns 90 deg, delete "x" turns 90 deg, play leans forward, unlock arrow leans. Press: icon sinks to 0.86.
+     AMBIENT    running stopwatch / timer button breathes a soft ring (2.6 s), unlock arrow glides (1.9 s).
+     ENTRANCE   round buttons pop in 0.6 s after idle starts (after the boxes finished rising), so icons never fight the boxes.
+   Ambient loops run ONLY while body.is-idle (no paint cost on the normal panel). prefers-reduced-motion / the app's
+   Animations switch (data-reduce-motion) turn every rule off. */
+
+:root { --ii-soft: cubic-bezier(0.37, 0, 0.63, 1); --ii-pop: cubic-bezier(0.2, 1.25, 0.4, 1); }
+
+/* ---------- ENTRANCE: round buttons pop in after their box ---------- */
+@keyframes ii-in {
+  from { opacity: 0; transform: scale(0.55); }
+}
+body.is-idle .ic-round { animation: ii-in 0.4s var(--ii-pop) 0.6s backwards; }
+
+/* ---------- PRIMARY: play / pause swap ----------
+   js/mt-idle-focus.js swaps the <svg> (innerHTML) only when the state changes, so a new element = this animation runs once per swap. */
+@keyframes ii-swap {
+  from { opacity: 0; transform: scale(0.35) rotate(-50deg); }
+  to   { opacity: 1; transform: none; }
+}
+#sw-toggle svg, #idle-timer-go svg { animation: ii-swap 0.34s var(--ii-pop); transition: transform 0.2s var(--ia-in, ease-out); }
+.ic-round:hover:not(:disabled) svg { transform: scale(1.12); }
+#sw-toggle:hover:not(:disabled) svg, #idle-timer-go:hover:not(:disabled) svg { transform: translate3d(1px, 0, 0) scale(1.1); }
+.ic-round:active:not(:disabled) svg { transform: scale(0.86); transition-duration: 0.08s; }
+
+/* ---------- SECONDARY: "+" icons (add alarm / note / task) ---------- */
+#al-add svg, #note-add svg, #idle-todo-add svg, .ic-add svg { transition: transform 0.28s var(--ia-in, ease-out); }
+#al-add:hover:not(:disabled) svg, #note-add:hover:not(:disabled) svg, #idle-todo-add:hover:not(:disabled) svg,
+.ic-add:hover:not(:disabled) svg { transform: rotate(90deg) scale(1.1); }
+/* alarm form open: "+" becomes "x" (45 deg), closing turns it back */
+#al-add[aria-expanded="true"] svg { transform: rotate(135deg); }
+#al-add[aria-expanded="true"]:hover:not(:disabled) svg { transform: rotate(135deg) scale(1.1); }
+#al-add[aria-expanded="true"] { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }
+
+/* delete "x" turns, task tick pops, "unfinished" chevron uses the premium curve */
+.ic-del svg { transition: transform 0.22s var(--ia-in, ease-out); }
+.ic-del:hover svg { transform: rotate(90deg) scale(1.15); }
+.ic-del:active svg { transform: rotate(90deg) scale(0.85); transition-duration: 0.08s; }
+@keyframes ii-pop {
+  0% { transform: scale(0.8); } 55% { transform: scale(1.18); } 100% { transform: scale(1); }
+}
+.ic-row.is-finishing .ic-check { animation: ii-pop 0.38s var(--ii-soft); }
+.ic-missed-toggle svg { transition: transform 0.32s var(--ia-in, ease-out); }
+.ic-missed-toggle:hover svg { transform: translate3d(0, 1px, 0); }
+.ic-missed.is-open .ic-missed-toggle:hover svg { transform: rotate(180deg) translate3d(0, 1px, 0); }
+
+/* ---------- ADJUST button: grid leans on hover, the check draws itself ---------- */
+.ia-btn[aria-pressed="false"]:hover .ia-ico-grid { transform: rotate(-8deg) scale(1.1); }
+.ia-btn .ia-ico-done path { stroke-dasharray: 22; stroke-dashoffset: 22; transition: stroke-dashoffset 0.1s linear; }
+.ia-btn[aria-pressed="true"] .ia-ico-done path { stroke-dashoffset: 0; transition: stroke-dashoffset 0.34s var(--ia-in, ease-out) 0.12s; }
+
+/* ---------- UNLOCK handle arrow (slide / both mode) ---------- */
+.iu-handle svg { transition: transform 0.22s var(--ia-in, ease-out); }
+.idle-unlock:not([data-mode="tap"]) .iu-track:hover .iu-handle svg { transform: translate3d(2px, 0, 0); }
+.idle-unlock.is-dragging .iu-handle svg { transform: translate3d(2px, 0, 0) scale(1.1); }
+
+/* ---------- AMBIENT (idle only) ---------- */
+@keyframes ii-ring {
+  0%   { transform: scale(1);    opacity: 0.45; }
+  70%  { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.idle-sw.is-running .ic-round--lg, .idle-timer .ic-round.is-running { position: relative; }
+.idle-sw.is-running .ic-round--lg::after, .idle-timer .ic-round.is-running::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; pointer-events: none;
+  border: 1.5px solid var(--accent, #5b8cff); opacity: 0; will-change: transform, opacity;
+}
+body.is-idle .idle-sw.is-running .ic-round--lg::after, body.is-idle .idle-timer .ic-round.is-running::after { animation: ii-ring 2.6s var(--ii-soft) infinite; }
+@keyframes ii-glide {
+  0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(3px, 0, 0); }
+}
+body.is-idle .idle-unlock[data-mode="both"]:not(.is-dragging) .iu-handle > svg:first-child,
+body.is-idle .idle-unlock[data-mode="slide"]:not(.is-dragging) .iu-handle > svg:first-child { animation: ii-glide 1.9s var(--ii-soft) infinite; }
+
+/* ---------- reduced motion ---------- */
+:root[data-reduce-motion="true"] body .ic-round,
+:root[data-reduce-motion="true"] body .ic-row .ic-check,
+:root[data-reduce-motion="true"] body .ic-round svg,
+:root[data-reduce-motion="true"] body .iu-handle svg,
+:root[data-reduce-motion="true"] body .ic-round::after { animation: none !important; transition: none !important; }
+:root[data-reduce-motion="true"] .ic-round:hover svg, :root[data-reduce-motion="true"] .ic-del:hover svg { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  body .ic-round, body .ic-row .ic-check, body .ic-round svg, body .iu-handle svg, body .ic-round::after,
+  body .ic-del svg, body .ic-missed-toggle svg, body .ia-btn path { animation: none !important; transition: none !important; }
+  .ic-round:hover svg, .ic-del:hover svg { transform: none; }
+}

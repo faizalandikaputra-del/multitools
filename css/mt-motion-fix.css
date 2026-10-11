@@ -38,13 +38,10 @@
 .saber-wrap:not(.is-active)::before,
 .saber-wrap:not(.is-active)::after { animation-play-state: paused; }
 
-/* 3c. Pointer away from the panel: freeze purely decorative loops (orbs, saber, status dots).
-       Loaders / spinners / update dot keep running because they are feedback. */
-html.mt-away .ambient-orb,
-html.mt-away .saber-wrap::before,
-html.mt-away .saber-wrap::after,
-html.mt-away .idle-session::before,
-html.mt-away .panel-head h1::before { animation-play-state: paused !important; }
+/* 3c. (removed) Pointer away from the panel used to freeze the orbs, the Idle session dot and the title dot.
+       Nothing is frozen by the pointer leaving any more: every decorative loop (saber ring, orbs, dots) keeps
+       running while the cursor is outside the panel. Loaders / spinners / update dot are feedback and run too.
+       The only calm rule left is 5 below (orbs rest while the user is actively working IN the panel). */
 
 /* 4. Smoother tab-switch entrance: shorter travel, longer ease-out tail, tighter stagger.
       (tab-motion.css: 14px / scale .94 / .34s / 26ms.) No will-change on purpose: .mt-stagger can be dozens

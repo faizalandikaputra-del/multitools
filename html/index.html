@@ -59,8 +59,8 @@
   <!-- Layout clean-up (anchor/flip grids, wrapping text). Keep after mt-uitheme and before material-theme. -->
   <link rel="stylesheet" href="../css/mt-tidy.css?v=1">
   <link rel="stylesheet" href="../css/mt-ae-icons.css?v=1">
-  <!-- Motion/focus fixes (Animations OFF really off, tile focus ring, fewer endless loops). Needs js/mt-away.js. -->
-  <link rel="stylesheet" href="../css/mt-motion-fix.css?v=3">
+  <!-- Motion/focus fixes (Animations OFF really off, tile focus ring, fewer endless loops). js/mt-away.js now only drives the "user is working" calm rule. -->
+  <link rel="stylesheet" href="../css/mt-motion-fix.css?v=5">
   <!-- Smoother motion: sidebar highlight, tab-switch cards, Settings modal, finished flash. Needs js/mt-smooth.js. -->
   <link rel="stylesheet" href="../css/mt-smooth.css?v=3">
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
@@ -70,8 +70,10 @@
   <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=7">
   <!-- Idle enter / exit motion + the "squashed widgets on exit" fix (loads after mt-idle-adjust.css) -->
   <link rel="stylesheet" href="../css/mt-idle-motion.css?v=1">
+  <!-- Idle icon motion: swap / hover / ambient (loads after mt-idle-motion.css) -->
+  <link rel="stylesheet" href="../css/mt-idle-icons.css?v=1">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
-  <link rel="stylesheet" href="../css/material-theme.css?v=5">
+  <link rel="stylesheet" href="../css/material-theme.css?v=6">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -726,7 +728,7 @@
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
   <script src="../js/smooth-scroll.js?v=9"></script>
-  <script src="../js/ambient-orbs.js?v=11"></script>
+  <script src="../js/ambient-orbs.js?v=12"></script>
   <script src="../js/panel-refresh.js?v=1"></script>
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>

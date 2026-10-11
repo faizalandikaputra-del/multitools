@@ -540,6 +540,9 @@
       drag = null; saveLayout();
       WIDGETS.forEach(readout);
     }
+    // Done: hidden widgets stop being ghosts, so the grid reflows and a moved box (offset from its OLD grid place) can land on
+    // another one. Re-resolve once now that the layout is final (before this, only drops / resizes were checked, with ghosts present).
+    if (!on && isIdle()) { settle(); }
   }
 
   function init() {

@@ -373,3 +373,231 @@
 }
 :root[data-ui-theme="material"][data-theme] .qce-res-tile:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
 :root[data-reduce-motion="true"][data-ui-theme="material"][data-theme] .qce-res-tile { transition: none; }
+
+
+/* ---------- 11. Idle screensaver widgets (Material You) ----------
+   The idle screen (clock, "Time in After Effects", timer, stopwatch, alarms, Notes / To-Do, unlock bar, adjust button and the
+   widget handles) used to stay frosted GLASS in every style (white-on-translucent chips, blur, glow). Under Material You each
+   widget is now a flat TONAL surface of the same palette (js/mt-material.js -> --md-*), exactly like the cards in the panel:
+     Time in After Effects + Stopwatch ..... primary container      (the two "hero" tiles)
+     Timer + unlock bar + small buttons .... secondary container
+     Alarms + Notes / To-Do ................ surface-high           (calm, readable lists)
+     Notification message .................. tertiary container
+   Big radius (28px cards), no border, no shadow, no blur, M3 switches / filled-tonal buttons, the play button is a squircle
+   that morphs into a circle while running (same shape-morph idea as the Quick Resolution tiles).
+   Text colour: --mu-idle-fg = on-surface on the plain palette canvas, white when a background image / GIF / video is behind the
+   idle screen (html.has-bg-media). The cards are SOLID (not translucent), so they stay readable on top of any media.
+   Selector prefix keeps specificity >= the Glass rules in mt-idle-focus.css / mt-idle-adjust.css / style.css; this file loads last.
+   Chromium 74 safe: no color-mix, no gap on flex (margins only where new), no aspect-ratio. */
+:root[data-ui-theme="material"][data-theme] body {
+  --mu-idle-fg: var(--md-on-surface);
+  --mu-idle-time: var(--md-on-surface);
+}
+:root[data-ui-theme="material"][data-theme].has-bg-media body { --mu-idle-fg: #fff; --mu-idle-time: #fff; }
+
+/* clock */
+:root[data-ui-theme="material"][data-theme] body .idle-clock {
+  --idle-clock-color: var(--mu-idle-fg);
+  font-family: "Google Sans Text", "Google Sans", "Product Sans", "Roboto Flex", "Roboto", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+:root[data-ui-theme="material"][data-theme] body .idle-date { font-weight: 500; letter-spacing: 0.02em; opacity: 0.9; text-shadow: none; }
+:root[data-ui-theme="material"][data-theme] body .idle-time { color: var(--mu-idle-time); font-weight: 500; letter-spacing: -0.045em; text-shadow: none; }
+:root[data-ui-theme="material"][data-theme].has-bg-media body .idle-date,
+:root[data-ui-theme="material"][data-theme].has-bg-media body .idle-time { text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45); }
+
+/* chips + message: flat tonal, no glass */
+:root[data-ui-theme="material"][data-theme] body .idle-session,
+:root[data-ui-theme="material"][data-theme] body .idle-message {
+  color: var(--md-on-tertiary-container); background: var(--md-tertiary-container); border: 0; border-radius: 20px; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-ui-theme="material"][data-theme] body .idle-session::before { background: var(--md-tertiary); animation-name: mu-idle-dot; }
+@keyframes mu-idle-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--md-primary-rgb), 0.5); }
+  70%  { box-shadow: 0 0 0 0.4rem rgba(var(--md-primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--md-primary-rgb), 0); }
+}
+
+/* cards: shared tonal base */
+:root[data-ui-theme="material"][data-theme] body .idle-elapsed,
+:root[data-ui-theme="material"][data-theme] body .idle-timer,
+:root[data-ui-theme="material"][data-theme] body .idle-card {
+  color: var(--md-on-surface); background: var(--md-surface-high); border: 0; border-radius: var(--mu-r-big); box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-ui-theme="material"][data-theme] body .idle-elapsed,
+:root[data-ui-theme="material"][data-theme] body .idle-sw { color: var(--md-on-primary-container); background: var(--md-primary-container); }
+:root[data-ui-theme="material"][data-theme] body .idle-timer { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
+
+/* time in After Effects */
+:root[data-ui-theme="material"][data-theme] body .ie-label { opacity: 0.85; font-weight: 500; }
+:root[data-ui-theme="material"][data-theme] body .ie-seg { background: rgba(var(--md-on-surface-rgb), 0.07); border-radius: 18px; }
+:root[data-ui-theme="material"][data-theme] body .ie-num { font-weight: 500; letter-spacing: -0.02em; }
+
+/* timer: linear progress = rounded track + primary fill; "done" pulses a primary ring instead of a glow */
+:root[data-ui-theme="material"][data-theme] body .it-time { font-weight: 500; }
+:root[data-ui-theme="material"][data-theme] body .it-bar { height: 0.3rem; background: rgba(var(--md-on-surface-rgb), 0.12); }
+:root[data-ui-theme="material"][data-theme] body .it-bar i { background: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] body .idle-timer.is-done { border: 0; animation: mu-idle-done 1.6s var(--mu-ease) infinite; }
+@keyframes mu-idle-done {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--md-primary-rgb), 0.45); }
+  50%      { box-shadow: 0 0 0 0.5rem rgba(var(--md-primary-rgb), 0); }
+}
+:root[data-reduce-motion="true"][data-ui-theme="material"][data-theme] body .idle-timer.is-done { animation: none; }
+
+/* stopwatch */
+:root[data-ui-theme="material"][data-theme] body .sw-time { font-weight: 500; letter-spacing: -0.035em; text-shadow: none; color: var(--md-on-primary-container); }
+
+/* card headings, empty states, dividers */
+:root[data-ui-theme="material"][data-theme] body .ic-head strong { font-weight: 600; }
+:root[data-ui-theme="material"][data-theme] body .ic-empty { color: var(--md-on-surface-variant); opacity: 1; }
+:root[data-ui-theme="material"][data-theme] body .ic-missed,
+:root[data-ui-theme="material"][data-theme] body .idle-tabs .ic-missed { border-top-color: rgba(var(--md-outline-rgb), 0.3); }
+:root[data-ui-theme="material"][data-theme] body .ic-meta { opacity: 1; color: var(--md-on-surface-variant); }
+
+/* round buttons: filled tonal (+ / play). Large = FAB squircle -> circle while running. Timer card: filled primary. */
+:root[data-ui-theme="material"][data-theme] body .ic-round {
+  color: var(--md-on-secondary-container); background-color: var(--md-secondary-container);
+  transition: background-color 0.2s var(--mu-ease), border-radius 0.3s var(--mu-ease), transform 0.15s var(--mu-ease), opacity 0.15s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .idle-sw .ic-round,
+:root[data-ui-theme="material"][data-theme] body .idle-timer .ic-round { color: var(--md-on-primary); background-color: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] body .ic-round:hover:not(:disabled) { background-image: var(--mu-state-hover); }
+:root[data-ui-theme="material"][data-theme] body .ic-round:active:not(:disabled) { background-image: var(--mu-state-press); transform: scale(0.94); }
+:root[data-ui-theme="material"][data-theme] body .ic-round--lg { width: 3rem; height: 3rem; border-radius: 18px; }
+:root[data-ui-theme="material"][data-theme] body .idle-sw.is-running .ic-round--lg,
+:root[data-ui-theme="material"][data-theme] body .idle-timer .ic-round.is-running { color: var(--md-on-primary); background-color: var(--md-primary); border-radius: 50%; }
+:root[data-ui-theme="material"][data-theme] body .ic-round:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .ic-link:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .ic-btn:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .al-switch:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .tb-tab:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .idle-fold-btn:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .ic-check:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .ic-del:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .ic-add:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+
+/* text buttons (Reset / Hide / Add) */
+:root[data-ui-theme="material"][data-theme] body .ic-link {
+  padding: 0.25rem 0.65rem; border-radius: 999px; text-decoration: none; font-weight: 600; opacity: 1; color: var(--md-primary);
+  transition: background-color 0.2s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .idle-sw .ic-link,
+:root[data-ui-theme="material"][data-theme] body .idle-timer .ic-link { color: var(--md-on-primary-container); }
+:root[data-ui-theme="material"][data-theme] body .idle-timer .ic-link { color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .ic-link:hover { background-color: rgba(var(--md-on-surface-rgb), 0.08); }
+:root[data-ui-theme="material"][data-theme] body .ic-add { border-radius: 999px; color: var(--md-primary); font-weight: 600; opacity: 1; }
+:root[data-ui-theme="material"][data-theme] body .ic-add:hover:not(:disabled) { background: rgba(var(--md-primary-rgb), 0.08); }
+
+/* filled-tonal / filled buttons (Set alarm, Cancel) */
+:root[data-ui-theme="material"][data-theme] body .ic-btn {
+  color: var(--md-on-secondary-container); background-color: var(--md-secondary-container); font-weight: 600;
+  transition: background-color 0.2s var(--mu-ease), transform 0.15s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .ic-btn:hover { background-image: var(--mu-state-hover); background-color: var(--md-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .ic-btn--primary,
+:root[data-ui-theme="material"][data-theme] body .ic-btn--primary:hover { color: var(--md-on-primary); background-color: var(--md-primary); filter: none; }
+
+/* list rows, checkbox (M3 rounded square with a drawn tick in on-primary), delete */
+:root[data-ui-theme="material"][data-theme] body .ic-row,
+:root[data-ui-theme="material"][data-theme] body .al-row { border-radius: 14px; }
+:root[data-ui-theme="material"][data-theme] body .ic-row:hover,
+:root[data-ui-theme="material"][data-theme] body .ic-row:focus-within,
+:root[data-ui-theme="material"][data-theme] body .al-row:hover,
+:root[data-ui-theme="material"][data-theme] body .al-row:focus-within { background: rgba(var(--md-on-surface-rgb), 0.07); }
+:root[data-ui-theme="material"][data-theme] body .al-row.is-rang { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+:root[data-ui-theme="material"][data-theme] body .ic-check {
+  position: relative; border: 2px solid var(--md-on-surface-variant); border-radius: 6px; background-color: transparent; background-image: none;
+  transition: background-color 0.2s var(--mu-ease), border-color 0.2s var(--mu-ease), transform 0.15s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .ic-check:hover { border-color: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] body .ic-row.is-done .ic-check,
+:root[data-ui-theme="material"][data-theme] body .ic-row.is-finishing .ic-check { background-color: var(--md-primary); border-color: var(--md-primary); background-image: none; }
+:root[data-ui-theme="material"][data-theme] body .ic-row.is-done .ic-check::after,
+:root[data-ui-theme="material"][data-theme] body .ic-row.is-finishing .ic-check::after {
+  content: ""; position: absolute; left: 50%; top: 46%; width: 0.28rem; height: 0.55rem; margin: -0.3rem 0 0 -0.14rem;
+  border: solid var(--md-on-primary); border-width: 0 2px 2px 0; transform: rotate(45deg); pointer-events: none;
+}
+:root[data-ui-theme="material"][data-theme] body .ic-del:hover { background: rgba(var(--md-on-surface-rgb), 0.1); }
+
+/* task text: plain line (the generic filled text-field rule must not box every row); underline-style focus */
+:root[data-ui-theme="material"][data-theme] body .ic-input {
+  background-color: transparent; border: 0; border-radius: 8px; box-shadow: none; color: inherit;
+}
+:root[data-ui-theme="material"][data-theme] body .ic-input:focus { background-color: transparent; box-shadow: inset 0 -2px 0 var(--md-primary); }
+
+/* alarms: M3 switch (outlined small thumb off, big on-primary thumb on a primary track on) */
+:root[data-ui-theme="material"][data-theme] body .al-switch,
+:root[data-ui-theme="material"][data-theme] body .ifb-track {
+  background: var(--md-surface-highest); box-shadow: inset 0 0 0 2px var(--md-outline);
+  transition: background-color 0.2s var(--mu-ease), box-shadow 0.2s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .al-switch i,
+:root[data-ui-theme="material"][data-theme] body .ifb-track i {
+  top: 0.3rem; left: 0.3rem; width: 0.55rem; height: 0.55rem; background: var(--md-outline); box-shadow: none;
+  transition: transform 0.25s var(--mu-ease), width 0.25s var(--mu-ease), height 0.25s var(--mu-ease), top 0.25s var(--mu-ease), left 0.25s var(--mu-ease), background-color 0.2s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .al-switch[aria-checked="true"],
+:root[data-ui-theme="material"][data-theme] body .idle-fold-btn[aria-checked="true"] .ifb-track { background: var(--md-primary); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] body .al-switch[aria-checked="true"] i,
+:root[data-ui-theme="material"][data-theme] body .idle-fold-btn[aria-checked="true"] .ifb-track i {
+  top: 0.15rem; left: 0.15rem; width: 0.85rem; height: 0.85rem; background: var(--md-on-primary); transform: translateX(0.85rem);
+}
+:root[data-ui-theme="material"][data-theme] body .al-form { background: var(--md-surface); border-radius: 20px; }
+:root[data-ui-theme="material"][data-theme] body .al-daily input { accent-color: var(--md-primary); }
+
+/* show / hide cards pill */
+:root[data-ui-theme="material"][data-theme] body .idle-fold-btn {
+  color: var(--md-on-secondary-container); background-color: var(--md-secondary-container); border: 0; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none; font-weight: 600;
+  transition: background-color 0.2s var(--mu-ease), transform 0.15s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .idle-fold-btn:hover { background-image: var(--mu-state-hover); background-color: var(--md-secondary-container); }
+
+/* Notes / To-Do: M3 secondary tabs as pills over a lower surface */
+:root[data-ui-theme="material"][data-theme] body .tb-tabs { padding-left: 0; margin-bottom: 0.5rem; }
+:root[data-ui-theme="material"][data-theme] body .tb-tab {
+  color: var(--md-on-surface-variant); background: transparent; border: 0; border-radius: 999px; opacity: 1; font-weight: 600;
+  transition: background-color 0.2s var(--mu-ease), color 0.2s var(--mu-ease);
+}
+:root[data-ui-theme="material"][data-theme] body .tb-tab:hover { background: rgba(var(--md-on-surface-rgb), 0.08); color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body .tb-tab.is-active { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .tb-body,
+:root[data-ui-theme="material"][data-theme] body .tb-tabs + .tb-body { background: var(--md-surface); border: 0; border-radius: 20px; }
+:root[data-ui-theme="material"][data-theme] body .td-progress { background: rgba(var(--md-on-surface-rgb), 0.12); }
+:root[data-ui-theme="material"][data-theme] body .td-progress i { background: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] body .td-progress.is-complete i { box-shadow: none; }
+
+/* unlock bar (slide / tap / both) */
+:root[data-ui-theme="material"][data-theme] body .iu-track {
+  color: var(--md-on-secondary-container); background: var(--md-secondary-container); border: 0; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-ui-theme="material"][data-theme] body .iu-fill { background: rgba(var(--md-primary-rgb), 0.28); }
+:root[data-ui-theme="material"][data-theme] body .iu-label { font-weight: 500; }
+:root[data-ui-theme="material"][data-theme] body .iu-handle { color: var(--md-on-primary); background: var(--md-primary); box-shadow: none; }
+/* tap mode: bare ring + dot + label in the idle text colour (no filled disc), like the Glass version */
+:root[data-ui-theme="material"][data-theme] body .idle-unlock[data-mode="tap"] .iu-track { background: none; color: var(--mu-idle-fg); }
+:root[data-ui-theme="material"][data-theme] body .idle-unlock[data-mode="tap"] .iu-handle { color: var(--mu-idle-fg); background: transparent; border-color: currentColor; }
+:root[data-ui-theme="material"][data-theme] body .idle-unlock[data-mode="tap"] .iu-handle::before { background: currentColor; }
+:root[data-ui-theme="material"][data-theme] body .idle-unlock[data-mode="tap"] .iu-handle::after { border-color: currentColor; }
+:root[data-ui-theme="material"][data-theme] body .idle-unlock[data-mode="tap"] .iu-label { color: var(--mu-idle-fg); }
+
+/* adjust widgets: button, pills, handles */
+:root[data-ui-theme="material"][data-theme] body .ia-btn,
+:root[data-ui-theme="material"][data-theme] body .ia-pill {
+  color: var(--md-on-secondary-container); background-color: var(--md-secondary-container); border: 0; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-ui-theme="material"][data-theme] body .ia-btn:hover,
+:root[data-ui-theme="material"][data-theme] body .ia-pill:hover { background-image: var(--mu-state-hover); background-color: var(--md-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .ia-btn[aria-pressed="true"] { color: var(--md-on-primary); background-color: var(--md-primary); background-image: none; border: 0; }
+:root[data-ui-theme="material"][data-theme] body .ia-btn:focus-visible,
+:root[data-ui-theme="material"][data-theme] body .ia-pill:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+:root[data-ui-theme="material"][data-theme] body .wa-eye,
+:root[data-ui-theme="material"][data-theme] body .wa-grip,
+:root[data-ui-theme="material"][data-theme] body .wa-name { color: var(--md-bg); background: var(--md-on-surface); border-color: transparent; }
+:root[data-ui-theme="material"][data-theme] body .wa-eye:hover,
+:root[data-ui-theme="material"][data-theme] body .wa-grip:hover,
+:root[data-ui-theme="material"][data-theme] body .wa-drag .wa-grip { color: var(--md-on-primary); background: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] body.is-adjusting .wa-lift { box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.18); }

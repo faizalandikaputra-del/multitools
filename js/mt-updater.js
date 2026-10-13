@@ -228,34 +228,11 @@
     var s = String(txt || "").replace(/\r/g, "").replace(/^\s*[-*]\s+/gm, "\u2022 ").replace(/^#+\s*/gm, "").replace(/[*_`]/g, "").trim();
     return s.length > 700 ? s.slice(0, 700) + "\u2026" : (s || "No release notes provided.");
   }
-  // The update card lives in the dynamic island (js/mt-island.js, MTIsland.notice) while the island is on; with the island off the old banner is used.
-  var barF = 0, shownFlag = false, doneNote = false;
-  function viaIsland() { return !!(window.MTIsland && window.MTIsland.notice && window.MTIsland.isEnabled && window.MTIsland.isEnabled()); }
-  function pushIsland(open) {
-    if (!viaIsland()) { return; }
-    if (!shownFlag) { if (!doneNote) { window.MTIsland.notice(null); } return; }
-    window.MTIsland.notice({
-      title: el.title.textContent, sub: el.sub.textContent, notes: el.notes.textContent, f: barF, busy: !!state.busy,
-      nowText: el.now.textContent, nowHidden: el.now.hidden, laterText: el.later.textContent, open: !!open,
-      onNow: function () { install(); }, onLater: function () { el.later.click(); }
-    });
-  }
-  function setBar(f) { barF = Math.max(0, Math.min(1, f)); el.bar.style.transform = "scaleX(" + barF + ")"; pushIsland(); }
-  function showBanner(on, forceOpen) {
-    var first = !!on && !shownFlag;
-    shownFlag = !!on;
-    if (viaIsland()) {
-      banner.classList.remove("is-show"); banner.setAttribute("aria-hidden", "true");
-      pushIsland(first || !!forceOpen);
-    } else {
-      banner.classList.toggle("is-show", !!on); banner.setAttribute("aria-hidden", on ? "false" : "true");
-      if (window.MTIsland && window.MTIsland.notice) { window.MTIsland.notice(null); }
-    }
-  }
+  function setBar(f) { el.bar.style.transform = "scaleX(" + Math.max(0, Math.min(1, f)) + ")"; }
+  function showBanner(on) { banner.classList.toggle("is-show", !!on); banner.setAttribute("aria-hidden", on ? "false" : "true"); }
   function setBusyUi(on) {
     banner.classList.toggle("is-busy", on);
     el.now.disabled = on; el.later.disabled = on; el.check.disabled = on; el.install.disabled = on;
-    pushIsland();
   }
   function errText(e) {
     var m = e && e.message;
@@ -277,7 +254,6 @@
     banner.classList.remove("is-open"); setBar(0);
     el.status.textContent = "Version " + norm(cur) + " installed. v" + info.version + " is available.";
     el.install.hidden = false;
-    el.now.textContent = "Update Now"; el.now.hidden = false; el.later.textContent = "Later";
     var sn = null; try { sn = JSON.parse(localStorage.getItem(K_SNOOZE) || "null"); } catch (e) { }
     return !(sn && sn.v === info.version && sn.until > Date.now());
   }
@@ -326,12 +302,11 @@
   function progress(title, sub, f) {
     el.title.textContent = title; el.sub.textContent = sub; if (f !== null) { setBar(f); }
     el.status.textContent = title + (sub ? " " + sub : "");
-    pushIsland();
   }
   function install() {
     var info = state.latest;
     if (!info || state.busy || !FS) { return; }
-    state.busy = true; setBusyUi(true); showBanner(true, true);
+    state.busy = true; setBusyUi(true); showBanner(true);
     var ext = extDir(), L = local(), downloaded = [], written = [], restartNeeded = false;
 
     function rollback() {
@@ -397,7 +372,7 @@
         el.title.textContent = "Updated to v" + info.version;
         el.sub.textContent = "This update changed the panel manifest: restart After Effects to finish.";
         el.status.textContent = "Updated to v" + info.version + ". Restart After Effects to finish.";
-        setBar(1); pushIsland(true);
+        setBar(1);
       } else {
         progress("Updated to v" + info.version, "Reloading\u2026", 1);
         setTimeout(reloadPanel, 900);
@@ -408,7 +383,7 @@
       el.title.textContent = "Update failed";
       el.sub.textContent = errText(e);
       el.status.textContent = errText(e);
-      el.now.textContent = "Retry"; pushIsland(true);
+      el.now.textContent = "Retry";
       try { console.log("[MTUpdater] install failed:", e && e.message, e && e.detail); } catch (x) { }
     });
   }
@@ -444,20 +419,13 @@
     showBanner(false);
   });
 
-  window.addEventListener("mt-island-toggle", function () { showBanner(shownFlag); });   // island switched on / off in Settings: move the card
-
   var L0 = local();
   el.status.textContent = FS ? ("Version " + norm(L0.version) + " installed." + ((validRepo(L0.repo) || L0.feed) ? "" : " Updates are not set up yet (see README).")) : CEP_MSG;
 
   // just-updated confirmation after the reload
   try {
     var done = localStorage.getItem(K_DONE);
-    if (done) { localStorage.removeItem(K_DONE); setTimeout(function () {
-      if (viaIsland() && !shownFlag) {
-        doneNote = true; setTimeout(function () { doneNote = false; }, 6200);
-        window.MTIsland.notice({ title: "Updated to v" + done, sub: "Enjoy the new features!", laterText: "OK", nowHidden: true, open: true, ttl: 6000, onLater: function () { doneNote = false; window.MTIsland.notice(null); } });
-      } else { say("Updated to v" + done + ". Enjoy the new features!"); }
-    }, 1600); }
+    if (done) { localStorage.removeItem(K_DONE); setTimeout(function () { say("Updated to v" + done + ". Enjoy the new features!"); }, 1600); }
   } catch (e) { }
 
   var forced = false;

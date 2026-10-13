@@ -1,8 +1,7 @@
 /* Multi Tool - mt-idle-roll.js (v1)
    Digit roll for every live number on the idle screen (same motion as the big clock, see css/mt-idle-time.css):
    the old digit rolls UP and out, the new digit rises in FROM BELOW. Styles: css/mt-idle-roll.css.
-   API:  MTRoll.set(node, text [, "fast" [, force]])   draws text into node; changed digits roll, everything else is written as is.
-         force === true  rolls outside idle mode too (the dynamic island, js/mt-island.js).
+   API:  MTRoll.set(node, text [, "fast"])   draws text into node; changed digits roll, everything else is written as is.
          MTRoll.reset(node)                  next set() on this node draws plain (no roll).
    "fast" = counters that tick every second (stopwatch, timer, time in After Effects): shorter and smaller travel.
    Rules: the first draw of every idle session is plain (the idle entry animation already moves everything); a change in the
@@ -54,11 +53,11 @@
     node._mr = { text: text, toks: toks, epoch: epoch };
   }
 
-  function set(node, text, mode, force) {
+  function set(node, text, mode) {
     if (!node) { return; }
     text = String(text);
     var st = node._mr, on, toks, kids, i, k = 0, slot, o, n, fast, step, self;
-    on = idleNow() || force === true;
+    on = idleNow();
     if (st && st.text === text) { st.epoch = epoch; return; }                          // same text: nothing to draw, but it is now "drawn" for this idle session
     toks = tokens(text);
     kids = node.children;

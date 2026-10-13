@@ -10,7 +10,7 @@
   var bus = window.MTSettingsBus, modal = document.getElementById("settings-modal");
   if (!bus || !modal) { return; }
 
-  var KEY_ATTRS = ["data-ui-theme-opt", "data-mu-seed", "data-mu-mode", "data-anim-style-opt", "data-anim-ease-opt", "data-nav-pos-opt", "data-label-select"];
+  var KEY_ATTRS = ["data-ui-theme-opt", "data-mu-seed", "data-mu-mode", "data-anim-style-opt", "data-anim-ease-opt", "data-label-select"];
   var SKIP = { "settings-modal": 1, "settings-title": 1, "settings-close": 1, "label-toggle": 1, "label-toggle-text": 1, "label-collapse": 1, "label-assign-list": 1 };
   var VARS = ["--accent", "--accent-rgb", "--accent-strong", "--accent-soft", "--on-accent", "--gp-rgb", "--gp-bg", "--gp-accent", "--mtx-k",
     "--md-bg", "--md-bg-rgb", "--md-primary", "--md-primary-rgb", "--md-on-primary", "--md-secondary-container", "--md-on-secondary-container",
@@ -49,7 +49,7 @@
   // ---------- state -> window ----------
   var alive = 0, lastJson = "", timer = 0;
   function collect() {
-    var els = modal.querySelectorAll("[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-nav-pos-opt],[data-label-select]");
+    var els = modal.querySelectorAll("[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-label-select]");
     var k = {}, i, el, key, o, tag, type;
     for (i = 0; i < els.length; i++) {
       el = els[i]; key = keyOf(el);

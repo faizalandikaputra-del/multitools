@@ -567,20 +567,9 @@
     if (!indicatorPlaced) { ind.style.transition = "none"; }   // first placement: no animation
     // The highlight takes the active tab's own box (offsetTop/offsetHeight share the layout units of .tabs, also
     // when UI scale is not 100%). A fixed highlight height used to stick out below a tab that had been squeezed.
-    // Settings > Navigation position (js/mt-navpos.js): in a top / bottom bar the highlight slides sideways. The slot is written as
-    // translate(Xpx, -50%) there (px first), translate(-50%, Ypx) in a rail (px second); mt-smooth.js and mt-anim.js read the one px value.
-    var bar = /^(top|bottom)$/.test(document.documentElement.getAttribute("data-nav-pos") || "");
-    if (bar) {
-      var left = active.offsetLeft, w = active.offsetWidth;
-      ind.style.width = w ? w + "px" : "";
-      ind.style.height = "";
-      ind.style.transform = "translate(" + left + "px, -50%)";
-    } else {
-      var top = active.offsetTop, h = active.offsetHeight;
-      ind.style.width = "";                                   // the rail width (also while it is expanded) comes from the stylesheet
-      ind.style.height = h ? h + "px" : "";
-      ind.style.transform = "translate(-50%, " + top + "px)";
-    }
+    var top = active.offsetTop, h = active.offsetHeight;
+    ind.style.height = h ? h + "px" : "";
+    ind.style.transform = "translate(-50%, " + top + "px)";
     if (!indicatorPlaced) { void ind.offsetWidth; ind.style.transition = ""; indicatorPlaced = true; }
   }
 
@@ -591,8 +580,6 @@
   function scrollTabIntoView(tabId) {
     var el = document.querySelector('.tabs .tab[data-tab="' + tabId + '"]');
     if (!el || typeof el.scrollIntoView !== "function") { return; }
-    // top / bottom bar (js/mt-navpos.js): scroll by whole tabs so no icon is ever cut in half
-    if (window.MTNavPos && window.MTNavPos.horizontal && window.MTNavPos.horizontal() && window.MTNavPos.reveal(el)) { return; }
     el.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
@@ -4416,8 +4403,7 @@
       clearDragOverClasses();
       if (!t || t === dragEl) { overEl = null; return; }
       var rect = t.getBoundingClientRect();
-      if (/^(top|bottom)$/.test(document.documentElement.getAttribute("data-nav-pos") || "")) { overBefore = (e.clientX - rect.left) < rect.width / 2; }   // top / bottom bar: tabs sit side by side
-      else { overBefore = (e.clientY - rect.top) < rect.height / 2; }
+      overBefore = (e.clientY - rect.top) < rect.height / 2;
       overEl = t;
       t.classList.add(overBefore ? "drag-over-before" : "drag-over-after");
     });
@@ -4500,8 +4486,8 @@
         var live = Array.prototype.slice.call(tabsContainer.querySelectorAll(".tab"));
         var i = live.indexOf(t);
         var next = null;
-        if (e.key === "ArrowDown" || e.key === "ArrowRight") { next = live[(i + 1) % live.length]; }
-        if (e.key === "ArrowUp" || e.key === "ArrowLeft") { next = live[(i - 1 + live.length) % live.length]; }
+        if (e.key === "ArrowDown") { next = live[(i + 1) % live.length]; }
+        if (e.key === "ArrowUp") { next = live[(i - 1 + live.length) % live.length]; }
         if (next) { e.preventDefault(); next.focus(); next.click(); }
       });
     });
@@ -5132,12 +5118,6 @@
         animToggle.checked = Motion.isOn();
         animToggle.addEventListener("change", function () { Motion.set(animToggle.checked); });
       }
-      // Dynamic island on / off (js/mt-island.js). Saved as "mtx.island": "0" = off.
-      var islandToggle = $("island-enabled");
-      if (islandToggle) {
-        islandToggle.checked = !window.MTIsland || !window.MTIsland.isEnabled || window.MTIsland.isEnabled();
-        islandToggle.addEventListener("change", function () { if (window.MTIsland && window.MTIsland.setEnabled) { window.MTIsland.setEnabled(islandToggle.checked); } });
-      }
       $("settings-close").addEventListener("click", function () { self.close(); });
       this.modal.addEventListener("mousedown", function (e) { if (e.target === self.modal) { self.close(); } });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && self.modal.classList.contains("is-open")) { self.close(); } });
@@ -5324,11 +5304,8 @@
         Idle.reset();
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass
         if (window.MTAnim) { window.MTAnim.reset(); }            // Settings > Tab animation back to Smooth / 100% / Soft
-        if (window.MTNavPos) { window.MTNavPos.reset(); }        // Settings > Navigation position back to Left
         Motion.set(true);
         if ($("anim-enabled")) { $("anim-enabled").checked = true; }
-        if (window.MTIsland && window.MTIsland.setEnabled) { window.MTIsland.setEnabled(true); }
-        if ($("island-enabled")) { $("island-enabled").checked = true; }
         Store.remove("autoParent"); Store.remove("presetFolder");
         if ($("el-auto-parent")) { $("el-auto-parent").checked = false; }
         if (self.motionObjectUrl) { URL.revokeObjectURL(self.motionObjectUrl); self.motionObjectUrl = null; }

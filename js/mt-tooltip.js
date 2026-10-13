@@ -59,32 +59,6 @@
   var mo = null;
   var rafId = 0, lastR = null;
 
-  /* The panel is zoomed with ".app { zoom: var(--ui-scale) }" (css/style.css). Older Chromium/CEF builds (AE 2021) return
-     getBoundingClientRect() already DIVIDED by that zoom while mouse x/y and this fixed tooltip stay in real screen pixels, so
-     at any UI scale other than 100% the "is the cursor on the tab?" check failed and no name showed (worst in the bottom bar).
-     vrect() finds out which convention the host uses (rect.width vs offsetWidth: ~1 = old, ~zoom = new) and always returns a
-     rect in screen pixels. At 100% it is a plain getBoundingClientRect(). Same idea as pointerBox() in js/main.js. */
-  function zoomOf(el) {
-    var z = 1, n, v;
-    for (n = el; n && n.nodeType === 1; n = n.parentElement) {
-      v = parseFloat(window.getComputedStyle(n).zoom);
-      if (v && v > 0 && v !== 1) { z *= v; }
-    }
-    if (z === 1) {
-      v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
-      if (v && v > 0 && el.closest && el.closest(".app")) { z = v; }
-    }
-    return z;
-  }
-  function vrect(el) {
-    var r = el.getBoundingClientRect(), z = zoomOf(el), k = 1, ratio;
-    if (Math.abs(z - 1) > 0.001 && el.offsetWidth > 0) {
-      ratio = r.width / el.offsetWidth;                       // old engines: ~1   new engines: ~z
-      if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
-    }
-    return { left: r.left * k, top: r.top * k, right: r.right * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
-  }
-
   function raf(fn) { return (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(fn); }
   function caf(id) { (window.cancelAnimationFrame || clearTimeout)(id); }
 
@@ -94,7 +68,7 @@
   function track() {
     rafId = 0;
     if (!shown || !cur) { return; }
-    var r = vrect(cur.el);
+    var r = cur.el.getBoundingClientRect();
     if (!lastR || r.left !== lastR.left || r.top !== lastR.top || r.width !== lastR.width || r.height !== lastR.height) {
       lastR = { left: r.left, top: r.top, width: r.width, height: r.height };
       if (mx < r.left - 3 || mx > r.right + 3 || my < r.top - 3 || my > r.bottom + 3) { leave(); return; }
@@ -118,13 +92,8 @@
   /* Walk up from the hovered node to the nearest element that has a name to show. */
   function findTarget(node) {
     var n = node, t;
-    // A navigation rail never shows tooltips (its expanded view shows the tab names instead). A top / bottom bar (Settings > Navigation
-    // position) cannot expand, so there the tab's name (aria-label) is the tooltip.
-    if (node && node.nodeType === 1 && node.closest && node.closest(".sidebar")) {
-      var navPos = document.documentElement.getAttribute("data-nav-pos"), tab = node.closest(".tab");
-      if ((navPos === "top" || navPos === "bottom") && tab && tab.getAttribute("aria-label")) { return { el: tab, raw: tab.getAttribute("aria-label"), aria: true }; }
-      return null;
-    }
+    // The left navigation never shows tooltips (its expanded view shows the tab names instead).
+    if (node && node.nodeType === 1 && node.closest && node.closest(".sidebar")) { return null; }
     while (n && n.nodeType === 1 && n !== document.documentElement) {
       if (n.hasAttribute && n.hasAttribute("title")) {
         t = n.getAttribute("title");
@@ -185,15 +154,13 @@
   }
 
   function place(el) {
-    var r = vrect(el);
+    var r = el.getBoundingClientRect();
     var vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
     var w = tip.offsetWidth, h = tip.offsetHeight;
     var side = "top", x, y, ax, ay, anchorX;
     var inSidebar = !!(el.closest && el.closest(".sidebar"));
-    var navPos = document.documentElement.getAttribute("data-nav-pos");      // Settings > Navigation position
-    // A rail (left / right) shows names by expanding, never as a tooltip. A top / bottom bar has no room for that, so its tabs get the
-    // tooltip (see findTarget) and it must open centred under (top bar) or over (bottom bar) the tab, not beside it.
-    if (inSidebar && navPos !== "top" && navPos !== "bottom" && r.right + GAP + w < vw - EDGE) {
+
+    if (inSidebar && r.right + GAP + w < vw - EDGE) {
       side = "right";
       x = r.right + GAP;
       y = r.top + r.height / 2 - h / 2;
@@ -218,7 +185,7 @@
     showTimer = 0;
     if (!cur || cur.suppressed || !cur.text || !ensure()) { return; }
     if (!document.documentElement.contains(cur.el)) { leave(); return; }
-    var rr = vrect(cur.el);
+    var rr = cur.el.getBoundingClientRect();
     if (mx < rr.left - 3 || mx > rr.right + 3 || my < rr.top - 3 || my > rr.bottom + 3) { leave(); return; }
     if (!textEl.firstChild) { textEl.appendChild(document.createTextNode("")); }
     textEl.firstChild.nodeValue = cur.text;

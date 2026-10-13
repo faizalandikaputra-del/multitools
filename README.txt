@@ -283,3 +283,11 @@ fix52 (navigation style): new option Settings > Appearance > "Navigation style" 
   expands a Dock rail. Line = no circles, thin accent line on the screen-edge side of the active tab. Square = rounded-square highlights.
   Colours follow Glass and Material You (--nv-line / --nv-fg). Cache-busting: mt-navstyle.css/js ?v=1, mt-tooltip.js ?v=6, mt-tooltip.css ?v=4,
   sidebar-expand.js ?v=3, main.js ?v=35.
+
+fix53 (freeze with Dock style): panel froze / hitched while the pointer moved over the navigation (Settings > Navigation style = Dock), worst on AE 2021.
+  Cause: Dock writes --dk on every .sidebar .tab on each pointer move; the MutationObserver in js/ae2021-compat.js watches "style" on the whole
+  document, so every move re-ran the full flex-gap / aspect-ratio shim (many getComputedStyle + forced layouts per frame). mt-navstyle.js also
+  read the zoom of every tab through the whole ancestor chain each frame.
+  Fix: ae2021-compat.js relevant() ignores style-only changes on .sidebar .tab and #tab-indicator; mt-navstyle.js grow() looks up the zoom once per
+  frame and writes --dk only when the value changed (2 decimals). Measured on a forced AE 2021 fallback, 4x CPU throttle: 200 pointer moves
+  19.7 s -> 4.7 s. Cache-busting: ae2021-compat.js ?v=11 (all four html files), mt-navstyle.js ?v=2.

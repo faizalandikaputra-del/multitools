@@ -43,8 +43,8 @@
     return z;
   }
   // rect in the same pixels as clientX / clientY (old CEF returns it divided by the zoom, see js/main.js pointerBox)
-  function box(el) {
-    var r = el.getBoundingClientRect(), z = zoomOf(el), k = 1, ratio;
+  function box(el, zoom) {
+    var r = el.getBoundingClientRect(), z = zoom || zoomOf(el), k = 1, ratio;
     if (Math.abs(z - 1) > 0.001 && el.offsetWidth > 0) {
       ratio = r.width / el.offsetWidth;
       if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
@@ -53,22 +53,24 @@
   }
   function clearGrow() {
     var l = document.querySelectorAll(".sidebar .tab"), i;
-    for (i = 0; i < l.length; i++) { l[i].style.removeProperty("--dk"); }
+    for (i = 0; i < l.length; i++) { l[i].__dk = null; l[i].style.removeProperty("--dk"); }
   }
   function grow() {
     rafId = 0;
     if (!isDock() || !inside || root.getAttribute("data-reduce-motion") === "true") { clearGrow(); return; }
     var pos = root.getAttribute("data-nav-pos"), bar = pos === "top" || pos === "bottom";
-    var l = document.querySelectorAll(".sidebar .tab"), i, b, c, d, t, s, reach;
+    var l = document.querySelectorAll(".sidebar .tab"), i, b, c, d, t, s, reach, z, v;
+    z = l.length ? zoomOf(l[0]) : 1;          // one zoom lookup per frame, not one per tab (getComputedStyle up the whole tree)
     for (i = 0; i < l.length; i++) {
-      b = box(l[i]);
+      b = box(l[i], z);
       if (!b.width) { continue; }
       c = bar ? b.left + b.width / 2 : b.top + b.height / 2;
       d = Math.abs((bar ? px : py) - c);
       reach = (bar ? b.width : b.height) * REACH;
       t = Math.max(0, 1 - d / reach);
       s = 1 + MAXGROW * t * t * (3 - 2 * t);
-      l[i].style.setProperty("--dk", s.toFixed(3));
+      v = s.toFixed(2);
+      if (l[i].__dk !== v) { l[i].__dk = v; l[i].style.setProperty("--dk", v); }   // write only when the value changed
     }
   }
   function onMove(e) {

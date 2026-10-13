@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.48",
-    "changelog":  "- Update 1.8.48",
+    "latest_version":  "1.8.49",
+    "changelog":  "- Update 1.8.49",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -64,7 +64,7 @@
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
-                      "sha256":  "382feeb28ee202325e6314030794796644d1fbe3d31af8e289ef72284e62fa04"
+                      "sha256":  "bdd9b6c5984744ad6ee6d21acf78edefa14699b84ab190ec1defe12d7870d4d5"
                   },
                   {
                       "path":  "css/mt-idle-icons.css",
@@ -84,7 +84,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "57c5fcb0928093ad0da72d709e9efaf2ad5f79394c704e4a5be9f6621ebae820"
+                      "sha256":  "6014345f4f689547b6f22979e1038bd7f46759457a7fa60f163c4676b0ae1873"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -196,11 +196,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "349b6962570dbef79046076c40f1421d6717b8284872959485822bb96ccbca75"
+                      "sha256":  "2a8e3fe04556dceabddbe41e7e94846d4e3dac494c4be7365d5eab7e17161599"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "128bdd55893c7d96a2b1ece80128393f01b6424ad6be6bd6bc3d2422a8d8ac24"
+                      "sha256":  "e80b35303a39f748e0bdf84b8ff71fe5cd44e2e428ada6793aeead7dfbbc71bb"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
-                      "sha256":  "d3a7ea46f331215ff6f749a3e77dee5b081f4f126d3574f07239f6c212fffc68"
+                      "sha256":  "228b590b06b303a1a7813d03c28f70afe4ddc429817a0ad9c26dc9e6866faaa3"
                   },
                   {
                       "path":  "js/mt-idle-roll.js",
@@ -252,7 +252,7 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "1f24d1f184db3f83fbd851870b4aca365d44d153d3f4fc9d129168f7d4cb51d0"
+                      "sha256":  "0d606216fe4e30e6b0fd27e5763c34f057ed6ba99e8a1d5cbdb0f21d304bed97"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -308,7 +308,7 @@
                   },
                   {
                       "path":  "js/mt-updater.js",
-                      "sha256":  "7840a9add1292ed199f54feb07d7a1e88c4df951838adbf52ffb2d952cb1a018"
+                      "sha256":  "0656053f2e5f0681ac3565c394e1c4ba124e767dd6ce7767666495f6796efce5"
                   },
                   {
                       "path":  "js/panel-refinements.js",

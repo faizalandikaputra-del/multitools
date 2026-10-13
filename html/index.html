@@ -7,6 +7,9 @@
   <!-- Interface style (Settings > Style): apply the saved choice BEFORE first paint so there is no flash of the wrong look.
        Material You sets data-theme to its palette scheme (light or dark; js/mt-material.js). Logic + picker: js/mt-uitheme.js -->
   <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
+  <!-- Navigation position (Settings > Navigation position): apply the saved side BEFORE first paint so the rail never jumps. Logic: js/mt-navpos.js, layout: css/mt-navpos.css -->
+  <script>try { var ns = localStorage.getItem("mtx.navStyle"); document.documentElement.setAttribute("data-nav-style", (ns === "dock" || ns === "line" || ns === "square") ? ns : "classic"); } catch (e) { }</script>
+  <script>try { var np = localStorage.getItem("mtx.navPos"); document.documentElement.setAttribute("data-nav-pos", (np === "right" || np === "top" || np === "bottom") ? np : "left"); } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=2">
   <link rel="stylesheet" href="../css/style.css?v=13">
@@ -86,6 +89,10 @@
     try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }
   </script>
   <script src="../js/ae2021-compat.js?v=10"></script>
+  <!-- Navigation position: Left / Right / Top / Bottom. Loaded after every other stylesheet. Companion: js/mt-navpos.js -->
+  <link rel="stylesheet" href="../css/mt-navpos.css?v=2">
+  <!-- Navigation style: Classic / Dock / Line / Square. Companion: js/mt-navstyle.js -->
+  <link rel="stylesheet" href="../css/mt-navstyle.css?v=1">
 </head>
 <body>
   <div class="mt-splash" id="mt-splash" aria-hidden="true">
@@ -402,6 +409,8 @@
         <p class="field-note">Makes the whole interface (text, boxes, buttons) bigger or smaller. This window hides while you hold the slider so you can see the result &mdash; release to bring it back.</p>
       </div>
 
+      <!-- Navigation position: where the tab navigation sits (Left default / Right / Top / Bottom). Logic: js/mt-navpos.js (localStorage mtx.navPos),
+           layout: css/mt-navpos.css. The cards are keyed by data-nav-pos-opt (listed in js/mt-settings-remote.js and js/mt-settings-window.js). -->
       <div class="field field-column" id="nav-pos-field">
         <span class="field-label">Navigation position</span>
         <div class="mtx-anim-grid mtx-nav-grid" role="radiogroup" aria-label="Navigation position">
@@ -413,6 +422,7 @@
         <p class="field-note">Moves the tab navigation to the left, right, top or bottom of the panel. Top and bottom show the tabs in a bar (hover a tab for its name); the tab list scrolls sideways when the panel is narrow.</p>
       </div>
 
+      <!-- Navigation style: Classic (default) / Dock / Line / Square. Logic: js/mt-navstyle.js (localStorage mtx.navStyle), looks: css/mt-navstyle.css.
            The cards are keyed by data-nav-style-opt (listed in js/mt-settings-remote.js and js/mt-settings-window.js). -->
       <div class="field field-column" id="nav-style-field">
         <span class="field-label">Navigation style</span>
@@ -745,6 +755,8 @@
   <script src="../js/mt-material.js?v=3"></script>
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=3"></script>
+  <script src="../js/mt-navpos.js?v=2"></script>
+  <script src="../js/mt-navstyle.js?v=1"></script>
   <script src="../js/mt-anim.js?v=2"></script>
   <script src="../js/mt-idle-roll.js?v=2"></script>
   <script src="../js/mt-island.js?v=11"></script>

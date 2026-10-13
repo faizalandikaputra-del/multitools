@@ -363,13 +363,6 @@ html[data-theme="light"]:not(.has-bg-media) .iu-track {
   font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.25);
 }
 .idle-sw.is-hidden .sw-time { opacity: 0.5; letter-spacing: 0.04em; }
-/* Hide / Show: same motion as the dynamic island (css/mt-island.css mi-flip 0.42s + mi-pop 0.4s spring). js/mt-idle-focus.js adds the classes. */
-.sw-time { transition: opacity 0.3s ease, letter-spacing 0.42s cubic-bezier(0.05, 0.7, 0.1, 1); }
-.sw-time.is-flip { animation: sw-flip 0.42s cubic-bezier(0.05, 0.7, 0.1, 1) both; }
-@keyframes sw-flip { from { opacity: 0; filter: blur(8px); transform: scale(0.86); } }
-.sw-hide.is-pop { display: inline-block; animation: sw-pop 0.4s cubic-bezier(0.34, 1.28, 0.64, 1) both; }
-@keyframes sw-pop { from { opacity: 0; transform: scale(0.35) rotate(-25deg); } }
-:root[data-reduce-motion="true"] .sw-time, :root[data-reduce-motion="true"] .sw-time.is-flip, :root[data-reduce-motion="true"] .sw-hide.is-pop { animation: none; transition: none; }
 .idle-sw.is-running .ic-round--lg { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }
 .sw-foot { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 1.4rem; margin-top: auto; }
 .sw-foot .ic-link:only-child { margin-left: auto; }

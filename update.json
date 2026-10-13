@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.44",
-    "changelog":  "- Update 1.8.44",
+    "latest_version":  "1.8.45",
+    "changelog":  "- Update 1.8.45",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -196,11 +196,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "0232f42900bb9c059fe39e8954938cb59a4a27744ee3a9d32948c2e91b2a10a7"
+                      "sha256":  "340781656b7749da40097427e24b99fdec56d23bbb5d9c5ed314f84cea78fd97"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "69e4b51bd78c0c76ec6da4e3ad709f0bc368c27d271991b3f9f849c488f4c57f"
+                      "sha256":  "b76185d65fcdce46ebe669874f1a2e4ed501db276baf783f71ea865b44445e27"
                   },
                   {
                       "path":  "js/ae2021-compat.js",

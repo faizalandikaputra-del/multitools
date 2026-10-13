@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.51",
-    "changelog":  "- Update 1.8.51",
+    "latest_version":  "1.8.52",
+    "changelog":  "- Update 1.8.52",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -60,7 +60,7 @@
                   },
                   {
                       "path":  "css/mt-idle-adjust.css",
-                      "sha256":  "d47a515cd5a7467a851360bb5bee2279cc63be4a4820fe32b7178e3fe76eaf61"
+                      "sha256":  "82d62a9b8255a15f4f1b107f4c5e1e34e6f1e94fe75591d6a5d3cb99f6bbb299"
                   },
                   {
                       "path":  "css/mt-idle-focus.css",
@@ -76,7 +76,7 @@
                   },
                   {
                       "path":  "css/mt-idle-roll.css",
-                      "sha256":  "6c4e6906f890424393407a4d2f454732d9bbde19f63fd000eb7d11663a2fd61e"
+                      "sha256":  "fe40c477f9e4b78542a0c48a91454c88029951c81d40444449e876018bd7dd59"
                   },
                   {
                       "path":  "css/mt-idle-time.css",
@@ -84,7 +84,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "cbae413bae53ba162c8b8b402b9b53294c78eb49e676559fd89bab0a54d4e192"
+                      "sha256":  "d20782790305134a152118b4d28d47ada257865e9821c10f87c31c7570057979"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -188,7 +188,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "74f27d8d48af415606b1d95946e44a0c601e37fad45ee06cf2040828fd66ba4f"
+                      "sha256":  "b3cc893197f152c0f162bc3c586ffbc2730e826c6e5ca2c1819f7733810c2bdf"
                   },
                   {
                       "path":  "html/settings.html",
@@ -232,19 +232,19 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "4c8e00be2f4a6b4f8ac7e55d18a9fed733e5dab042d44da4d26bd9fbeb88ed97"
+                      "sha256":  "c363a5713dfb5d663197e93df93255b747b864ea7de3076a428b230a32a45205"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
-                      "sha256":  "27ac6cee6a99b0065b3409bf1fdf2a08e8a0a10792d5ab45e4da4f2f408d558c"
+                      "sha256":  "c7a5858d17b20c07fd7a1a5ccfa53a7799b246aa0482abc7f87096618a5f32b5"
                   },
                   {
                       "path":  "js/mt-idle-roll.js",
-                      "sha256":  "36ae9a99c80c397cd7cd6bd8516c9fdb15f492d709c231bc1f6357d11e7d9b47"
+                      "sha256":  "516e5078a70892bfe58a43418d78392911685bc8b2e4371b8c66c5e9dea4fca4"
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "7b0fa0c15c1afa4d0b7170b11869ca4689ab07f86d874735806e9febc30a1756"
+                      "sha256":  "417a62b1b72c84f6834a9d5c29bf961675e7ccef0af0a57cc816d374c0f62555"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -588,7 +588,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "1422bbd64194a9d24e6691b304a8d68eb8f2ca46701014c60e3d28f5d0ac5544"
+                      "sha256":  "6613af51586590ce4874ee7c67628c1d3a89575e7947a79d3dc32b496f23f0ed"
                   }
               ]
 }

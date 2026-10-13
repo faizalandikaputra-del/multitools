@@ -464,11 +464,12 @@
     var t = { active: on, name: state === "done" ? "Time is up" : (state === "paused" ? "Timer paused" : "Timer"), text: state === "done" ? "00:00:00" : clock(left),
               frac: state === "done" ? 1 : (on ? Math.max(0, Math.min(1, 1 - left / total)) : 0), done: state === "done", paused: state === "paused", running: state === "running",
               h: num(get("tH"), 0, 23, 1), m: num(get("tM"), 0, 59, 0) };
-    var w = { active: st !== "idle", name: "Stopwatch", text: get("swHidden") === "1" ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), running: st === "running", paused: st === "paused" };
+    var w = { active: st !== "idle", name: "Stopwatch", text: get("swHidden") === "1" ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), running: st === "running", paused: st === "paused", hidden: get("swHidden") === "1" };
     window.MTIsland.update({ timer: t, sw: w });
   }
   if (window.MTIsland) {
     window.MTIsland.onToggle = function (which) { if (which === "timer") { start(); } else { swToggle(); tickerCheck(); } };
+    window.MTIsland.onToggleHide = function () { swToggleHide(); };
     window.MTIsland.onReset = function (which) { if (which === "timer") { reset(); } else { swReset(); tickerCheck(); } };
     window.MTIsland.onSetTime = function (h, m) {                       // only while the timer is not started (same rule as the Settings fields)
       if (state === "running" || state === "paused") { return; }
@@ -602,7 +603,7 @@
   }
 
   // ================= stopwatch =================
-  var swIcon = "";
+  var swIcon = "", swHidPrev = null;
   function swState() { var v = get("swState"); return v === "running" || v === "paused" ? v : "idle"; }
   function swElapsed() {
     var ms = Math.max(0, num0(get("swAcc")));
@@ -614,11 +615,15 @@
     else { set("swStart", Date.now()); set("swState", "running"); }
     renderStopwatch();
   }
+  function swToggleHide() { set("swHidden", get("swHidden") === "1" ? "0" : "1"); renderStopwatch(); }
   function swReset() { del("swAcc"); del("swStart"); set("swState", "idle"); renderStopwatch(); }
   function renderStopwatch() {
     if (!el.sw) { return; }
     var st = swState(), hidden = get("swHidden") === "1", ico = st === "running" ? "pause" : "play";
-    rollText(el.swTime, hidden ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), "fast");
+    var swTxt = hidden ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed());
+    if (swHidPrev !== null && swHidPrev !== hidden && window.MTRoll && isIdle()) { window.MTRoll.swap(el.swTime, swTxt, "fast"); }     // Hide / Show: the characters leave up, the new ones rise in
+    else { rollText(el.swTime, swTxt, "fast"); }
+    swHidPrev = hidden;
     el.sw.classList.toggle("is-hidden", hidden);
     el.sw.classList.toggle("is-running", st === "running");
     el.sw.classList.toggle("is-live", st !== "idle");
@@ -633,7 +638,7 @@
     if (!el.sw) { return; }
     el.swToggle.addEventListener("click", swToggle);
     el.swReset.addEventListener("click", swReset);
-    el.swHide.addEventListener("click", function () { set("swHidden", get("swHidden") === "1" ? "0" : "1"); renderStopwatch(); });
+    el.swHide.addEventListener("click", swToggleHide);
     renderStopwatch();
   }
 

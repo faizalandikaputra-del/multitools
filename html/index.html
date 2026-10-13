@@ -67,7 +67,7 @@
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
   <link rel="stylesheet" href="../css/mt-idle-focus.css?v=14">
-  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=17">
+  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=18">
   <!-- Idle enter / exit motion + the "squashed widgets on exit" fix (loads after mt-idle-adjust.css) -->
   <link rel="stylesheet" href="../css/mt-idle-motion.css?v=1">
   <!-- Idle icon motion: swap / hover / ambient (loads after mt-idle-motion.css) -->
@@ -75,9 +75,9 @@
   <!-- Idle clock digit roll (loads after mt-idle-icons.css) -->
   <link rel="stylesheet" href="../css/mt-idle-time.css?v=1">
   <!-- Idle live numbers (date, time in AE, timer, stopwatch, counts): digit roll, same motion as the clock (loads after mt-idle-time.css) -->
-  <link rel="stylesheet" href="../css/mt-idle-roll.css?v=1">
+  <link rel="stylesheet" href="../css/mt-idle-roll.css?v=2">
   <!-- Dynamic island for a running Timer / Stopwatch (loads after mt-idle-adjust.css and mt-idle-roll.css) -->
-  <link rel="stylesheet" href="../css/mt-island.css?v=6">
+  <link rel="stylesheet" href="../css/mt-island.css?v=7">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=6">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
@@ -297,6 +297,7 @@
   <div class="idle-adjust" id="idle-adjust">
     <div class="ia-pills">
       <button class="ia-pill" id="ia-auto" type="button" tabindex="-1" title="Hide the panels after a few seconds without movement, so the background shows">Auto-hide 6 s</button>
+      <button class="ia-pill" id="ia-tidy" type="button" tabindex="-1" title="Line the widgets up in even rows with equal gaps">Tidy up</button>
       <button class="ia-pill" id="ia-reset" type="button" tabindex="-1">Reset layout</button>
     </div>
     <button class="ia-btn" id="ia-btn" type="button" aria-pressed="false" aria-label="Adjust widgets" title="Adjust widgets">
@@ -713,8 +714,8 @@
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-anim.js?v=1"></script>
-  <script src="../js/mt-idle-roll.js?v=1"></script>
-  <script src="../js/mt-island.js?v=6"></script>
+  <script src="../js/mt-idle-roll.js?v=2"></script>
+  <script src="../js/mt-island.js?v=7"></script>
   <script src="../js/main.js?v=31"></script>
   <script src="../js/mt-smooth.js?v=2"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
@@ -725,8 +726,8 @@
   <!-- Auto updater: needs the DOM above + Node. Loaded after main.js so the toast element and tabs exist. -->
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
-  <script src="../js/mt-idle-focus.js?v=17"></script>
-  <script src="../js/mt-idle-adjust.js?v=19"></script>
+  <script src="../js/mt-idle-focus.js?v=18"></script>
+  <script src="../js/mt-idle-adjust.js?v=20"></script>
   <script src="../js/mt-settings-bus.js?v=3"></script>
   <script src="../js/mt-settings-remote.js?v=3"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the

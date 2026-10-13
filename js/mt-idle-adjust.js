@@ -30,7 +30,7 @@
 (function () {
   "use strict";
   var P = "mtx.", LAYOUT_KEY = P + "wLayout", TIMER_KEY = P + "showTimer", CLOCK_KEY = P + "showClock";
-  var SC_MIN = 0.5, SC_MAX = 2.2, S_MIN = 0.68, S_MAX = 1.3, MIN_W = 110, MIN_H = 56, GAP = 8, EDGE = 4, EDGE_B = 12, GAP2 = 6, SNAP = 8, STEP = 10, STEP_BIG = 40;
+  var SC_MIN = 0.5, SC_MAX = 2.2, S_MIN = 0.68, S_MAX = 1.3, MIN_W = 110, MIN_H = 56, GAP = 8, EDGE = 4, EDGE_B = 12, GAP2 = 6, SNAP = 10, GRID_Y = 8, GRID_M = 16, STEP = 10, STEP_BIG = 40;
   var WIDGETS = [
     { id: "clock", el: "idle-hero", clock: true, key: CLOCK_KEY, name: "Clock", noun: "clock" },
     { id: "elapsed", el: "idle-elapsed", name: "Time in After Effects", noun: "time in After Effects", box: "idle-show-elapsed" },
@@ -91,11 +91,8 @@
   }
 
   // ---------- geometry (all numbers are screen px, relative to the inside of the panel #idle-clock) ----------
-  function reduceMotion() {
-    try {
-      if (document.documentElement.getAttribute("data-reduce-motion") === "true") { return true; }
-      return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    } catch (e) { return false; }
+  function reduceMotion() {            // the app's own Animations switch only (not the OS setting: the owner keeps Windows animation effects off and wants the motion)
+    return document.documentElement.getAttribute("data-reduce-motion") === "true";
   }
   function panel() { return $("idle-clock"); }
   function origin() {
@@ -390,7 +387,7 @@
     var el = $(w.el), it = ensure(w); if (!el || !it) { return; }
     e.preventDefault(); e.stopPropagation();
     var o = origin(), r = rectOf(w, o);
-    drag = { w: w, id: e.pointerId, x: e.clientX, y: e.clientY, r: r, o: o, s0: scaleFor(w, it), h0: it.h ? it.h * o.W : 0, grip: e.currentTarget, clock: !!w.clock };
+    drag = { w: w, id: e.pointerId, x: e.clientX, y: e.clientY, r: r, o: o, others: otherRects(w, o), T: targets(o, otherRects(w, o)), s0: scaleFor(w, it), h0: it.h ? it.h * o.W : 0, grip: e.currentTarget, clock: !!w.clock };
     raise(w); el.classList.add("wa-drag");
     try { drag.grip.setPointerCapture(e.pointerId); } catch (e1) { }
     readout(w);
@@ -399,7 +396,18 @@
     if (!drag || (drag.id !== undefined && e.pointerId !== drag.id)) { return; }
     var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (drag.clock) { setScale(drag.w, drag.s0 * (drag.r.w + dx) / Math.max(40, drag.r.w)); readout(drag.w); return; }
-    resizeTo(drag.w, drag.o, drag.r.w + dx, Math.abs(dy) > 4 ? drag.r.h + dy : (drag.h0 || null));
+    var nw = drag.r.w + dx, nh = Math.abs(dy) > 4 ? drag.r.h + dy : (drag.h0 || null), oo = origin(), gx = null, gy = null, bx, by, q, i;
+    bx = snapAxis2(nw, 0, { lo: [], c: [], hi: drag.T.x.hi.map(function (t) { return { at: t.at - drag.r.l, pen: t.pen }; }) }, 0);      // right edge on a line
+    for (i = 0; i < drag.others.length; i++) { q = drag.others[i].w - nw; if (Math.abs(q) <= SNAP && (!bx || Math.abs(q) < Math.abs(bx.d))) { bx = { d: q, at: drag.others[i].w }; } }   // same width as a neighbour
+    if (bx) { nw += bx.d; gx = oo.l + drag.r.l + nw; }
+    if (nh !== null && Math.abs(dy) > 4) {
+      by = snapAxis2(nh, 0, { lo: [], c: [], hi: drag.T.y.hi.map(function (t) { return { at: t.at - drag.r.t, pen: t.pen }; }) }, 0);
+      for (i = 0; i < drag.others.length; i++) { q = drag.others[i].h - nh; if (Math.abs(q) <= SNAP && (!by || Math.abs(q) < Math.abs(by.d))) { by = { d: q, at: drag.others[i].h }; } }
+      q = Math.round((drag.r.t + nh) / GRID_Y) * GRID_Y - (drag.r.t + nh); if (Math.abs(q) <= SNAP && (!by || Math.abs(q) + 3 < Math.abs(by.d))) { by = { d: q, at: 0 }; }   // 8 px rows
+      if (by) { nh += by.d; gy = oo.t + drag.r.t + nh; }
+    }
+    showGuides(gx, gy);
+    resizeTo(drag.w, drag.o, nw, nh);
     readout(drag.w);
   }
   function onUp(e) {
@@ -407,6 +415,7 @@
     var w = drag.w, el = $(w.el);
     try { drag.grip.releasePointerCapture(drag.id); } catch (e2) { }
     if (el) { el.classList.remove("wa-drag"); }
+    showGuides(null, null);
     drag = null; readout(w); settle(w);
   }
   function onKey(w, e) {
@@ -442,6 +451,55 @@
     flipFrom(before);
   }
 
+  // Tidy up: rows of widgets with equal gaps. Widgets that sit on about the same height form a row (left to right as they were); a row that does not fit wraps;
+  // a row is stretched to the panel width (keeping each widget's text scale between 0.68 and 1.3), every widget of a row gets the row's height, rows are GAP apart.
+  function tidyAll() {
+    if (!adjusting || !panel()) { return; }
+    if (!hasItems()) { freeze(); }
+    placeAllMissing();
+    var o = origin(), M = GRID_M, avail = o.W - 2 * M, list = [], rows = [], cur = null, subs = [], y = M, before = snapshot();
+    WIDGETS.forEach(function (w) { if (visible(w) && items[w.id]) { list.push({ w: w, r: rectOf(w, o) }); } });
+    if (!list.length) { return; }
+    list.sort(function (a, b) { return (a.r.t - b.r.t) || (a.r.l - b.r.l); });
+    list.forEach(function (m) {
+      if (cur && !m.w.full && !cur.full && m.r.t < cur.t + cur.h * 0.5) { cur.items.push(m); cur.h = Math.max(cur.h, m.r.h); }
+      else { cur = { t: m.r.t, h: m.r.h, full: !!m.w.full, items: [m] }; rows.push(cur); }
+    });
+    rows.forEach(function (row) {
+      var sub = [], sw = 0;
+      row.items.sort(function (a, b) { return a.r.l - b.r.l; });
+      row.items.forEach(function (m) {
+        var ww = m.w.full ? avail : clamp(m.r.w, m.w.clock ? 40 : MIN_W, avail);
+        if (sub.length && sw + GAP + ww > avail) { subs.push(sub); sub = []; sw = 0; }
+        sw += (sub.length ? GAP : 0) + ww; sub.push({ m: m, ww: ww, nw: ww });
+      });
+      if (sub.length) { subs.push(sub); }
+    });
+    subs.forEach(function (sub) {
+      var gaps = (sub.length - 1) * GAP, fixed = 0, flex = 0, f = 1, x, total = 0, rowH = 0;
+      sub.forEach(function (e) { if (e.m.w.clock || e.m.w.full) { fixed += e.ww; } else { flex += e.ww; } });
+      if (flex > 0) { f = (avail - gaps - fixed) / flex; if (f < 0.8 || f > 1.35) { f = 1; } }
+      sub.forEach(function (e) {
+        var it = items[e.m.w.id], w0;
+        glide(e.m.w);
+        if (e.m.w.clock) { return; }
+        w0 = (it.w0 || it.w) * o.W;
+        e.nw = e.m.w.full ? avail : clamp(clamp(e.ww * f, MIN_W, avail), w0 * S_MIN, w0 * S_MAX);
+        it.w = e.nw / o.W; delete it.h; apply(e.m.w);                           // natural height at the new width
+      });
+      sub.forEach(function (e) { e.h = rectOf(e.m.w, o).h; rowH = Math.max(rowH, e.h); total += e.nw; });
+      total += gaps; x = M + Math.max(0, (avail - total) / 2);
+      sub.forEach(function (e) {
+        var it = items[e.m.w.id];
+        it.x = x / o.W; it.y = (y + (e.m.w.clock ? (rowH - e.h) / 2 : 0)) / o.W;
+        if (!e.m.w.clock && rowH > e.h + 4) { it.h = rowH / o.W; }
+        apply(e.m.w); x += e.nw + GAP;
+      });
+      y += rowH + GAP;
+    });
+    dirty = true; syncEnd(); resolveAll(); saveLayout();
+  }
+
   // ---------- move ----------
   function guideEls() {
     if (guides) { return guides; }
@@ -456,14 +514,29 @@
     if (gx === null) { g.v.classList.remove("is-on"); } else { g.v.style.left = gx + "px"; g.v.classList.add("is-on"); }
     if (gy === null) { g.h.classList.remove("is-on"); } else { g.h.style.top = gy + "px"; g.h.classList.add("is-on"); }
   }
-  // the nearest alignment within SNAP px: edges / centre of the moving box against the targets
-  function snapAxis(lo, size, targets) {
-    var pts = [lo, lo + size / 2, lo + size], best = null, i, j, d;
+  // ---------- tidy snapping ----------
+  // Targets, per axis, for the left / top edge (lo), the centre (c) and the right / bottom edge (hi) of the moving box.
+  //   - the panel edges and the centre line
+  //   - the other widgets: same edge, same centre, and exactly GAP px next to them (so every gap between widgets is the same)
+  //   - a column grid (12 columns, 6 on a narrow panel) for x, an 8 px grid for y; the grid pulls a little weaker (pen) than another widget
+  function targets(o, others) {
+    var T = { x: { lo: [{ at: EDGE, pen: 0 }], c: [{ at: o.W / 2, pen: 0 }], hi: [{ at: o.W - EDGE, pen: 0 }] }, y: { lo: [{ at: EDGE, pen: 0 }], c: [], hi: [] } }, i, b, cols = o.W >= 480 ? 12 : 6, cw, c;
+    for (i = 0; i < others.length; i++) {
+      b = others[i];
+      T.x.lo.push({ at: b.l, pen: 0 }, { at: b.l + b.w + GAP, pen: 0 }); T.x.hi.push({ at: b.l + b.w, pen: 0 }, { at: b.l - GAP, pen: 0 }); T.x.c.push({ at: b.l + b.w / 2, pen: 0 });
+      T.y.lo.push({ at: b.t, pen: 0 }, { at: b.t + b.h + GAP, pen: 0 }); T.y.hi.push({ at: b.t + b.h, pen: 0 }, { at: b.t - GAP, pen: 0 }); T.y.c.push({ at: b.t + b.h / 2, pen: 0 });
+    }
+    cw = (o.W - 2 * GRID_M - (cols - 1) * GAP) / cols;
+    if (cw > 8) { for (c = 0; c < cols; c++) { T.x.lo.push({ at: GRID_M + c * (cw + GAP), pen: 3 }); T.x.hi.push({ at: GRID_M + c * (cw + GAP) + cw, pen: 3 }); } }
+    return T;
+  }
+  // the best alignment within SNAP px: {d: how far to move, at: the line that was met}; step > 0 adds a regular grid of that size
+  function snapAxis2(lo, size, A, step) {
+    var best = null, pts = [[lo, A.lo, 0], [lo + size / 2, A.c, 0], [lo + size, A.hi, 1]], i, j, d, sc, g;
+    function take(dd, at, pen) { sc = Math.abs(dd) + pen; if (Math.abs(dd) <= SNAP && (best === null || sc < best.sc)) { best = { d: dd, at: at, sc: sc }; } }
     for (i = 0; i < pts.length; i++) {
-      for (j = 0; j < targets.length; j++) {
-        d = targets[j] - pts[i];
-        if (Math.abs(d) <= SNAP && (best === null || Math.abs(d) < Math.abs(best.d))) { best = { d: d, at: targets[j] }; }
-      }
+      for (j = 0; j < pts[i][1].length; j++) { take(pts[i][1][j].at - pts[i][0], pts[i][1][j].at, pts[i][1][j].pen); }
+      if (step && i !== 1) { g = Math.round(pts[i][0] / step) * step; take(g - pts[i][0], g, 3); }
     }
     return best;
   }
@@ -471,13 +544,9 @@
     if (e.button !== undefined && e.button !== 0) { return; }
     var el = $(w.el); if (!el || !ensure(w)) { return; }
     e.preventDefault(); e.stopPropagation();
-    var o = origin(), r = rectOf(w, o), others = otherRects(w, o), xs = [EDGE, o.W - EDGE], ys = [EDGE], i, b, p = panel();
-    for (i = 0; i < others.length; i++) {
-      b = others[i];
-      xs.push(b.l, b.l + b.w / 2, b.l + b.w); ys.push(b.t, b.t + b.h / 2, b.t + b.h);
-    }
+    var o = origin(), r = rectOf(w, o), others = otherRects(w, o), T = targets(o, others), p = panel();
     // r, xs, ys are CONTENT coordinates (they do not change when the panel scrolls); sc0 = scroll position at the start
-    mv = { w: w, id: e.pointerId, sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, r: r, xs: xs, ys: ys, others: others, free: hit(r, others, GAP2), vl: r.l, vt: r.t, sc0: p.scrollTop, tl: r.l, tt: r.t, cl: r.l, ct: r.t, ov: e.currentTarget, raf: 0, released: false };
+    mv = { w: w, id: e.pointerId, sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, r: r, tx: T.x, ty: T.y, others: others, free: hit(r, others, GAP2), vl: r.l, vt: r.t, sc0: p.scrollTop, tl: r.l, tt: r.t, cl: r.l, ct: r.t, ov: e.currentTarget, raf: 0, released: false };
     raise(w); el.classList.add("wa-drag", "wa-lift");
     try { mv.ov.setPointerCapture(e.pointerId); } catch (e1) { }
     readout(w);
@@ -496,7 +565,7 @@
       else if (mv.py < vt + ZONE) { d = -clamp(((vt + ZONE) - mv.py) / ZONE, 0, 1.4) * 11; }
       if (d) { p.scrollTop = p.scrollTop + d; o = origin(); }
       f = fit({ l: r.l + mv.px - mv.sx, t: r.t + (mv.py - mv.sy) + (p.scrollTop - mv.sc0), w: r.w, h: r.h }, o);
-      bx = snapAxis(f.l, r.w, mv.xs); by = snapAxis(f.t, r.h, mv.ys);
+      bx = snapAxis2(f.l, r.w, mv.tx, 0); by = snapAxis2(f.t, r.h, mv.ty, GRID_Y);
       if (bx) { f.l += bx.d; gx = o.l + bx.at; }
       if (by) { f.t += by.d; gy = o.t + by.at; }
       f = fit(f, o);
@@ -704,19 +773,21 @@
       ui.btn.setAttribute("title", on ? "Done" : "Adjust widgets");
     }
     if (ui.reset) { ui.reset.tabIndex = on ? 0 : -1; }
+    if (ui.tidy) { ui.tidy.tabIndex = on ? 0 : -1; }
     if (ui.auto) { ui.auto.tabIndex = on ? 0 : -1; }
     syncEnd();                                                     // scroll room only while Adjust is open
     wake();
   }
 
   function init() {
-    ui.btn = $("ia-btn"); ui.reset = $("ia-reset"); ui.auto = $("ia-auto");
+    ui.btn = $("ia-btn"); ui.reset = $("ia-reset"); ui.tidy = $("ia-tidy"); ui.auto = $("ia-auto");
     loadAH();
     loadLayout();
     WIDGETS.forEach(build);
     refresh(); applyAll();
     if (ui.btn) { ui.btn.addEventListener("click", function (e) { setAdjust(!adjusting); if (e.detail) { ui.btn.blur(); } }); }
     if (ui.reset) { ui.reset.addEventListener("click", resetAll); }
+    if (ui.tidy) { ui.tidy.addEventListener("click", tidyAll); }
     bindAH();
 
     // Esc leaves adjust mode first. On window (capture) so it runs before the idle screen's own Esc handler.

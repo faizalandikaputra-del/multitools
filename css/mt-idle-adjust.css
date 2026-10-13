@@ -148,7 +148,8 @@ body.is-adjusting .ia-pill {
   transition: opacity 0.3s var(--ia-in), transform 0.3s var(--ia-in), background-color 0.15s ease;
 }
 body.is-adjusting #ia-reset { transition-delay: 0s, 0s, 0s, 0s; }
-body.is-adjusting #ia-auto { transition-delay: 0.05s, 0.05s, 0s, 0s; }
+body.is-adjusting #ia-tidy { transition-delay: 0.04s, 0.04s, 0s, 0s; }
+body.is-adjusting #ia-auto { transition-delay: 0.08s, 0.08s, 0s, 0s; }
 
 html[data-theme="light"]:not(.has-bg-media) .ia-btn,
 html[data-theme="light"]:not(.has-bg-media) .ia-pill {

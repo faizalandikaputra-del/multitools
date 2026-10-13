@@ -1,4 +1,4 @@
-/* Multi Tool - mt-idle-roll.css (v1)
+/* Multi Tool - mt-idle-roll.css (v2)
    Digit roll for the live numbers of the idle screen: date, Time in After Effects (h / m / s), Timer, Stopwatch, To-Do count, Unfinished count.
    Markup is built by MTRoll (js/mt-idle-roll.js): node > .mr-c (one slot per digit) > .mr-n (current) [+ .mr-o (leaving) while rolling]; .mr-s = the words around the numbers.
    Same motion language as the big clock (css/mt-idle-time.css): old digit up and out (accelerate), new digit up from below (decelerate), no overshoot.
@@ -22,8 +22,4 @@
 :root[data-reduce-motion="true"] .mr-o { display: none; }
 :root[data-reduce-motion="true"] .mr-c.is-roll { clip-path: none; }
 :root[data-reduce-motion="true"] .mr-c.is-roll .mr-n { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  .mr-o { display: none; }
-  .mr-c.is-roll { clip-path: none; }
-  .mr-c.is-roll .mr-n { animation: none; }
-}
+/* no prefers-reduced-motion block on purpose: the owner keeps Windows animation effects off and wants every UI to keep moving; only the app's Animations switch above stops it. */

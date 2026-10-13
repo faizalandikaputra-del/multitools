@@ -1695,3 +1695,17 @@ fix49 (dynamic island): island vanished after the timer finished; always show th
   The "is-on" class is now written on every update, so a missed change can never leave it hidden.
 - Simpler look: the pointer OUTSIDE the island = icon only (small round pill, symmetric). Pointer ON the island = the digits (or "Update v1.9.0") open out smoothly (width + fade, same curve). Update dot / spinner stay visible in the icon pill.
 Tested in jsdom (logic only: timer done -> reset keeps island on, hover class on / off, idle / quiet rules). Not run inside AE.
+
+fix50 (NeuCurve + dynamic island + idle screen): island covered the NeuCurve toolbar; digit roll in the island; stopwatch Hide / Show motion; tidier widget layout on the idle screen.
+- css/mt-island.css (v7): .curve-pane { top: 50px } - the NeuCurve pane starts BELOW the island (8 + 36 + 6 px), so its toolbar is never covered.
+- Digit roll: js/mt-idle-roll.js (v2) MTRoll.set(node, text, mode, ALWAYS): the island passes always = true and rolls its digits exactly like the idle screen (old digit up and out, new one rises from below), also outside idle mode.
+  A node that comes into view (island opened / closed, tool switched) draws plain once. css/mt-idle-roll.css (v2): the prefers-reduced-motion block is removed (it turned the roll off when Windows animation effects are off); the app's Animations switch still stops it.
+- Stopwatch Hide / Show: new MTRoll.swap(node, text, mode, always): every character leaves up (staggered 32 ms, 190 ms), the new text rises in from below (300 ms). Used by the idle Stopwatch (js/mt-idle-focus.js v18) and by the island.
+  The island's Stopwatch view got a "Hide time" / "Show time" button (same switch mtx.swHidden, MTIsland.onToggleHide); the collapsed capsule swaps too.
+- Idle screen > Adjust (js/mt-idle-adjust.js v20, css v18, html: new "Tidy up" pill above "Reset layout"):
+  * Snap (10 px, guide lines): edges / centres of other widgets, EXACTLY the same gap (8 px) next to a neighbour, a 12-column grid (6 on a narrow panel) for x and an 8 px grid for y; widgets pull a little stronger than the grid.
+  * Resize snaps too: the right edge to a line, the same width / height as a neighbour, bottom edge to 8 px rows, with guide lines.
+  * Tidy up: widgets on about the same height become a row, a row that does not fit wraps, each row is stretched to the panel width (text scale kept within 0.68 - 1.3), every widget of a row gets the row height, equal 8 px gaps, rows centred; glides there (0.3 s). Saved like any layout.
+  * reduceMotion() in js/mt-idle-adjust.js reads only the app's Animations switch (OS setting ignored), so glide / drop / pop-in run with Windows animations off.
+Other idle css files (mt-idle-motion.css, mt-idle-time.css, mt-idle-icons.css, mt-idle-adjust.css) still contain their own prefers-reduced-motion blocks; not touched.
+Tested in jsdom (logic only: roll outside idle, swap, island Hide button). The tidy-up / snap math and all motion were NOT run in a browser or AE.

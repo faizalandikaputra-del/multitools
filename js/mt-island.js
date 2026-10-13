@@ -20,7 +20,7 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var cTw, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager;
+  var cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "timer", view = "timer", lastVis = false;
   var cfg = { h: 1, m: 0 };
 
@@ -34,7 +34,9 @@
   function pad2(n) { return n < 10 ? "0" + n : String(n); }
   function clampN(v, lo, hi) { v = parseInt(v, 10); if (!isFinite(v)) { v = lo; } return Math.max(lo, Math.min(hi, v)); }
   function setTxt(node, t) { if (node.textContent !== t) { node.textContent = t; } }
-  function digits(node, t) { if (window.MTRoll) { window.MTRoll.set(node, t, "fast"); } else { setTxt(node, t); } }
+  function digits(node, t) { if (window.MTRoll) { window.MTRoll.set(node, t, "fast", true); } else { setTxt(node, t); } }       // same digit roll as the idle screen (always: also outside idle mode)
+  function dswap(node, t) { if (window.MTRoll) { window.MTRoll.swap(node, t, "fast", true); } else { setTxt(node, t); } }          // stopwatch Hide / Show
+  function rollReset(node) { if (window.MTRoll && node) { window.MTRoll.reset(node); } }
   function cb(name, a, b) { var f = window.MTIsland && window.MTIsland[name]; if (f) { f(a, b); } }
 
   function build() {
@@ -107,7 +109,9 @@
     sRst = btn("mi-round mi-round-s", RESET, "Reset stopwatch"); sPlay = btn("mi-go mi-go-s", PLAY + "<span>Start</span>", "Start stopwatch");
     sRst.addEventListener("click", function () { cb("onReset", "sw"); }); sPlay.addEventListener("click", function () { cb("onToggle", "sw"); });
     sb.appendChild(sRst); sb.appendChild(sPlay);
-    swrap.appendChild(sBig); swrap.appendChild(sb); vS.appendChild(swrap);
+    sHide = btn("mi-link mi-hide", "Hide time", "Hide stopwatch time");
+    sHide.addEventListener("click", function () { cb("onToggleHide"); });
+    swrap.appendChild(sBig); swrap.appendChild(sHide); swrap.appendChild(sb); vS.appendChild(swrap);
 
     vU = el("div", "mi-view mi-view-u");
     banner = $("mt-update");
@@ -185,6 +189,7 @@
     var c = cycle();
     if (k !== "u") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
     root.setAttribute("data-dir", (c.indexOf(k) > c.indexOf(view) || view === "u" || c.indexOf(view) < 0) ? "next" : "prev");
+    rollReset(k === "timer" ? tBig : sBig);
     spin++; sw.style.setProperty("--mi-spin", (spin * 180) + "deg");
     view = k; paint(true);
   }
@@ -221,6 +226,7 @@
     if (o === open) { return; }
     build(); open = o;
     root.classList.toggle("is-open", o); root.setAttribute("aria-expanded", o ? "true" : "false");
+    rollReset(tBig); rollReset(sBig); rollReset(cTime);          // the node that comes into view draws plain once (no roll through old digits)
     if (o) { view = upd ? "u" : effective(); if (view !== "u") { sel = view; } root.setAttribute("data-dir", "next"); }
     paint(false);
     if (!o) {
@@ -270,8 +276,9 @@
       root.setAttribute("data-tool", eff);
       cEl.classList.toggle("is-t", eff === "timer"); cEl.classList.toggle("is-s", eff === "sw");
       var cdd = eff === "timer" ? t : s;
+      if (lastEff !== eff) { rollReset(cTime); lastEff = eff; }
       if (cdd) {
-        digits(cTime, cdd.text);
+        if (eff === "sw" && lastHid !== undefined && !!cdd.hidden !== lastHid) { dswap(cTime, cdd.text); } else { digits(cTime, cdd.text); }
         if (eff === "timer") { cIco.style.setProperty("--p", String(Math.max(0, Math.min(1, cdd.frac || 0)) * 360) + "deg"); }
         cEl.classList.toggle("is-done", eff === "timer" && !!cdd.done);
         cEl.classList.toggle("is-paused", eff === "timer" ? !!cdd.paused : !!(s && s.paused));
@@ -298,7 +305,8 @@
         }
       }
       if (view === "sw" && s) {
-        digits(sBig, s.text);
+        if (lastHid !== undefined && !!s.hidden !== lastHid) { dswap(sBig, s.text); } else { digits(sBig, s.text); }
+        setTxt(sHide, s.hidden ? "Show time" : "Hide time"); sHide.setAttribute("aria-label", s.hidden ? "Show stopwatch time" : "Hide stopwatch time");
         sBig.classList.toggle("is-paused", !!s.paused);
         stateBtn(sPlay, !!s.running, s.running ? "Pause stopwatch" : (s.paused ? "Resume stopwatch" : "Start stopwatch"), "Pause", s.paused ? "Resume" : "Start");
         sRst.disabled = !s.active;
@@ -307,6 +315,7 @@
 
     applySize();
     shown = want; root.classList.toggle("is-on", want);        // written every time: a missed change can never leave the island hidden
+    if (s) { lastHid = !!s.hidden; }
     var arrived = upd && !updWas; updWas = upd;
     var done = !!(t && t.done);
     if ((arrived || (done && !wasDone)) && want && !open && root.animate && !reduce()) {            // time is up: one jelly pulse
@@ -330,6 +339,6 @@
     paint(false);
   }
 
-  window.MTIsland = { update: update, aim: aim, onToggle: null, onReset: null, onSetTime: null };
+  window.MTIsland = { update: update, aim: aim, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

@@ -53,15 +53,16 @@
     node._mr = { text: text, toks: toks, epoch: epoch };
   }
 
-  function set(node, text, mode) {
+  function set(node, text, mode, always) {
     if (!node) { return; }
     text = String(text);
+    if (node._swBusy) { node._swPend = text; return; }                                  // a show / hide swap is playing: it draws the latest text when it ends
     var st = node._mr, on, toks, kids, i, k = 0, slot, o, n, fast, step, self;
-    on = idleNow();
+    on = idleNow() || !!always;                                                         // always: the Dynamic Island rolls its digits outside idle mode too
     if (st && st.text === text) { st.epoch = epoch; return; }                          // same text: nothing to draw, but it is now "drawn" for this idle session
     toks = tokens(text);
     kids = node.children;
-    if (!st || !on || st.epoch !== epoch || !sameShape(st.toks, toks) || kids.length !== toks.length) { plain(node, text, toks); return; }
+    if (!st || !on || (!always && st.epoch !== epoch) || !sameShape(st.toks, toks) || kids.length !== toks.length) { plain(node, text, toks); return; }
     fast = mode === "fast"; step = fast ? 35 : 60;
     for (i = 0; i < toks.length; i++) {
       slot = kids[i];
@@ -86,5 +87,35 @@
 
   function reset(node) { if (node) { node._mr = null; } }
 
-  window.MTRoll = { set: set, reset: reset };
+  // Show / hide swap (stopwatch "Hide" / "Show"): every character leaves UP (staggered, accelerate), the new text rises in FROM BELOW (decelerate).
+  // Same motion language as the digit roll. While it plays, set() only remembers the newest text; at the end the node is rebuilt in the normal roll markup.
+  function chars(node, text) {
+    var i, s, out = [];
+    node.textContent = ""; node.removeAttribute("data-mr");
+    for (i = 0; i < text.length; i++) {
+      s = document.createElement("span"); s.textContent = text.charAt(i);
+      s.style.display = "inline-block"; s.style.whiteSpace = "pre"; node.appendChild(s); out.push(s);
+    }
+    return out;
+  }
+  function swap(node, text, mode, always) {
+    if (!node) { return; }
+    text = String(text);
+    var reduce = document.documentElement.getAttribute("data-reduce-motion") === "true";
+    if (!node.animate || reduce) { reset(node); set(node, text, mode, always); return; }
+    var old = node._mr ? node._mr.text : node.textContent, out, EASE_OUT = "cubic-bezier(0.3, 0, 1, 1)", EASE_IN = "cubic-bezier(0.05, 0.7, 0.1, 1)", st = 32;
+    if (node._swT) { clearTimeout(node._swT); node._swT = 0; }
+    node._swBusy = true; node._swPend = text;
+    out = chars(node, old);
+    out.forEach(function (c, i) { c.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translate3d(0,-60%,0)" }], { duration: 190, delay: i * st, easing: EASE_OUT, fill: "forwards" }); });
+    node._swT = setTimeout(function () {
+      var inn = chars(node, node._swPend), last = 0;
+      inn.forEach(function (c, i) { last = 300 + i * st; c.animate([{ opacity: 0, transform: "translate3d(0,60%,0)" }, { opacity: 1, transform: "none" }], { duration: 300, delay: i * st, easing: EASE_IN, fill: "backwards" }); });
+      node._swT = setTimeout(function () {
+        node._swT = 0; node._swBusy = false; var t = node._swPend; node._swPend = null; reset(node); set(node, t, mode, always);
+      }, last + 30);
+    }, 190 + Math.max(0, old.length - 1) * st);
+  }
+
+  window.MTRoll = { set: set, reset: reset, swap: swap };
 })();

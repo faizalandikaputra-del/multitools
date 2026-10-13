@@ -126,7 +126,10 @@
 .mi-bar { height: 4px; margin: 10px 4px 0; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.14); }
 .mi-fill { display: block; height: 100%; width: var(--pc, 0%); border-radius: 999px; background: var(--accent, #5b8cff); transition: width 0.9s linear; }
 .mi-sub { margin: 8px 0 14px; text-align: center; font-size: 0.72rem; line-height: 16px; color: rgba(255, 255, 255, 0.5); }
-.mi-big-s { margin-bottom: 16px; }
+.mi-big-s { margin-bottom: 2px; }
+.mi-hide { display: block; width: 100%; height: 26px; margin: 0 0 12px; padding: 0; border: 0; background: none; color: rgba(255, 255, 255, 0.55); font: inherit; font-size: 0.74rem; cursor: pointer; transition: color 0.15s ease; }
+.mi-hide:hover { color: #fff; }
+.mi-hide:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
 
 .mi-btns { display: flex; align-items: center; }
 .mi-go { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; height: 40px; margin: 0; padding: 0 18px; border: 0; border-radius: 999px; font: inherit; font-size: 0.84rem; font-weight: 700; color: var(--mi-on); background: var(--accent, #5b8cff); cursor: pointer; transition: filter 0.15s ease, transform 0.18s var(--mi-ease), opacity 0.2s ease; }
@@ -194,3 +197,6 @@ body.is-quiet .idle-chips > #idle-timer.is-live, body.is-quiet .idle-dash > #idl
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
 :root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mi-view-u .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }
+
+/* NeuCurve brings its own toolbar to the very top of the panel: the pane starts BELOW the island (8 px + 36 px + 6 px) so the island never covers it. */
+.curve-pane { top: 50px; }

@@ -14,7 +14,7 @@
 
   /* ---------- 1. sidebar highlight ---------- */
   function readY(t) {
-    var m = /,\s*(-?[\d.]+)px/.exec(t || "");
+    var m = /(-?[\d.]+)px/.exec(t || "");      /* the one px value: Y in a rail "translate(-50%, Ypx)", X in a top / bottom bar "translate(Xpx, -50%)" */
     return m ? parseFloat(m[1]) : null;
   }
   /* v2: the highlight no longer uses a CSS transition (symmetric ease-in-out: every tab switch started from standstill and
@@ -31,7 +31,10 @@
     var y0 = readY(ind.style.transform), v0 = 0, tgt = y0, t0 = 0, anim = null, lastY = y0;
     if (spring) { document.documentElement.classList.add("mt-ind-spring"); }
 
-    function tx(y) { return "translate(-50%, " + y.toFixed(2) + "px)"; }
+    function tx(y) {
+      var d = document.documentElement.getAttribute("data-nav-pos");      /* Settings > Navigation position */
+      return (d === "top" || d === "bottom") ? "translate(" + y.toFixed(2) + "px, -50%)" : "translate(-50%, " + y.toFixed(2) + "px)";
+    }
     function clock() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
     function stateAt(t) {
       if (tgt === null || !t0) { return { y: tgt, v: 0 }; }

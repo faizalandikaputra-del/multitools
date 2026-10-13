@@ -40,7 +40,7 @@
   var el = {}, state = "idle", ticker = 0;
 
   // ================= timer =================
-  function cfgMs() { return (num(get("tH"), 0, 23, 1) * 3600 + num(get("tM"), 0, 59, 0) * 60) * 1000; }
+  function cfgMs() { return (num(get("tH"), 0, 23, 1) * 3600 + num(get("tM"), 0, 59, 0) * 60 + num(get("tS"), 0, 59, 0)) * 1000; }
   function leftMs() {
     if (state === "running") { return Math.max(0, num0(get("tEnd")) - Date.now()); }
     if (state === "paused") { return Math.max(0, num0(get("tRemain"))); }
@@ -53,7 +53,7 @@
     if (state === "running") { pause(); return; }
     if (state === "paused") { set("tEnd", Date.now() + num0(get("tRemain"))); setState("running"); return; }
     var total = cfgMs();
-    if (total <= 0) { toast("Set hours or minutes for the timer first."); return; }
+    if (total <= 0) { toast("Set a time for the timer first."); return; }
     set("tTotal", total); set("tEnd", Date.now() + total); setState("running");
   }
   function pause() { set("tRemain", Math.max(0, num0(get("tEnd")) - Date.now())); setState("paused"); }
@@ -456,24 +456,23 @@
     if (clr) { clr.addEventListener("click", function () { writeMissed([]); persist(); renderLists(); }); }
   }
 
-  // Dynamic island (js/mt-island.js): feeds BOTH tools (the island shows one in the capsule, the expanded panel lets you pick one and set / start / reset it).
-  // active = running / paused / done (timer) or running / paused (stopwatch); the island capsule shows while one of them is active.
+  // Dynamic island (js/mt-island.js): always fed with both the timer and the stopwatch (state + digits); the island decides what to show
   function renderIsland() {
     if (!window.MTIsland) { return; }
-    var st = swState(), total = num0(get("tTotal")) || 1, on = state !== "idle", left = leftMs();
-    var t = { active: on, name: state === "done" ? "Time is up" : (state === "paused" ? "Timer paused" : "Timer"), text: state === "done" ? "00:00:00" : clock(left),
-              frac: state === "done" ? 1 : (on ? Math.max(0, Math.min(1, 1 - left / total)) : 0), done: state === "done", paused: state === "paused", running: state === "running",
-              h: num(get("tH"), 0, 23, 1), m: num(get("tM"), 0, 59, 0) };
-    var w = { active: st !== "idle", name: "Stopwatch", text: get("swHidden") === "1" ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), running: st === "running", paused: st === "paused" };
-    window.MTIsland.update({ timer: t, sw: w });
+    var st = swState(), total = num0(get("tTotal")) || 1, left = leftMs(), cfg = split(cfgMs());
+    window.MTIsland.update({
+      timer: { state: state, text: state === "done" ? "00:00:00" : clock(left), frac: state === "idle" ? 0 : (state === "done" ? 1 : Math.max(0, Math.min(1, 1 - left / total))), cfg: { h: cfg.h, m: cfg.m, s: cfg.s } },
+      sw: { state: st, text: clock(swElapsed()), hidden: get("swHidden") === "1" }
+    });
   }
   if (window.MTIsland) {
     window.MTIsland.onToggle = function (which) { if (which === "timer") { start(); } else { swToggle(); tickerCheck(); } };
+    window.MTIsland.onSwHide = function () { set("swHidden", get("swHidden") === "1" ? "0" : "1"); renderStopwatch(); };
     window.MTIsland.onReset = function (which) { if (which === "timer") { reset(); } else { swReset(); tickerCheck(); } };
-    window.MTIsland.onSetTime = function (h, m) {                       // only while the timer is not started (same rule as the Settings fields)
+    window.MTIsland.onSetTimer = function (h, m, s) {      // new timer length from the island (only while the timer is not running / paused)
       if (state === "running" || state === "paused") { return; }
-      set("tH", num(h, 0, 23, 1)); set("tM", num(m, 0, 59, 0));
-      if (el.h) { el.h.value = num(get("tH"), 0, 23, 1); } if (el.m) { el.m.value = num(get("tM"), 0, 59, 0); }
+      set("tH", num(h, 0, 23, 1)); set("tM", num(m, 0, 59, 0)); set("tS", num(s, 0, 59, 0));
+      if (el.h) { el.h.value = get("tH"); } if (el.m) { el.m.value = get("tM"); }
       render();
     };
   }
@@ -629,11 +628,16 @@
     el.swHide.setAttribute("aria-pressed", hidden ? "true" : "false");
     renderIsland();
   }
+  function swAnim(node, cls) { if (!node) { return; } node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); }
   function bindStopwatch() {
     if (!el.sw) { return; }
     el.swToggle.addEventListener("click", swToggle);
     el.swReset.addEventListener("click", swReset);
-    el.swHide.addEventListener("click", function () { set("swHidden", get("swHidden") === "1" ? "0" : "1"); renderStopwatch(); });
+    el.swHide.addEventListener("click", function () {
+      set("swHidden", get("swHidden") === "1" ? "0" : "1"); renderStopwatch();
+      // same motion as the dynamic island's Hide / Show (css/mt-island.css mi-flip + mi-pop): digits flip in out of a blur, the label pops
+      if (document.documentElement.getAttribute("data-reduce-motion") !== "true") { swAnim(el.swTime, "is-flip"); swAnim(el.swHide, "is-pop"); }
+    });
     renderStopwatch();
   }
 
@@ -973,7 +977,7 @@
     var rs = $("settings-reset");
     if (rs) {
       rs.addEventListener("click", function () {
-        ["showElapsed", "tH", "tM", "tState", "tEnd", "tRemain", "tTotal", "tSound", "tVoice", "tVolume", "tSoundPath", "notes", "todoDay", "todoSaved", "missed",
+        ["showElapsed", "tH", "tM", "tS", "tState", "tEnd", "tRemain", "tTotal", "tSound", "tVoice", "tVolume", "tSoundPath", "notes", "todoDay", "todoSaved", "missed",
          "swState", "swStart", "swAcc", "swHidden", "alarms", "noteList", "idleTab", "cardScale", "foldHidden", "showSw", "showAl", "showTabs"].forEach(del);
         draft = 0; missedOpen = false; todoKey = ""; missedKey = ""; alKey = ""; noteKey = null;
         if (dataFile) { clearTimeout(saveTimer); saveTimer = 0; dataFile.remove(); }

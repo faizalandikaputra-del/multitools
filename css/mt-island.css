@@ -1,0 +1,212 @@
+/* Multi Tool - mt-island.css (v3)  -  the "dynamic island" of js/mt-island.js
+   Closed: a small black capsule, top centre, ONE icon (timer ring or stopwatch) centred exactly with a grid.
+   Open (click): the capsule grows into a card with a Timer / Stopwatch switch, big digits, controls and, for the timer, H : M : S steppers.
+   Motion (it is the one lively thing on the panel):
+     open   width + height + radius spring (0.56 s, ~8 % overshoot); the icon fades out first, the card content fades in 0.1 s later (blur 8 -> 0)
+     close  content fades first (0.12 s), then the capsule shrinks back (0.42 s, decelerate), the icon returns last
+     switch Timer <-> Stopwatch: thumb slides, height follows the new content with the same spring, content rises in
+   Only width / height / radius of ONE small fixed box are animated; the card inside has a fixed width, so its text never re-wraps while the box moves.
+   Animations follow the in-app Animations toggle (html[data-reduce-motion]) only, NOT the Windows "show animations" flag. Chromium-74 safe. */
+.mt-island {
+  --mi-w: 56px; --mi-h: 28px; --mi-ew: 272px;
+  --mi-t: var(--accent, #5b8cff); --mi-s: #ffb340;
+  --mi-spring: cubic-bezier(0.34, 1.28, 0.64, 1); --mi-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  position: fixed; z-index: 9000; top: 6px; left: 0; right: 0; margin: 0 auto;
+  box-sizing: border-box; width: var(--mi-w); height: var(--mi-h); max-width: calc(100vw - 16px);
+  overflow: hidden; contain: layout; border-radius: 14px; background: #000; color: #fff;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  font-family: -apple-system, "SF Pro Display", system-ui, "Segoe UI", "Helvetica Neue", sans-serif;
+  pointer-events: none; user-select: none; -webkit-user-select: none;
+  transform-origin: 50% 0; transform: translate3d(0, -0.7rem, 0) scale(0.35, 0.5);
+  opacity: 0; visibility: hidden;
+  transition: transform 0.3s cubic-bezier(0.3, 0, 1, 1), opacity 0.22s linear 0.08s, visibility 0s linear 0.32s,
+    width 0.42s var(--mi-ease), height 0.42s var(--mi-ease), border-radius 0.42s var(--mi-ease);
+}
+.mt-island.is-on {
+  transform: translate3d(0, 0, 0) scale(1); opacity: 1; visibility: visible; pointer-events: auto;
+  transition: transform 0.56s cubic-bezier(0.34, 1.45, 0.64, 1), opacity 0.16s linear, visibility 0s,
+    width 0.42s var(--mi-ease), height 0.42s var(--mi-ease), border-radius 0.42s var(--mi-ease);
+}
+.mt-island.is-on.is-open {
+  border-radius: 26px;
+  transition: transform 0.3s ease, opacity 0.16s linear, visibility 0s,
+    width 0.56s var(--mi-spring), height 0.56s var(--mi-spring), border-radius 0.56s var(--mi-spring);
+}
+.mt-island.is-on:not(.is-open):hover { transform: translate3d(0, 0, 0) scale(1.06); transition: transform 0.22s var(--mi-spring), opacity 0.16s linear, width 0.42s var(--mi-ease), height 0.42s var(--mi-ease), border-radius 0.42s var(--mi-ease); }
+.mt-island.is-on:not(.is-open):active { transform: translate3d(0, 0, 0) scale(0.95); }
+.mt-island [hidden] { display: none !important; }
+.mi-pill, .mi-switch, .mi-later, .mi-u-more, .mi-step, .mi-reset, .mi-main, .mi-eye { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }   /* component rules below come later = win */
+.mt-island :focus-visible { outline: 2px solid var(--mi-t) !important; outline-offset: 2px; }
+.mt-island.is-sw :focus-visible { outline-color: var(--mi-s) !important; }
+
+/* ---------- NeuCurve tab: keep the island clear of the editor ----------
+   The Curve tab is a full-size iframe, so the closed island sat on top of the NeuCurve toolbar and blocked its buttons.
+   The pane now keeps a strip of --mi-reserve at the top (island top 6 + height 28 + 4 gap) and the frame sits below it.
+   Applied all the time (not only on .is-curve) so the frame never gets a resize when you switch tabs. */
+:root { --mi-reserve: 38px; }
+html.mt-island-off { --mi-reserve: 0px; }   /* island switched off (Settings > Dynamic island): no strip, the Curve frame fills the pane again */
+.curve-pane { box-sizing: border-box; padding-top: var(--mi-reserve);
+  background-image: linear-gradient(var(--mi-strip, #0a0a0a), var(--mi-strip, #0a0a0a)); background-repeat: no-repeat; background-position: 0 0; background-size: 100% var(--mi-reserve); }
+html.mt-island-off .curve-pane { padding-top: 0; background-image: none; }
+html.mt-island-off .mt-island { display: none !important; }   /* solid strip in NeuCurve's colour (js/mt-island.js sets --mi-strip) */
+
+/* ---------- closed: one icon, centred ---------- */
+.mi-pill { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: grid; place-items: center; border-radius: inherit; opacity: 1; transform: none;
+  transition: opacity 0.16s linear 0.22s, transform 0.3s var(--mi-spring) 0.22s; }
+.mi-pill:focus-visible { outline-offset: -3px; }
+.mt-island.is-open .mi-pill { opacity: 0; transform: scale(0.6); pointer-events: none; transition: opacity 0.1s linear, transform 0.2s ease; }
+.mi-glyph { grid-area: 1 / 1; display: block; width: 16px; height: 16px; opacity: 0; transform: scale(0.5) rotate(-25deg); transition: opacity 0.2s linear, transform 0.38s var(--mi-spring); }
+.mt-island:not(.is-sw) .mi-g-t, .mt-island.is-sw .mi-g-s { opacity: 1; transform: none; }
+.mi-ring { fill: none; stroke: rgba(255, 255, 255, 0.22); stroke-width: 2.4; }
+.mi-arc { fill: none; stroke: var(--mi-t); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 56.55; stroke-dashoffset: 56.55; transition: stroke-dashoffset 0.9s linear; }
+.mi-hand-t { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.mi-sw-body { fill: none; stroke: var(--mi-s); stroke-width: 2.2; }
+.mi-sw-nub { stroke: var(--mi-s); stroke-width: 2.4; stroke-linecap: round; }
+.mi-hand-s { fill: none; stroke: var(--mi-s); stroke-width: 2.2; stroke-linecap: round; transform-origin: 12px 13.5px; }
+.mi-g-s.is-run .mi-hand-s { animation: mi-spin 3s linear infinite; }
+.mi-g-s.is-pause { opacity: 0.6; }
+.mi-g-t.is-done { animation: mi-done 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+@keyframes mi-spin { to { transform: rotate(360deg); } }
+@keyframes mi-done { 50% { transform: scale(1.25); opacity: 0.6; } }
+
+/* ---------- open: the card (fixed width, so nothing re-wraps while the capsule grows) ---------- */
+.mi-panel { position: absolute; top: 0; left: calc(50% - var(--mi-ew) / 2); width: var(--mi-ew); box-sizing: border-box; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 10px;
+  transform-origin: 50% 0; transform: translate3d(0, -6px, 0) scale(0.94); opacity: 0; filter: blur(8px); visibility: hidden; pointer-events: none;
+  transition: opacity 0.12s linear, transform 0.2s ease, filter 0.12s linear, visibility 0s linear 0.2s; }
+.mt-island.is-open .mi-panel { transform: none; opacity: 1; filter: none; visibility: visible; pointer-events: auto;
+  transition: opacity 0.3s linear 0.1s, transform 0.5s var(--mi-spring) 0.06s, filter 0.3s linear 0.1s, visibility 0s; }
+
+
+/* ---------- ONE switch: Timer <-> Stopwatch (changes only on click) ----------
+   Left = the feature in use, right (dim) = where a click goes. Both are stacks of two labels that roll past each other
+   (spring), the pill glow follows the colour of the feature, and the old view fades out before the new one rises in. */
+.mi-head { position: relative; }
+.mi-switch { position: relative; width: 100%; height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 14px; box-sizing: border-box; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09); color: #fff; overflow: hidden; transition: background-color 0.2s ease, transform 0.18s var(--mi-spring); }
+.mi-switch:hover { background: rgba(255, 255, 255, 0.14); }
+.mi-switch:active { transform: scale(0.97); }
+.mi-stack { position: relative; display: block; height: 20px; min-width: 0; overflow: hidden; font-size: 13px; line-height: 20px; font-weight: 600; letter-spacing: 0.01em; text-align: left; }
+.mi-cur { flex: 1 1 auto; }
+.mi-nxt { flex: 0 0 auto; width: 84px; margin: 0 8px 0 auto; font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.42); text-align: right; transition: color 0.2s ease; }
+.mi-switch:hover .mi-nxt { color: rgba(255, 255, 255, 0.7); }
+.mi-l { position: absolute; left: 0; top: 0; right: 0; display: flex; align-items: center; white-space: nowrap; opacity: 1; transform: none;
+  transition: transform 0.46s var(--mi-spring), opacity 0.24s linear; }
+.mi-nxt .mi-l { justify-content: flex-end; }
+.mi-cur .mi-l-s, .mi-nxt .mi-l-t { opacity: 0; transform: translate3d(0, 120%, 0); }                 /* waiting below */
+.lab-sw .mi-cur .mi-l-t, .lab-sw .mi-nxt .mi-l-s { opacity: 0; transform: translate3d(0, -120%, 0); } /* left above */
+.lab-sw .mi-cur .mi-l-s, .lab-sw .mi-nxt .mi-l-t { opacity: 1; transform: none; }
+.mi-swap { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: rgba(255, 255, 255, 0.6); transition: transform 0.5s var(--mi-spring), color 0.2s ease; }
+.mi-switch:hover .mi-swap { color: #fff; }
+.lab-sw .mi-swap { transform: rotate(180deg); }
+.mi-dot { flex: 0 0 auto; width: 5px; height: 5px; margin-left: 7px; border-radius: 50%; background: var(--mi-t); opacity: 0; transform: scale(0); transition: opacity 0.2s linear, transform 0.3s var(--mi-spring); }
+.mi-dot-s { background: var(--mi-s); }
+.mi-nxt .mi-dot { margin-left: 5px; }
+.mi-l.is-live .mi-dot { opacity: 1; transform: scale(1); }
+.mi-panel.is-leaving .mi-pane > * { opacity: 0; transform: translate3d(0, -6px, 0) scale(0.98); filter: blur(4px); transition: opacity 0.12s linear, transform 0.13s ease, filter 0.12s linear; }
+/* the other feature is running while this one is shown: a small dot beside the closed icon */
+.mi-pill::after { content: ""; position: absolute; right: 9px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: var(--mi-s); opacity: 0; transform: scale(0); transition: opacity 0.2s linear, transform 0.3s var(--mi-spring); pointer-events: none; }
+.mt-island.is-sw .mi-pill::after { background: var(--mi-t); }
+.mt-island.has-alt:not(.is-open):not(.is-upd) .mi-pill::after { opacity: 1; transform: scale(1); }
+
+.mi-pane { display: none; flex-direction: column; gap: 10px; }
+.mt-island:not(.is-sw) .mi-pane-t, .mt-island.is-sw .mi-pane-s { display: flex; }
+.mi-panel.is-swap .mi-pane > * { animation: mi-view-in 0.38s cubic-bezier(0.05, 0.7, 0.1, 1) both; }
+.mi-panel.is-swap .mi-pane > *:nth-child(2) { animation-delay: 0.04s; }
+@keyframes mi-view-in { from { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.97); filter: blur(4px); } }
+
+/* timer set-up: H : M : S steppers. The colon is centred on the number row, not on the column. */
+.mi-set { display: flex; align-items: flex-start; justify-content: center; gap: 2px; }
+.mi-pane-t:not(.is-set) .mi-set, .mi-pane-t.is-set .mi-read { display: none; }
+.mi-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.mi-step { width: 100%; height: 22px; display: grid; place-items: center; border-radius: 8px; color: rgba(255, 255, 255, 0.5); transition: color 0.15s ease, background-color 0.15s ease, transform 0.18s var(--mi-spring); }
+.mi-step:hover { color: #fff; background: rgba(255, 255, 255, 0.09); }
+.mi-step:active { transform: scale(0.9); background: rgba(255, 255, 255, 0.16); }
+.mt-island .mi-num { width: 100%; height: 42px; box-sizing: border-box; margin: 0; padding: 0; border: 0; border-radius: 10px; outline: 0; background: transparent; box-shadow: none;
+  text-align: center; font: inherit; font-size: 34px; font-weight: 600; line-height: 42px; font-variant-numeric: tabular-nums; color: #fff; caret-color: var(--mi-t); user-select: text; -webkit-user-select: text; transition: background-color 0.15s ease; }
+.mt-island .mi-num:hover { background: rgba(255, 255, 255, 0.05); }
+.mt-island .mi-num:focus { background: rgba(255, 255, 255, 0.1); box-shadow: none; }
+.mi-unit { margin-top: 2px; font-size: 11px; line-height: 14px; color: rgba(255, 255, 255, 0.45); }
+.mi-colon { position: relative; flex: 0 0 8px; height: 42px; margin-top: 22px; }
+.mi-colon::before, .mi-colon::after { content: ""; position: absolute; left: 2px; width: 4px; height: 4px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); }
+.mi-colon::before { top: calc(50% - 8px); }
+.mi-colon::after { top: calc(50% + 4px); }
+
+/* live digits */
+.mi-read { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0 0; }
+.mi-big { display: flex; align-items: center; justify-content: center; min-height: 44px; font-size: 38px; line-height: 44px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; transition: opacity 0.25s ease; }
+.is-paused .mi-big { opacity: 0.55; }
+.mi-bar { align-self: stretch; height: 4px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.14); }
+.mi-pane-s .mi-bar { display: none; }
+.mi-bar > i { display: block; width: 100%; height: 100%; border-radius: 2px; background: var(--mi-t); transform-origin: 0 50%; transform: scaleX(var(--p, 0)); transition: transform 0.9s linear; }
+.mi-status { height: 16px; font-size: 12px; line-height: 16px; color: rgba(255, 255, 255, 0.55); }
+/* hide / show of the stopwatch digits (eye button): the digits and the line under them blur in, the eye pops. Hover reveal stays instant. */
+.mi-big.is-flip, .mi-status.is-flip { animation: mi-flip 0.42s cubic-bezier(0.05, 0.7, 0.1, 1) both; }
+@keyframes mi-flip { from { opacity: 0; filter: blur(8px); transform: scale(0.86); } }
+.mi-eye.is-pop svg { animation: mi-pop 0.4s var(--mi-spring) both; }
+@keyframes mi-pop { from { opacity: 0; transform: scale(0.35) rotate(-45deg); } }
+.mi-pane-t.is-done .mi-status { color: var(--mi-t); font-weight: 600; }
+
+/* controls */
+.mi-ctl { display: flex; gap: 8px; }
+.mi-reset, .mi-eye { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; transition: background-color 0.15s ease, color 0.25s ease, transform 0.18s var(--mi-spring); }
+.mi-reset:hover, .mi-eye:hover { background: rgba(255, 255, 255, 0.2); }
+.mi-reset:active, .mi-eye:active { transform: scale(0.9); }
+.mi-eye[aria-pressed="true"] { color: var(--mi-s); }
+.mi-main { flex: 1 1 auto; min-width: 0; height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #000; background: var(--mi-t); transition: filter 0.15s ease, transform 0.18s var(--mi-spring), opacity 0.2s ease; }
+.mi-pane-s .mi-main { background: var(--mi-s); }
+.mi-main:hover { filter: brightness(1.1); }
+.mi-main:active { transform: scale(0.97); }
+.mi-main:disabled { opacity: 0.35; cursor: default; filter: none; transform: none; }
+.mi-main svg, .mi-reset svg, .mi-eye svg, .mi-step svg { display: block; }
+
+/* ---------- update card (js/mt-updater.js -> MTIsland.notice) ---------- */
+.mi-pane-u { display: none; }
+.mt-island.is-upd .mi-head, .mt-island.is-upd .mi-pane-t, .mt-island.is-upd .mi-pane-s { display: none; }
+.mt-island.is-upd .mi-pane-u { display: flex; }
+.mt-island.is-upd .mi-g-t, .mt-island.is-upd .mi-g-s { opacity: 0; transform: scale(0.5) rotate(-25deg); }
+.mt-island.is-upd .mi-g-u { opacity: 1; transform: none; }
+.mi-g-u .mi-u-arrow { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.mt-island.is-upd:not(.is-open) .mi-pill::before { content: ""; position: absolute; right: 8px; top: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--mi-t); box-shadow: 0 0 8px var(--mi-t); animation: mi-upd-pulse 1.8s ease-in-out infinite; pointer-events: none; }
+@keyframes mi-upd-pulse { 50% { transform: scale(1.5); opacity: 0.55; } }
+.mi-g-u { opacity: 0; transform: scale(0.5) rotate(-25deg); transition: opacity 0.2s linear, transform 0.38s var(--mi-spring); }
+.mi-u-head { display: flex; align-items: center; }
+.mi-u-ico { flex: 0 0 auto; width: 36px; height: 36px; margin-right: 10px; display: grid; place-items: center; border-radius: 50%; color: var(--mi-t); background: rgba(255, 255, 255, 0.1); }
+.mi-pane-u.is-run .mi-u-ico svg { animation: mi-u-bob 1.1s ease-in-out infinite; }
+@keyframes mi-u-bob { 50% { transform: translate3d(0, 2px, 0); } }
+.mi-u-text { flex: 1 1 auto; min-width: 0; }
+.mi-u-title { font-size: 14px; line-height: 18px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mi-u-sub { margin-top: 1px; font-size: 12px; line-height: 16px; color: rgba(255, 255, 255, 0.55); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mi-u-more { flex: 0 0 auto; margin-left: 8px; height: 26px; display: flex; align-items: center; padding: 0 9px 0 10px; border-radius: 999px; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.09); transition: background-color 0.15s ease, color 0.15s ease; }
+.mi-u-more svg { margin-left: 4px; transition: transform 0.34s var(--mi-spring); }
+.mi-u-more:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.mi-u-more[aria-expanded="true"] svg { transform: rotate(180deg); }
+.mi-u-notes { display: none; margin: 0; max-height: 104px; overflow-y: auto; padding: 9px 11px; box-sizing: border-box; border-radius: 14px; background: rgba(255, 255, 255, 0.07); white-space: pre-wrap;
+  font-family: inherit; font-size: 12px; line-height: 1.45; color: rgba(255, 255, 255, 0.66); user-select: text; -webkit-user-select: text; }
+.mi-pane-u.is-notes .mi-u-notes { display: block; }
+.mi-u-notes.is-in { animation: mi-view-in 0.38s cubic-bezier(0.05, 0.7, 0.1, 1) both; }
+.mi-u-bar { display: none; height: 4px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.14); }
+.mi-pane-u.is-busy .mi-u-bar { display: block; }
+.mi-u-bar > i { display: block; width: 100%; height: 100%; border-radius: 2px; background: var(--mi-t); transform-origin: 0 50%; transform: scaleX(var(--p, 0)); transition: transform 0.3s ease; }
+.mi-later { flex: 0 0 auto; height: 40px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #fff; background: rgba(255, 255, 255, 0.12); transition: background-color 0.15s ease, transform 0.18s var(--mi-spring), opacity 0.15s ease; }
+.mi-later:hover { background: rgba(255, 255, 255, 0.2); }
+.mi-later:active { transform: scale(0.94); }
+.mi-later:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+/* Digit roll (js/mt-idle-roll.js, "fast" mode) in the island. css/mt-idle-roll.css switches the roll off when Windows "show animations" is off;
+   the island follows only the in-app Animations toggle, so the roll is put back here (the toggle itself is handled at the end of this file). */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduce-motion="true"]) .mt-island .mr-o { display: block; }
+  :root:not([data-reduce-motion="true"]) .mt-island .mr-c.is-roll { clip-path: inset(0 -0.25em); }
+  :root:not([data-reduce-motion="true"]) .mt-island .mr-c.is-roll .mr-o { animation: mr-out-f 0.18s cubic-bezier(0.3, 0, 1, 1) both; }
+  :root:not([data-reduce-motion="true"]) .mt-island .mr-c.is-roll .mr-n { animation: mr-in-f 0.26s cubic-bezier(0.05, 0.7, 0.1, 1) backwards; }
+}
+
+/* live idle widgets fly into the island when the idle UI auto-hides (beats the plain auto-hide fade of css/mt-idle-adjust.css) */
+html:not(.mt-island-off) body.is-quiet .idle-chips > #idle-timer.is-live, html:not(.mt-island-off) body.is-quiet .idle-dash > #idle-sw.is-live {
+  opacity: 0; pointer-events: none; transform-origin: 50% 50%;
+  transform: translate3d(var(--mi-dx, 0px), var(--mi-dy, 0px), 0) scale(0.18);
+  transition: transform 0.46s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s linear 0.26s;
+}
+
+:root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
+:root[data-reduce-motion="true"] .mt-island * { transition: none !important; animation: none !important; }

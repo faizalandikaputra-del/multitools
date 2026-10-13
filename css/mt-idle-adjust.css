@@ -306,3 +306,49 @@ body.is-adjusting .idle-fold.wa-allghost { order: 2; }
 body.is-adjusting #idle-ghost-tray { order: 3; }
 body.is-adjusting .idle-hero.wa-off { order: 4; }
 #idle-ghost-tray:empty { display: none; }
+
+/* ---------- fix34: a moved box gives its slot back (no hole) ----------
+   js/mt-idle-adjust.js sets margin-bottom = -height on a dragged / moved box, so the boxes below close up instead of leaving a gap the size of the box.
+   In the stretching chips grid the box must keep its own height (stretch + a negative margin would make it taller). */
+.idle-chips > .wa-float, .idle-dash > .wa-float { align-self: start; }
+
+/* ---------- fix37: a widget hidden / shown while Adjust is open stays in its place ----------
+   Ghosts that were already hidden when Adjust opened still sit AFTER the visible boxes (fix33). A widget the person hides or shows with the eye
+   during this Adjust session gets .wa-stay (js/mt-idle-adjust.js): it keeps its own grid place and only dims, so nothing jumps to the bottom and back. */
+body.is-adjusting .idle-dash > .wa-ghost.wa-stay { order: 0; }
+body.is-adjusting .idle-hero.wa-off.wa-stay { order: 0; }
+/* While Adjust is open the neighbour of a hidden Stopwatch / Alarms card keeps its own width (css/mt-idle-focus.css widens it to the full row, which made it drop below
+   the ghost and jump). It widens when Adjust is closed, like on the normal idle screen. A width set by hand (inline grid-column) still wins. */
+body.is-adjusting .idle-dash.no-sw > #idle-alarms, body.is-adjusting .idle-dash.no-al > #idle-sw { grid-column: span 6; }
+@media (max-width: 20rem) { body.is-adjusting .idle-dash.no-sw > #idle-alarms, body.is-adjusting .idle-dash.no-al > #idle-sw { grid-column: span 12; } }
+
+/* ---------- fix38: resizing one chip never resizes its neighbour ----------
+   .idle-chips stretches the cards of a row to one height. When a card has a height set by hand (min-height from the resize handle) the row gets .wa-free
+   (js/mt-idle-adjust.js syncRows) and every card keeps its own height. Back to the default size = equal heights again. */
+.idle-chips.wa-free { align-items: start; }
+
+/* ---------- FREE CANVAS (v14) ----------
+   The panel scrolls down (overflow-y), so a widget can sit below the first screen. Once the widgets are adjusted, #idle-clock gets .wa-canvas (js/mt-idle-adjust.js). Every widget is then placed by its OWN inline
+   left / top / width / min-height (position: absolute inside the panel), so the grid, the rows and the other widgets have no say:
+   moving, resizing, hiding or showing one widget never shifts another one. The wrappers stay in the page only so the Card scale zoom
+   still applies; they take no space. */
+html body .idle-clock.wa-canvas { overflow-x: hidden; overflow-y: auto; }
+#idle-canvas-end { position: absolute; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.wa-canvas .idle-chips, .wa-canvas .idle-fold, .wa-canvas .idle-dash {
+  position: static; height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important;
+}
+.wa-canvas .idle-chips > *, .wa-canvas .idle-dash > *, .wa-canvas .idle-hero {
+  position: absolute !important; margin: 0 !important; grid-column: auto !important; order: 0 !important; align-self: auto !important;
+}
+.wa-canvas .idle-hero { width: max-content; max-width: calc(100% - 8px); }
+/* a widget that jumps to a free spot (dropped on another one, shown on top of one, panel resized) glides there */
+.wa-canvas .wa-glide {
+  transition-property: left, top, width, min-height, opacity, transform !important;
+  transition-duration: 0.3s !important; transition-delay: 0s !important; transition-timing-function: var(--ia-std) !important;
+}
+/* while the JS measures the widgets: no motion in the way */
+.wa-measure .idle-chips > *, .wa-measure .idle-dash > *, .wa-measure .idle-hero { transform: none !important; transition: none !important; animation: none !important; }
+/* the flow layout measured for Reset layout: hidden widgets keep their own slot (no reordering, no widening of a neighbour) */
+.wa-measure .idle-dash > *, .wa-measure .idle-hero, .wa-measure .idle-fold, .wa-measure #idle-ghost-tray { order: 0 !important; }
+.wa-measure .idle-dash > #idle-sw, .wa-measure .idle-dash > #idle-alarms { grid-column: span 6 !important; }
+:root[data-reduce-motion="true"] .wa-canvas .wa-glide { transition: none !important; }

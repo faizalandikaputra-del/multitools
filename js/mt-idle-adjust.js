@@ -1,46 +1,43 @@
-/* Multi Tool - mt-idle-adjust.js
-   Idle screen: resize every widget, show / hide each one without opening Settings, all from the "Adjust widgets"
-   button at the bottom right of the idle screen (#ia-btn).
+/* Multi Tool - mt-idle-adjust.js  (v15: FREE CANVAS)
+   Idle screen: move, resize and show / hide every widget without opening Settings, all from the "Adjust widgets" button
+   (#ia-btn, bottom right of the idle screen).
 
    Widgets: Clock (date, time, session, message), Time in After Effects, Timer, Stopwatch, Alarms, Notes and to-do.
-   - Clock: moves like a card; its grip changes the TEXT SCALE (50 - 220 %, grows away from the edge it is anchored to, arrow keys 5 %,
-     double-click the grip = 100 %). Replaces the old Settings > Clock Scale / Card Scale sliders. Layout key: "clock":{"s":1.3,"x":..,"y":..}.
-     The eye hides the clock (key mtx.showClock).
-   - Move: while adjusting, drag any box anywhere (it follows the pointer with a little easing, lifts, snaps softly to the
-     other boxes and back to its own place, with guide lines). It is stored as an offset from its grid place (relative left / top,
-     px), so the grid and every transform stay untouched. Double-click a box = back to its place; arrow keys nudge a focused
-     box (Shift = bigger). The old "Hide panels" switch is gone.
-   - No stacking: boxes never end up on top of each other. A box that is dropped, resized, reset or pushed onto another one glides
-     to the nearest free spot (resolveAll); while dragging, a box over another shows a red outline. Saved layouts are checked
-     when the idle screen opens and when the panel is resized.
-   - Resize: drag the grip on the bottom right of a widget (arrow keys also work: left / right = one column, up / down =
-     height, Shift = bigger steps; double-click the grip = back to the default size). The width snaps to whole columns of a
-     12-column grid (span 4 - 12), so the gaps between boxes stay equal; the height is a minimum in px. The text follows
-     the width: --wa-s = span / default span (0.68 - 1.3), see css/mt-idle-adjust.css "text follows the box".
-   - Show / hide: the eye button. Four widgets use the SAME switches as Settings > Idle screen > Idle screen cards
-     (#idle-show-elapsed / -sw / -al / -tabs), so both places always agree. The Timer chip has no Settings switch:
-     key mtx.showTimer. A hidden widget stays on screen as a dimmed ghost while adjusting, so it can be switched back on.
+
+   HOW THE LAYOUT WORKS (rewritten in v15, replaces the grid + offset system of fix33 - fix38)
+   - Normal state (never adjusted): the widgets sit in their normal grid / flow, exactly as before.
+   - First time Adjust opens: every visible widget is "frozen" where it stands (position: absolute inside #idle-clock, class
+     .wa-canvas). From then on each widget is placed by its OWN left / top / width / height and depends on no other widget:
+     moving, resizing, hiding or showing one widget can never push, stretch or shift another one.
+     Hidden widgets (ghosts) are put in a free spot while adjusting.
+   - Move: drag a widget anywhere inside the panel (soft snap to the panel edges and to the other widgets, guide lines).
+     Arrow keys nudge the focused widget (Shift = bigger).
+   - Resize: drag the grip (bottom right). Width and height are free; the text follows the width (--wa-s = width / start width,
+     0.68 - 1.3, see css "text follows the box"). Arrow keys resize, double-click the grip = default size.
+     The clock has no box: its grip changes the TEXT SCALE (50 - 220 %).
+   - Free placement: widgets may overlap and sit anywhere, down to the panel bottom; the one touched last is on top. A widget never
+     ends up outside the panel (also after the panel is resized).
+   - Reset layout: back to the original flow layout. If nothing was changed when Done is pressed, the flow layout stays
+     (nothing is saved).
+   - Show / hide: the eye. Four widgets use the SAME switches as Settings > Idle screen > Idle screen cards
+     (#idle-show-elapsed / -sw / -al / -tabs); the Timer has key mtx.showTimer; the clock mtx.showClock.
    - Done: the button again, or Esc (Esc leaves adjust mode first, a second Esc leaves the idle screen).
-   - The adjust button hides itself after ~2.5 s without movement (always, even with the pointer resting on it); a mouse move brings it back.
-   - Auto-hide: after a few seconds without movement the all boxes and the adjust button fade away (slide +
-     fade, staggered), so the wallpaper shows; any mouse move / touch / key brings them back. Not while adjusting, while the
-     pointer is over a box, while typing in a box, or in "Mouse move" exit mode. The first tap on a hidden UI only reveals it.
-     The small "Auto-hide" pill (visible while adjusting) cycles off / 3 / 6 / 10 s.
-   - Motion: a width change (column snap, arrow keys, reset) animates the box and its neighbours with a FLIP
-     (translate + scale, 280 ms, standard easing); a pure height drag follows the pointer directly.
-   Keys: mtx.autoHide (seconds, 0 = off, default 6), mtx.wLayout = {"sw":{"span":8,"h":180,"x":24,"y":-12}, ...}, mtx.showTimer.
-   Load AFTER js/mt-idle-focus.js. ES5, Chromium-74 safe. */
+   - Adjust button hides itself after ~2.5 s without movement; auto-hide of all widgets after a few seconds (pill cycles
+     off / 3 / 6 / 10 s), not while adjusting / hovering a widget / typing.
+   Keys: mtx.autoHide, mtx.wLayout = {"v":2,"items":{"sw":{"x":0.05,"y":0.4,"w":0.45,"w0":0.45,"h":0.2}, "clock":{"x":..,"y":..,"s":1.3}}}
+   (x, w = fraction of the panel width; y, h = fraction of the panel height, so a layout survives a resized panel), mtx.showTimer.
+   Old v1 layouts (grid span + offsets) are ignored on purpose. Load AFTER js/mt-idle-focus.js. ES5, Chromium-74 safe. */
 (function () {
   "use strict";
   var P = "mtx.", LAYOUT_KEY = P + "wLayout", TIMER_KEY = P + "showTimer", CLOCK_KEY = P + "showClock";
-  var SC_MIN = 0.5, SC_MAX = 2.2, COLS = 12, MIN_SPAN = 4, MAX_H = 1200, S_MIN = 0.68, S_MAX = 1.3, MAX_OFF = 4000, SNAP = 8, KEEP = 48;
+  var SC_MIN = 0.5, SC_MAX = 2.2, S_MIN = 0.68, S_MAX = 1.3, MIN_W = 110, MIN_H = 56, GAP = 8, EDGE = 4, EDGE_B = 12, GAP2 = 6, SNAP = 8, STEP = 10, STEP_BIG = 40;
   var WIDGETS = [
     { id: "clock", el: "idle-hero", clock: true, key: CLOCK_KEY, name: "Clock", noun: "clock" },
-    { id: "elapsed", el: "idle-elapsed", span: 6, name: "Time in After Effects", noun: "time in After Effects", box: "idle-show-elapsed" },
-    { id: "timer", el: "idle-timer", span: 6, name: "Timer", noun: "timer", own: true, key: TIMER_KEY },
-    { id: "sw", el: "idle-sw", span: 6, name: "Stopwatch", noun: "stopwatch", box: "idle-show-sw" },
-    { id: "al", el: "idle-alarms", span: 6, name: "Alarms", noun: "alarms", box: "idle-show-al" },
-    { id: "tabs", el: "idle-tabs", span: 12, name: "Notes and to-do", noun: "notes and to-do", box: "idle-show-tabs" }
+    { id: "elapsed", el: "idle-elapsed", name: "Time in After Effects", noun: "time in After Effects", box: "idle-show-elapsed" },
+    { id: "timer", el: "idle-timer", name: "Timer", noun: "timer", own: true, key: TIMER_KEY },
+    { id: "sw", el: "idle-sw", name: "Stopwatch", noun: "stopwatch", box: "idle-show-sw" },
+    { id: "al", el: "idle-alarms", name: "Alarms", noun: "alarms", box: "idle-show-al" },
+    { id: "tabs", el: "idle-tabs", name: "Notes and to-do", noun: "notes and to-do", box: "idle-show-tabs", full: true }
   ];
   var ICON_EYE = '<svg class="wa-ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>' +
     '<svg class="wa-ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4"/><path d="M6.5 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
@@ -52,91 +49,61 @@
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { } }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function r1(v) { return Math.round(v * 10) / 10; }
 
   var AH_KEY = P + "autoHide", AH_OPTS = [0, 3, 6, 10];
-  var layout = {}, adjusting = false, drag = null, mv = null, guides = null, ui = {};
-  var ahSec = 6, ahTimer = 0, quiet = false, swallowClick = false, lastMove = 0, iaTimer = 0, GAP = 8, IA_MS = 2500;
+  var items = {}, dirty = false, adjusting = false, drag = null, mv = null, guides = null, ui = {};
+  var ahSec = 6, ahTimer = 0, quiet = false, swallowClick = false, lastMove = 0, iaTimer = 0, IA_MS = 2500, switching = false;
 
   // ---------- storage ----------
+  function hasItems() { var k; for (k in items) { if (items.hasOwnProperty(k)) { return true; } } return false; }
+  function num(v, lo, hi) { v = parseFloat(v); return isFinite(v) && v >= lo && v <= hi ? v : null; }
   function loadLayout() {
-    var o = null;
+    var o = null, it;
+    items = {}; dirty = false;
     try { o = JSON.parse(lsGet(LAYOUT_KEY) || "null"); } catch (e) { o = null; }
-    layout = {};
-    if (!o || typeof o !== "object") { return; }
+    if (!o || o.v !== 3 || !o.items || typeof o.items !== "object") { return; }
     WIDGETS.forEach(function (w) {
-      var s = o[w.id]; if (!s || typeof s !== "object") { return; }
-      var sp = parseInt(s.span, 10), hh = parseFloat(s.h), out = {};      // (an older px "w" is ignored on purpose)
-      if (!w.clock && isFinite(sp) && sp >= MIN_SPAN && sp <= COLS && sp !== w.span) { out.span = sp; }
-      if (!w.clock && isFinite(hh) && hh > 0) { out.h = Math.min(MAX_H, Math.round(hh)); }
-      var xx = parseFloat(s.x), yy = parseFloat(s.y);
-      if (isFinite(xx) && Math.abs(xx) >= 1 && Math.abs(xx) <= MAX_OFF) { out.x = Math.round(xx); }
-      if (isFinite(yy) && Math.abs(yy) >= 1 && Math.abs(yy) <= MAX_OFF) { out.y = Math.round(yy); }
-      var sc = parseFloat(s.s);                                              // the clock: a scale (0.5 - 2.2) instead of a column span
-      if (w.clock && isFinite(sc) && sc >= SC_MIN && sc <= SC_MAX && Math.abs(sc - 1) >= 0.01) { out.s = Math.round(sc * 100) / 100; }
-      if (out.span || out.h || out.x || out.y || out.s) { layout[w.id] = out; }
+      var s = o.items[w.id], x, y, ww, w0, h, sc; if (!s || typeof s !== "object") { return; }
+      x = num(s.x, -0.5, 1.5); y = num(s.y, -0.5, 8); if (x === null || y === null) { return; }
+      it = { x: x, y: y };
+      if (w.clock) { sc = num(s.s, SC_MIN, SC_MAX); if (sc !== null) { it.s = sc; } }
+      else {
+        ww = num(s.w, 0.05, 2); if (ww === null) { return; }
+        w0 = num(s.w0, 0.05, 2); h = num(s.h, 0.01, 8);
+        it.w = ww; it.w0 = w0 === null ? ww : w0; if (h !== null) { it.h = h; }
+      }
+      items[w.id] = it;
     });
+    dirty = hasItems();
   }
   function saveLayout() {
-    var any = false, k; for (k in layout) { if (layout.hasOwnProperty(k)) { any = true; } }
-    if (any) { lsSet(LAYOUT_KEY, JSON.stringify(layout)); } else { lsDel(LAYOUT_KEY); }
+    var out = { v: 3, items: {} }, any = false;
+    WIDGETS.forEach(function (w) {
+      var it = items[w.id], c;
+      if (!it) { return; }
+      c = { x: Math.round(it.x * 10000) / 10000, y: Math.round(it.y * 10000) / 10000 }; any = true;
+      if (w.clock) { if (it.s) { c.s = Math.round(it.s * 100) / 100; } }
+      else { c.w = Math.round(it.w * 10000) / 10000; c.w0 = Math.round(it.w0 * 10000) / 10000; if (it.h) { c.h = Math.round(it.h * 10000) / 10000; } }
+      out.items[w.id] = c;
+    });
+    if (any && dirty) { lsSet(LAYOUT_KEY, JSON.stringify(out)); } else { lsDel(LAYOUT_KEY); }
   }
 
-  // ---------- motion: FLIP for width changes ----------
+  // ---------- geometry (all numbers are screen px, relative to the inside of the panel #idle-clock) ----------
   function reduceMotion() {
     try {
       if (document.documentElement.getAttribute("data-reduce-motion") === "true") { return true; }
       return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     } catch (e) { return false; }
   }
-  function visibleBoxes() {
-    var out = [];
-    WIDGETS.forEach(function (w) { var el = $(w.el); if (el && el.offsetParent !== null) { out.push(el); } });
-    return out;
+  function panel() { return $("idle-clock"); }
+  function origin() {
+    var p = panel(), r = p.getBoundingClientRect();
+    return { l: r.left + p.clientLeft, t: r.top + p.clientTop - p.scrollTop, W: p.clientWidth, H: p.clientHeight };   // t: top of the scrollable CONTENT
   }
-  // First (where every box is now, including a running animation) -> mutate -> Last -> play the difference.
-  function flip(mutate) {
-    var els = visibleBoxes(), first = [], i;
-    if (reduceMotion() || !els.length || !els[0].animate) { mutate(); return; }
-    for (i = 0; i < els.length; i++) { first.push(els[i].getBoundingClientRect()); }
-    for (i = 0; i < els.length; i++) { if (els[i].__waAnim) { try { els[i].__waAnim.cancel(); } catch (e) { } els[i].__waAnim = null; } }
-    mutate();
-    for (i = 0; i < els.length; i++) {
-      var el = els[i], a = first[i], b = el.getBoundingClientRect();
-      if (!b.width || !b.height) { continue; }
-      var dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
-      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) { continue; }
-      var k = pxRatio(el.parentNode) || 1;                       // the cards sit inside a zoomed box: translate is in layout px
-      el.__waAnim = el.animate(
-        [{ transformOrigin: "0 0", transform: "translate(" + (dx / k) + "px," + (dy / k) + "px) scale(" + sx + "," + sy + ")" },
-         { transformOrigin: "0 0", transform: "none" }],
-        { duration: 280, easing: "cubic-bezier(0.2, 0, 0, 1)" });
-    }
-  }
-
-  // ---------- size ----------
-  function spanOf(w) { var s = layout[w.id]; return s && s.span ? s.span : w.span; }
-  function applySize(w) {
-    var el = $(w.el), s = layout[w.id]; if (!el) { return; }
-    if (w.clock) {                                                         // the clock block: text scale (--wa-s) + offset, no grid span
-      if (s && s.s) { el.style.setProperty("--wa-s", String(s.s)); el.classList.add("wa-scaled"); }
-      else { el.style.removeProperty("--wa-s"); el.classList.remove("wa-scaled"); }
-      el.style.left = s && s.x ? s.x + "px" : ""; el.style.top = s && s.y ? s.y + "px" : "";
-      return;
-    }
-    if (s && s.span) {
-      el.style.gridColumn = "span " + s.span;
-      el.style.setProperty("--wa-s", String(Math.round(clamp(s.span / w.span, S_MIN, S_MAX) * 100) / 100));
-      el.classList.add("wa-scaled");
-    } else {
-      el.style.gridColumn = ""; el.style.removeProperty("--wa-s"); el.classList.remove("wa-scaled");
-    }
-    el.style.width = ""; el.classList.remove("wa-sized");                 // (clean up inline widths of older versions)
-    el.style.minHeight = s && s.h ? s.h + "px" : "";
-    el.style.left = s && s.x ? s.x + "px" : ""; el.style.top = s && s.y ? s.y + "px" : "";     // moved boxes: offset from the grid place
-  }
-  function applyAll() { WIDGETS.forEach(applySize); }
   function cardScale() {
-    var box = $("idle-clock"), v = 1;
+    var box = panel(), v = 1;
     try { v = parseFloat(box.style.getPropertyValue("--idle-card-scale")) || 1; } catch (e) { v = 1; }
     return v;
   }
@@ -145,62 +112,294 @@
     var r = el.getBoundingClientRect(), ow = el.offsetWidth, k = ow ? r.width / ow : 1;
     return (isFinite(k) && k > 0.3 && k < 3) ? k : cardScale();
   }
-  // nat = the natural height of the widget at its new width; a taller box is stored, a shorter one is simply "natural"
-  function setSize(w, span, nh, nat) {
-    var s = layout[w.id] || (layout[w.id] = {});
-    span = clamp(span, MIN_SPAN, COLS);
-    if (span !== w.span) { s.span = span; } else { delete s.span; }
-    if (nh > (nat || 0) + 4) { s.h = Math.round(clamp(nh, 0, MAX_H)); } else { delete s.h; }
-    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
-    applySize(w);
+  function visible(w) { var el = $(w.el); return !!(el && el.offsetParent !== null); }
+  // Where a widget IS. A widget that has its own place is read from the stored item (left / top / width) + its height, never from the
+  // screen rect: a glide (transition) in progress would report a half-way spot and push the other widgets for nothing.
+  function rectOf(w, o) {
+    var el = $(w.el), it = items[w.id], k, r;
+    if (it && hasItems()) {
+      k = pxRatio(el.parentNode) || 1;
+      return { l: it.x * o.W, t: it.y * o.W, w: w.clock ? el.offsetWidth * k : it.w * o.W, h: el.offsetHeight * k };
+    }
+    r = el.getBoundingClientRect();
+    return { l: r.left - o.l, t: r.top - o.t, w: r.width, h: r.height };
   }
-  function scaleOf(w) { var s = layout[w.id]; return s && s.s ? s.s : 1; }
-  function setScale(w, v) {                    // clock only; within 3 % of 100 % it snaps to "default"
-    var s = layout[w.id] || (layout[w.id] = {});
-    v = clamp(Math.round(v * 100) / 100, SC_MIN, SC_MAX);
-    if (Math.abs(v - 1) < 0.03) { delete s.s; } else { s.s = v; }
-    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
-    applySize(w);
+  // lowest y a widget may reach: far below the view (the idle screen scrolls down, so widgets can live below the fold)
+  function bottomLimit(o) { return Math.max(o.H * 4, 2400); }
+  function otherRects(w, o) {
+    var out = [];
+    WIDGETS.forEach(function (x) { if (x !== w && visible(x)) { out.push(rectOf(x, o)); } });
+    return out;
   }
-  function naturalHeight(el) {
-    var keep = el.style.minHeight, n; el.style.minHeight = ""; n = el.offsetHeight; el.style.minHeight = keep; return n;
+  // true if box a touches (or comes closer than g px to) any box of the list
+  function hit(a, list, g) {
+    var i, b; g = g || 0;
+    for (i = 0; i < list.length; i++) {
+      b = list[i];
+      if (a.l < b.l + b.w + g - 1 && a.l + a.w > b.l - g + 1 && a.t < b.t + b.h + g - 1 && a.t + a.h > b.t - g + 1) { return true; }
+    }
+    return false;
   }
+  // keep the whole box inside the panel (a box bigger than the panel is only pinned to the top-left)
+  function fit(r, o) {
+    var B = bottomLimit(o) - EDGE_B;
+    return {
+      l: r.w <= o.W - 2 * EDGE ? clamp(r.l, EDGE, o.W - r.w - EDGE) : EDGE,
+      t: r.h <= B - EDGE ? clamp(r.t, EDGE, B - r.h) : EDGE,
+      w: r.w, h: r.h
+    };
+  }
+  // nearest spot (to r) where the box touches no other box
+  function findSpot(r, others, o) {
+    var xs = [r.l], ys = [r.t], i, a, b, c, best = null, d, f, t, o2;
+    for (i = 0; i < others.length; i++) {
+      o2 = others[i];
+      xs.push(o2.l - r.w - GAP, o2.l + o2.w + GAP, o2.l); ys.push(o2.t - r.h - GAP, o2.t + o2.h + GAP, o2.t);
+    }
+    xs.push(EDGE); ys.push(EDGE);
+    for (a = 0; a < xs.length; a++) {
+      for (b = 0; b < ys.length; b++) {
+        c = { l: xs[a], t: ys[b], w: r.w, h: r.h }; f = fit(c, o);
+        if (Math.abs(f.l - c.l) > 0.5 || Math.abs(f.t - c.t) > 0.5) { continue; }                 // that candidate is outside the panel
+        if (hit(f, others)) { continue; }
+        d = Math.abs(f.l - r.l) + Math.abs(f.t - r.t);
+        if (!best || d < best.d) { best = { d: d, l: f.l, t: f.t }; }
+      }
+    }
+    if (best) { return { l: best.l, t: best.t, w: r.w, h: r.h }; }
+    t = r.t; for (i = 0; i < others.length; i++) { t = Math.max(t, others[i].t + others[i].h + GAP); }       // crowded: under everything, still inside
+    return fit({ l: r.l, t: t, w: r.w, h: r.h }, o);
+  }
+
+  // ---------- applying a stored item to its element ----------
+  function clearInline(el) {
+    el.style.zIndex = ""; el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.minHeight = "";
+    el.style.removeProperty("--wa-s"); el.classList.remove("wa-scaled");
+  }
+  function scaleFor(w, it) {
+    if (w.clock) { return it.s || 1; }
+    return it.w0 ? clamp(it.w / it.w0, S_MIN, S_MAX) : 1;
+  }
+  var applying = false;
+  function apply(w) {
+    var el = $(w.el), it = items[w.id], o, k, s;
+    if (!el) { return; }
+    if (!it) { clearInline(el); return; }
+    o = origin(); k = pxRatio(el.parentNode) || 1;
+    el.style.left = r1(it.x * o.W / k) + "px"; el.style.top = r1(it.y * o.W / k) + "px";
+    s = scaleFor(w, it);
+    if (Math.abs(s - 1) > 0.02) { el.style.setProperty("--wa-s", String(Math.round(s * 100) / 100)); el.classList.add("wa-scaled"); }
+    else { el.style.removeProperty("--wa-s"); el.classList.remove("wa-scaled"); }
+    if (!w.clock) {
+      el.style.width = r1(it.w * o.W / k) + "px";
+      el.style.minHeight = it.h ? r1(it.h * o.W / k) + "px" : "";
+    }
+    if (!applying) { syncEnd(); }
+  }
+  // The panel scrolls (overflow-y). While Adjust is open a 1 px marker 160 px under the lowest widget gives the scroll room, so a widget can be dragged below the fold; outside Adjust it sits 12 px under it (no scrolling when everything fits).
+  function syncEnd() {
+    var p = panel(), m = $("idle-canvas-end"), o, bottom = 0, k;
+    if (!p) { return; }
+    if (!hasItems()) { if (m && m.parentNode) { m.parentNode.removeChild(m); } return; }
+    o = origin();
+    WIDGETS.forEach(function (w) { var it = items[w.id], el = $(w.el); if (it && el && visible(w)) { k = pxRatio(el.parentNode) || 1; bottom = Math.max(bottom, it.y * o.W + el.offsetHeight * k); } });
+    if (!m) { m = document.createElement("div"); m.id = "idle-canvas-end"; m.setAttribute("aria-hidden", "true"); }
+    if (m.parentNode !== p) { p.appendChild(m); }
+    m.style.top = Math.round(bottom + (adjusting ? 160 : 12)) + "px";     // scroll room only while Adjust is open; otherwise the panel scrolls only when a widget really sticks out
+  }
+  function applyAll() {
+    var p = panel(); if (!p) { return; }
+    p.classList.toggle("wa-canvas", hasItems());
+    applying = true; WIDGETS.forEach(apply); applying = false; syncEnd();
+    syncEnd();
+  }
+  function naturalHeight(w) {                      // screen px
+    var el = $(w.el), keep = el.style.minHeight, k = pxRatio(el.parentNode) || 1, n;
+    el.style.minHeight = ""; n = el.offsetHeight * k; el.style.minHeight = keep; return n;
+  }
+  // MOTION (Premium archetype, same curves as css/mt-idle-adjust.css): enter = decelerate 420 ms, settle = standard 300 ms
+  var EASE_IN = "cubic-bezier(0.05, 0.7, 0.1, 1)", EASE_STD = "cubic-bezier(0.2, 0, 0, 1)";
+  function popIn(w) {                              // a widget that appears: rises 0.6 rem, scales up from 96 %, fades in
+    var el = $(w.el), end;
+    if (!el || !el.animate || reduceMotion()) { return; }
+    try { end = window.getComputedStyle(el).opacity; } catch (e) { end = "1"; }
+    el.animate([{ opacity: 0, transform: "translate3d(0, 0.6rem, 0) scale(0.96)" }, { opacity: end, transform: "none" }], { duration: 420, easing: EASE_IN });
+  }
+  function dropAnim(w) {                           // set down: lift (1.025) -> tiny press (0.992) -> rest. Follow-through, no bounce
+    var el = $(w.el);
+    if (!el || !el.animate || reduceMotion()) { return; }
+    el.animate([{ transform: "scale(1.025)" }, { transform: "scale(0.992)", offset: 0.5 }, { transform: "none" }], { duration: 300, easing: EASE_STD });
+  }
+  // everything that moves because of a change (reset layout) glides from where it was to where it is now
+  function flipFrom(before) {
+    if (reduceMotion()) { return; }
+    var o = origin();
+    WIDGETS.forEach(function (w) {
+      var el = $(w.el), b = before[w.id], a, dx, dy;
+      if (!el || !b || !visible(w) || !el.animate) { return; }
+      a = el.getBoundingClientRect(); dx = b.left - a.left; dy = b.top - a.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { return; }
+      el.animate([{ transform: "translate3d(" + dx + "px," + dy + "px,0)" }, { transform: "none" }], { duration: 420, easing: EASE_STD });
+    });
+  }
+  function snapshot() {
+    var out = {};
+    WIDGETS.forEach(function (w) { var el = $(w.el); if (el && visible(w)) { out[w.id] = el.getBoundingClientRect(); } });
+    return out;
+  }
+  var zTop = 10;
+  function raise(w) { var el = $(w.el); if (el) { el.style.zIndex = String(++zTop); } }
+  function glide(w) {
+    var el = $(w.el); if (!el || reduceMotion()) { return; }
+    el.classList.add("wa-glide");
+    if (el.__waG) { clearTimeout(el.__waG); }
+    el.__waG = setTimeout(function () { el.__waG = 0; el.classList.remove("wa-glide"); }, 360);
+  }
+  function setPos(w, o, l, t) {
+    var it = items[w.id]; if (!it) { return; }
+    it.x = l / o.W; it.y = t / o.W; dirty = true; apply(w);
+  }
+
+  // ---------- freeze / unfreeze ----------
+  // measure with no motion in the way (an auto-hide transform or an entrance animation would skew the rects)
+  function measureNow(fn) {
+    var p = panel(), out; p.classList.add("wa-measure");
+    try { out = fn(); } finally { p.classList.remove("wa-measure"); }
+    return out;
+  }
+  // every VISIBLE widget gets its current place as its own absolute box
+  function freeze() {
+    if (hasItems() || !panel()) { return; }
+    var o = origin(), list = [];
+    measureNow(function () {
+      WIDGETS.forEach(function (w) { if (visible(w)) { list.push({ w: w, r: rectOf(w, o) }); } });
+    });
+    list.forEach(function (m) {
+      var it = { x: m.r.l / o.W, y: m.r.t / o.W };
+      if (!m.w.clock) { it.w = m.r.w / o.W; it.w0 = it.w; }
+      items[m.w.id] = it;
+    });
+    dirty = false;
+    panel().classList.add("wa-canvas");
+    applying = true; WIDGETS.forEach(apply); applying = false; syncEnd();
+  }
+  function unfreeze() {
+    items = {}; dirty = false;
+    var p = panel(); if (p) { p.classList.remove("wa-canvas"); p.scrollTop = 0; }
+    WIDGETS.forEach(apply); syncEnd();
+  }
+  // a widget with no place yet (it was hidden when the canvas was made): natural size, nearest free spot
+  function placeMissing(w) {
+    var el = $(w.el), o, k, r, others, sp, ww, par, cw, gap = 0, cs, it;
+    if (!el || items[w.id] || !hasItems() || !visible(w)) { return; }
+    o = origin(); k = pxRatio(el.parentNode) || 1;
+    if (!w.clock) {
+      par = el.parentNode; cw = par ? par.getBoundingClientRect().width : 0;
+      try { cs = window.getComputedStyle(par); gap = (parseFloat(cs.columnGap) || 0) * k; } catch (e) { gap = 0; }
+      ww = cw > 80 ? (w.full ? cw : (cw - gap) / 2) : o.W * 0.46;
+      ww = clamp(ww, MIN_W, o.W - 2 * EDGE);
+      it = items[w.id] = { x: EDGE / o.W, y: EDGE / o.W, w: ww / o.W, w0: ww / o.W };
+    } else { it = items[w.id] = { x: EDGE / o.W, y: EDGE / o.W }; }
+    apply(w);
+    r = rectOf(w, o); others = otherRects(w, o);
+    sp = findSpot({ l: EDGE, t: EDGE, w: r.w, h: r.h }, others, o);
+    it.x = sp.l / o.W; it.y = sp.t / o.W; apply(w);
+  }
+  function placeAllMissing() { WIDGETS.forEach(placeMissing); }
+
+  // ---------- no stacking, never outside ----------
+  // Keeps the box inside the panel and OFF every other box: if it touches one it glides to the nearest free spot (the canvas is as tall as it needs to be).
+  function settleOne(w, o) {
+    var it = items[w.id], el = $(w.el), r, f, others;
+    if (!it || !el || !visible(w)) { return false; }
+    r = rectOf(w, o); f = fit(r, o); others = otherRects(w, o);
+    if (hit(f, others, GAP2)) { f = findSpot(f, others, o); }
+    if (Math.abs(f.l - r.l) > 0.5 || Math.abs(f.t - r.t) > 0.5) { glide(w); setPos(w, o, f.l, f.t); return true; }
+    return false;
+  }
+  function resolveAll(first) {
+    if (!hasItems() || !panel()) { return; }
+    var o = origin(), list = first ? [first].concat(WIDGETS.filter(function (x) { return x !== first; })) : WIDGETS, pass, changed;
+    for (pass = 0; pass < 3; pass++) {
+      changed = false;
+      list.forEach(function (w) { if (settleOne(w, o)) { changed = true; } });
+      if (!changed) { break; }
+    }
+  }
+  function settle(first) { resolveAll(first); saveLayout(); }
+
+  // ---------- size ----------
   function readout(w) {
-    var el = $(w.el), name = el && el.querySelector(".wa-name"); if (!el || !name) { return; }
-    name.textContent = drag && drag.w === w ? (w.clock ? Math.round(scaleOf(w) * 100) + "%" : spanOf(w) + "/" + COLS + " \u00d7 " + Math.round(el.offsetHeight)) : w.name;
+    var el = $(w.el), name = el && el.querySelector(".wa-name"), it = items[w.id], r, o; if (!el || !name) { return; }
+    if (drag && drag.w === w && it) {
+      if (w.clock) { name.textContent = Math.round(scaleFor(w, it) * 100) + "%"; }
+      else { o = origin(); r = rectOf(w, o); name.textContent = Math.round(r.w) + " × " + Math.round(r.h); }
+    } else { name.textContent = w.name; }
+  }
+  function ensure(w) { if (!hasItems()) { freeze(); } if (!items[w.id]) { placeMissing(w); } return items[w.id]; }
+  // new width (and height, or null = leave it); the text scale follows the width
+  function setSizeRaw(w, o, nw, nh) {
+    var el = $(w.el), it = items[w.id], r, B = bottomLimit(o) - EDGE_B, nat;
+    r = rectOf(w, o);
+    nw = clamp(nw, MIN_W, Math.max(MIN_W, o.W - r.l - EDGE));
+    it.w = nw / o.W; dirty = true; apply(w);
+    if (nh !== null) {
+      nat = naturalHeight(w);
+      nh = clamp(nh, MIN_H, Math.max(MIN_H, B - r.t));
+      if (nh > nat + 4) { it.h = nh / o.W; } else { delete it.h; }
+      apply(w);
+    }
+  }
+  // A widget can only grow until it meets another widget: if the new size would touch one, the size stops just before it
+  // (bisection between the last good size and the wanted one; width first, then height).
+  function resizeTo(w, o, nw, nh) {
+    var el = $(w.el), it = items[w.id], others, ow, oh, hasH, lo, hi, i, mid, wv, r;
+    if (!el || !it) { return; }
+    others = otherRects(w, o);
+    function ok() { return !hit(rectOf(w, o), others, GAP2); }
+    ow = it.w * o.W; hasH = !!it.h; oh = hasH ? it.h * o.W : null;
+    r = rectOf(w, o);
+    var startOk = ok(), startH = r.h;
+    setSizeRaw(w, o, nw, nh);
+    if (!startOk || ok()) { return; }
+    setSizeRaw(w, o, ow, oh === null && nh !== null ? startH : oh);              // back to the last good size
+    if (oh === null && nh !== null) { delete it.h; apply(w); }
+    lo = ow; hi = nw;
+    for (i = 0; i < 8; i++) { mid = (lo + hi) / 2; setSizeRaw(w, o, mid, null); if (ok()) { lo = mid; } else { hi = mid; } }
+    wv = lo; setSizeRaw(w, o, wv, null);
+    if (nh !== null) {
+      lo = rectOf(w, o).h; hi = nh;
+      if (hi > lo) {
+        for (i = 0; i < 8; i++) { mid = (lo + hi) / 2; setSizeRaw(w, o, wv, mid); if (ok()) { lo = mid; } else { hi = mid; } }
+        setSizeRaw(w, o, wv, lo);
+      }
+    }
+  }
+  function setScale(w, v) {
+    var it = items[w.id], prev, o, others; if (!it) { return; }
+    prev = it.s;
+    v = clamp(Math.round(v * 100) / 100, SC_MIN, SC_MAX);
+    if (Math.abs(v - 1) < 0.03) { delete it.s; } else { it.s = v; }
+    dirty = true; apply(w);
+    o = origin(); others = otherRects(w, o);
+    if (v > (prev || 1) && hit(rectOf(w, o), others, GAP2)) { if (prev) { it.s = prev; } else { delete it.s; } apply(w); }   // the clock may not grow onto another widget
   }
 
   function onDown(w, e) {
     if (e.button !== undefined && e.button !== 0) { return; }
-    var el = $(w.el), grid = el && el.parentNode; if (!el || !grid) { return; }
+    var el = $(w.el), it = ensure(w); if (!el || !it) { return; }
     e.preventDefault(); e.stopPropagation();
-    if (w.clock) {                                       // clock: dragging the grip changes the scale; it grows away from its anchored edge
-      var pos = (($("idle-clock") && $("idle-clock").getAttribute("data-position")) || ""), r0 = el.getBoundingClientRect();
-      drag = { w: w, clock: true, id: e.pointerId, x: e.clientX, y: e.clientY, s0: scaleOf(w), w0: Math.max(40, r0.width), dir: /right$/.test(pos) ? -1 : (pos === "center" ? 2 : 1), grip: e.currentTarget };
-      el.classList.add("wa-drag");
-      try { drag.grip.setPointerCapture(e.pointerId); } catch (e3) { }
-      readout(w); return;
-    }
-    var k = pxRatio(grid), cs = null, gap = 0;
-    try { cs = window.getComputedStyle(grid); gap = (parseFloat(cs.columnGap) || parseFloat(cs.gridColumnGap) || 0) * k; } catch (e0) { gap = 0; }
-    drag = {
-      w: w, id: e.pointerId, x: e.clientX, y: e.clientY, span: spanOf(w), oh: el.offsetHeight, nat: naturalHeight(el), h0: layout[w.id] && layout[w.id].h ? layout[w.id].h : 0,
-      pitch: Math.max(10, (grid.getBoundingClientRect().width + gap) / COLS),     // screen px of one column + one gap
-      k: pxRatio(el), grip: e.currentTarget
-    };
-    el.classList.add("wa-drag");
+    var o = origin(), r = rectOf(w, o);
+    drag = { w: w, id: e.pointerId, x: e.clientX, y: e.clientY, r: r, o: o, s0: scaleFor(w, it), h0: it.h ? it.h * o.W : 0, grip: e.currentTarget, clock: !!w.clock };
+    raise(w); el.classList.add("wa-drag");
     try { drag.grip.setPointerCapture(e.pointerId); } catch (e1) { }
     readout(w);
   }
   function onMove(e) {
     if (!drag || (drag.id !== undefined && e.pointerId !== drag.id)) { return; }
-    if (drag.clock) { setScale(drag.w, drag.s0 * (drag.w0 + drag.dir * (e.clientX - drag.x)) / drag.w0); readout(drag.w); return; }
-    var cols = Math.round((e.clientX - drag.x) / drag.pitch), dy = (e.clientY - drag.y) / drag.k;
-    var el = $(drag.w.el);
-    // the height is only touched when the pointer really moved up / down; a width-only drag keeps the stored height (or "natural")
-    var want = clamp(drag.span + cols, MIN_SPAN, COLS), nh = Math.abs(dy) > 4 ? drag.oh + dy : drag.h0;
-    if (want !== spanOf(drag.w)) { flip(function () { setSize(drag.w, want, nh, el ? naturalHeight(el) : drag.nat); resolveAll(drag.w); }); }   // a column step glides
-    else { setSize(drag.w, want, nh, el ? naturalHeight(el) : drag.nat); }                                                   // height follows the pointer
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (drag.clock) { setScale(drag.w, drag.s0 * (drag.r.w + dx) / Math.max(40, drag.r.w)); readout(drag.w); return; }
+    resizeTo(drag.w, drag.o, drag.r.w + dx, Math.abs(dy) > 4 ? drag.r.h + dy : (drag.h0 || null));
     readout(drag.w);
   }
   function onUp(e) {
@@ -208,115 +407,40 @@
     var w = drag.w, el = $(w.el);
     try { drag.grip.releasePointerCapture(drag.id); } catch (e2) { }
     if (el) { el.classList.remove("wa-drag"); }
-    drag = null; saveLayout(); readout(w); settle(w);
+    drag = null; readout(w); settle(w);
   }
   function onKey(w, e) {
-    var key = e.key, step = e.shiftKey ? 40 : 10, dc = 0, dy = 0;
+    var key = e.key, step = e.shiftKey ? STEP_BIG : STEP, dx = 0, dy = 0, it = ensure(w), o, r;
+    if (!it) { return; }
     if (w.clock) {                                       // clock: arrows change the scale (5 %, Shift 10 %)
       var d = 0, q = e.shiftKey ? 0.1 : 0.05;
       if (key === "ArrowRight" || key === "ArrowUp") { d = q; } else if (key === "ArrowLeft" || key === "ArrowDown") { d = -q; } else { return; }
       e.preventDefault(); e.stopPropagation();
-      flip(function () { setScale(w, scaleOf(w) + d); resolveAll(w); }); saveLayout(); return;
+      setScale(w, scaleFor(w, it) + d); settle(w); return;
     }
-    if (key === "ArrowLeft") { dc = -1; } else if (key === "ArrowRight") { dc = 1; }
+    if (key === "ArrowLeft") { dx = -step; } else if (key === "ArrowRight") { dx = step; }
     else if (key === "ArrowUp") { dy = -step; } else if (key === "ArrowDown") { dy = step; } else { return; }
-    var el = $(w.el); if (!el) { return; }
     e.preventDefault(); e.stopPropagation();
-    var h0 = layout[w.id] && layout[w.id].h ? layout[w.id].h : 0;
-    flip(function () { setSize(w, spanOf(w) + dc, dy ? el.offsetHeight + dy : h0, naturalHeight(el)); resolveAll(w); });
+    o = origin(); r = rectOf(w, o);
+    resizeTo(w, o, r.w + dx, dy ? r.h + dy : (it.h ? it.h * o.W : null));
+    settle(w);
+  }
+  function resetOne(w) {      // the grip, double-click: default size
+    var it = items[w.id]; if (!it) { return; }
+    if (w.clock) { delete it.s; } else { it.w = it.w0; delete it.h; }
+    dirty = true; apply(w); glide(w); settle(w); readout(w);
+  }
+  // Reset layout: back to the original flow. While adjusting the canvas is made again from that flow (nothing moved yet = nothing saved).
+  // Reset layout: the original flow layout of ALL six widgets (hidden ones keep their own slot, so showing one later never overlaps
+  // anything). Done without any further change: the flow layout comes back and nothing is saved.
+  function resetAll() {
+    var before = snapshot();
+    lsDel(CLOCK_KEY);
+    unfreeze(); refresh();
+    if (adjusting) { freeze(); dirty = false; placeAllMissing(); }     // freeze() measures every displayed widget, ghosts included
     saveLayout();
+    flipFrom(before);
   }
-  function resetOne(w) {      // the grip: size only
-    flip(function () { var s = layout[w.id]; if (s) { delete s.span; delete s.h; delete s.s; if (!s.x && !s.y) { delete layout[w.id]; } } applySize(w); resolveAll(w); });
-    saveLayout(); readout(w);
-  }
-  function resetPos(w) {      // double-click on the box: position only
-    flip(function () { var s = layout[w.id]; if (s) { delete s.x; delete s.y; if (!s.span && !s.h && !s.s) { delete layout[w.id]; } } applySize(w); resolveAll(); });
-    saveLayout();
-  }
-  function resetAll() { lsDel(CLOCK_KEY); flip(function () { layout = {}; applyAll(); refresh(); }); saveLayout(); }
-
-  // ---------- no stacking ----------
-  function hits(R, others) {
-    var i, o;
-    for (i = 0; i < others.length; i++) {
-      o = others[i];
-      if (R.left < o.right - 1 && R.right > o.left + 1 && R.top < o.bottom - 1 && R.bottom > o.top + 1) { return true; }
-    }
-    return false;
-  }
-  function otherRects(el) {
-    var out = [];
-    visibleBoxes().forEach(function (o) { if (o !== el) { out.push(o.getBoundingClientRect()); } });
-    return out;
-  }
-  // Moves box w (its x / y offset) to the nearest spot where it touches no other box. Returns true if it had to move.
-  function resolveOne(w) {
-    var el = $(w.el); if (!el || el.offsetParent === null) { return false; }
-    var r = el.getBoundingClientRect(), k = pxRatio(el.parentNode) || 1, others = otherRects(el), vw = window.innerWidth;
-    function box(l, t) { return { left: l, top: t, right: l + r.width, bottom: t + r.height }; }
-    if (!hits(box(r.left, r.top), others)) { return false; }
-    var xs = [r.left], ys = [r.top], i, a, b, best = null, bl, bt, d, o;
-    for (i = 0; i < others.length; i++) {
-      o = others[i];
-      xs.push(o.left - r.width - GAP, o.right + GAP); ys.push(o.top - r.height - GAP, o.bottom + GAP);
-    }
-    for (a = 0; a < xs.length; a++) {
-      for (b = 0; b < ys.length; b++) {
-        if (xs[a] < 4 || xs[a] + r.width > vw - 4 || ys[b] < 4) { continue; }          // stay inside the panel
-        if (hits(box(xs[a], ys[b]), others)) { continue; }
-        d = Math.abs(xs[a] - r.left) + Math.abs(ys[b] - r.top);
-        if (!best || d < best.d) { best = { d: d, l: xs[a], t: ys[b] }; }
-      }
-    }
-    if (!best) {                                       // crowded: put it under everything
-      bt = r.top; for (i = 0; i < others.length; i++) { bt = Math.max(bt, others[i].bottom + GAP); }
-      best = { l: clamp(r.left, 4, Math.max(4, vw - r.width - 4)), t: bt };
-    }
-    var st = layout[w.id] || (layout[w.id] = {});
-    var nx = clamp(Math.round((st.x || 0) + (best.l - r.left) / k), -MAX_OFF, MAX_OFF), ny = clamp(Math.round((st.y || 0) + (best.t - r.top) / k), -MAX_OFF, MAX_OFF);
-    if (Math.abs(nx) < 2) { nx = 0; } if (Math.abs(ny) < 2) { ny = 0; }
-    if (nx) { st.x = nx; } else { delete st.x; }
-    if (ny) { st.y = ny; } else { delete st.y; }
-    if (!st.span && !st.h && !st.x && !st.y && !st.s) { delete layout[w.id]; }
-    applySize(w);
-    return true;
-  }
-  // Pulls a moved box back inside the idle screen (the box that clips overflow). A saved layout from a wider panel, or an
-  // offset that pushed the box past an edge, would otherwise leave it cut off. Returns true if it had to move.
-  function fitInside(w) {
-    var el = $(w.el), box = $("idle-clock"), s = layout[w.id];
-    if (!el || !box || !s || !(s.x || s.y) || el.offsetParent === null) { return false; }
-    var r = el.getBoundingClientRect(), c = box.getBoundingClientRect(), k = pxRatio(el.parentNode) || 1;
-    var L = c.left + 4, R = c.left + box.clientWidth - 4, dx = 0, dy = 0;
-    if (r.width <= R - L) { if (r.right > R) { dx = R - r.right; } else if (r.left < L) { dx = L - r.left; } }
-    if (r.top < c.top + 4) { dy = c.top + 4 - r.top; }
-    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { return false; }
-    var nx = clamp(Math.round((s.x || 0) + dx / k), -MAX_OFF, MAX_OFF), ny = clamp(Math.round((s.y || 0) + dy / k), -MAX_OFF, MAX_OFF);
-    if (Math.abs(nx) < 2) { nx = 0; } if (Math.abs(ny) < 2) { ny = 0; }
-    if (nx) { s.x = nx; } else { delete s.x; }
-    if (ny) { s.y = ny; } else { delete s.y; }
-    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
-    applySize(w);
-    return true;
-  }
-  // `first` (optional) is the box the user just touched: if it was moved it is resolved first; then every other moved box, until nothing overlaps.
-  function resolveAll(first) {
-    var pass, changed, i, w, list;
-    for (pass = 0; pass < 3; pass++) {
-      changed = false;
-      list = first ? [first].concat(WIDGETS.filter(function (x) { return x !== first; })) : WIDGETS;
-      for (i = 0; i < list.length; i++) {
-        w = list[i];
-        if (!(layout[w.id] && (layout[w.id].x || layout[w.id].y))) { continue; }   // a box in its grid place never moves aside: the moved box does
-        if (fitInside(w)) { changed = true; }                                       // never cut off at an edge
-        if (layout[w.id] && resolveOne(w)) { changed = true; }
-      }
-      if (!changed) { break; }
-    }
-    return changed;
-  }
-  function settle(first) { flip(function () { resolveAll(first); }); saveLayout(); }
 
   // ---------- move ----------
   function guideEls() {
@@ -332,7 +456,7 @@
     if (gx === null) { g.v.classList.remove("is-on"); } else { g.v.style.left = gx + "px"; g.v.classList.add("is-on"); }
     if (gy === null) { g.h.classList.remove("is-on"); } else { g.h.style.top = gy + "px"; g.h.classList.add("is-on"); }
   }
-  // the nearest alignment within SNAP screen px: edges / centre of the moving box against the others and against its own place
+  // the nearest alignment within SNAP px: edges / centre of the moving box against the targets
   function snapAxis(lo, size, targets) {
     var pts = [lo, lo + size / 2, lo + size], best = null, i, j, d;
     for (i = 0; i < pts.length; i++) {
@@ -343,85 +467,81 @@
     }
     return best;
   }
-  function moveStep() {
-    if (!mv) { return; }
-    var el = $(mv.w.el), ex = mv.tx - mv.cx, ey = mv.ty - mv.cy;
-    if (el) {
-      if (Math.abs(ex) < 0.2 && Math.abs(ey) < 0.2) { mv.cx = mv.tx; mv.cy = mv.ty; } else { mv.cx += ex * 0.36; mv.cy += ey * 0.36; }   // easing toward the pointer
-      el.style.left = Math.round(mv.cx * 10) / 10 + "px"; el.style.top = Math.round(mv.cy * 10) / 10 + "px";
-    }
-    if (mv.cx !== mv.tx || mv.cy !== mv.ty) { mv.raf = requestAnimationFrame(moveStep); }
-    else { mv.raf = 0; if (mv.released) { finishMove(); } }
-  }
   function startMove(w, e) {
     if (e.button !== undefined && e.button !== 0) { return; }
-    var el = $(w.el); if (!el) { return; }
+    var el = $(w.el); if (!el || !ensure(w)) { return; }
     e.preventDefault(); e.stopPropagation();
-    var s = layout[w.id] || {}, k = pxRatio(el.parentNode), r = el.getBoundingClientRect(), others = [];
-    visibleBoxes().forEach(function (o) { if (o !== el) { others.push(o.getBoundingClientRect()); } });
-    mv = {
-      w: w, id: e.pointerId, sx: e.clientX, sy: e.clientY, x0: s.x || 0, y0: s.y || 0, tx: s.x || 0, ty: s.y || 0, cx: s.x || 0, cy: s.y || 0,
-      k: k, r: r, others: others, ov: e.currentTarget, raf: 0, released: false
-    };
-    el.classList.add("wa-drag", "wa-lift");
+    var o = origin(), r = rectOf(w, o), others = otherRects(w, o), xs = [EDGE, o.W - EDGE], ys = [EDGE], i, b, p = panel();
+    for (i = 0; i < others.length; i++) {
+      b = others[i];
+      xs.push(b.l, b.l + b.w / 2, b.l + b.w); ys.push(b.t, b.t + b.h / 2, b.t + b.h);
+    }
+    // r, xs, ys are CONTENT coordinates (they do not change when the panel scrolls); sc0 = scroll position at the start
+    mv = { w: w, id: e.pointerId, sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, r: r, xs: xs, ys: ys, others: others, free: hit(r, others, GAP2), vl: r.l, vt: r.t, sc0: p.scrollTop, tl: r.l, tt: r.t, cl: r.l, ct: r.t, ov: e.currentTarget, raf: 0, released: false };
+    raise(w); el.classList.add("wa-drag", "wa-lift");
     try { mv.ov.setPointerCapture(e.pointerId); } catch (e1) { }
     readout(w);
+    mv.raf = requestAnimationFrame(moveStep);
   }
   function onMoveMove(e) {
     if (!mv || mv.released || (mv.id !== undefined && e.pointerId !== mv.id)) { return; }
-    var k = mv.k, r = mv.r, dx = e.clientX - mv.sx, dy = e.clientY - mv.sy;           // screen px
-    var left = r.left + dx, top = r.top + dy, w = r.width, h = r.height, gx = null, gy = null, i, bx, by, xs = [], ys = [];
-    // keep a part of the box on screen
-    // keep the WHOLE box on screen (a box half past the edge is cut off); only a box bigger than the panel may overhang
-    var vw = window.innerWidth, vh = window.innerHeight;
-    left = (w <= vw - 8) ? clamp(left, 4, vw - w - 4) : clamp(left, KEEP - w, vw - KEEP);
-    top = (h <= vh - 8) ? clamp(top, 4, vh - h - 4) : clamp(top, KEEP - h, vh - KEEP);
-    // soft snap: its own place (offset 0), then the other boxes
-    xs.push(r.left - mv.x0 * k); ys.push(r.top - mv.y0 * k);
-    xs.push(r.left - mv.x0 * k + w); ys.push(r.top - mv.y0 * k + h);
-    for (i = 0; i < mv.others.length; i++) {
-      xs.push(mv.others[i].left, mv.others[i].left + mv.others[i].width / 2, mv.others[i].left + mv.others[i].width);
-      ys.push(mv.others[i].top, mv.others[i].top + mv.others[i].height / 2, mv.others[i].top + mv.others[i].height);
+    mv.px = e.clientX; mv.py = e.clientY;
+  }
+  // one frame: scroll the panel when the pointer is near its top / bottom edge, find the target spot (edges + snap), ease toward it
+  function moveStep() {
+    if (!mv) { return; }
+    var p = panel(), o = origin(), r = mv.r, vt = o.t + p.scrollTop, vb = vt + p.clientHeight, ZONE = 56, d = 0, f, bx, by, gx = null, gy = null, ex, ey, blocked = false, el = $(mv.w.el);
+    if (!mv.released) {
+      if (mv.py > vb - ZONE) { d = clamp((mv.py - (vb - ZONE)) / ZONE, 0, 1.4) * 11; }
+      else if (mv.py < vt + ZONE) { d = -clamp(((vt + ZONE) - mv.py) / ZONE, 0, 1.4) * 11; }
+      if (d) { p.scrollTop = p.scrollTop + d; o = origin(); }
+      f = fit({ l: r.l + mv.px - mv.sx, t: r.t + (mv.py - mv.sy) + (p.scrollTop - mv.sc0), w: r.w, h: r.h }, o);
+      bx = snapAxis(f.l, r.w, mv.xs); by = snapAxis(f.t, r.h, mv.ys);
+      if (bx) { f.l += bx.d; gx = o.l + bx.at; }
+      if (by) { f.t += by.d; gy = o.t + by.at; }
+      f = fit(f, o);
+      // other widgets are solid: if the wanted spot touches one, try sliding along it (x only, y only), else stay at the last free spot
+      if (!mv.free && hit({ l: f.l, t: f.t, w: r.w, h: r.h }, mv.others, GAP2)) {
+        if (!hit({ l: f.l, t: mv.vt, w: r.w, h: r.h }, mv.others, GAP2)) { f.t = mv.vt; }
+        else if (!hit({ l: mv.vl, t: f.t, w: r.w, h: r.h }, mv.others, GAP2)) { f.l = mv.vl; }
+        else { f.l = mv.vl; f.t = mv.vt; }
+        blocked = true;
+      }
+      mv.vl = f.l; mv.vt = f.t;
+      if (el) { el.classList.toggle("wa-clash", blocked); }
+      showGuides(gx, gy);
+      mv.tl = f.l; mv.tt = f.t;
     }
-    bx = snapAxis(left, w, xs); by = snapAxis(top, h, ys);
-    if (bx) { left += bx.d; gx = bx.at; }
-    if (by) { top += by.d; gy = by.at; }
-    showGuides(gx, gy);
-    var elm = $(mv.w.el);
-    if (elm) { elm.classList.toggle("wa-clash", hits({ left: left, top: top, right: left + w, bottom: top + h }, mv.others)); }   // red outline: it will be moved aside
-    mv.tx = mv.x0 + (left - r.left) / k; mv.ty = mv.y0 + (top - r.top) / k;
-    if (!mv.raf) { mv.raf = requestAnimationFrame(moveStep); }
+    ex = mv.tl - mv.cl; ey = mv.tt - mv.ct;
+    if (Math.abs(ex) < 0.2 && Math.abs(ey) < 0.2) { mv.cl = mv.tl; mv.ct = mv.tt; } else { mv.cl += ex * 0.36; mv.ct += ey * 0.36; }   // easing toward the pointer
+    setPos(mv.w, o, mv.cl, mv.ct);
+    if (mv.released && mv.cl === mv.tl && mv.ct === mv.tt) { mv.raf = 0; finishMove(); return; }
+    mv.raf = requestAnimationFrame(moveStep);
   }
   function onMoveUp(e) {
     if (!mv || (mv.id !== undefined && e.pointerId !== mv.id)) { return; }
     try { mv.ov.releasePointerCapture(mv.id); } catch (e2) { }
     showGuides(null, null);
-    mv.released = true;
-    if (Math.abs(mv.tx) < 1) { mv.tx = 0; } if (Math.abs(mv.ty) < 1) { mv.ty = 0; }
-    if (!mv.raf) { mv.raf = requestAnimationFrame(moveStep); }     // finish the glide, then settle (finishMove)
+    mv.released = true;                            // the loop finishes the glide to the last target, then finishMove()
   }
   function finishMove() {
     if (!mv) { return; }
-    var w = mv.w, el = $(w.el), x = Math.round(mv.tx), y = Math.round(mv.ty), s = layout[w.id] || (layout[w.id] = {});
-    if (x) { s.x = x; } else { delete s.x; }
-    if (y) { s.y = y; } else { delete s.y; }
-    if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
+    var w = mv.w, el = $(w.el);
+    if (mv.raf) { cancelAnimationFrame(mv.raf); mv.raf = 0; }
+    showGuides(null, null);
     if (el) { el.classList.remove("wa-drag", "wa-lift", "wa-clash"); }
-    mv = null; applySize(w); saveLayout(); readout(w); settle(w);      // dropped on another box? it glides to the nearest free spot
+    mv = null; readout(w);
+    dropAnim(w); settle(w);
   }
   function onMoveKey(w, e) {
-    var key = e.key, step = e.shiftKey ? 40 : 10, dx = 0, dy = 0;
+    var key = e.key, step = e.shiftKey ? STEP_BIG : STEP, dx = 0, dy = 0, o, r, f;
     if (key === "ArrowLeft") { dx = -step; } else if (key === "ArrowRight") { dx = step; }
     else if (key === "ArrowUp") { dy = -step; } else if (key === "ArrowDown") { dy = step; } else { return; }
     e.preventDefault(); e.stopPropagation();
-    flip(function () {
-      var s = layout[w.id] || (layout[w.id] = {}), x = clamp((s.x || 0) + dx, -MAX_OFF, MAX_OFF), y = clamp((s.y || 0) + dy, -MAX_OFF, MAX_OFF);
-      if (x) { s.x = x; } else { delete s.x; }
-      if (y) { s.y = y; } else { delete s.y; }
-      if (!s.span && !s.h && !s.x && !s.y && !s.s) { delete layout[w.id]; }
-      applySize(w); resolveAll(w);
-    });
-    saveLayout();
+    if (!ensure(w)) { return; }
+    o = origin(); r = rectOf(w, o); f = fit({ l: r.l + dx, t: r.t + dy, w: r.w, h: r.h }, o);
+    if (hit(f, otherRects(w, o), GAP2)) { return; }
+    setPos(w, o, f.l, f.t); settle(w);
   }
 
   // ---------- show / hide ----------
@@ -431,13 +551,23 @@
     if (c) { return !!c.checked; }
     return true;
   }
+  // a widget that appears gets its own place (or the nearest free spot); nothing else moves
+  function afterToggle(w) {
+    if (!hasItems()) { return; }
+    if (!items[w.id]) { placeMissing(w); } else { settleOne(w, origin()); }
+    if (isOn(w)) { popIn(w); }
+    saveLayout();
+  }
   function setOn(w, on) {
-    if (w.key) { lsSet(w.key, on ? "1" : "0"); refresh(); return; }
+    if (w.key) { lsSet(w.key, on ? "1" : "0"); refresh(); afterToggle(w); return; }
     var c = $(w.box);
     if (!c) { return; }
-    c.checked = !!on;
-    try { c.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) { var ev = document.createEvent("Event"); ev.initEvent("change", true, false); c.dispatchEvent(ev); }
-    refresh();
+    switching = true;
+    try {
+      c.checked = !!on;
+      try { c.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) { var ev = document.createEvent("Event"); ev.initEvent("change", true, false); c.dispatchEvent(ev); }
+    } finally { switching = false; }
+    refresh(); afterToggle(w);
   }
   function refresh() {
     WIDGETS.forEach(function (w) {
@@ -451,36 +581,6 @@
         eye.setAttribute("title", (on ? "Hide " : "Show ") + w.noun);
       }
     });
-    ghostsApart();
-  }
-
-  // Hidden widgets (ghosts) are shown while adjusting so they can be switched back on. They must NEVER push a visible widget:
-  //  - ghosts of the chips row (Time in After Effects, Timer) move into a second row (#idle-ghost-tray, same classes as .idle-chips)
-  //    that sits BELOW the dashboard; they go back to their own row when they are switched on or when Adjust closes.
-  //  - ghosts inside the dashboard are ordered after the visible boxes (css), and a dashboard made only of ghosts is marked (.wa-allghost).
-  var CHIP_IDS = ["idle-elapsed", "idle-timer"];
-  function ghostTray(make) {
-    var t = $("idle-ghost-tray"), clock = $("idle-clock");
-    if (!t && make && clock) { t = document.createElement("div"); t.id = "idle-ghost-tray"; t.className = "idle-chips wa-tray"; clock.appendChild(t); }
-    return t;
-  }
-  function ghostsApart() {
-    var chips = document.querySelector(".idle-chips:not(.wa-tray)"), tray, i, el, dash = $("idle-dash"), kids, all, fold;
-    if (chips) {
-      tray = ghostTray(adjusting);
-      for (i = 0; i < CHIP_IDS.length; i++) {
-        el = $(CHIP_IDS[i]); if (!el) { continue; }
-        if (adjusting && el.classList.contains("wa-ghost")) { if (el.parentNode !== tray) { tray.appendChild(el); } }
-        else if (el.parentNode !== chips) { chips.insertBefore(el, CHIP_IDS[i] === "idle-elapsed" ? chips.firstChild : null); }
-      }
-    }
-    if (dash) {
-      kids = dash.children; all = kids.length > 0;
-      for (i = 0; i < kids.length; i++) { if (!kids[i].classList.contains("wa-ghost")) { all = false; break; } }
-      dash.classList.toggle("wa-allghost", all);
-      fold = dash.parentNode;
-      if (fold && fold.classList && fold.classList.contains("idle-fold")) { fold.classList.toggle("wa-allghost", all); }
-    }
   }
 
   // ---------- chrome on each widget ----------
@@ -495,15 +595,14 @@
     grip.setAttribute("title", "Drag to resize. Double-click for the default size.");
     lbl.appendChild(eye); lbl.appendChild(name); bar.appendChild(lbl); bar.appendChild(grip);
     var ov = document.createElement("div"); ov.className = "wa-move"; ov.tabIndex = 0; ov.setAttribute("role", "group");
-    ov.setAttribute("aria-label", "Move " + w.noun + ". Arrow keys move it, double-click puts it back.");
-    ov.setAttribute("title", "Drag to move. Double-click to put it back.");
+    ov.setAttribute("aria-label", "Move " + w.noun + ". Arrow keys move it.");
+    ov.setAttribute("title", "Drag to move it anywhere.");
     el.appendChild(ov); el.appendChild(bar);
     ov.addEventListener("pointerdown", function (e) { startMove(w, e); });
     ov.addEventListener("pointermove", onMoveMove);
     ov.addEventListener("pointerup", onMoveUp);
     ov.addEventListener("pointercancel", onMoveUp);
     ov.addEventListener("keydown", function (e) { onMoveKey(w, e); });
-    ov.addEventListener("dblclick", function (e) { e.stopPropagation(); resetPos(w); });
     eye.addEventListener("click", function (e) { e.stopPropagation(); setOn(w, !isOn(w)); });
     grip.addEventListener("pointerdown", function (e) { onDown(w, e); });
     grip.addEventListener("pointermove", onMove);
@@ -511,7 +610,7 @@
     grip.addEventListener("pointercancel", onUp);
     grip.addEventListener("keydown", function (e) { onKey(w, e); });
     grip.addEventListener("dblclick", function (e) { e.stopPropagation(); resetOne(w); });
-    if (w.box && $(w.box)) { $(w.box).addEventListener("change", refresh); }   // Settings window flips the same switch
+    if (w.box && $(w.box)) { $(w.box).addEventListener("change", function () { if (!switching) { refresh(); afterToggle(w); } }); }   // Settings window flips the same switch
   }
 
   // ---------- auto-hide ----------
@@ -573,11 +672,7 @@
     ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"].forEach(function (n) {
       window.addEventListener(n, activity, { capture: true, passive: true });
     });
-    // a finished timer brings the UI back
-    var tm = $("idle-timer");
-    if (tm) {
-      try { new MutationObserver(function () { if (isIdle() && tm.classList.contains("is-done")) { wake(); } }).observe(tm, { attributes: true, attributeFilter: ["class"] }); } catch (e) { }
-    }
+    // a finished timer no longer wakes the UI (that made the timer vanish and pop back): it stays visible (.is-live) and rolls its digits back to the set time
     if (ui.auto) { ui.auto.textContent = ahLabel(); ui.auto.addEventListener("click", function () { cycleAH(); wake(); }); }
   }
 
@@ -586,8 +681,23 @@
     on = !!on && isIdle();
     if (on === adjusting) { return; }
     adjusting = on;
-    setClass("is-adjusting", on);
-    if (!on) { ghostsApart(); }                                    // ghosts of the chips row go home before the layout is settled
+    if (on) {
+      freeze();                                                    // visible widgets stay exactly where they are
+      setClass("is-adjusting", true);
+      refresh(); placeAllMissing();                                // ghosts (hidden widgets) get a free spot of their own
+      resolveAll();                                                // a saved layout from an older version may overlap: separate it
+      WIDGETS.forEach(function (w) { if (!isOn(w)) { popIn(w); } });   // ghosts fade in; the visible widgets do not move
+    } else {
+      if (mv) { finishMove(); }
+      else if (drag) {
+        var el = $(drag.w.el); if (el) { el.classList.remove("wa-drag"); }
+        drag = null; WIDGETS.forEach(readout);
+      }
+      showGuides(null, null);
+      setClass("is-adjusting", false);
+      if (!dirty && hasItems()) { unfreeze(); lsDel(LAYOUT_KEY); }  // nothing was changed: keep the original flow layout
+      else { settle(); }
+    }
     if (ui.btn) {
       ui.btn.setAttribute("aria-pressed", on ? "true" : "false");
       ui.btn.setAttribute("aria-label", on ? "Done adjusting" : "Adjust widgets");
@@ -595,19 +705,8 @@
     }
     if (ui.reset) { ui.reset.tabIndex = on ? 0 : -1; }
     if (ui.auto) { ui.auto.tabIndex = on ? 0 : -1; }
+    syncEnd();                                                     // scroll room only while Adjust is open
     wake();
-    if (on) {
-      refresh();
-    } else if (mv) {
-      mv.tx = mv.cx; mv.ty = mv.cy; mv.released = true; showGuides(null, null); finishMove();
-    } else if (drag) {
-      var el = $(drag.w.el); if (el) { el.classList.remove("wa-drag"); }
-      drag = null; saveLayout();
-      WIDGETS.forEach(readout);
-    }
-    // Done: hidden widgets stop being ghosts, so the grid reflows and a moved box (offset from its OLD grid place) can land on
-    // another one. Re-resolve once now that the layout is final (before this, only drops / resizes were checked, with ghosts present).
-    if (!on && isIdle()) { settle(); }
   }
 
   function init() {
@@ -615,7 +714,7 @@
     loadAH();
     loadLayout();
     WIDGETS.forEach(build);
-    applyAll(); refresh();
+    refresh(); applyAll();
     if (ui.btn) { ui.btn.addEventListener("click", function (e) { setAdjust(!adjusting); if (e.detail) { ui.btn.blur(); } }); }
     if (ui.reset) { ui.reset.addEventListener("click", resetAll); }
     bindAH();
@@ -630,7 +729,7 @@
       clock.addEventListener("click", function (e) {
         if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); return; }   // that tap only revealed the UI
         if (!adjusting) { return; }
-        var t = e.target, sel = ".idle-card, .idle-timer, .idle-elapsed, .idle-message, button, input, textarea, select, a", path = e.composedPath ? e.composedPath() : [], i;
+        var t = e.target, sel = ".idle-card, .idle-timer, .idle-elapsed, .idle-hero, .idle-message, button, input, textarea, select, a", path = e.composedPath ? e.composedPath() : [], i;
         if (t && t.closest && t.closest(sel)) { return; }
         for (i = 0; i < path.length; i++) { if (path[i] && path[i].matches && path[i].matches(sel)) { return; } }
         e.stopPropagation();
@@ -648,7 +747,7 @@
           if (qT) { clearTimeout(qT); qT = 0; }
           setClass("is-ia-quiet", false); setQuiet(false);   // a late clear from the last exit must not hide this entry
           ahArm(); iaWake();
-          requestAnimationFrame(function () { if (isIdle()) { resolveAll(); saveLayout(); } });   // a saved layout never opens stacked
+          requestAnimationFrame(function () { if (isIdle() && hasItems()) { applyAll(); resolveAll(); saveLayout(); } });   // a saved layout never opens stacked or cut off
         } else {
           if (adjusting) { setAdjust(false); }
           if (ahTimer) { clearTimeout(ahTimer); ahTimer = 0; }
@@ -661,12 +760,12 @@
         }
       }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     } catch (e2) { }
-    // never stacked: check a saved layout when the idle screen opens, and again when the panel is resized
+    // the panel (or Card scale) changed: positions are fractions of the panel, so they follow; then keep everything inside and unstacked
     var rzT = 0;
-    window.addEventListener("resize", function () { if (!isIdle()) { return; } clearTimeout(rzT); rzT = setTimeout(function () { settle(); }, 160); });
+    window.addEventListener("resize", function () { clearTimeout(rzT); rzT = setTimeout(function () { if (hasItems()) { applyAll(); if (isIdle()) { settle(); } } }, 160); });
     // "Reset everything" in Settings
     var rs = $("settings-reset");
-    if (rs) { rs.addEventListener("click", function () { lsDel(LAYOUT_KEY); lsDel(TIMER_KEY); lsDel(CLOCK_KEY); lsDel(AH_KEY); layout = {}; loadAH(); if (ui.auto) { ui.auto.textContent = ahLabel(); } applyAll(); refresh(); }); }
+    if (rs) { rs.addEventListener("click", function () { lsDel(LAYOUT_KEY); lsDel(TIMER_KEY); lsDel(CLOCK_KEY); lsDel(AH_KEY); unfreeze(); loadAH(); if (ui.auto) { ui.auto.textContent = ahLabel(); } refresh(); }); }
   }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

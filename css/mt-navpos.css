@@ -1,0 +1,129 @@
+/* mt-navpos.css - Settings > Navigation position: Left (default) / Right / Top / Bottom.
+   Companion: js/mt-navpos.js (sets <html data-nav-pos="left|right|top|bottom">, key mtx.navPos).
+   Loaded after every other stylesheet on purpose. Delete this file + its <link> + js/mt-navpos.js to undo.
+
+   Left   = the original look, nothing here applies.
+   Right  = the same rail on the right edge; names open towards the left.
+   Top / Bottom = the rail becomes a bar as thick as the rail was wide (--sidebar-w). The tab list scrolls sideways when the
+   panel is too narrow; the active tab is scrolled into view by main.js. Names never expand in a bar (js/sidebar-expand.js skips it).
+   AE 2021 (Chromium 74): no flex gap here. Spacing in a bar is written as margins with !important, because
+   js/ae2021-compat.js writes its own inline margins for the vertical list and would otherwise leave a bar with no spacing. */
+
+:root { --nav-bar-h: var(--sidebar-w); }
+
+/* ============================ RIGHT ============================ */
+html[data-nav-pos="right"] .app { flex-direction: row-reverse; }
+html[data-nav-pos="right"] .sidebar { border-right: 0; border-left: 1px solid var(--sidebar-glass-edge); }
+/* the rail still keeps a constant flow width while it opens; it now grows towards the left over the panel */
+html[data-nav-pos="right"] .sidebar.is-expanded { margin-right: 0; margin-left: calc(var(--sidebar-w) - var(--sbx-w)); }
+/* icon stays pinned to the right edge, the name opens on its left */
+html[data-nav-pos="right"] .sidebar .tab { flex-direction: row-reverse; }
+html[data-nav-pos="right"] .sidebar .tab > svg { margin-left: 0; margin-right: calc((var(--tab-size) - 1.15rem) / 2); }
+html[data-nav-pos="right"] .sidebar .tab-label {
+  margin-left: 0; margin-right: 0.7rem; padding-right: 0; padding-left: 0.6rem; text-align: right;
+  -webkit-transform: translateX(6px) translateZ(0); transform: translateX(6px) translateZ(0);
+}
+html[data-nav-pos="right"] .sidebar.is-expanded .tab-label { -webkit-transform: translateX(0) translateZ(0); transform: translateX(0) translateZ(0); }
+
+/* ============================ TOP + BOTTOM ============================ */
+html[data-nav-pos="top"] .app { flex-direction: column; }
+html[data-nav-pos="bottom"] .app { flex-direction: column-reverse; }
+
+html[data-nav-pos="top"] .sidebar,
+html[data-nav-pos="bottom"] .sidebar {
+  flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: flex-start;
+  width: auto; height: var(--nav-bar-h); margin: 0; padding: 0 var(--space-3);
+  overflow: hidden; gap: 0; transition: none;
+  border-right: 0; border-left: 0;
+}
+html[data-nav-pos="top"] .sidebar { border-bottom: 1px solid var(--sidebar-glass-edge); }
+html[data-nav-pos="bottom"] .sidebar { border-top: 1px solid var(--sidebar-glass-edge); }
+/* the glass sheen runs across the bar, not down it */
+html[data-nav-pos="top"] .sidebar,
+html[data-nav-pos="bottom"] .sidebar { background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)); }
+
+html[data-nav-pos="top"] .tabs,
+html[data-nav-pos="bottom"] .tabs {
+  flex-direction: row; align-items: center; justify-content: flex-start;
+  flex: 1 1 auto; width: auto; min-width: 0; height: 100%; min-height: 0;
+  overflow-x: auto; overflow-y: hidden; gap: 0;
+}
+html[data-nav-pos="top"] .sidebar .tabs > .tab,
+html[data-nav-pos="bottom"] .sidebar .tabs > .tab { margin: 0 4px !important; flex: 0 0 auto; width: var(--tab-size); }
+html[data-nav-pos="top"] .sidebar .tabs > .tab:first-of-type,
+html[data-nav-pos="bottom"] .sidebar .tabs > .tab:first-of-type { margin-left: 0 !important; }
+
+/* Refresh + Settings sit at the end of the bar (the first one takes the free space, so they stay on the far edge even when every tab fits) */
+html[data-nav-pos="top"] .sidebar > .refresh-btn,
+html[data-nav-pos="bottom"] .sidebar > .refresh-btn,
+html[data-nav-pos="top"] .sidebar > .settings-btn,
+html[data-nav-pos="bottom"] .sidebar > .settings-btn { margin: 0 0 0 8px !important; flex: 0 0 auto; width: var(--tab-size); }
+html[data-nav-pos="top"] .sidebar > .refresh-btn,
+html[data-nav-pos="bottom"] .sidebar > .refresh-btn { margin-left: auto !important; }
+
+/* fix26: whole tabs only. js/mt-navpos.js fit() gives .tabs the exact width of N tabs; the list snaps to a tab edge, so an icon is never
+   cut through the middle. The scrollbar stays hidden (style.css). Chromium 74 supports scroll-snap. */
+html[data-nav-pos="top"] .tabs,
+html[data-nav-pos="bottom"] .tabs { scroll-snap-type: x mandatory; scroll-padding: 0; }
+html[data-nav-pos="top"] .sidebar .tabs > .tab,
+html[data-nav-pos="bottom"] .sidebar .tabs > .tab { scroll-snap-align: start; }
+
+/* no trailing margin after the last tab: the last page then ends exactly on its right edge (a 4px overshoot cut the first icon of that page) */
+html[data-nav-pos="top"] .sidebar .tabs > .tab:last-of-type,
+html[data-nav-pos="bottom"] .sidebar .tabs > .tab:last-of-type { margin-right: 0 !important; }
+
+/* Two quiet arrows appear only when more tabs exist than fit. No fill, no border: a chevron that dims at the end of the list. */
+.mt-nav-arrow { display: none; }
+html[data-nav-pos="top"] .mt-nav-arrow:not([hidden]),
+html[data-nav-pos="bottom"] .mt-nav-arrow:not([hidden]) {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 22px; height: var(--tab-size); margin: 0; padding: 0;
+  border: 0; border-radius: 8px; background: transparent; color: var(--text-dim);
+  cursor: pointer; -webkit-appearance: none; appearance: none;
+  transition: color 0.18s ease, opacity 0.18s ease, background-color 0.18s ease;
+}
+.mt-nav-arrow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.mt-nav-arrow:hover:not(:disabled) { color: var(--text); background-color: var(--surface-hover); }
+.mt-nav-arrow:active:not(:disabled) { opacity: 0.7; }
+.mt-nav-arrow:disabled { opacity: 0.28; cursor: default; }
+:root[data-reduce-motion="true"] .mt-nav-arrow { transition: none; }
+
+/* names are never shown in a bar */
+html[data-nav-pos="top"] .sidebar .tab-label,
+html[data-nav-pos="bottom"] .sidebar .tab-label { display: none; }
+
+/* highlight slides sideways: main.js writes translate(Xpx, -50%) and the width, so it only needs its anchor here */
+html[data-nav-pos="top"] .tab-indicator,
+html[data-nav-pos="bottom"] .tab-indicator { left: 0; top: 50%; width: var(--tab-size); height: var(--tab-size); }
+
+/* drag-to-reorder marker is a vertical line in a bar */
+html[data-nav-pos="top"] .tab.drag-over-before, html[data-nav-pos="bottom"] .tab.drag-over-before { box-shadow: -3px 0 0 0 var(--accent-strong); }
+html[data-nav-pos="top"] .tab.drag-over-after,  html[data-nav-pos="bottom"] .tab.drag-over-after  { box-shadow: 3px 0 0 0 var(--accent-strong); }
+
+/* The dynamic island is fixed to the top of the window: with a top bar it moves down to sit on the panel instead of on the tabs */
+html[data-nav-pos="top"] .mt-island { top: calc(var(--nav-bar-h) * var(--ui-scale, 1) + 6px) !important; }
+
+/* ---------- Settings: position cards (shown in the Settings window and in the hidden modal) ---------- */
+.mtx-nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-column-gap: 8px; grid-row-gap: 8px; }
+.mtx-navpv {
+  position: relative; display: block; height: 48px; border-radius: 10px; overflow: hidden;
+  background: rgba(var(--accent-rgb, 255, 255, 255), 0.09);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+/* b = the navigation, s = the content area; the nav piece is the memorable part, the rest stays quiet */
+.mtx-navpv b { position: absolute; border-radius: 4px; background: rgba(var(--accent-rgb, 255, 255, 255), 0.7); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.mtx-navpv s { position: absolute; border-radius: 3px; background: rgba(var(--accent-rgb, 255, 255, 255), 0.22); text-decoration: none; }
+.mtx-navpv--left   b { left: 5px;  top: 5px; bottom: 5px; width: 8px; }
+.mtx-navpv--left   s { left: 19px; top: 5px; right: 5px; bottom: 5px; }
+.mtx-navpv--right  b { right: 5px; top: 5px; bottom: 5px; width: 8px; }
+.mtx-navpv--right  s { left: 5px;  top: 5px; right: 19px; bottom: 5px; }
+.mtx-navpv--top    b { left: 5px; right: 5px; top: 5px; height: 8px; }
+.mtx-navpv--top    s { left: 5px; right: 5px; top: 19px; bottom: 5px; }
+.mtx-navpv--bottom b { left: 5px; right: 5px; bottom: 5px; height: 8px; }
+.mtx-navpv--bottom s { left: 5px; right: 5px; top: 5px; bottom: 19px; }
+.ui-theme-card:hover .mtx-navpv--left b   { -webkit-transform: translateX(2px);  transform: translateX(2px); }
+.ui-theme-card:hover .mtx-navpv--right b  { -webkit-transform: translateX(-2px); transform: translateX(-2px); }
+.ui-theme-card:hover .mtx-navpv--top b    { -webkit-transform: translateY(2px);  transform: translateY(2px); }
+.ui-theme-card:hover .mtx-navpv--bottom b { -webkit-transform: translateY(-2px); transform: translateY(-2px); }
+:root[data-reduce-motion="true"] .mtx-navpv b { transition: none; }
+@media (max-width: 520px) { .mtx-nav-grid { grid-template-columns: repeat(2, 1fr); } }

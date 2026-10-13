@@ -40,1514 +40,246 @@ INSTALL
    macOS: defaults write com.adobe.CSXS.<version> PlayerDebugMode 1
    (CSXS version: 10 for After Effects 2021, 9 for 2019-2020, 11 for 2022+)
 3. Restart After Effects -> Window > Extensions > Multi Tool.
-   (Shortcut for steps 1-2 on Windows: run Install.bat.)
+   (On Windows, Install.bat does steps 1-2.)
 
-DEBUG: open http://localhost:8088 in Chrome (port set in .debug).
+DEBUG: open http://localhost:8088 in Chrome. Extra ports: 8089 (Curve settings), 8090 (Curve graph editor).
 
-CURVE TAB (NeuCurve)
-The "Curve" tab hosts the full NeuCurve tool (folder "neucurve/"). Its Settings popup and
-Graph Editor open as separate windows and are registered in CSXS/manifest.xml. If you still
-have the standalone NeuCurve extension installed, remove it so the two do not both run.
-Extra debug ports: 8089 (Curve settings), 8090 (Curve graph editor).
-
-CURVE TAB BACKGROUND
----------------------
-The Curve tab is always solid now - it no longer turns transparent to show the panel's background image / GIF /
-video through it, and ignores the Settings > Background opacity slider entirely. It keeps NeuCurve's own native
-dark look (#0a0a0a body, #0e0e0e graph canvas, #1a1a1a panels/side column, #141414 rails), same as the stand-alone
-windows (Settings popup, Graph Editor). This used to work the other way (transparent, matching every other tab) via
-a "mt-embed-bg" veil style block + a stricter "mt-embed-transparent" style block + a JS backstop in
-neucurve/index.html - all three were removed on purpose. If transparency is ever wanted back, restore that block
-from an earlier copy of index.html rather than rebuilding it from scratch.
-
-CURVE TAB ADJUSTABLE BACKGROUND (supersedes "CURVE TAB BACKGROUND" above)
-------------------------------------------------------------------------
-NeuCurve Settings (gear icon) > Graph Background: choose the image/GIF, then press "Adjust Background". It opens
-a "Display" editor like the MultiTool one: Opacity, Zoom (100-300%), Position X / Y, Reset, Done. Drag the
-background to move it, scroll to zoom, Esc = Done. The old plain opacity slider was removed; opacity now
-defaults to 100% (Reset returns everything to 100% / 100% / 50% / 50%).
-neucurve/nc-bg.js + nc-bg.css draw the background behind the graph in the Curve tab / graph window and sync live
-from the Settings window (localStorage neucurve_bgImagePath / bgOpacity / bgZoom / bgPosX / bgPosY + the
-com.neucurve.sync event). With no image chosen the tab stays solid. The compiled bundle (assets/index.js) was
-patched in two places only: the opacity slider block became the "Adjust Background" button, and the opacity
-default changed 0.2 -> 1 (plus window.__ncBgStores so the editor can drive the existing opacity store).
-
-CURVE TAB OVERSHOOT TOGGLE
+RULES FOR EDITING THE CODE
 --------------------------
-NeuCurve Settings has an "Allow Overshoot" switch (default ON = previous behavior). OFF: the Bezier handles and
-the Custom-curve anchors/handles can no longer be dragged above 1 or below 0 (the graph stays inside the box),
-and turning it OFF pulls any existing out-of-range Bezier/Custom values back into 0..1. Stored as
-localStorage neucurve_overshoot and synced between windows like the other NeuCurve settings. Elastic / Bounce /
-Wave are overshoot BY DEFINITION and are not affected. Bundle patch: Zo() clamp helper replaces the y-clamps
-in the drag code of assets/index.js (search "Zo(" / "ncOvEl").
+- manifest.xml: after any change, restart After Effects (CEP caches it). The two Settings windows have no <ScriptPath>
+  on purpose (they never call ExtendScript). The Curve settings window is 380-900 px wide, 420-1400 px high.
+- jsx/host.jsx is ExtendScript (ES3): no .some / .find / .includes / .filter. Close and reopen the panel after a change.
+- AE 2021 runs Chromium 74. Do not use: gap on flex, aspect-ratio, min() / max() / clamp() without a fallback, the
+  "inset" shorthand (write top/right/bottom/left), backdrop-filter without @supports, :focus-visible inside a selector
+  list (the whole rule is dropped). js/ae2021-compat.js converts flex gap to margins and keeps aspect-ratio boxes
+  square; on AE 2022+ it does nothing. style.css ends with an @supports-not-clamp fallback block.
+- Animations stop ONLY through Settings > Enable animations (<html data-reduce-motion="true">). The OS "Show animations"
+  setting is ignored; no @media (prefers-reduced-motion) blocks.
+- A new page must load js/mt-spinbox.js and css/mt-spinbox.css to get the themed number stepper.
+- Any control in a Settings window needs the same id in html/index.html and html/settings.html.
+- Opt out of a themed control with data-native="true" (select, color, number) or data-no-scrub="true" (scrub).
 
-CURVE TAB BACKGROUND GRADIENT + HANDLE STYLE
---------------------------------------------
-NeuCurve Settings (gear icon) has two more sections (built by neucurve/nc-extras.js, styled by nc-extras.css,
-mounted into the Settings page through window.__ncExtraUI() from the one-line hook in assets/index.js):
-- Background Gradient: on/off, Color 1, Color 2, Direction (0-360 deg), Intensity (0-100%). Drawn behind the graph
-  (below the Graph Background image, which stays on top of it).
-- Handle Style: Circle (default) / Heart / Square / Diamond / Star / PNG-GIF image, Size (2-9, default 4.5),
-  Line thickness (0.5-6, default 1.2) and a Reset button. Works on the Bezier / Custom handles and on the
-  Elastic / Bounce / Wave / Steps handles. Hit area (dragging) is unchanged. With the defaults nothing is replaced.
-  "PNG / GIF": choose a file (animated GIF supported); path is stored like the Graph Background path.
-localStorage keys (prefix neucurve_): gradOn gradC1 gradC2 gradDir gradInt hStyle hSize hLine hImg.
+MULTI TOOL PANEL
+================
 
-CURVE TAB PREVIEW-DOT COLOR
-----------------------------
-neucurve/nc-theme-sync.css also re-colors the value-preview strip's scrubbing dot (".ball") and its trail from
---mt-accent (they were hardcoded blue in the compiled bundle and never read --ui-color/--accent like the rest of
-NeuCurve does). Same theming pipeline as everything else - see nc-theme-sync.js/.css.
+Shortcutz tab
+- Speed-dial hub. Built-in cards: Expression, Quick Effect and Utility shortcuts (host.jsx SHTZ_*).
+- Pin icon on Animation Presets and Code Expression cards adds that .ffx / snippet to "My Shortcuts".
+- "+ Add Custom Shortcut": Name, Type (Expression / .ffx Path / JSX Script), Color. Stored in localStorage
+  "mtx.shortcutz.items"; drag to reorder. The x only removes the shortcut, never the original preset or snippet.
 
-CURVE TAB ICON SIZE
--------------------
-neucurve/nc-icons.css sets the tool-row icons to 18px glyphs (26px buttons) and the APPLY-row buttons (download / close / settings).
-All sizes are CSS variables at the top of that file (--nc-icon-btn, --nc-icon-svg, --nc-util-btn, ...).
+Expression Code backup
+- Snippets are mirrored to ~/Documents/Multitool_CEP_Data/saved_expressions.json (ExprFile in js/main.js,
+  EXPR_FILE_* in host.jsx) and restored when localStorage is empty (fresh install).
+- Settings > Expression Backups: Backup / Import. File I/O is best-effort; the panel keeps working on localStorage.
 
-CURVE GLOW
-----------
-- Main graph curve: neucurve/nc-glow.js. AE's embedded Chromium does not render CSS filter/drop-shadow on SVG paths,
-  so the glow is drawn with 4 stacked, wider, low-opacity strokes (<g class="nc-glow"> inserted before the curve path).
-  It copies the curve's "d" and "stroke", so it follows dragging and the curve color. Tune LAYERS at the top of the file.
-  To switch it off, remove the <script src="./nc-glow.js"> line in neucurve/index.html.
-- Preset thumbnails (<canvas>): neucurve/assets/index.js has a small patch (search for globalAlpha=.06) that draws
-  3 wider, faint strokes under the curve. If the bundle is rebuilt or replaced, re-apply it.
+Animator Text tab (internal id "textflex")
+- Builds ONE animator "TextFlex_Animator". The Expression Selector Amount holds the stagger and bounce / ease math
+  (textIndex / textTotal exist only there); each checked property holds the typed value. Applying again replaces it.
+- Anchor Point Alignment is set to [0,0]; Grouping follows Based On. Words / Lines detect whether AE counts line breaks.
+- Choosing a preset loads it at once (no Load button). Code: TF_apply, _tfAmountExpr (host.jsx), TextFlex (main.js).
 
-CURVE PARTICLES
----------------
-neucurve/nc-particles.js draws soft circle particles that fall from the top of the lower area (tool row + APPLY row +
-Library) and fade out. One click-through <canvas>, clipped to ".action-container" + ".variable-section" (measured live,
-so it follows resizing / divider drag / landscape). Tune density, size, speed, opacity, color in CONFIG at the top of the
-file. Off: remove the <script src="./nc-particles.js"> line in neucurve/index.html.
+Export GIF (Tools tab)
+- Options: Range, Width, Frame rate, Colors, Background, Loop, Dither, Optimize (saved in mtx.gifOptions).
+- TOOLS_gifRender renders a PNG sequence through a temporary Render Queue item; js/mt-gif.js builds one shared palette,
+  encodes and writes <CompName>_<YYYYMMDD-HHMMSS>.gif into the Save Frame folder. It never overwrites (name_2.gif).
+- Limits: 1-bit transparency, 1000 frames max, needs Node (--enable-nodejs in the manifest).
 
-APPLY BUTTON GLOW
------------------
-Soft white top-highlight (like the "Auto Parent" toggle-row reference: a bright edge along the top fading down,
-no color, no spin) that slowly breathes in and out (2.6s, faster on hover: 1.3s), patched into
-neucurve/assets/index.js - search for "apply-glow-breathe". Replaced the earlier spinning cyan conic-gradient ring.
-Tune speed/strength: the 2.6s / 1.3s durations, and the box-shadow alpha values (.14/.3 at rest, .32/.65 at peak) in
-the @keyframes block. If the bundle is rebuilt or replaced, re-apply the patch.
+Settings window (gear button)
+- Separate window: html/settings.html (com.ogatt.multitool.settings, Modeless). The real controls stay in the hidden
+  #settings-modal. js/mt-settings-remote.js (panel) replays the window's actions; js/mt-settings-window.js mirrors state;
+  js/mt-settings-bus.js sends every message over the CEP event AND a localStorage mailbox.
+- Sections: Appearance, Background, Motion, Idle screen, Easy Layer, Data and updates.
+- Scale UI 70-150% (CSS zoom on .app via --ui-scale; mtx.uiScale). The window fades out while the slider is held.
+- Controls are themed: color picker (mt-colorpicker), number stepper (mt-spinbox), dropdown menu (mt-select), sliders,
+  checkboxes (mt-settings-controls.css, mt-final-controls.css). Only the OS file chooser stays native.
 
-AE 2021 COMPATIBILITY FIX (CSXS 10 / Chromium 74)
---------------------------------------------------
-The panel's UI used to look broken on After Effects 2021 (spacing collapsed, tool tiles
-not square, idle-clock text mis-sized) while looking fine on AE 2022+. Root cause: AE 2021
-ships CEP 10, whose embedded Chromium is version 74 (2019), which predates several CSS
-features this panel's CSS relies on:
-  - `gap` on flex containers          -> shipped in Chrome 84 (2020)
-  - `aspect-ratio`                    -> shipped in Chrome 88 (2021)
-  - `clamp()` / `min()` / `max()`     -> shipped in Chrome 79 (2019)
-  - the `inset` shorthand             -> shipped in Chrome 87 (2020)
-On Chromium 74 those declarations are either inert or fully invalid, which is what made
-the layout collapse (spacing gone, tiles not square, full-screen overlays not covering
-their container, idle-clock fonts wrong size).
+Style (Settings > Style)
+- Glass (default, css/glass-theme.css) or Material You (css/material-theme.css, js/mt-material.js, js/mt-uitheme.js;
+  key mtx.uiTheme). Delete a theme's files and its <link> to remove it.
+- Material You builds a tonal palette from Theme color, has Light / Dark and its own Background color (mtx.mdBg).
+  It pins data-theme to "light" or "dark" itself. The colour settings keep the Glass look.
 
-Fixes applied (UI/visuals themselves were NOT changed - these only restore compatibility):
-  1. `inset: 0` -> replaced with explicit `top/right/bottom/left: 0` everywhere (css/style.css
-     and the one occurrence inside neucurve/assets/index.js). Identical result on every
-     Chromium version, so nothing changes on AE 2022+.
-  2. New file js/ae2021-compat.js: a small, self-contained runtime shim, included in both
-     html/index.html and neucurve/index.html. It feature-detects flex-gap and aspect-ratio
-     support on load; on a host that already supports them (AE 2022+) it does nothing at
-     all. On an old host (AE 2021) it:
-       - converts every `gap`/`row-gap`/`column-gap` flex declaration into equivalent
-         margins between the existing children (no markup changes, same visual spacing),
-       - keeps every `aspect-ratio` element square via a ResizeObserver-driven inline
-         `height`,
-       - re-applies both automatically whenever the panel's DOM changes (tab switches,
-         dynamic lists, NeuCurve's own re-renders) and on window resize.
-  3. css/style.css: added an `@supports not (width: clamp(1px,1px,1px))` fallback block
-     (bottom of the file) giving the idle-clock text and the sidebar tab gap plain static
-     values for hosts that can't parse clamp()/min() at all. Skipped entirely on any host
-     that supports them, so AE 2022+ is unaffected.
+Background
+- One "Background" row: image, GIF, MP4 or WebM. Only one is active; Remove clears it.
+- "Use original media colors" (mtx.bgOrig): OFF = grayscale + contrast(1.05).
+- Adjust background: Opacity, Zoom 100-300%, Position X / Y; drag = move, scroll = zoom, Esc = Done (keys mtx.bgZoom,
+  mtx.bgPosX, mtx.bgPosY, mtx.bgOpacity). The Settings window shows a full-window preview (js/mt-bg-preview.js);
+  a session-only video cannot be previewed there.
+- Ambient orbs (js/ambient-orbs.js, css/ambient-orbs.css) move to random spots and blink. Tune MOVE_MIN_S / MOVE_MAX_S.
 
-Tested by loading the panel (and clicking through every tab, including Curve/NeuCurve) in
-a modern headless Chromium with the compat script's detection logic force-disabled to
-verify the fallback math (margins/heights) matches the native gap/aspect-ratio layout
-exactly, and separately confirming the script no-ops with zero DOM changes and zero
-console errors when real support is detected (the normal AE 2022+/2024 case).
+Motion and scrolling
+- Settings > Tab animation: Smooth (default), Glide, Pop, Fade, Cascade, None; Speed 50-200%; Easing Soft / Even / Spring
+  (css/mt-anim-styles.css, js/mt-anim.js; keys mtx.animStyle / animSpeed / animEase).
+- css/tab-motion.css + showTab() / staggerCards() in main.js: cards enter one by one; the old tab fades out in ~110 ms.
+- css/mt-smooth.css + js/mt-smooth.js: sidebar highlight easing, "finished" flash on action buttons (DONE_SEL),
+  elastic spring on .tool tiles.
+- js/smooth-scroll.js: eased mouse-wheel scroll (TAU, STEP). Touchpad, Ctrl / Shift + wheel and the Curve tab are untouched.
+- ScrollForward (main.js) passes the wheel to .main when the pointer is over a button or card.
+- Left navigation: expands after 5 s of hovering (DWELL in js/sidebar-expand.js); has no tooltips;
+  css/sidebar-center.css keeps the highlight centred. js/tab-wheel.js reports wheel use as "mt-wheel-activity".
+- js/mt-tooltip.js: custom tooltips that replace native titles (menu tiles show their full name).
+- js/mt-scrub.js: every number field can be dragged (Shift = x10, Alt = x0.1).
 
-SHORTCUTZ TAB
--------------
-New "Shortcutz" tab: a Speed Dial / Favorites Hub.
-- Expression Shortcuts / Quick Effect Shortcuts / Utility Shortcuts: fixed built-in cards, always
-  present (host.jsx: SHTZ_addEffect, SHTZ_autoParentToTop; also reuses EXPR_applyCode, AA_setAnchor,
-  TOOLS_convertAudioToKeyframes).
-- Pin icon added to cards in Animation Presets (presets) and Code Expression (saved snippets) - pins
-  that .ffx / expression into Shortcutz's "My Shortcuts" grid (js/main.js: Shortcutz.pinFfx / pinExpr).
-- "+ Add Custom Shortcut": Name, Type (Expression / .ffx Path / JSX Script), Color Accent. .ffx Path
-  has a Browse button (host.jsx: SHTZ_pickFfxFile). JSX Script runs via host.jsx: SHTZ_runCustomScript,
-  wrapped in its own Undo Group.
-- Everything in "My Shortcuts" persists in localStorage ("mtx.shortcutz.items") and can be dragged to
-  reorder. The x on a tile only unpins/removes the shortcut - it never touches the original preset
-  file or saved snippet.
-- Tiles use the same rotating "saber" glow border as elsewhere (see CURVE GLOW note above), but as a
-  hover/focus-only variant (.saber-wrap--tile) so an idle grid of many tiles isn't all glowing at once.
+Idle screen
+- Shows clock, date, "Time in After Effects" (live hours / minutes / seconds), Timer, Stopwatch, Alarms, Today list
+  (8 tasks max) and Notes. Leave with Esc or by clicking an empty spot; mouse movement does not leave.
+- Session time: heartbeat in localStorage every 30 s; a gap over 3 min (SESSION_GAP_MS) starts a new session.
+- Timer: hours + minutes, Start / Pause / Resume / Reset. Sound: Chime (built-in) or Custom file (copied to
+  Documents/MyMultitoolExtension/Sounds). At 00:00:00 it shows "Time is up" for 3 s, then the digits roll back.
+- Daily list: ticks reset each day, tasks stay. Missed tasks go to "Unfinished" history (mtx.missed). Data is saved in
+  localStorage and Documents/MyMultitoolExtension/DailyTasks.json.
+- Adjust (button at the bottom right): free canvas. Drag, resize (grip), eye = show / hide, Reset layout. Widgets never
+  overlap; the panel scrolls. Clock grip = text scale 50-220%. Layout key mtx.wLayout (v3, fractions of the panel width).
+  The UI auto-hides after 3 / 6 / 10 s (mtx.autoHide, default 6). Code: js/mt-idle-adjust.js, css/mt-idle-adjust.css.
+- Digits roll when they change (js/mt-idle-roll.js: MTRoll.set / reset). Files: css/mt-idle-time.css, mt-idle-roll.css,
+  mt-idle-motion.css, mt-idle-icons.css, mt-idle-focus.css.
+- Dynamic island (js/mt-island.js): black capsule at the top centre, closed = one icon (timer / stopwatch). Click = it grows into
+  a card: ONE switch (left = feature in use, right = where a click goes; the feature changes only when it is clicked, never
+  by itself), big digits, Start / Pause / Reset, timer H : M : S steppers (key mtx.tS = seconds). A dot beside the closed icon
+  means the other feature is running. Click outside or Esc closes it. Shown whenever the panel is not idle; in idle mode only
+  while the idle UI is auto-hidden and one is live. On / off: Settings > Motion > Show dynamic island (key mtx.island).
+- Update card: while the island is on, "Update available / Update Now / Later / Notes", the download progress, the result and
+  the "Updated to vX" confirmation are shown in the island (MTIsland.notice, called by js/mt-updater.js). The closed island
+  shows an update icon with a progress ring. With the island off, the old banner (#mt-update) is used.
+- Idle parking moves .app off-screen with a transform (not display:none), so the Curve iframe keeps its size.
 
-EXPRESSION CODE - FILE-BASED PERSISTENCE (survives uninstall/reinstall/update)
--------------------------------------------------------------------------------
-Custom expression snippets used to live only in localStorage, which is wiped whenever the
-extension folder is deleted, updated, or reinstalled. They now also get mirrored to a plain
-JSON file in the user's Documents folder:
-  ~/Documents/Multitool_CEP_Data/saved_expressions.json
+Auto update ("Update Now", js/mt-updater.js)
+- Uses fetch() + cep.fs.writeFile. No Node, zip or PowerShell for the update itself.
+- Feed update.json is read from version.json "feed" (optional), raw.githubusercontent.com/<repo>/<branch>/update.json
+  and cdn.jsdelivr.net at the same time; the first good answer wins. update.json may hold "remove": [...] and "ref".
+- Update Now downloads every listed file, checks each SHA-256, writes only when ALL pass, and restores the old files if
+  a write fails. version.json is written last. If CSXS/manifest.xml changed, restart After Effects.
+- Banner on start, Settings > Updates, "Check update" in the Settings footer, Refresh Panel checks at once.
+  Silent re-check every 20 min and on focus (at most every 5 min). A failed check shows its reason.
+- Safe by design: HTTPS only, plain relative paths, hashes checked, no token stored. Whoever controls the repo controls
+  the code in the panel, so protect the GitHub account (2FA).
+- Info shows the version from version.json (fallback VERSION in main.js). manifest.xml still says 1.1.0; that is harmless.
+- Publish: put Multi_Tool.zip in the work folder and run Update.bat.
 
-- host.jsx: _exprFilePaths/_ensureExpressionsFile create the folder + file on first run.
-  saveExpressionsToFile(jsonString) / loadExpressionsFromFile() do the raw file I/O (both wrapped
-  in try/catch, both fail soft). Bridge-facing wrappers: EXPR_FILE_init, EXPR_FILE_load,
-  EXPR_FILE_save, EXPR_FILE_backupExport (Settings > "Backup Expressions", native Save dialog),
-  EXPR_FILE_backupImport (Settings > "Import Expressions", native Open dialog).
-- js/main.js: ExprFile module. exprCatStore.save() is wrapped so every add/edit/delete/favorite/
-  category change also fires EXPR_FILE_save in the background. On panel boot and every time the
-  Expression Code tab is opened, ExprFile.restoreIfNeeded() checks whether localStorage's snippet
-  store is empty (fresh install) and, if so, restores it from the JSON file automatically.
-- Settings modal: new "Expression Backups" field with the two manual buttons described above.
+CURVE TAB (NeuCurve, folder neucurve/)
+======================================
+- The Curve tab hosts NeuCurve in an iframe. Its Settings window (neucurve/settings.html) and Graph Editor
+  (neucurve/index.html?ext=graph) are separate CEP windows. Remove the stand-alone NeuCurve extension if installed.
+- Theme: the iframe gets the panel state by postMessage; separate windows get it from localStorage "mt_theme_state" and
+  the event "com.multitool.theme.sync" (js/main.js Curve.sync, neucurve/nc-theme-sync.js).
+- Accent = NeuCurve Settings > UI Color only (not the panel Theme color). Panel Background color re-tints the base.
+- Light panel = light Curve tab (neucurve/nc-light.css under html.mt-light, plus the runtime pass in nc-light.js).
+- The compiled bundle neucurve/assets/index.js is patched. After a rebuild, search for these markers and re-apply:
+  globalAlpha=.06 and ze.lineWidth=7 (thumbnail glow), apply-glow-breathe, Zo( / ncOvEl / ncOvRes (overshoot),
+  __ncLive / ZL() / NC_liveRun (Auto Apply), __ncGS (graph size), NcBz / NcBx / NcBy (background stores),
+  NcInvTgt (Invert), __ncApplyDefault (after "Lr.subscribe"), preview-track-wrapper (ball range), navStripWidth 32 -> 0,
+  the mousemove stuck-drag guard in function Q, and "inset: 0" written as top/right/bottom/left.
 
-All file I/O is best-effort - if Documents isn't writable or the file gets locked, the panel just
-keeps working off localStorage as before and shows a toast/console warning instead of crashing.
+Layout (nc-flow.css / nc-flow.js)
+- Flow look: mode tabs, rounded graph, value pill (click = copy cubic-bezier(...)), Ease Out / Ease / Ease In, APPLY,
+  gear, library toolbar, preset tiles. nc-flow.js MOVES the original buttons (no clones), so bundle handlers keep working.
+- Landscape = panel wider than 480 px or Settings > Layout = landscape: tabs become a pill bar above the graph, the toolbar
+  moves above the preset grid.
+- Icons: nc-icons.css (sizes), nc-icons-pro.js / .css (Ease icons: BY_CLASS; copy in nc-flow.js ICON).
+- Colors and sizes: --fl-* at the top of nc-flow.css. Off: remove the nc-flow lines in neucurve/index.html.
+- Preset tiles: nc-fix16 to nc-fix19 (rounded boxes, name outside), nc-fix22 (square tiles, Card Size slider 3-8),
+  nc-fix24 (portrait auto-fit ~54 px). nc-fix21: a disabled Speed Graph icon looks OFF. nc-fix23: tool rows wrap.
+  nc-fix25: .canvas-area is position:relative. Delete a file's line to undo it.
+- APPLY turns gray and reads "AUTO APPLY" while Auto Apply is ON (html.nc-auto-on).
 
-BUGFIX - "Function parts.some is undefined" WHEN APPLYING ANIMATION PRESETS
------------------------------------------------------------------------------
-jsx/host.jsx's _preFind() (used by PRE_apply / PRE_delete to resolve a chosen .ffx file, including
-ones inside a preset subfolder) validated the path with parts.some(...). ExtendScript's ES3 engine
-has no Array.prototype.some, so applying/deleting any preset threw "Function parts.some is
-undefined" at runtime. Replaced with a plain ES3 for-loop helper, _arrayHasInvalidPart(arr), that
-does the same "reject empty/'.'/'..' segments" check. Confirmed this was the only ES6+ array method
-(.some/.find/.includes/.filter) anywhere in host.jsx.
+Graph
+- Glow (nc-glow.js): AE's Chromium ignores CSS filter on SVG paths, so the glow is stacked strokes. Tune GLOW_PEAK,
+  GLOW_SIGMA, GLOW_RADIUS, GLOW_STEPS, HALO_R, HALO_A. Fewer layers are drawn while dragging. Off: remove the script tag.
+- Morph (nc-morph.js): mode switch blends the old graph into the new one (500 ms, ease-out-expo; handles glide).
+  Mouse wheel over the mode tabs switches the mode. Tune DURATION / GRID. Works for .mtab and .nav-tab.
+- Warm-up (nc-warm.js): cycles every mode twice behind the spinner on first open. Off: WARM = false or
+  localStorage neucurve_noWarm = "1".
+- Live ball (nc-ball.js): loops along the curve. Setting neucurve_liveBall (default 1); OFF brings the scrub strip back.
+- Graph size: grip next to the expand icon (nc-gsize.js); Shift = keep proportions, double-click = auto. Keys neucurve_gWp,
+  gHp, gWl, gHl. The self-healing fit check keeps the plot inside its box. Old landscape look: neucurve_gFit = "0".
+- Floor fill (nc-gfill.js): floor and Graph Background fill the whole box + 6 px. Off: neucurve_gFill = "0".
+- Overshoot: Settings > Allow Overshoot (neucurve_overshoot). OFF clamps handles to 0..1. Elastic / Bounce / Wave are
+  unaffected. Rubber-band resistance is opt-in: neucurve_ovResist = "1".
+- Falling effect (nc-particles.js, CONFIG at the top): Off / Particles / Rain with color and opacity (neucurve_pEffect,
+  pColor, pAlpha). Falls over the preset area.
+- Handles (nc-extras.js): Circle / Heart / Square / Diamond / Star / PNG-GIF, size, line thickness (keys hStyle, hSize,
+  hLine, hImg). Pressing a handle shows its value (nc-handle.js).
+- Background gradient (nc-extras.js + nc-grad.css): on/off, 6 presets, 2 colors, Glow, Direction, Intensity, Area
+  (Whole panel / Graph only). Keys neucurve_grad*.
+- Graph Background image: nc-bg.js rewrites x / y / width / height of the graph's own <image>. Adjust Background has
+  Opacity, Zoom, Position X / Y and a full-window preview. "Use Original Media Colors" OFF uses the SVG filter #nc-gray-f.
+- Curve Tab View (nc-view.js / .css; keys neucurve_hidePresets, hideGraph): Hide Preset Graphs or Hide Graph Settings,
+  never both. With presets hidden, the preview strip docks in the graph's bottom edge.
 
-BUGFIX - MOUSE WHEEL SCROLL BLOCKED OVER CARDS/TILES/BUTTONS (all tabs except NeuCurve)
------------------------------------------------------------------------------------------
-Reported: scrolling only worked with the cursor over empty background: hovering any card, tile,
-tool button or inner box swallowed the wheel event instead of letting it reach the panel's scroll
-container. Audited every overflow declaration and every wheel/stopPropagation/preventDefault call
-in css/style.css and js/main.js - no CSS overflow rule or JS handler here was actually capturing
-wheel input (the various overflow:hidden uses are all for rounded-corner/text clipping, not scroll
-containers), which points to CEP's underlying CEF build occasionally swallowing wheel events once
-the pointer is over a native form control (button/input) instead of bubbling them, rather than a
-markup bug.
-Fix: js/main.js, new ScrollForward module (wired in on DOMContentLoaded). A single document-level
-"wheel" listener in the CAPTURE phase (so it always runs first, regardless of what's under the
-cursor) walks up from the event target looking for a genuine nested scroll area (open accordion,
-the expression-code preview box, ...); if none is found, or the one found is already scrolled to
-its limit in that direction, it manually applies e.deltaY to `.main`'s scrollTop and calls
-preventDefault(). NeuCurve is fully excluded (checks `.main.is-curve`), and anything outside
-`.main` (sidebar tab rail, Settings modal) is untouched. css/style.css: added
--webkit-overflow-scrolling:touch on `.main` for smoother momentum scrolling alongside it.
+Auto Apply (nc-live.js, host.jsx NC_liveStatus / NC_liveRun)
+- With Auto Apply ON, dragging in the graph updates the selected keyframes live (Bezier: about every 70 ms; 130 ms on
+  AE 2019 / 2021). The last clicked keyframes are remembered and re-selected. Works in the Curve tab and the Graph Editor.
+- Bezier uses the fast path applyCubicBezierProps (selected properties only), with a fallback to the full walk.
+  Elastic / Bounce / Wave / Steps / Custom re-apply 450 ms after you stop.
+- A badge shows the target: green = selected, yellow = last ones, red = none. There is no polling timer (it made AE's
+  cursor flicker). Auto Apply OFF sends nothing.
 
-UI/UX POLISH PASS - SHIMMER, EASING, GPU HINTS (css/fluid-polish.css, neucurve/nc-fluid-polish.css)
--------------------------------------------------------------------------------------------------------
-Two new stylesheets, both purely additive (nothing removed/rewritten in style.css or NeuCurve's own
-files) and both loaded LAST so they layer on top:
-- css/fluid-polish.css (linked in html/index.html, right after css/style.css): adds a hover shimmer
-  sweep to tool tiles, Shortcutz tiles, preset/expression/snippet cards and Quick Comp Edit resolution
-  tiles (a second background-image animated via background-position, not a new DOM element or
-  pseudo-element - .tool's existing ::before/::after glow layers were already spoken for); re-tunes the
-  tab-switch fade+slide (panel-in/head-in) onto a slightly snappier cubic-bezier(0.25,1,0.5,1) curve;
-  adds backface-visibility+will-change GPU compositing hints to the busiest animated elements (saber
-  borders, cards, the modal, tab indicator); fills in a couple of card types that had a hover state but
-  no :active press feedback; and extends the existing neon accent focus glow to native
-  select/range/number/color inputs. All new motion respects prefers-reduced-motion.
-- neucurve/nc-fluid-polish.css (linked last in neucurve/index.html, after nc-apply-glow.css): much
-  smaller and deliberately conservative - just a tactile press-scale on plain buttons (excluding
-  .apply-btn, which already has its own glow-trace feedback) and the same neon focus glow on native
-  inputs. Does not touch nc-glow/nc-apply-glow/nc-particles/nc-theme-sync - see their own notes above.
-Tune the shimmer's opacity/size/speed or the new easing curve at the top of css/fluid-polish.css
-(--fluid, --shimmer-dur custom properties and the two linear-gradient rules in section 3).
+NeuCurve Settings window (Flow style: settings.html, nc-settings.js, nc-settings*.css)
+- Tabs: Appearance, Background, Handles, Behavior, plus a Profile card. It does not load the Svelte bundle.
+- Every control uses the same neucurve_ localStorage keys and the "com.neucurve.sync" event as before.
+- The window resizes itself to its content (fitWindow). Dropdown lists open as floating, window-bounded menus.
+- Not ported on purpose: Language, RGB Mode, home indicator, video background, Graph Size sliders, Guide tab,
+  "Visit Website". Version label v2.10.0 stays.
 
-PREMIUM VISUAL ORNAMENT PASS (css/premium-ornaments.css)
----------------------------------------------------------
-Third additive stylesheet, linked in html/index.html right after css/fluid-polish.css (loaded
-last, so it layers on top of both style.css and fluid-polish.css - nothing in either is
-rewritten). Adds:
-- Ambient blurred accent-color mesh glow + a faint 16px dot-grid texture on .app itself (behind
-  .sidebar/.main, in front of the custom background image/GIF/canvas layers), so it shows on
-  every tab even when no custom background is set.
-- Cyberpunk corner-bracket accents on the panel header, the Expression Code "new snippet" card,
-  the Info/About card, and the code editor (inside its rounded corners instead of outside, since
-  it clips - see the file's own comment).
-- Glassmorphism (backdrop-filter blur + translucent tint), guarded behind @supports so AE 2021's
-  Chromium 74 (predates backdrop-filter) just keeps the normal solid surface: applied ONLY to the
-  Settings modal and the right-click context menu, deliberately not to any card whose background
-  main.js's Settings.applyCardSurfaces keeps live-synced to the panel's background color (see
-  that function's own comments) - giving those a hardcoded translucent tint would quietly break
-  that sync.
-- A small pulsing green "active" status dot before the current tab's title (fixed color, not the
-  theme accent, so it always reads as a status light rather than a re-themeable decoration).
-- A neon icon halo on hover/active sidebar tabs and icon buttons - box-shadow on the icon's own
-  box, NOT filter:drop-shadow, which the CEF note in neucurve/nc-glow.js already established
-  doesn't render on SVG paths inside After Effects.
-- A literal 1px gradient-stroke border (the padding-box/border-box double-background trick) on
-  the code editor when focused, layered on top of its existing glow box-shadow. The panel's
-  existing rotating .saber-wrap conic-gradient ring (Shortcutz tiles, toggles, preset folders) is
-  untouched and still the primary "signature" active-card treatment; this is a calmer static
-  alternative for a text-input surface where a spinning ring while typing would be distracting.
-Tune colors/opacity at the top of css/premium-ornaments.css (--ornament-glow, --grid-dot-color,
---glass-surface, --glass-border custom properties, both dark and the :root[data-theme="light"]
-override).
-
-FALLING STARS / METEOR SHOWER BACKGROUND (css/falling-stars.css, js/falling-stars.js)
-----------------------------------------------------------------------------------------
-New scoped ambient background: thin, glowing streaks drift from the upper-right toward the
-lower-left at a shallow diagonal, across every tab EXCEPT Curve/NeuCurve.
-- Canvas (#falling-stars-canvas, class "falling-stars-bg") lives as the first child of .app in
-  html/index.html: position:absolute, z-index:0, so it paints behind .sidebar (z-index 30) and
-  .main (z-index 1) - see css/falling-stars.css.
-- js/falling-stars.js runs its own rAF loop, 15-25 particles (PARTICLE_COUNT), each with
-  randomized speed/length/opacity(0.2-0.6)/lifetime(2-5s), fading in/out at the start/end of
-  its life so nothing "pops" on/off screen.
-- Tab scoping: watches #main for the "is-curve" class (toggled by Curve.show()/hide() in
-  js/main.js whenever the Curve tab is entered/left) via a MutationObserver - no edits to
-  main.js were needed. Stops the loop AND clears the canvas the instant Curve becomes active,
-  so NeuCurve's bezier canvas gets a fully clear background and the full CPU/GPU budget back;
-  resumes automatically on leaving Curve. Also pauses while the panel document itself is
-  hidden/backgrounded (document.hidden), and never starts at all if the user has
-  prefers-reduced-motion enabled.
-- This is a SEPARATE, additive layer from the pre-existing js/global-bg.js "shooting star"
-  canvas (position:fixed to the OS window, always running regardless of tab, sparse - max 3
-  concurrent streaks, faster/brighter). global-bg.js was NOT modified. Running both together is
-  a deliberate two-layer effect (a sparse bright system + a denser subtle one); to go back to
-  just one, remove this feature's <link>/<canvas>/<script> tags from html/index.html rather than
-  editing global-bg.js.
-- Tune density/speed/size/opacity/lifetime in the CONFIG-style constants at the top of
-  js/falling-stars.js (PARTICLE_COUNT, the rand() ranges in MeteorParticle.prototype.reset).
-
-GLASS THEME (css/glass-theme.css)
----------------------------------
-Final stylesheet (loaded last in html/index.html): "Clean Dark Glassmorphism Minimalist". Design tokens live at the top of the file
-(--panel-bg, --surface-card, --surface-hover, --border-subtle, --accent-glow, --radius-card, --radius-btn). It remaps the legacy tokens the
-rest of the CSS already used (--bg, --surface, --border, --shadow-card*, --radius-m/-l), so tabs re-theme together; delete the file (and its
-<link>) to get the previous look back. --accent-glow follows Settings > Theme color. Cards under a rotating "saber" ring (code editor, preset
-folder header, Shortcutz tiles, toggles) intentionally use the OPAQUE --surface-solid so the ring mask keeps working.
-Settings > Background color still re-tints everything: Settings.applyCardSurfaces() (js/main.js) now writes translucent --surface/--surface-hover
-plus opaque --surface-sunken/--surface-solid tiers. neucurve/nc-glass.css gives the Curve tab the same base palette (solid, no blur).
-
-TAB MOTION (kotak-kotak per tab)
---------------------------------
-css/tab-motion.css + showTab()/renderTab()/staggerCards() in js/main.js. Masuk tab: kartu/kotak muncul
-berurutan (fade + naik 14px + scale 0.94, stagger 26ms, maks 14 item). Pindah tab: isi lama fade out ~110ms
-lalu isi baru masuk. Hanya opacity+transform (ringan, tanpa blur/shadow animasi). Tuning: --mt-card-dur,
---mt-leave-dur di tab-motion.css; MT_LEAVE_MS / MT_STAGGER_MAX di main.js. Mati hanya bila
-data-reduce-motion="true" (opt-in; setting OS "Show animations" diabaikan, sama seperti style.css).
-
-SMOOTH SCROLL (roda mouse)
---------------------------
-js/smooth-scroll.js: scroll roda mouse halus (easing eksponensial, 1 rAF) untuk semua area scroll -
-.main, daftar preset/ekspresi, modal Settings, preview kode. Dipanggil dari ScrollForward (main.js).
-Touchpad tetap native/instan; Ctrl/Shift+wheel, slider yang pakai wheel sendiri, dan tab Curve tidak disentuh.
-Tuning: TAU (lembut/lambat) dan STEP (jarak per klik) di bagian atas file.
-
-LAMA SESI DI TAMPILAN JAM (Idle / hemat GPU)
---------------------------------------------
-Di bawah jam muncul teks "You've been in After Effects for 1 hour 23 minutes" (bahasa Inggris). Kode: Idle.initSession()/
-formatSession()/updateClock() di js/main.js, elemen #idle-session di html/index.html, gaya .idle-session
-di css/style.css. Panel menulis "detak" ke localStorage tiap 30 dtk; saat panel dimuat, bila detak terakhir
-< 3 mnt hitungan dilanjutkan, bila lebih lama dianggap AE baru dibuka (mulai dari 0). Bila panel ditutup
-> 3 mnt di tengah sesi AE, hitungan mulai ulang. Ubah SESSION_GAP_MS untuk toleransi lain. Teks ikut
-update tiap menit (tidak ada timer tambahan).
-
-DISPLAY (Settings > Adjust background): posisi / zoom / opacity background
+CHANGE LOG (newest at the end; style "fixN (version): what / cause / fix")
 --------------------------------------------------------------------------
-Tombol "Adjust background" di Settings menyembunyikan UI dan menampilkan background penuh + panel kecil
-(#bg-editor) berisi slider Opacity (dipindah dari Settings), Zoom 100-300%, Position X/Y 0-100%, Reset, Done.
-Drag background = geser posisi, scroll roda = zoom, Esc/Done = kembali ke Settings. Disimpan di localStorage
-(mtx.bgZoom / mtx.bgPosX / mtx.bgPosY / mtx.bgOpacity). Kode: Settings.initBgEditor() di js/main.js,
-CSS "Background editor" di css/style.css. Variabel --bg-zoom/--bg-pos-x/--bg-pos-y hanya ditulis ke
-#bg-layer dan #bg-motion-layer (bukan :root) supaya drag tetap ringan. Berlaku untuk gambar dan GIF/video.
-Tanpa background yang dipilih, tombolnya hanya memunculkan pesan.
-
-
-[fixed9] Slider fix (Adjust background): fill-trail synced on JS value changes (hook in js/panel-refinements.js + explicit calls in Settings.applyOpacity/syncBgControls), assets cache-busted with ?v=8 in html/index.html.
-
-
-[fixed10] REMOVED: falling stars / shooting stars (js/falling-stars.js, js/global-bg.js, css/falling-stars.css + their canvases). ADDED: ambient circles now move to random positions (js/ambient-orbs.js) and blink slowly (css/ambient-orbs.css). Tune speed in MOVE_MIN_S / MOVE_MAX_S (js) and the orbBlink durations + opacity range in css. The Curve tab (neucurve/nc-particles.js) still has its own small falling-circle particles; delete the nc-particles.js script line in neucurve/index.html to remove them too.
-
-
-FIX: NEUCURVE BACKGROUND GRADIENT + LARGE GRAPH EDITOR THEME (fixed15)
-----------------------------------------------------------------------
-1) Background Gradient not visible (Settings > Background Gradient):
-   - With a custom Background color set in the panel, nc-theme-sync.js generates opaque rules for ".canvas-area"
-     (the graph floor) that out-ranked the see-through rules in nc-bg.css, hiding the gradient (and the Graph
-     Background image) completely. nc-bg.css now has higher-specificity see-through rules for .canvas-area,
-     .fixed-section, .content-wrapper and .main-container under html.nc-has-grad / html.nc-has-bg + .mt-bg-themed.
-   - .extension-wrapper was 72% opaque over the whole widget and dimmed the gradient to almost nothing; it is now
-     transparent while the gradient is on (.side-column / .model-rail / .hint keep their own translucent tint).
-   - The NeuCurve Settings window itself stays solid on purpose; the preview strip in Settings shows the gradient.
-2) "Open Large Graph Editor" ignored the panel theme:
-   - That editor is its own CEP window (neucurve/index.html?ext=graph), not an iframe, so the panel's postMessage
-     never reached it (same for the Settings window). js/main.js Curve.sync() now ALSO writes the theme/background
-     state to localStorage ("mt_theme_state") and fires the CEP event "com.multitool.theme.sync"; the panel also
-     answers "com.multitool.theme.request". neucurve/nc-theme-sync.js applies that state (accent + Background color)
-     in standalone windows exactly as it does in the iframe, reads it on load, follows it live, and asks the panel
-     for a fresh copy on open. Iframe behavior is unchanged.
-   - html/index.html: main.js cache-bust bumped to ?v=10.
-
-
-LIVE AUTO APPLY (fixed16)
--------------------------
-NeuCurve Settings > Auto Apply (existing toggle) now behaves like a live link to After Effects:
-- Click a keyframe (or several) in the timeline, then move/edit the graph in NeuCurve: the selected keyframes are
-  updated continuously WHILE you drag (Bezier model: at most one update every ~70 ms, ~130 ms on AE 2019/2021),
-  so the After Effects Graph Editor follows in real time. The final value is always sent when you let go.
-- The LAST keyframes you clicked are remembered (jsx/host.jsx: NC_liveStatus / NC_liveRun). If you deselect or click
-  elsewhere, Auto Apply keeps targeting them and re-selects them for you (Bezier model). If they no longer exist
-  (deleted / moved), it asks you to click a keyframe again.
-- A small badge on the graph shows the target: green = keyframes currently selected, yellow = using the last ones you
-  clicked, red = nothing to target yet ("click a keyframe"). The dot turns blue while an update is running.
-- Works in the Curve tab AND in the Large Graph Editor window (before, Auto Apply never ran in that window).
-  A change that only arrives by sync from the other NeuCurve window is NOT applied again (no double apply).
-- Elastic / Bounce / Wave / Steps / Custom(bake) create keyframes, so they do not run on every mouse move: they
-  re-apply 450 ms after you stop changing, on the keyframes that are currently selected.
-- Live updates are silent (no "Applying..." toast); errors are shown at most once every 3 s. The manual APPLY button
-  is unchanged. Each live update is its own undo step in AE (identical repeats are skipped).
-Files: neucurve/nc-live.js + nc-live.css (new), assets/index.js (small patches: __ncLive hooks, ZL(), NC_liveRun
-bridge), jsx/host.jsx (end of file).
-
-
-TEXTFLEX (fixed: "textTotal is not defined")
------------------------------------------
-After Effects only defines textIndex / textTotal inside an Expression Selector's Amount, so an expression written
-directly on an animator property (Position, Opacity, ...) errors out. TextFlex therefore builds ONE animator named
-"TextFlex_Animator": the Expression Selector Amount holds the stagger + bounce/ease math (Direction, Delay, In/Out/
-In-Out, Markers, Overshoot/Ease), and each checked property just holds the value typed in the panel. Text > More
-Options > Anchor Point Alignment is set to [0,0] and Grouping follows Based On. Re-applying replaces the old animator.
-Files: jsx/host.jsx (TF_apply, _tfAmountExpr), js/main.js (TextFlex tab - UI unchanged).
-
-
-CURVE TAB: GRADIENT ONLY BEHIND THE GRAPH + COMPACT LIVE BADGE
---------------------------------------------------------------
-1) Background Gradient (NeuCurve Settings) used to be a full-window layer, with the preset / Save / library boxes made
-   translucent on top of it, so the gradient showed through those boxes. It is now mounted INSIDE the graph area
-   (.canvas-area, see placeGrad() in neucurve/nc-extras.js) so it is the curve's own background, and the Apply / Save
-   row, library cards, rail and hint bar keep their normal solid colours (or the panel Background-color tint).
-   neucurve/nc-bg.css: the gradient-only rules now make just .canvas-area / .canvas-container / .curve-svg see-through.
-   (The Graph Background IMAGE keeps its previous full-window behaviour.)
-2) The LIVE badge (neucurve/nc-live.js + nc-live.css) no longer prints the layer / property name. It shows a short
-   phrase ("LIVE · 3 keys", "LIVE · last", "LIVE · pick key", "LIVE · no comp"), is smaller and slightly transparent, and
-   sits in the bottom-right corner of the graph instead of the top (clear of the curve start and the model tabs).
-
-CURVE TAB AUTO APPLY v3 (cursor flicker fix)
---------------------------------------------
-Auto Apply (NeuCurve Settings) was rewritten in neucurve/nc-live.js. The old version polled After Effects
-(NC_liveStatus) every ~350 ms while the Curve tab was open and Auto Apply was ON; each poll runs on AE's main thread
-and made AE reset the mouse cursor (arrow <-> I-beam flicker over the expression box). Now there is NO timer: the
-last clicked keyframes are remembered with a single request when the pointer enters the panel (180 ms dwell, max once
-per 2 s), and NC_liveRun reads the selection itself on every apply. Auto Apply OFF = nothing is sent to AE.
-Live applying while you edit the graph works exactly as before.
-
-CURVE TAB FALLING EFFECT (PARTICLES / RAIN) SETTINGS
-----------------------------------------------------
-NeuCurve Settings > "Falling Effect": choose Off / Particles / Rain, plus Color and Opacity (0-100%). It falls over
-the preset Library area of the Curve tab (same zone as before; default = white Particles, 100% = unchanged look).
-Stored as localStorage neucurve_pEffect / neucurve_pColor / neucurve_pAlpha and synced live between windows.
-UI: neucurve/nc-extras.js (+ nc-extras.css). Effect: neucurve/nc-particles.js. "Reset effect" restores defaults.
-
-FIX: BACKGROUND GRADIENT = WHOLE CURVE-TAB BACKGROUND (v5)
-----------------------------------------------------------
-The gradient used to be mounted inside .canvas-area, so it only filled the graph box. It is now a full-window layer
-behind #app (neucurve/nc-extras.js placeGrad), and with it ON neucurve/nc-bg.css makes the graph, side panels, Apply /
-tool row, library header and preset grid translucent so the gradient shows around and behind them. Gradient OFF =
-unchanged. A Graph Background image is still drawn on top of the gradient.
-
-UPDATE (v6): the gradient no longer shows inside the graph box - the graph keeps its own solid background and the
-gradient only fills the area below it (tool row, Apply, library). Rule lives in neucurve/nc-bg.css (nc-has-grad).
-
-ANIMATOR TEXT TAB (v7)
-----------------------
-- The "TextFlex" tab is now named "Animator Text" (tab tooltip/label in html/index.html, panel title in js/main.js,
-  After Effects undo step + success message in jsx/host.jsx). Internal ids (data-tab="textflex", the
-  "TextFlex_Animator" animator name, saved presets key) are unchanged so existing presets and layers keep working.
-- Preset bar: the Load button is gone. Choosing a preset in the dropdown loads it immediately (js/main.js, TextFlex
-  render, #tf-preset-select "change"). Save / Delete / Refresh work as before.
-
-v8 - ADJUST BACKGROUND + GRADIENT LOOK
---------------------------------------
-- Adjust Background (Settings > Graph Background): Zoom / Position X / Position Y now go through NeuCurve's own
-  synced stores (assets/index.js: NcBz / NcBx / NcBy, next to the opacity store) instead of a separate event path, so
-  they update the Curve tab and the graph window exactly like Opacity does (persist + live sync + storage event).
-  nc-bg.js setVal() uses those stores; dragging writes localStorage live and pushes the stores on mouse-up.
-- Gradient look (nc-bg.css, nc-has-grad): below the graph it is now one continuous surface - rows, library header
-  and grid are transparent; only the tool pill, Apply group, library select and preset tiles get a soft dark glass.
-
-v9 - BACKGROUND GRADIENT REMOVED
---------------------------------
-The "Background Gradient" setting (NeuCurve Settings) and all its code (nc-extras.js, nc-bg.css, #nc-grad-layer)
-are gone. Settings now: colors, Auto Apply, Overshoot, Handle Style, Falling Effect, Layout, Graph Background.
-Old neucurve_grad* values left in localStorage are ignored.
-Graph Background (image/GIF + Adjust Background): tested with two separate simulated windows (Settings -> Curve tab):
-image, opacity, zoom and position all reach the Curve tab live (nc-bg.js + NcBz/NcBx/NcBy stores in assets/index.js).
-
-v10 - ADJUST BACKGROUND REBUILT (adjusts the REAL NeuCurve background)
-----------------------------------------------------------------------
-Root cause of "Zoom / Position do nothing, only Opacity works": NeuCurve draws its Graph Background itself, as an
-<image> inside the graph SVG (svg.curve-svg > image, bound to the opacity store). Older nc-bg.js added a second layer
-behind the graph and moved THAT, so the visible image never changed.
-Now neucurve/nc-bg.js rewrites x / y / width / height of that very <image> (CSS "cover" maths, zoom 100-300 %,
-position 0-100 %), in the Curve tab and the Large Graph Editor, png/jpg/gif. No extra layer / nc-has-bg class any more.
-Settings > Graph Background > Adjust Background: preview frame with the graph's real shape (aspect is reported by the
-Curve tab), drag = move, scroll = zoom, Esc = Done, sliders Opacity / Zoom / Position X / Position Y, Reset, Done.
-Note: at Zoom 100 % only the axis the image overflows can move (same as CSS background-position).
-Tested with two simulated windows (Settings -> Curve tab): opacity, zoom, X, Y and preview drag all update the Curve tab.
-
-v11 - ADJUST BACKGROUND: FULL-WINDOW PREVIEW
---------------------------------------------
-The preview now covers the whole Settings window. The bright frame is exactly what the graph shows (same shape as the
-real graph); everything outside it is dimmed, so you can see the rest of the image while dragging / scrolling / using
-the sliders. Files: neucurve/nc-bg.js (buildPreview/layoutPreview), neucurve/nc-bg.css (#nc-bg-prev, #nc-bg-frame).
-
-v12 - Rain is calmer: fall speed reduced ~37% (neucurve/nc-particles.js CONFIG.rain.speed 300-520 -> 190-330 px/s).
-Tweak that one line to taste.
-
-
-
-CURVE TAB: "FLOW" LOOK (neucurve/nc-flow.css + nc-flow.js)
------------------------------------------------------------
-The Curve (NeuCurve) tab now follows the Flow reference layout:
-  model tabs (rounded, active = lighter box)  >  rounded graph with heart handles + corner expand icon
-  >  row 1: reset | import (Read from AE) | speed graph | [x1, y1, x2, y2] value pill | star
-  >  row 2: << | hourglass (Invert) | >> | APPLY | settings
-  >  accent divider bar  >  scrub slider  >  toolbar: library select, templates, expression, preview, bake, live,
-     options  >  preset tiles (rounded squares, selected = accent border, names hidden - hover shows the title).
-nc-flow.js MOVES the original buttons (it does not clone them), so every handler / active / disabled state of the
-compiled bundle keeps working. New behaviour: the value pill is computed live from the Bezier handles (click = copy
-cubic-bezier(...)); << >> select the previous / next preset; the star saves the current curve as a preset (switches
-the library to "Sav" and presses its + tile). Reset icon = Remove Expressions, import icon = Read from AE (same
-functions as before, new icons). The "Open Large Graph Editor" button now sits in the graph's bottom-right corner.
-First run only (localStorage flag neucurve_flowInit): curve + handle color and the UI color default to Flow yellow
-(#FFD21F) and the handle style to Heart; change them afterwards in NeuCurve Settings as usual. Buttons/APPLY/active
-states follow the panel Theme color (--mt-accent) and fall back to the same yellow.
-Tune: variables at the top of nc-flow.css (--fl-accent, --fl-bg, --fl-btn, --fl-radius ...).
-Off switch: remove the nc-flow.css <link> and the nc-flow.js <script> lines in neucurve/index.html (and, if you want
-the old defaults back, delete localStorage keys neucurve_flowInit/uiColor/graphLineColor/handleColor/hStyle/hSize).
-
-CURVE TAB: AUTO APPLY BUTTON STATE (nc-flow.js syncAuto + end of nc-flow.css)
------------------------------------------------------------------------------
-When NeuCurve Settings > Auto Apply is ON, the APPLY button turns gray and reads "AUTO APPLY" (html gets class
-"nc-auto-on"; the label is a CSS ::after, the button's own text/handlers are untouched, so a click still applies
-manually). Turning it OFF restores the yellow APPLY. State is read from localStorage neucurve_autoApply on the
-storage event, the com.neucurve.sync event, window focus and a cheap 0.8 s poll (never sent to After Effects).
-Colors: html.nc-auto-on rules at the bottom of nc-flow.css.
-
-CURVE TAB: GLOW (Flow reference)
---------------------------------
-neucurve/nc-glow.js: the curve glow is now 6 wider/softer stacked strokes blended with mix-blend-mode:screen (it also
-lightens the Graph Background image under the curve) + a radial-gradient halo behind every handle (HALO_R / HALO_A).
-neucurve/nc-flow.css (end): glow under the selected preset tile, under the active model tab, the accent divider bar,
-the star and a light one on APPLY. Tune LAYERS/HALO_* in nc-glow.js; remove the "GLOW" block in nc-flow.css to drop the rest.
-
-
-v13 - SMOOTHER CURVE GLOW, NEUCURVE COLORS INDEPENDENT, SCALE UI
------------------------------------------------------------------
-1) Curve glow smoother (neucurve/nc-glow.js): the glow is now 22 thin stacked strokes whose opacities are computed
-   so the sum follows a Gaussian falloff (no more visible rings/bands). The handle halo gradient also has 8 eased
-   stops instead of 2. Tune GLOW_PEAK (brightness), GLOW_SIGMA (spread), GLOW_RADIUS (cut-off), GLOW_STEPS
-   (smoothness vs. work) at the top of the file; HALO_R / HALO_A for the handle halos.
-2) NeuCurve colors no longer follow the Multi Tool Theme color. The accent (buttons, active states, preset borders,
-   APPLY, preview dot) now comes only from NeuCurve Settings > UI Color (--ui-color, written by the bundle); the
-   curve from Graph Line Color and the handles from Handle & Node Color. Files: nc-theme-sync.js (theme hex is
-   ignored; new --nc-ui-rgb helper var), nc-theme-sync.css, nc-flow.css (--fl-accent = var(--ui-color)),
-   nc-fluid-polish.css. Settings > Background color still re-tints the Curve tab base as before.
-3) Settings > Scale UI (70-150%, default 100%): zooms the whole interface (text, boxes, buttons) via CSS `zoom` on
-   .app driven by --ui-scale (css/style.css end of file; Settings.initUiScale/applyUiScale in js/main.js; markup
-   #ui-scale-field in html/index.html; saved as localStorage mtx.uiScale; "Reset everything" resets it too).
-   While the slider is held (mouse, touch or arrow keys) the Settings window fades out (body.is-scale-edit) so the
-   real UI can be seen; it returns on release. The Settings window itself, toast and context menu are not scaled.
-   The NeuCurve iframe is not scaled by it (its box still fills the Curve tab).
-   Cache-bust bumped: style.css ?v=10, main.js ?v=12.
-
-v14 - LANDSCAPE: LEFT SIDE OF THE CURVE TAB CONTROLS CUT OFF
--------------------------------------------------------------
-In landscape mode (graph left, presets right) the left ~32px of the control rows under the graph (reset button, "<<",
-library select / "Sav", book icon) was covered by a dark strip: NeuCurve's .sidebar-extension-bg (absolute, left:0,
-width 32px, #141414) that extends the model rail downward. The Flow layout removes the 40px left padding of the action
-area, so the strip ended up on top of the buttons. Fix: neucurve/nc-flow.css hides .sidebar-extension-bg
-(next to the "landscape" rule near the end of the layout section).
-
-
-CURVE TAB - EASE BUTTONS, INVERT, LANDSCAPE LAYOUT
----------------------------------------------------
-- Row under the value pill is now:  [Ease Out] [Ease] [Ease In]  APPLY  gear.  They apply NeuCurve's built-in
-  presets "Ease Out" / "Ease" / "Ease In" no matter which library is showing (hook window.__ncApplyDefault added
-  to assets/index.js right after "Lr.subscribe"; nc-flow.js applyDefault() falls back to clicking the tile).
-- Invert (hourglass) moved to the library toolbar, right after Live Playhead.
-- Landscape (panel wider than 480px, or Settings > layout = landscape): model tabs are a horizontal pill bar above the
-  graph, the scrub slider + library toolbar sit at the top of the right column above the preset grid, preset names
-  are shown under each tile (portrait too), tiles have no dark box (thumbnail canvas fill removed in assets/index.js).
-  navStripWidth patched 32 -> 0 (2 places) because the old vertical rail no longer lives inside the graph.
-- nc-flow.js remeasure(): re-fires the bundle's resize listener when the graph box changes size, otherwise the graph
-  stayed at its old height and was cut off at the bottom.
-
-
-CURVE TAB - THINNER GLOW + PREVIEW BALL RANGE
----------------------------------------------
-- Glow is much lighter now. Curve: neucurve/nc-glow.js  GLOW_PEAK .50->.26, GLOW_SIGMA 11->4.5, GLOW_RADIUS 36->15,
-  GLOW_STEPS 14, handle halo HALO_R 11 / HALO_A .22. Preset tiles: thumbnail glow strokes reduced (assets/index.js, search
-  "ze.lineWidth=7"). Selected tile / active tab / divider / star / APPLY glows reduced in nc-flow.css.
-- Preview ball (the white circle on the scrub slider) used to move only between 15% and 85% of the track, so it looked
-  "ahead" of the line at the start and stopped short at the end. It now covers the full track: at t=0 its left edge
-  touches the start of the line and at t=1 its right edge touches the end (assets/index.js, component with
-  "preview-track-wrapper": calc(5px + (100% - 10px) * value); 5px = half of the 10px ball in nc-flow.css).
-
-
-CURVE TAB - EASE BUTTON ICONS
------------------------------
-Ease Out / Ease / Ease In buttons use the keyframe-shaped icons copied from the Flow reference (nc-flow.js: kf() helper +
-ICON.easeOut / ease / easeIn, 25x25 filled SVG paths; sized in nc-flow.css, "Ease Out / Ease / Ease In: keyframe icons").
-
-
-CURVE TAB: GRAPH MORPH ANIMATION (neucurve/nc-morph.js + nc-morph.css)
------------------------------------------------------------------------
-Switching the curve mode (Bezier / Custom / Elastic / Bounce / Wave / Steps) now morphs the old graph into the new one
-(380 ms, cubic ease-out with a tiny overshoot, the same feel as Flow) instead of jumping. The handles fade out while the
-graph morphs and fade back in afterwards. NeuCurve's own Y-axis easing keeps running underneath; the morph always blends
-towards the newest shape, so the last frame is exactly the app's own graph. Switching tabs again mid-morph continues from
-the in-between shape. Dragging / loading a preset is untouched. Turns off with Settings > Animations = off.
-Tune: DURATION (ms) / GRID (samples) at the top of nc-morph.js. Remove: delete the <script src="./nc-morph.js"> and
-<link href="./nc-morph.css"> lines in neucurve/index.html.
-
-MOTION TOOLS TAB: removed (tab, css/motion-tools.css, js/motion-tools.js, jsx/motion-tools.jsx and their hooks in
-index.html, main.js, host.jsx).
-
-CURVE TAB: HANDLE GLIDE + WHEEL TAB SWITCH (neucurve/nc-morph.js)
-------------------------------------------------------------------
-- Handles no longer fade: during the mode morph every handle glides from where the old mode had it to where the new
-  mode wants it (same 380 ms easing as the curve). Extra handles sprout from the last old handle. The thin handle /
-  guide lines fade back in after the glide.
-- Mouse wheel over the mode tabs (Bezier / Custom / Elastic / Bounce / Wave / Steps) switches the mode: wheel down =
-  next tab, wheel up = previous tab (stops at the first / last). Works for the horizontal bar and the vertical rail.
-  Tune STEP (wheel distance per switch) and COOLDOWN (ms) in the wheel block of nc-morph.js.
-
-NEUCURVE SETTINGS: GUIDE TAB + "VISIT WEBSITE" REMOVED
-------------------------------------------------------
-The Settings popup (neucurve/assets/index.js, component with the "Settings | Guide" header) no longer has the Guide tab
-(the header now only shows "Settings") and the "Visit Website" button above the version number is gone. The version
-label (v2.10.0) stays.
-
-
-v15 - CURVE TAB: LANDSCAPE MODE TABS (WHEEL + MORPH), RIGHT SIDE CUT OFF, FLICKER GUARDS
------------------------------------------------------------------------------------------
-1) Landscape: mouse wheel over the mode tabs did nothing and switching modes did not animate. Root cause: the compiled
-   bundle has two different tab markups - portrait = ".mtab" in ".model-tabs-horizontal", landscape = ".nav-tab" in
-   ".model-nav-strip" (nc-flow.js turns it into the pill bar). nc-morph.js only knew ".mtab". It now handles both
-   (TAB_SEL / TAB_BOX_SEL at the top of nc-morph.js): the morph/handle glide starts on either, and the wheel switches
-   the mode inside whichever tab box the pointer is over (also the Graph Editor window's .model-rail).
-2) Landscape: right side cut off (last toolbar icons beside the library select were clipped). The library toolbar
-   (.fl-side .library-header) now wraps instead of overflowing, the right column can shrink (min-width:0) and the preset
-   grid scrolls vertically only. See the "v15" block at the end of nc-flow.css.
-3) Fast flicker guards (nc-flow.js): (a) build() rewrote class="fl-expand" on every pass; a same-value write still queues a
-   MutationObserver record and that observer watches "class", so build() re-armed itself every frame forever - now only
-   written when different (same for the APPLY button title); (b) the observer ignores "d" writes and anything inside
-   g.nc-glow (nc-glow / nc-morph rewrite those constantly); (c) remeasure() stops firing resize if the graph box keeps
-   changing size (more than 6 times in 1 s), which would otherwise show as blinking. Cache-bust ?v=15 added to
-   nc-flow / nc-morph in neucurve/index.html.
-
-
-[v17] NEUCURVE: RIGHT COLUMN, ICONS, GRADIENT MENU, HOVER POLISH
------------------------------------------------------------------
-1) Landscape right column: the preset dropdown has its own full-width row; the tool icons (templates, expression, preview,
-   bake, live, options) sit in a row BELOW it, equal widths, nothing clipped (neucurve/nc-polish.css + .fl-toolrow in nc-flow.js).
-2) New icons that match each button's function (ICON table at the top of neucurve/nc-flow.js).
-3) NeuCurve Settings > Background Gradient: on/off, 6 presets, Color 1/2, Glow, Direction, Intensity, Area (Whole panel / Graph only),
-   Reset. Code: neucurve/nc-extras.js (UI + engine), neucurve/nc-grad.css (translucent surfaces). Keys: neucurve_grad*.
-4) Hover / press / focus polish: css/hover-polish.css (main panel, all tabs) and the end of neucurve/nc-polish.css (Curve tab).
-   Delete the file + its <link> to undo any of these.
-
-[v18] NEUCURVE: FREE GRAPH SIZE (all layouts)
----------------------------------------------
-Drag the small grip at the bottom-right corner of the graph (Curve tab / large graph window) to resize the plot with no fixed
-aspect: wider, taller, square, anything. Shift = keep proportions, double-click = back to auto. Remembered separately for
-portrait and landscape; "auto" layout simply uses whichever is showing. Also in NeuCurve Settings > Graph Size (4 sliders + reset).
-Files: neucurve/nc-gsize.js (grip + storage/sync), nc-grad.css (grip style), nc-extras.js (Settings sliders), and a small patch in
-assets/index.js (search "__ncGS": plot-size calc now asks window.__ncGS(isLandscape) and skips the old 0.8-1.3 aspect clamp when
-a custom size is set; window.__ncGBump / __ncGPlot are exposed). Keys: neucurve_gWp gHp gWl gHl (25-100, empty = auto).
-
-TOOLTIP + LEFT NAVIGATION (build fixed14)
------------------------------------------
-- Tooltip fix (js/mt-tooltip.js): it used to stay hidden after a click / scroll / wheel until the cursor left the
-  element, and never came back after a panel re-render or window blur. Now it returns as soon as the cursor
-  moves again, and picks up the element under the cursor on mousemove (self-heal).
-- The left navigation has no tooltips any more (title="" removed from the sidebar buttons, mt-tooltip ignores .sidebar).
-- Menu tiles (.tool) now have a tooltip with the tile's full name (title set in buildTool() in js/main.js).
-- Left navigation auto-expands after 5 s of hovering (css/sidebar-expand.css + js/sidebar-expand.js) and shows the
-  tab names; it collapses smoothly when the cursor leaves. Change DWELL (ms) in js/sidebar-expand.js and
-  --sbx-w / --sbx-dur in css/sidebar-expand.css.
-
-LEFT NAVIGATION: CENTRED HIGHLIGHT (build fixed15)
---------------------------------------------------
-- The icon / name looked pushed down inside the active highlight. Causes: the highlight glow was offset 4px downward,
-  the icon and name had no common centre line, and on a short panel / other UI scale the tab buttons were squeezed
-  (flex-shrink) while the highlight kept its fixed height, so it stuck out below the icon + name.
-- css/sidebar-center.css (new, linked after sidebar-expand.css): icon + name are block boxes centred by flexbox,
-  symmetric glow. Delete the file + its <link> to undo.
-- css/sidebar-center.css also stops the tabs from shrinking (the list scrolls instead).
-- js/main.js moveIndicator(): the highlight copies the active tab's offsetHeight, so both always match.
-
-FIX 16 (Curve tab, right column)
---------------------------------
-neucurve/nc-fix16.css (linked last in neucurve/index.html): preset tiles no longer show a dark block - only the square
-preset-graph thumbnail gets a box (hover / selected), the name stays outside it, and the selected glow fits the thumbnail.
-The scrub (preview) circle has no black box / dark ring behind it any more.
-
-FIX 17 (Curve tab, preset area)
--------------------------------
-neucurve/nc-fix17.css (linked after nc-fix16.css): the big dark block behind the preset grid is gone; every saved
-(user) preset graph has its own box around the thumbnail (name outside); a soft white ambient glow sits on the right
-side of the preset area. Tune --nc-amb-white / --nc-amb-width at the top of the file (0 = no glow).
-
-FIX 18 (Curve tab, control bar)
--------------------------------
-neucurve/nc-fix18.css (linked after nc-fix17.css): the gray boxes (value pill, Ease Out/Ease/Ease In buttons, AUTO APPLY,
-library select) use the same fill/border/hover as the saved preset tiles. Variables --nc-box-* at the top of the file.
-
-CURVE TAB PRESET BOXES (fix19)
-------------------------------
-Every preset graph tile (built-in AND saved) now has a rounded translucent box behind the graph, like the reference
-photo; the preset name stays below the box. neucurve/nc-fix19.css (loaded last) replaces the old rule of nc-fix17.css
-that boxed only saved presets. Hover = lighter fill + #3a3a3a border, selected = accent border + glow. Colors come from
---nc-box-* in nc-fix18.css; corner radius is 12px in nc-fix19.css.
-
-TOOLTIP (fix20)
----------------
-css/mt-tooltip.css: the custom tooltip now uses the same box as the preset tiles (10px corners, 1.5px soft white border,
-inset highlight; in the Curve tab it follows --nc-box-border). js/mt-tooltip.js: the native browser tooltip no longer
-slips through - a titled child inside a titled parent gets its own custom tooltip, a 120 ms watchdog takes over the
-title of whatever is really under the cursor (re-created nodes, disabled buttons, titles the app puts back), and a
-leftover title on the left navigation is removed instead of popping the native tooltip.
-
-NEUCURVE STUCK-DRAG FIX (idle / screensaver)
---------------------------------------------
-If a mouse button release never reached the panel (released outside the CEP panel, screensaver, lock screen), the
-bundle kept its drag active; the first mouse move afterwards (buttons = 0) applied a huge delta and the Bezier
-handles slammed to 0/1 (S-shaped curve with both handles at the extremes). assets/index.js, function Q (mousemove
-handler): a mousemove with no button pressed while a drag / box-select is active now ends the drag (calls Ve) instead
-of moving anything.
-
-TEXTFLEX "BASED ON WORDS/LINES" EXPRESSION FIX
-----------------------------------------------
-The Amount expression read the layer text with text.sourceText.value.text, which is undefined inside an expression
-("Cannot read property 'length' of undefined"). It now uses String(thisLayer.text.sourceText) (jsx/host.jsx _tfAmountExpr).
-
-TEXTFLEX WORDS/LINES GROUPING FIX
----------------------------------
-jsx/host.jsx _tfAmountExpr: the word/line grouping now detects whether After Effects counts line-break characters in
-textIndex/textTotal (textTotal vs source length) so Words/Lines stay correct on multi-line text; spaces and line breaks
-take the group of the word before them. Verified by running the generated expressions in Node against mocks
-(230,400 combinations of Based On / Direction / Mode / Style / Markers: no errors, no NaN).
-
-SMOOTH DROPDOWN MENUS (js/mt-select.js + css/mt-select.css)
------------------------------------------------------------
-Every <select> (TextFlex Based on / Direction / Preset, Add Shortcut type, Easy Layer label colors, Clock Position...)
-now opens a themed, animated menu instead of the OS popup: fade + scale from the field, staggered items, hover and
-keyboard highlight, check mark on the current value, flips above when there is no room, type-ahead, Esc / outside
-click closes. The native <select> stays in place, so .value and "change" listeners are unchanged. Opt out for one
-select with data-native="true". The same CSS file also softens the right-click menus (.ctx-menu) and the accordion
-bodies (.collapse). Respects data-reduce-motion="true".
-
-THEMED COLOR PICKER (js/mt-colorpicker.js + css/mt-colorpicker.css)
--------------------------------------------------------------------
-Every <input type="color"> (Settings > Theme color / Background color, Add Shortcut colour, the accent menu's
-"Custom Color") opens a themed popover instead of the OS colour dialog: saturation/brightness field, hue slider,
-old/new preview, HEX + RGB fields, quick swatches, recent colours, eyedropper where supported. The input keeps
-working (value, "input" while dragging, "change" on close). The Color Palette > Custom Color wheel (.cw) is NOT
-changed. Opt out per input with data-native="true".
-
-SMOOTH SPIN BOXES (js/mt-spinbox.js + css/mt-spinbox.css)
----------------------------------------------------------
-Every <input type="number"> loses the tiny OS arrows and gets a two-part stepper on its right edge: the half under
-the pointer lights up in the theme colour, a press pulses the field, holding repeats and accelerates (x1 -> x2 -> x5),
-Shift = x10 (click, ArrowUp/ArrowDown, wheel), and the mouse wheel steps a FOCUSED field only. min / max / step are
-respected and "input" / "change" events fire as before. Opt out per field with data-native="true".
-
-
-v13 - Curve tab Particles: denser and smoother (neucurve/nc-particles.js). CONFIG.density 1/7000 -> 1/2600, max 70 -> 160, min 8 -> 22; fades use smoothstep easing, sideways sway is time-based (no jitter when speed varies), softer sprite edge, high-quality image smoothing, re-entry pause 1.8s -> 0.6s, frame dt clamp 50ms -> 34ms. Too busy? lower CONFIG.density (e.g. 1/3500) or CONFIG.max. Rain is unchanged.
-
-
-AUTO UPDATE ("Update Now")  -  v1.1.0
--------------------------------------
-Files: js/mt-updater.js, css/mt-updater.css, version.json, plus the banner / Settings > Updates markup in html/index.html.
-
-What the user sees: a small banner slides in at the top of the panel when a newer version exists:
-"Update available  v1.1.0 -> v1.2.0"  [Update Now] [Later] [What's new]. Settings > Updates has "Check for updates"
-(and an "Update Now" button once something newer is found). Update Now downloads the new zip, installs it over the
-current folder and reloads the panel by itself. If manifest.xml or jsx/host.jsx changed, it asks to restart
-After Effects instead. Nothing is installed without the user pressing Update Now.
-
-ONE-TIME SETUP (publisher)
-1. Create a free GitHub account + a repository (e.g. "multitool"). It must be PUBLIC so the panel can read the releases.
-2. Edit version.json:  { "version": "1.1.0", "repo": "YOUR-USERNAME/multitool" }   then install that build once by hand.
-3. To publish an update: raise "version" in version.json (and ExtensionBundleVersion / Extension Version in
-   CSXS/manifest.xml to match), zip the CONTENTS of the MultiTool folder (CSXS, html, css, js, jsx, neucurve,
-   version.json, README.txt at the zip's top level), then on GitHub: Releases > Draft a new release > tag "v1.2.0"
-   (same number as version.json) > attach the .zip > write what changed in the description (shown under
-   "What's new") > Publish release. Tick nothing as pre-release / draft (those are ignored on purpose).
-4. Everyone running an older version gets the banner on their next panel start (silent check, at most every
-   6 hours; "Check for updates" in Settings checks immediately).
-
-HOW IT STAYS SAFE
-- HTTPS only, from github.com. The zip's SHA-256 is verified against the checksum GitHub stores for the asset
-  (or a line "sha256: <64 hex>" in the release description); a mismatch discards the download untouched.
-- The current install is copied to ~/Documents/MyMultitoolExtension/UpdateBackup before anything is overwritten.
-  If copying fails half-way, the backup is restored automatically. Settings, backgrounds, snippets and presets live
-  outside the extension folder (Documents / localStorage), so they are not touched.
-- The installed "repo" in version.json is kept even if a new zip ships the OWNER/REPO placeholder.
-- Files are only overwritten / added, never deleted, so a removed file in a new version can remain as an unused leftover.
-- Unpacking uses the operating system's own tool (PowerShell Expand-Archive on Windows, ditto on macOS): no extra libraries.
-- Needs write permission to the extension folder: fine in %APPDATA%\Adobe\CEP\extensions (Windows) or
-  ~/Library/Application Support/Adobe/CEP/extensions (macOS); the system-wide CEP folders need admin rights.
-- Until "repo" is set to a real value the feature stays idle (Settings > Updates says it is not set up).
-
-v1.1.1+ note: "Check update" now sits in the Settings footer (between "Reset everything" and "Done"). The sidebar
-Refresh Panel button also checks for updates: it sets localStorage "mt_update_force_check", and after the reload
-js/mt-updater.js checks immediately (ignoring the 6 h throttle) and shows either the update banner or a toast
-"Panel refreshed. You are up to date (vX)". Errors / offline stay silent in this path.
-
-v1.1.2 note - spin box in the Curve tab: neucurve/index.html is a separate page, so it never loaded js/mt-spinbox.js / css/mt-spinbox.css
-and its number fields kept the tiny native arrows. It now loads both (plus neucurve/nc-spinbox.css, which tints the stepper with NeuCurve's
-own UI colour via --nc-ui-rgb). Any new page added to the extension must load these two files too to get the same stepper.
-
-v1.1.3 note - Settings now always opens from the top: Settings.open() in js/main.js focused the "Done" button (bottom of the dialog) with a plain
-focus(), which scrolled the dialog down to it. It now uses focus({ preventScroll: true }) and resets the dialog's scrollTop to 0.
-
-
-INTERFACE STYLE: GLASS / MATERIAL YOU  (Settings > Style)
----------------------------------------------------------
-Files: js/mt-uitheme.js, css/mt-uitheme.css (the picker), css/material-theme.css (the Material You look), small hooks in html/index.html
-and js/main.js. Saved in localStorage "mtx.uiTheme" ("material"; no value = Glass). Settings > Reset everything puts it back to Glass.
-- Glass = the original look (css/glass-theme.css), still the default and untouched.
-- Material You = light pastel-lavender canvas with a faint grid, pill buttons with soft raised shadows, rounded cards, navy text, filled accent
-  buttons. Active only under <html data-ui-theme="material">; delete css/material-theme.css (+ its <link>) to remove it entirely.
-- Material You is a LIGHT style: it pins <html data-theme> to "light" (main.js syncTheme() respects that; leaving it re-syncs with the AE UI).
-- Settings > Theme color still sets the accent (tonal states are that colour at low alpha). Settings > Background color is NOT used in
-  Material You (its tokens are overridden with !important); a Background image / animated background still shows.
-- The Curve tab (NeuCurve) is a dark app with no light variant, so in Material You it sits in a rounded dark card.
-- To tweak the look: the --mu-* tokens at the top of css/material-theme.css (canvas, ink, shadows, pill gradient).
-
-MATERIAL YOU (Settings > Style > Material You)
------------------------------------------------
-A Pixel-style dynamic palette. js/mt-material.js turns Settings > Theme color into a tonal palette (primary / secondary /
-tertiary + tinted neutrals) and writes --md-* variables on <html>; css/material-theme.css only reads them. Flat tonal cards,
-24-28px corners, pill indicator on the sidebar, filled-tonal buttons, Material switches. Glass is untouched.
- - Palette: 8 quick swatches under Theme color (or any colour via the Theme color picker).
- - Light / Dark: picks the scheme. Choosing one resets the Background color to the palette's own.
- - Background color: now works in Material You. Cards, borders and text are derived from it, and text flips to
-   light/dark automatically depending on how bright the colour is. "Default" next to it goes back to the palette's background.
-   It is stored separately (mtx.mdBg) from the Glass background colour, so switching styles never changes the other one.
- - The Curve (NeuCurve) tab stays a dark rounded card in both styles.
-
-EXPORT GIF (Tools tab)
-----------------------
-Tools > "Export GIF" renders the active comp as an animated .gif, no Media Encoder / ffmpeg / plug-in needed.
- - Options: Range (Work Area / Entire Comp), Width, Frame rate, Colors (256/128/64), Background (Transparent / White / Black),
-   Loop forever, Dither, Optimize file size. They are remembered between sessions (mtx.gifOptions).
- - Flow: jsx/host.jsx TOOLS_gifRender renders a PNG sequence (RGB + straight alpha) into a temp folder through a temporary
-   Render Queue item (removed afterwards, other queued items are paused and restored). js/mt-gif.js then builds ONE shared
-   palette (median cut), maps every frame to it (optional Floyd-Steinberg dithering), stores only the changed rectangle per
-   frame when "Optimize" is on, LZW-encodes and writes <CompName>_<YYYYMMDD-HHMMSS>.gif. The temp folder is deleted at the end.
- - The save folder is the SAME one Save Frame uses (folder icon on either button changes it). An existing file is never
-   overwritten (name_2.gif ...). While encoding, the Export GIF button turns into "Cancel".
- - Playback speed is exact: the GIF's total duration equals the rendered time range (delays are distributed in 1/100 s steps).
- - Limits: GIF has 1-bit transparency only (no soft edges; "Optimize" is skipped for Transparent), max 1000 frames per export
-   (lower the fps or use a shorter range), needs Node.js in the panel (already enabled via --enable-nodejs in the manifest).
- - Files: js/mt-gif.js (encoder), css/mt-gif-export.css, Export GIF section in UtilityTools (js/main.js), TOOLS_gifRender (jsx/host.jsx).
-
-IDLE SCREENSAVER + CURVE TAB FIX
---------------------------------
-Idle Mode used to park the whole UI with display:none. That shrank the NeuCurve iframe to 0x0, and when you came back
-the graph measured a wrong height (plot sat too high at the bottom). Parking now moves the UI off-screen with a
-transform (css/style.css, body.is-idle-parked .app) so every box keeps its real size and nothing is re-measured.
-
-SCRUBBY NUMBER FIELDS (js/mt-scrub.js + css/mt-scrub.css)
----------------------------------------------------------
-Every number field in the panel (Animator Text: Position X/Y/Z, Anchor Point, Rotation, Scale, Skew, Tracking, Blur, Opacity;
-Tools, Quick Comp Edit, Export GIF ...) can be changed by dragging left / right, like After Effects:
- - drag the small label next to the field (X, Y, Z, Width ...), or drag the field itself while it is not focused;
- - 1 px = one "step" of the field, Shift = x10, Alt = x0.1; min / max are respected;
- - a plain click still focuses and selects the field for typing; the right edge strip stays the up / down stepper (mt-spinbox.js);
- - "input" fires while dragging and "change" on release, so the values are read exactly as if typed (and are kept across tab switches).
-Opt out for a field with data-no-scrub="true".
-
-SETTINGS > STYLE PREVIEW + GLASS COLOUR SETTINGS
-------------------------------------------------
-- The "Material You" card in Settings > Style is now a miniature of the real style (navigation rail with pill indicator,
-  flat tonal card, filled primary pill + tonal pill, no shadows). It is painted with the live Material You palette, so it
-  follows Theme color, Light/Dark and Background color - also while Glass is the active style (js/mt-uitheme.js paintPreview(),
-  fed by the "mt-palette-preview" event from js/mt-material.js; markup in html/index.html, look in css/mt-uitheme.css).
-- The colour settings keep the GLASS look under Material You: the colour swatch inputs (Theme color / Background color) and the
-  colour picker popup (translucent blur, hairline border, small radii). See section 10 of css/material-theme.css.
-
-CURVE TAB AUTO LIGHT STYLE
---------------------------
-NeuCurve now follows the panel's style automatically. When the panel is light (Settings > Style: Glass light / auto-light,
-Material You light, or a light Background color) the Curve tab switches to a light look too: light surfaces taken from the
-panel's real background color, dark text, dark hairlines/grid, dark preset graphs. Switching back to dark restores the
-native dark look. Nothing to configure.
- - js/main.js (Curve.sync) now also posts { scheme, panelBgHex } and re-syncs when data-theme / Material palette change.
- - neucurve/nc-light.js (new) builds the light override stylesheet at runtime from NeuCurve's own CSS (neutral colors
-   inverted, accent yellow untouched, dark text on the yellow APPLY button kept) - so future NeuCurve CSS is covered too.
- - neucurve/nc-theme-sync.js decides light/dark (scheme === "light", or a light picked Background color).
-
-SETTINGS > STYLE PREVIEW FOLLOWS BACKGROUND COLOR
-The Glass preview card in Settings > Style now takes the Background color you pick (and switches its light/dark look by that
-color's brightness); previously it stayed fixed. The Material You card already followed its own background color.
-
-CURVE TAB LIGHT LOOK - STATIC STYLESHEET
-neucurve/nc-light.css is the pre-generated light look (all rules scoped to html.mt-light). nc-theme-sync.js adds that class itself
-whenever the panel style is light (or a light Background color is picked), so the dark tab bar / borders / text flip even when
-nc-light.js cannot read NeuCurve's stylesheets at runtime. nc-light.js still adds a runtime pass on top.
-
-IDLE SCREENSAVER IN LIGHT STYLE
-In a light style with no background image/GIF/video, the idle clock, date and the "You've been in After Effects for ..." chip
-use dark text on a frosted white chip (css/style.css) instead of the old fixed white, which disappeared on the light panel color.
-With a background media set, the clock keeps its white look. Dark style is unchanged.
-
-
-FIX: NEUCURVE GRAPH SQUASHED IN LANDSCAPE WHEN THE PRESET PANEL IS DRAGGED LEFT
--------------------------------------------------------------------------------
-Dragging the vertical divider to the left makes the graph column narrow. A saved Graph Size (Settings > Graph Size, also the
-bottom-right grip; the sliders default to 100/100) used to switch the plot to "custom" mode, which bypassed the aspect limit and
-let the plot fill the whole narrow-and-tall column (squashed). Now custom mode also caps the height at 1.25x the width (more
-only if you deliberately chose H% > W%), so the graph stays proportioned and is centred in the column.
- - neucurve/assets/index.js: size block next to "__ncGS" (also exposes window.__ncGAv = free space before the cap).
- - neucurve/nc-gsize.js: the corner-grip drag now measures against __ncGAv (fixes the size jump after the first drag in auto mode).
- - neucurve/index.html: cache-bust ?v bumped (nc-gsize.js v=2, assets/index.js v=3).
-
-FIX (follow-up): GRAPH STRETCHED WIDE WHEN THE PRESET PANEL IS DRAGGED RIGHT
-Same cause, opposite direction: a wide graph column let the custom-size plot stretch horizontally. Custom mode now also caps the
-width at 1.3x the height (more only if you chose W% > H%), matching the auto-mode limit. neucurve/assets/index.js (size block
-next to "__ncGS"); cache-bust assets/index.js?v=4.
-
-FIX: UPDATE NOT DETECTED UNTIL AFTER EFFECTS IS RESTARTED / "CHECKING..." STUCK (js/mt-updater.js, v=14)
-- The silent check used to run ONCE, 5 s after the panel opened. A release uploaded while After Effects was already open was
-  never noticed (and a panel refresh did not help if the Node network stack was stuck for the session). Now it re-checks quietly
-  every 20 min and whenever the panel regains focus / becomes visible (at most every 5 min). "Check update" and Refresh Panel
-  still check immediately.
-- Network: the Node request and the OS network stack (PowerShell on Windows / curl on macOS) now RACE: the OS stack starts after
-  4 s if Node has not answered, first good answer wins, a definite GitHub answer (rate limit / no release) is final, and the
-  whole check always ends within 40 s (old worst case: Node 12 s, THEN PowerShell 45 s, in a row). Requests carry no-cache
-  headers and a cache-busting query so no proxy/CDN copy is used.
-- A failed automatic check is no longer silent: Settings > Updates shows "Automatic update check failed: ..." with the reason.
-- Reminder: an update is only offered when the newest GitHub Release tag is HIGHER than version.json "version" of the installed copy.
-
-FIX: QUICK SUDDEN GLITCH / HITCH IN THE CURVE TAB (js/ae2021-compat.js, ?v=10)
-On After Effects 2021 (Chromium 74) js/ae2021-compat.js is active (gap / aspect-ratio fallback; it does nothing on newer hosts,
-which is why it never showed in a modern browser). It watched every "style" change in the page, but its own fix-ups ARE style
-changes: every pass reset the margins to empty and set them again, so the observer re-armed itself forever (measured with the
-shim forced on: ~1,200 style writes per second on NeuCurve's buttons, ~12,000/s in the main panel) and it also re-parsed all
-stylesheets on each pass. NeuCurve's APPLY glow (60 style writes/s on an SVG path) kept it busy as well.
-Now: (1) writes only happen when the value really changes (no reset-then-set); (2) the shim discards the records caused by its
-own writes (takeRecords); (3) mutations on SVG elements, the graph-size grip and canvases are ignored; (4) stylesheets are
-re-scanned only when a sheet / rule count changes. Layout result is pixel-identical to before (checked at 3 panel sizes with
-the shim forced on); style writes dropped from ~50,000 to ~24 per 4 s in the main panel. neucurve/nc-gsize.js (?v=3) also stops
-re-measuring the graph for the APPLY glow animation.
-
-FIX (follow-up): "Could not reach GitHub ... (timeout / timeout)" WHILE AFTER EFFECTS IS OPEN (js/mt-updater.js, ?v=15)
-Both the Node request AND the PowerShell/curl request timed out for api.github.com, yet it worked right after restarting AE:
-typical when ONE of GitHub's several addresses is unreachable from the user's network (ISP block / routing) - the old code
-connected to a single resolved address, so a dead one meant a timeout, and a later attempt could land on a good one by luck.
-- request(): resolves ALL IPv4 addresses of the host and tries them one after another (a new one every 2.5 s or as soon as
-  the previous fails; 10 s per address); first answer wins; TLS still verifies the certificate for the real host name.
-  Used for the release lookup AND the download.
-- Second source that does not touch api.github.com: github.com/<repo>/releases.atom (newest tag) + releases/expanded_assets/<tag>
-  (the .zip link). Started after 3 s or at once if the API fails; first good answer wins. (No SHA-256 from that source; the
-  package is still validated before anything is copied.)
-- The error text now says what was tried, e.g. "api: node: 140.82.x.x ETIMEDOUT, ... / os: ps-noreply | web: ...".
-- PowerShell request timeout 30 s -> 25 s (so it reports its own result before the 45 s overall limit).
-
-
-AUTO UPDATE v2 (RE-Faster style)  -  supersedes "AUTO UPDATE" above
--------------------------------------------------------------------
-js/mt-updater.js now updates with plain fetch() + cep.fs.writeFile, exactly like RE-Faster: no Node, no zip, no PowerShell.
-- Notice: the panel downloads update.json (a small feed) from, at the same time: version.json "feed" (optional, e.g. a Gist raw link),
-  raw.githubusercontent.com/<repo>/<branch>/update.json, and cdn.jsdelivr.net (backup host). First good answer wins.
-- Update Now: downloads every file listed in update.json (raw.githubusercontent.com, then jsDelivr), verifies each SHA-256, and only
-  when ALL files are downloaded and verified writes the changed ones. If a write fails, the old files are restored. version.json is
-  written last. If CSXS/manifest.xml changed in a way that matters, After Effects must be restarted.
-- Publisher steps: put Multi_Tool.zip in the work folder and run Update.bat (see HAND-OFF RULES at the top). It writes
-  update.json + version.json and pushes everything to the PUBLIC repo in version.json ("repo", optional "branch", default "main").
-  update.json may also contain "remove": ["old/file.js"] to delete files, and "ref" (a commit/tag) to pin the download source.
-- Install / manual update on a PC: Install.bat (copies the extension into %APPDATA%\Adobe\CEP\extensions\MultiTool).
-- Safety: HTTPS only; paths in the feed must be plain relative paths (no "..", no drive letters); hashes are checked; no token is
-  needed or stored. Whoever controls the repo controls what runs in the panel, so keep the GitHub account protected (2FA).
-
-SPEED GRAPH ICON STAYS LIT WHILE OFF (fix21)
---------------------------------------------
-The Speed Graph button only works in Bezier mode. In other modes the app marks it .disabled but keeps the old .active flag, and
-the Flow layout (.fl-ico) had no .disabled style, so the icon stayed lit (accent colour, tinted square, filled bell) although its
-position was OFF. neucurve/nc-fix21.css (loaded after nc-fix20.css) makes a disabled Speed Graph look OFF: dimmed, idle colour,
-no tinted square, no filled bell, no hover lift (light theme included). It lights up only when .active and NOT .disabled.
-No bundle (assets/index.js) change. Tune the dimming with "opacity: .3" at the top of nc-fix21.css.
-
-Part 2 (nc-fix21.css v2): the graph had left speed mode (button state OFF) but the icon still looked lit. Cause: hover looked exactly
-like ON - nc-polish.css gave .fl-ico:hover the accent colour + tinted square + lift, and nc-icons-pro.css filled the bell on hover just
-like on .active - and after a click the pointer (or, on touch screens, a sticky :hover) is still on the button. Now only .active is
-accent + filled; hover on an OFF icon is a faint white lift with no accent / fill, and @media (hover: none) removes hover looks entirely.
-
-EASE / EASE IN / EASE OUT ICONS = AFTER EFFECTS KEYFRAMES (fix22)
------------------------------------------------------------------
-The three buttons under the graph (Ease Out | Ease | Ease In) now use the keyframe shapes After Effects shows in the timeline instead of
-little curves: Ease = hourglass; Ease In = hourglass half on the left narrowing into a point on the right; Ease Out = the mirror. Filled, softly rounded corners, same
-colour / hover / active behaviour as before. Edit the paths in BY_CLASS (neucurve/nc-icons-pro.js; the same shapes are kept in ICON of
-neucurve/nc-flow.js as fallback); stroke width / corner softness = ".ncp-k" in neucurve/nc-icons-pro.css (stroke-width 1.4).
-
-BATCH FIXES AFTER THE UI REVIEW (build fixed17)
------------------------------------------------
-- Ease In / Ease Out icons redrawn (neucurve/nc-icons-pro.js BY_CLASS + nc-flow.js ICON): no centre step any more, so they no longer
-  read as rewind / fast-forward buttons; deeper concave sides so they read as the two halves of the Ease hourglass.
-- Info / About now shows the installed version from version.json (js/mt-updater.js exposes MTUpdater.version(); js/main.js infoVersion()).
-  Fallback constant VERSION in main.js = "1.8.1". Note: CSXS/manifest.xml still says 1.1.0 - harmless, the updater never touches it.
-- Expression Code: "Propert(ies)" -> "Properties" (button, tab hint, Shortcutz hint).
-- css/mt-gif-export.css: the GIF progress fill used "inset: 0" (not supported by Chromium 74 / AE 2021); now top/right/bottom/left: 0.
-
-NEUCURVE: INVERT SPAM FIX (v1.8.12, bundle index.js?v=5)
---------------------------------------------------------
-Spamming Invert in the Curve tab slowly deformed the graph (e.g. 0.8,0.1,0.9,0.4 drifted toward 0.45,0.35,0.55,0.65). Cause: Invert
-animates the params over 300 ms, and each extra click inverted the in-between value of the running animation instead of its final value.
-Fix (neucurve/assets/index.js, no UI change): si() remembers the final target of the running animation (NcInvTgt) and writes the exact
-target when it ends; ni() (Invert) inverts that target while an animation is running. An odd number of clicks now always ends as the
-exact inverse, an even number as the original. Custom / Steps were never affected (they are not animated).
-
-SMOOTHER MOTION (v1.8.13: css/mt-smooth.css + js/mt-smooth.js)
----------------------------------------------------------------
-Additive layer, loaded after mt-motion-fix.css (material-theme.css is still the last stylesheet). Only transform / opacity animate.
-- Sidebar highlight: cubic-bezier(0.65, 0, 0.35, 1), no bounce; duration 240-440 ms grows with the distance (mt-smooth.js sets --mt-ind-dur).
-- Tab switch: cards 0.38 s + 18 ms stagger (was 0.44 s + 22 ms). --mt-leave-dur is left alone: showTab() in main.js waits for it.
-- Settings modal: opens 240 ms ease-out (no elastic overshoot), closes 140 ms; the backdrop waits until the card is gone.
-- Finished flash: when an action button / tile loses .is-loading, a soft accent veil plays for 0.5 s (skipped if an error toast is showing).
-  Which elements: DONE_SEL at the top of js/mt-smooth.js.
-- Animations OFF (data-reduce-motion="true") disables all of it.
-Off switch: delete css/mt-smooth.css + js/mt-smooth.js and their two tags in html/index.html.
-
-GRID TILES: ELASTIC SPRING RESTORED (v1.8.14, css/mt-smooth.css section 5)
----------------------------------------------------------------------------
-hover-polish.css sets "transform .18s ease-out" on every clickable element, which replaced the intended
-"transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" of .tool (style.css) for hover and press - so the Easy Layer grid
-tiles stopped springing back on release. mt-smooth.css now restores the elastic transform timing on .tool only
-(colour / shadow / opacity keep the hover-polish timing). Verified by reading the computed transition in Chromium with the
-real stylesheet order.
-
-
-TAB ANIMATION MENU (Settings > Tab animation)
----------------------------------------------
-Pick how cards enter when you switch tabs: Smooth (default, unchanged), Glide (follows the sidebar: down = cards rise from
-below, up = they drop from above), Pop, Fade, Cascade, None. Speed 50-200% and Easing (Soft / Even / Spring) apply to every
-style and to the way the Settings window opens. Each card previews its own motion on hover. Greyed out while
-Enable Animations is OFF; "Reset animation" and "Reset everything" return to Smooth / 100% / Soft.
-Files: css/mt-anim-styles.css, js/mt-anim.js (stored in localStorage mtx.animStyle / mtx.animSpeed / mtx.animEase).
-With the default choice nothing is set on <html>, so the panel behaves exactly as before. Two small hooks in js/main.js:
-staggerCards() keeps .mt-stagger as long as MTAnim.cleanupMs() says (slow speeds / Cascade need more than 900 ms), and the
-settings-reset handler calls MTAnim.reset(). Not scaled by Speed: the sidebar highlight (mt-smooth.js sets its own duration)
-and the 110 ms leave fade (showTab() waits for exactly that long).
-
-
-CURVE SETTINGS WINDOW = FLOW STYLE
---------------------------------------------
-The NeuCurve Settings window (gear icon) is now a standalone page copied from Flow's settings window:
-neucurve/settings.html + nc-settings.css (Flow's stylesheet) + nc-settings-extra.css + nc-settings.js.
-Layout: sidebar tabs (Appearance / Background / Handles / Behavior) + Profile card at the bottom, header with
-title, grouped rows, Edit/Close color editor (hue / saturation / value + hex), quick preset swatches, custom dropdowns.
-manifest.xml: the settings extension now opens ./neucurve/settings.html?ext=settings at a fixed 585 x 625 like Flow.
-It does NOT load the Svelte bundle any more. Every control uses the SAME localStorage keys (prefix neucurve_) and the
-same "com.neucurve.sync" event as before, so the Curve tab, Graph Editor, nc-extras.js, nc-bg.js (Adjust Background),
-nc-gsize.js and nc-particles.js are untouched.
-Tabs: Appearance = UI / Graph line / Handle colors, Quick Presets, Preset Glow (wgDir wgInt wgSize).
-Background = gradient (gradOn gradC1 gradC2 gradGlow gradDir gradInt gradArea) + graph image (bgImagePath, bgOpacity,
-"Adjust Background" button = nc-bg.js editor). Handles = hStyle hSize hLine hImg. Behavior = layoutMode, autoApply,
-overshoot, falling effect (pEffect pColor pAlpha), graph size (gWp gHp gWl gHl). Profile = name / bio / picture
-(neucurve_profile, local to this window only).
-Not ported on purpose: Language (NeuCurve UI stays English), RGB Mode, Hide Home Indicator, home-indicator color,
-video background (NeuCurve has no such feature). The old Svelte settings page is still inside assets/index.js but
-is no longer opened. Restart After Effects once so CEP reloads the manifest.
-
-CURVE TAB PRESET BOXES AUTO-FIT (nc-fix22.css)
------------------------------------------------
-The boxes behind the preset graphs now auto-fit the panel like Flow: columns = repeat(auto-fill, minmax(44px, 1fr)),
-so the panel width decides how many boxes fit in a row, every box stays square and fills the leftover width.
-The old "Grid Columns" slider (3-8) no longer changes anything. Smallest box size: --nc-tile-min in nc-fix22.css.
-To go back to fixed columns, delete the nc-fix22.css line from neucurve/index.html.
-
-
-CURVE TAB VIEW: GRAPH ONLY / PRESETS ONLY (nc-view.css + nc-view.js)
-----------------------------------------------------------------------
-Curve Settings > Behavior > "Curve Tab View" has two toggles that exclude each other (turning one on turns the other off):
-  Hide Preset Graphs   -> only the graph column stays (mode tabs, graph, tools, Apply, gear); the preset column and divider are gone.
-  Hide Graph Settings  -> only the preset graphs stay (slider, library toolbar, preset grid). The Apply bar and the gear stay on
-                          purpose: presets still need Apply, and the gear is the way back to Settings.
-Both off (default) = the normal two-column Curve tab, unchanged.
-Works in portrait and landscape. Not applied to the Large Graph Editor window or the Settings window.
-Storage: localStorage neucurve_hidePresets / neucurve_hideGraph ("true"/"false"), synced live through the same
-"com.neucurve.sync" event as every other NeuCurve setting (no restart of the panel needed).
-Files: neucurve/nc-view.css, neucurve/nc-view.js (linked at the end of neucurve/index.html), neucurve/settings.html (new group),
-neucurve/nc-settings.js (two toggles + the exclusion), neucurve/nc-settings-extra.css (hint text under a toggle label).
-To remove the feature: delete the nc-view.css / nc-view.js lines from neucurve/index.html.
-
-
-CURVE TAB: TOOL ROWS FIT THE GRAPH COLUMN IN LANDSCAPE (nc-fix23.css)
-----------------------------------------------------------------------
-In the side-by-side layout the rows under the graph used to overflow the narrow graph column (save-preset icon over the divider,
-value pill squeezed to "0", Apply 0px wide, gear outside). Both rows now wrap: icons shrink 30 -> 24px, the value pill and Apply
-keep a minimum width and move to their own line when the column is narrow. Wide columns keep single-line rows. Portrait untouched.
-To go back, delete the nc-fix23.css line from neucurve/index.html.
-
-
-SETTINGS DROPDOWNS NO LONGER CUT OFF (nc-settings.js place(), nc-settings.css .is-up)
-----------------------------------------------------------------------
-The Background Effect list always opened upward, so near the top of the scroll area its first items were clipped and could not
-be scrolled to. Every Settings dropdown (Layout Mode, Background Effect) now opens downward when it fits, otherwise upward,
-and if neither side has room the list gets its own scrollbar.
-
-
-HANDLE NUMBERS, DROPDOWN CLIP, AUTO WINDOW SIZE (nc-handle.css/js, nc-settings.*, manifest.xml)
-----------------------------------------------------------------------
-- Handle numbers: press (or drag) a handle in the Curve tab and its value ("0.38, 0.43") shows next to it, plus the 0 / 1 axis
-  numbers; release = clean Flow look again. The label was always drawn by the bundle but nc-flow.css hides every <text> in the
-  graph; nc-handle.css un-hides the value label and nc-handle.js sets html.nc-press while the pointer is down.
-  Files: neucurve/nc-handle.css, neucurve/nc-handle.js (linked in neucurve/index.html).
-- Falling Effect / Layout Mode list cut off: the card (.settings-group, overflow:hidden) clipped the open list. The open card now
-  gets .has-dd-open (overflow visible, raised above the next cards) and the list picks up / down / scrolls (place()).
-- Settings window fits its content: after opening, switching tab, opening a color editor or any layout change, nc-settings.js
-  fitWindow() calls CSInterface.resizeContent(585, height) so the active tab fits, limited to the screen height (min 420).
-  manifest.xml: settings window is now 585 x 420-1400 (was fixed 585 x 625) and the window box in nc-settings-extra.css follows
-  the window height. Restart After Effects once so CEP reloads the manifest.
-
-
-GRAPH SIZE MENU REMOVED FROM CURVE SETTINGS
-----------------------------------------------------------------------
-Behavior no longer has the "Graph Size" group (4 sliders + "Reset to Auto"). The graph can still be resized by dragging the small grip
-at the graph's bottom-right corner in the Curve tab (nc-gsize.js is untouched, same neucurve_gWp/gHp/gWl/gHl keys).
-
-
-SETTINGS WINDOW (separate window, like NeuCurve Settings)
----------------------------------------------------------
-The gear button now opens Settings in its own window (html/settings.html, extension id com.ogatt.multitool.settings,
-registered in CSXS/manifest.xml as Modeless). Sections: Appearance, Background, Motion, Idle screen, Easy Layer, Data and updates.
-The controls themselves still live in #settings-modal inside the panel (never shown now), so every existing handler keeps working.
-js/mt-settings-remote.js (panel) replays what you do in the window on those controls and sends their state back;
-js/mt-settings-window.js (window) mirrors it. Transport: js/mt-settings-bus.js (CEP event "com.multitool.settings.*").
-Controls are matched by id or data-* attribute, so a new control needs the same id in html/index.html and html/settings.html.
-After updating, restart After Effects (the manifest changed).
-
-Settings > Background > "Use original media colors" (same switch as NeuCurve)
-- ON (default, same look as before): image / GIF / video keep their own colors.
-- OFF: background goes grayscale + contrast(1.05), like NeuCurve. Saved in localStorage "mtx.bgOrig"; Reset settings turns it back ON.
-- Files: html/index.html + html/settings.html (#bg-original-color), js/main.js (Settings.init), css/style.css (html.mt-bg-gray).
-
-NeuCurve > Settings > Adjust Background: preview fix
-- The full-window preview stayed blank when the Settings window did not get "?ext=settings" in its URL. nc-bg.js now also detects
-  settings.html itself. "Done" label now picks a readable color on a white/light UI color (--nc-bge-on).
-
-NeuCurve > Settings > Adjust Background now matches Multi Tool's Background "Display" editor
-- Same card (solid, 14px radius, 22rem), title "Display", dim labels + bold values, sliders with accent fill-trail, pill Reset/Done buttons.
-- Files: neucurve/nc-bg.css, neucurve/nc-bg.js (fill-trail --_pct).
-
-Multi Tool > Settings > Background > Adjust background now looks like NeuCurve's editor (the reference)
-- css/mt-bg-editor.css (loaded before material-theme.css): same card, sizes, thin slider, mono readout and buttons. Title "Adjust Background".
-- NeuCurve's own editor is back to its original look (only the earlier preview fix + readable Done label are kept).
-
-Multi Tool Settings window > Background > Adjust background: NeuCurve-style preview (js/mt-bg-preview.js, css/mt-bg-preview.css)
-- The Settings window turns into a full-window preview of the background; the bright frame = the shape of the panel, the rest is dimmed.
-  Drag = move, scroll = zoom, Esc / Done = close. Card: Opacity, Zoom, Position X/Y, Reset, Done. The panel behind updates live.
-- The panel no longer hides its UI for this; the old in-panel editor (#bg-editor) stays as a fallback (opened from the panel's own Settings modal).
-- Panel side: js/mt-settings-remote.js sends "bgview" (view/opacity/panel shape) and, on request, "bgsrc" (file / data URL).
-  A session-only video (blob: URL) cannot be shown in another window: the sliders still work, the preview shows a note.
-
-Idle screen: time in After Effects, timer, notes, daily list (js/mt-idle-focus.js, css/mt-idle-focus.css)
-- Idle screen now shows, under the clock: live Hours / Minutes / Seconds in After Effects, the timer (progress bar, pulses when done),
-  a "Today" daily list (up to 8 tasks) and your notes. The idle screen is display-only; edit everything in Settings > Idle screen.
-- Timer: set hours + minutes, Start / Pause / Resume / Reset. Keeps running while the panel is open (survives a panel reload; if it ran out
-  while the panel was closed it shows "Time is up"). When time is up: toast + sound (switch + volume + Test sound in the same section).
-- Sound: "Anime girl voice + chime" = a rising sparkle chime, then a female voice installed on the computer (Japanese if available,
-  otherwise English), pitched up, saying a short "time's up". "My own file" copies a chosen audio file to Documents/MyMultitoolExtension/Sounds
-  (use a real anime voice clip here). If no voice exists on the computer the chime alone plays.
-- Daily list ticks clear at the start of a new day (tasks stay). "Reset everything" clears all of it.
-- The old one-line session chip (.idle-session) is hidden; the live segments replace it.
-
-[settingsfix] Settings window did nothing (Multi Tool) + NeuCurve Settings cut off.
-- js/mt-settings-bus.js: every message now travels over BOTH the CEP event AND a localStorage mailbox (+ storage event + 250 ms poll),
-  de-duplicated by sender id / counter. If CEP events are dropped, the settings still reach the panel and the panel state still reaches the window.
-  Old requests left in storage from an earlier session are never replayed. Cache-bust ?v=2.
-- neucurve/nc-settings-fit.css (new, loaded last in neucurve/settings.html): removes the hard-coded 583 x 620 / 559 x 596 / 383 px boxes.
-  The window now follows its real size; rows wrap; below 560 px wide the sidebar becomes icons only (scaled displays have a narrower CSS viewport than 585).
-- CSXS/manifest.xml: Curve settings window MinSize width 585 -> 380, MaxSize 585 -> 900 so it can be resized. Restart After Effects after installing.
-
-[motionfix] Animations ignored when Windows "Show animations" is off; NeuCurve color dots; "Use Original Media Colors".
-- Removed the remaining @media (prefers-reduced-motion) blocks (hover-polish, mt-settings-pro, mt-settings-window, nc-flowfx, nc-gbox,
-  nc-icons-pro, nc-polish). They froze hover lifts, settings-window transitions, NeuCurve falling particles/rain and icon motion whenever the
-  OS animation setting was off. Animations now only stop through Settings > Enable animations (<html data-reduce-motion="true">).
-- neucurve/nc-settings.js: the colored dot on every "Edit" color button (UI / Theme, Graph Line, Handle & Node, Effect) now follows its color
-  (only the two gradient buttons were painted before, the rest stayed black).
-- neucurve/nc-bg.js: "Use Original Media Colors" off now really grayscales the background. A CSS filter on an SVG <image> is ignored by older
-  CEP Chromium, so an SVG feColorMatrix filter (#nc-gray-f) is set inline on the graph image and on the Adjust-background preview.
-
-[cardsize] Curve tab > preset options (three dots) > Card Size slider did nothing.
-- neucurve/nc-fix22.css forced grid-template-columns to auto-fill and overrode the slider's --grid-cols. It now uses repeat(var(--grid-cols, 4), 1fr),
-  so the slider (3-8 columns) changes the card size again. Tiles stay square. Cache-bust ?v=2.
-
-[dropdowns+sound] Settings-window dropdowns match Multi Tool; anime voice removed; custom sound option.
-- html/settings.html now loads js/mt-select.js + css/mt-select.css + css/mt-settings-dd.css: every <select> in the Multi Tool Settings window opens the same
-  animated menu as the panel (pop-in, staggered items, accent highlight bar, check mark) and follows the theme color live.
-- neucurve/nc-settings-dd.css (new, last in neucurve/settings.html): Layout Mode / Background Effect menus restyled to the same look, tinted by the NeuCurve
-  UI / Theme Color (--p-rgb). Behavior unchanged.
-- Idle timer sound (Settings > Idle screen > Sound): "Anime girl voice" and its speech code were deleted. Options are now "Chime (built-in)" and
-  "Custom sound file". Choosing Custom with no file opens the file chooser at once; until a file exists the chime plays. A saved old "voice" value becomes "chime".
-
-
-IDLE SCREEN: SLIDE / TAP TO LEAVE, EDITABLE NOTES + TASKS, UNFINISHED HISTORY
-Mouse movement no longer leaves the idle screen. A bar at the bottom does: Settings > Idle screen > "Leave idle screen by"
-= Slide (drag the round handle to the end of the bar and release) or Tap (click the bar). Esc leaves in both modes.
-Code: Idle.applyExitMode()/bindUnlock() in js/main.js, #idle-unlock in html/index.html, .idle-unlock in css/mt-idle-focus.css.
-Key: mtx.idleExit = "slide" | "tap" (default slide).
-While idle, the Today list and the Notes card take clicks and typing: tick a task, edit its text, add (max 8) or remove it,
-type in Notes. Edits are mirrored into the Settings controls (same mtx.todoN / mtx.todoDoneN / mtx.notes keys).
-Daily tasks no longer get lost: tasks, ticks, notes and history are kept in memory, in localStorage and in
-Documents/MyMultitoolExtension/DailyTasks.json (written 0.4 s after each change). On start, the file is used when
-localStorage is empty or older (cleared, or full because of a big GIF background).
-Unfinished history (mtx.missed, JSON): when the date changes, every task that was not ticked moves there with the date it
-was missed (same task missed again = one entry, day count goes up), the ticks reset, the tasks stay. Open it with
-"Unfinished (n)" under the Today list. Finish = done today (leaves the history and ticks today's task with the same text);
-x = remove. Ticking today's task also clears its history entry. Settings > Idle screen > Daily list shows the count and
-has "Clear history". Code: newDay()/readMissed()/finishMissed() in js/mt-idle-focus.js.
-
-SETTINGS WINDOWS: NO NATIVE CONTROLS (Multi Tool + NeuCurve)
--------------------------------------------------------------
-Both Settings windows now use the same controls as the Multi Tool panel:
-- Color fields open the themed picker popover (js/mt-colorpicker.js). NeuCurve "Edit" buttons use it too; the old inline
-  hue/saturation/value sliders are gone (nc-settings.js openColorEditor, anchored through an invisible input).
-- Number fields get the themed stepper (js/mt-spinbox.js, Multi Tool window).
-- Dropdowns use the themed menu (js/mt-select.js in Multi Tool, nc-settings.js dropdown + nc-settings-dd.css in NeuCurve).
-- Sliders (.settings-range and the Adjust Background preview) use the panel slider: sunken track, accent fill, round thumb.
-- Checkboxes (.settings-check) are drawn custom, with an accent fill and tick.
-Styles: css/mt-settings-controls.css (shared, loaded last) + neucurve/nc-settings-controls.css (NeuCurve accent bridge).
-Only the OS file chooser (Choose image / Browse) stays native; CEP has no themed replacement for it.
-
-IDLE SCREEN: TAP MODE LOOK
---------------------------
-Settings > Idle screen > Leave idle screen by > Tap now shows a round beacon button (pulsing rings, "Tap to open" under it,
-no bar) instead of the slide-style pill. Slide mode is unchanged. Styles: css/mt-idle-focus.css ([data-mode="tap"] block);
-the extra tap icon sits next to the chevron inside #iu-handle in html/index.html and is shown only in tap mode.
-
-
-CURVE DRAG SMOOTHNESS, MOVE CURSOR, SETTINGS CONTROLS, MINIMAL TAP SCREEN
---------------------------------------------------------------------------
-- Dragging a handle / the curve was heavy because neucurve/nc-glow.js re-synced 14 wide blended strokes (plus a forced
-  getComputedStyle) synchronously on every mutation. Now: 8 glow steps, no mix-blend-mode, one sync per animation frame,
-  cached curve colour, and only every 3rd glow layer is drawn/updated while a drag runs (nc-glow.css html.nc-graph-drag;
-  full glow returns on release).
-- Handles and anchors show the Move cursor on hover and for the whole drag (nc-live.js adds html.nc-handle-drag, nc-live.css).
-  Dragging the empty graph keeps the crosshair.
-- css/mt-final-controls.css (last in html/settings.html and neucurve/settings.html): every range slider and scrollbar in both
-  Settings windows is themed; color-scheme is set so nothing falls back to the OS look. js/mt-settings-polish.js now sets --fill
-  on every range (also when its value is set from code).
-- Idle screen, Tap mode: the filled accent disc + two pulsing rings + caps label became one hairline ring with a dot, one slow
-  ring and a quiet label (css/mt-idle-focus.css). Height fits the space the idle box reserves, so it no longer overlaps the cards.
-
-GRAPH RESIZE GRIP MOVED (Curve tab)
------------------------------------
-The resize grip (nc-gsize.js) no longer sits on the plot's bottom-right corner. It is now a faint 14px mark in the box's corner
-cluster, directly left of the expand icon, and turns solid on hover. Drag, Shift = keep proportions, double-click = auto: unchanged.
-Styles: neucurve/nc-gbox.css (v21 block).
-
-CURVE TAB: OVERSHOOT RESISTANCE
--------------------------------
-With "Allow Overshoot" ON, dragging a Bezier handle or a Custom anchor/handle above 1 or below 0 now feels heavy: inside 0..1 the
-handle follows the pointer 1:1, outside it only follows a fraction that shrinks fast (pointer 0.5 past the edge = handle 0.14 past,
-and it can never pass about 0.37 beyond the edge). That discourages overshoot without removing it. Allow Overshoot OFF still clamps
-hard to 0..1. Elastic / Bounce / Wave are unchanged. Bundle patch: ncClampOv() / ncClampOvInc() / ncOvG() in assets/index.js.
-Switch the resistance off (plain free overshoot again): localStorage neucurve_ovResist = "0".
-
-CURVE TAB: FLOOR FILLS THE GRAPH BOX + SETTINGS DROPDOWN FIX
-------------------------------------------------------------
-1) Graph floor / background fills the whole graph box (neucurve/nc-gfill.js, nc-gbox.css v20, nc-bg.js v16).
-   The plot (curve, handles, grid, 0..1 range) keeps its size. Only the floor rect and the Graph Background image are stretched
-   to the .canvas-area box plus OVERSHOOT px on every side (default 6, constant at the top of nc-gfill.js), so the background
-   shows edge to edge with no seam. .canvas-area crops the overshoot. Off: localStorage neucurve_gFill = "0".
-   Settings > Graph Background > Adjust Background now previews the shape of the whole box (bgAspect follows the box).
-2) NeuCurve Settings dropdowns (Layout Mode / Background Effect), nc-settings.js v9:
-   - the open list is moved to <body> with position:fixed (class is-floating), bounded by the window, so no card / scroll area /
-     transformed ancestor can clip or offset it; small windows open up or down with the most room.
-   - ":focus-visible" removed from dropdown selector lists in nc-settings.css / nc-settings-pro.css / nc-settings-dd.css: old CEP
-     (Chromium < 86) drops the whole rule when one selector in the list is unknown, which killed the hover / open styles.
-
-CURVE TAB: NO OVERSHOOT RESISTANCE + LANDSCAPE PLOT FILLS THE BOX
------------------------------------------------------------------
-Supersedes "CURVE TAB: OVERSHOOT RESISTANCE" above.
-1) Resistance is now OPT-IN. Dragging a Bezier handle / Custom anchor past 0 or 1 follows the pointer 1:1, exactly like inside 0..1,
-   so entering overshoot no longer feels different or heavy. Bring the old rubber-band back: localStorage neucurve_ovResist = "1".
-   Allow Overshoot OFF still clamps hard to 0..1. Bundle patch: ncOvRes() in assets/index.js.
-2) Landscape layout: the plot was only (windowWidth * 50%) wide using a stale width, then capped again by the 1.3 aspect rule, which left
-   wide empty bands left/right of the plot. Now the plot width is the measured width of the graph box (bundle: r(12,s=se||...)) and
-   "fit" (no aspect cap, no 300px cap) applies to landscape too (nc-gsize.js v8: __ncGS / __ncGClamp(nw,nh,panelW,land)).
-   Together with nc-gfill.js the floor and the Graph Background reach the box edge plus 6px overshoot.
-   Old landscape look: localStorage neucurve_gFit = "0".
-
-CURVE TAB: PREVIEW STRIP INSIDE THE GRAPH BOX WHEN "HIDE PRESET GRAPHS" IS ON
------------------------------------------------------------------------------
-The scrub strip (track line + ball that previews the animation of the curve) used to disappear together with the presets. In the
-graph-only view it is now docked inside the graph box, along the bottom edge (left of the resize grip / expand icon).
-Click the strip = Preview (it presses the Preview button that is hidden with the preset toolbar; the ball runs along the track).
-Turning Hide Preset Graphs off hands the strip back to nc-flow.js (under the graph / above the presets) as before.
-Files: neucurve/nc-view.js v3 (dock + click), nc-view.css v3, nc-flow.js v24 (does not re-park the strip while nc-view-graph is on).
-
-CURVE TAB LIVE PREVIEW BALL + GRAPH RESIZE GRIP FIX
----------------------------------------------------
-Live Preview Ball (neucurve/nc-ball.js + nc-ball.css): the ball that ran on the scrub strip under the graph now runs INSIDE the
-graph, looping forever along the drawn curve (x = time, y = value) with a short comet tail. It follows every edit live and works in
-all modes (Bezier, Custom, Elastic, Bounce, Wave, Steps) and in the Large Graph Editor. The strip under the graph is hidden while it
-is on. The Preview (play) button restarts the run. Settings > Behavior > "Live Preview Ball" (neucurve_liveBall, default 1);
-OFF = ball removed, strip comes back.
-
-Resize grip fix (neucurve/nc-gsize.js v24): the square box cap used to switch off on the first drag step, so the box jumped to the
-full panel width, the plot jumped, the grip left the cursor, and it flickered at 100%. The box now stays put while resizing; only the
-plot inside it changes (25-100% per axis). Make the whole box bigger with the divider under it. Double-click the grip = auto.
-
-Idle screen: slider and "About" removed
-The unlock slider/tap bar (#idle-unlock), the "Leave idle screen by" setting (mtx.idleExit) and the About info button/popover
-are gone. Leave the idle screen with Esc or by clicking an empty spot (Idle.bindLeave() in js/main.js). Mouse movement does not leave.
-
-IDLE SCREEN WIDGETS (adjust)
-----------------------------
-Idle screen > small button bottom right = "Adjust widgets" (css/mt-idle-adjust.css, js/mt-idle-adjust.js).
-Drag the grip under a widget to resize it (the width snaps to a 12-column grid with equal gaps; text scales with the width), eye button = show / hide it, "Reset sizes"
-= defaults, button again or Esc = done. The Timer now always shows on the idle screen with play / pause / reset
-(js/mt-idle-focus.js renderTimerChip). Clicking a button that redraws its own icon (stopwatch / timer) no longer
-counts as an empty-spot click that leaves the idle screen (bindLeave in js/main.js uses event.composedPath()).
-
-Idle screen motion + auto-hide (css/mt-idle-adjust.css, js/mt-idle-adjust.js)
-After a few seconds without movement the Hide-panels switch, every box and the adjust button fade + slide away (staggered),
-so the wallpaper shows; mouse move / touch / key brings them back (the first tap on a hidden UI only reveals it).
-Not while adjusting, hovering a box, typing in one, or in "Mouse move" exit mode. Adjust mode > "Auto-hide" pill: off / 3 / 6 / 10 s
-(key mtx.autoHide, default 6). Changing a box width glides (FLIP, 280 ms); reduce-motion switches all of it off.
-
-Idle screen: move boxes, no more "Hide panels" (fix19)
-The "Hide panels" switch is removed; the cards are always open. Adjust button > drag any box anywhere (eased follow, lift, soft snap
-to the other boxes / its own place with guide lines; double-click = back; arrow keys nudge a focused box). Stored as an offset from the
-box's grid place in mtx.wLayout (x, y). "Reset layout" puts every box back (position + size). Show / hide per box: eye button.
-
-Idle screen: no stacking + self-hiding adjust button (fix20)
-A box dropped / resized / reset onto another one glides to the nearest free spot (red outline while dragging over another box);
-saved layouts are checked when the idle screen opens and when the panel is resized. The adjust button hides itself after ~2.5 s
-without mouse movement (not while adjusting) and returns on the next move.
-
-fix21: clicking the adjust button froze / crashed the panel. The body class observer in js/mt-idle-adjust.js re-wrote a body class on every
-callback while adjusting, which queued a new mutation record, forever. It now reacts only to the idle screen opening / closing, and body
-classes are written only when they really change (setClass).
-
-fix25: scrolling the left tab bar could drop the panel into the idle screen. js/tab-wheel.js handles that wheel on the window
-(capture) and stops the event, so the Idle timer (document capture listener in main.js) and js/mt-away.js never saw it, and the
-countdown kept running while you scrolled with a still mouse. tab-wheel now dispatches "mt-wheel-activity" before swallowing the
-event; Idle (main.js) and mt-away.js listen for it and count it as activity.
-
-fix26: coming back to Animation Presets now lands on the old scroll position at once, like the Tools tab. The "Presets" card title
-carries a live count ("Presets (60)", filled in as soon as the tab is painted from the cache), so its open/closed memory key
-("Presets" on a cold open, "Presets (60)" on the next visit) never matched and the card came back closed; there was nothing tall
-to scroll to, so the offset stayed at the top until the card was reopened. js/panel-refinements.js now ignores a trailing "(n)" in
-the key (open state and card accent colour), so the card returns open and the saved offset applies on the first frame.
-
-fix27: NeuCurve lag.
-- Mode switch (Bezier -> Custom and back): the morph (nc-morph.js) and the live ball (nc-ball.js) sampled the Custom path with
-  getTotalLength + up to 1200 getPointAtLength calls (about 70 ms per switch, far more on a cold JS engine right after AE starts;
-  nc-ball.js did 260 of them on EVERY Custom drag frame). New sampleCubicPath() evaluates the M / L / C path analytically; the
-  geometric sampler stays as a fallback for any other command and is capped at 400 points. Measured: no getPointAtLength left in
-  a mode switch, switch time about 100 ms -> 50 ms, no long task.
-- Constant background work: the live ball (nc-ball.js) and the APPLY glow (nc-apply-glow.js) wrote ~2000 attributes a second. Both now
-  run at ~30 fps, stop writing while the graph is being dragged (the ball is hidden for that time, nc-glow.css), and the ball no
-  longer forces a layout every frame. Mutations at rest: 1239 -> 630 per 3 s; graph drag keeps a steady 60 fps in the test.
-
-fix31: NeuCurve portrait preset tiles looked wrong (huge cards, cut off at the bottom). nc-fix22.css forced repeat(--grid-cols, 1fr),
-so on a wide panel the default 5 columns became ~150px squares with thick curves. New neucurve/nc-fix24.css (linked after nc-fix23.css
-in neucurve/index.html), portrait only (.content-wrapper:not(.is-landscape)): repeat(auto-fill, minmax(270px / --grid-cols, 1fr)), so
-the default is ~54px tiles and the panel width decides how many fit per row (787px = 12). Card Size slider still works (3 = bigger,
-8 = smaller). Radius 10px, name line 9px. Landscape is untouched. calc() only, no min()/max()/clamp() (Chromium 74 / AE 2021 safe).
-
-fix32: NeuCurve graph cut off in landscape / auto mode (left, right and 1,1 end clipped, plot bigger than its box).
-Two causes, both in the Curve tab:
-1) .canvas-area has the class "relative" but the utility class is not in the built CSS, so it computed to position:static. The bundle
-   measures the box with Svelte's hidden resize <iframe> (absolute inside .canvas-area); with a static parent that frame covered the whole
-   window, so the plot was sized from the window (e.g. 840 x 700) instead of the box (420 x 509). New neucurve/nc-fix25.css (linked after
-   nc-fix24.css in neucurve/index.html): .canvas-area { position: relative }.
-2) The plot was sized once at start-up. When nc-flow.js then docked the toolbar / buttons under the graph, the box shrank but no resize
-   event reached the bundle, so the plot kept the old size (e.g. 198 x 521 in a 216 x 409 box). neucurve/nc-gsize.js v25: place() now runs
-   fitCheck(): if the SVG is bigger than .canvas-area it shrinks the box by 1px for two frames (min/max-height) so the resize frame fires,
-   then calls __ncGBump(). At most 3 tries per box/plot size pair (no loop). nc-gsize.js query bumped to ?v=14.
-Both are needed: CSS alone and JS alone each left auto mode clipped. Checked at 491x627, 700x500, 900x700, 560x900, 400x700 in
-portrait, landscape and auto: the SVG always fits the box. Portrait and the Settings / graph windows are unchanged.
-
-fix33: NeuCurve landscape graph still came up cut off / not filling its box in the real host until the panel was reloaded AND the divider
-between graph and presets was dragged. The fix32 fit check only ran when a DOM mutation or a window resize happened to call place(); if
-Svelte's hidden resize frame missed a change and nothing else fired, the stale plot stayed. neucurve/nc-gsize.js v26 (query ?v=15):
-- fitCheck() now also catches a plot that is too SMALL (landscape, automatic size, gFit on: the plot must fill the box; portrait caps and
-  custom Graph Size % are left alone).
-- Self-healing: a ResizeObserver on .canvas-area plus a light 800 ms watchdog (reads only, skipped while the document is hidden or a drag is
-  running) call the check, so a stale plot heals by itself within about a second.
-- Escalation: try 1 shrinks .canvas-area by 1px for two frames; try 2+ also shrinks .fixed-section by 1px for two frames, which is what
-  a 1px divider drag does. 3 tries, then a 2 s pause before it may try again (no loop).
-Tested in headless Chromium: 15/15 size x layout combos fit, 5 aggressive resize-timing scenarios fit, injected too-big / too-small SVG
-heals, 0 nudges in 6 s of idle. The exact host event that leaves the plot stale could not be reproduced outside After Effects.
-
-fix37: lag when opening the Multi Tool Settings window and the NeuCurve Settings window.
-Found by reading the code (not measured inside After Effects, which is not available here). Causes, biggest first:
-1) CSXS/manifest.xml: both Settings windows loaded jsx/host.jsx (357 KB) into their own ExtendScript engine on every open, on After
-   Effects' main thread. They never call ExtendScript, so <ScriptPath> is removed from com.ogatt.multitool.settings and
-   com.ogatt.multitool.curve.settings. The panel and the Graph Editor keep it. After Effects must be restarted once (CEP caches the manifest).
-2) neucurve/settings.html: the Google Fonts <link> blocked the first paint (blank window until the request finished or timed out offline).
-   It now loads with media="print" onload="this.media='all'": same Inter font when online, nothing blocked.
-3) neucurve/nc-settings.js: the window resized itself 4 times while opening (resizeContent at 0 / 250 / 500 ms + the fit). It now resizes
-   only when its size really differs from the wanted size (fitWindow and resizeWindow both check window.innerWidth / innerHeight).
-4) js/mt-settings-bus.js v3: the 250 ms mailbox poll parsed every stored message on every tick (a background image "bgsrc" is up to
-   400 KB of JSON). It now remembers the text it read and parses only when it changed. Delivery is identical.
-5) js/mt-settings-remote.js v3 (panel side): while the window is open the panel read getComputedStyle() for about 200 controls every
-   350 ms. Only the 3 controls the window mirrors as hidden/shown (data-mirror-hidden) are checked now.
-6) css/mt-settings-pro.css v3 + js/mt-settings-polish.js v4: the card stagger (up to 280 ms delay + 340 ms) ran on the first open, so the
-   window looked half empty while loading. It now runs only after a tab was clicked (html.p-anim). The title animation no longer animates
-   letter-spacing (re-laid out the text each frame); opacity + transform only.
-Not changed: CEFCommandLine flags (changing them could change how the windows share localStorage with the panel), the AE 2021 shim.
-
-fix3 (1.8.30): CURVE TAB - graph mode switch now morphs with RE-Faster's logic, and no lag on the first switches.
-Source of the logic: RE-Faster's category morph (updateGraphCategoryUI): 500 ms, ease-out-expo (1 - 2^(-10 t)), no overshoot, the shape
-is always blended from what is on screen right now (so switching again mid-morph never snaps), plus its "is-morphing" frame-drop guard.
-- neucurve/nc-morph.js v22: DURATION 380 -> 500 ms, ease = ease-out-expo (was cubic + small overshoot), GRID 420 -> 200 points.
-  One render per frame: the observer render (needed so the app's own "d" write never reaches the screen) and the rAF render used to run
-  twice per frame while the app eases its Y viewport; the rAF render now steps aside while the app is writing.
-  Idle-time warm-up (3 slices of ~2-4 ms, 1.2 s after load, no DOM, no app state): runs the parser / sampler / frame builder on
-  synthetic Bezier / Custom / Elastic-like curves so the first real switch after AE starts already hits optimised code.
-- Frame-drop guard (RE-Faster's body.is-morphing): while a morph runs, the 8-stroke glow, the handle halos and the live ball are not
-  painted or updated (nc-morph.css on svg.curve-svg.nc-morphing; window.__ncMorphUntil read by nc-glow.js, nc-ball.js,
-  nc-apply-glow.js). The glow fades back in over 0.3 s at the end (.nc-morph-out). The flag expires by itself (250 ms, refreshed
-  every frame), so a hidden frame can never leave the glow switched off.
-- Not ported: RE-Faster's fake motion blur (blur() on the whole svg). It re-rasterises the graph every frame, which is the opposite of
-  this fix. Off-switches: DURATION / GRID at the top of nc-morph.js; delete the "html.nc-morph..." block at the end of nc-morph.css to keep
-  the glow during morphs.
-Cache-bust: nc-morph.js ?v=22, nc-morph.css ?v=16, nc-glow.js ?v=4, nc-ball.js ?v=4, nc-apply-glow.js ?v=3 (neucurve/index.html).
-
-fix4 (1.8.30): CURVE TAB - first mode switches heavy in After Effects only (fine in a browser tab).
-Cause: cold engine. The first time each mode is shown, the bundle builds that mode's UI, the stylesheets resolve for it and every helper
-script (nc-flow, nc-gsize, nc-icons-pro, nc-extras ...) runs its mutation handlers for the first time on unoptimised code in a
-software-rendered CEF. A desktop browser hides this; AE shows it until each mode has been used a few times.
-Fix: neucurve/nc-warm.js + nc-warm.css (new). Right after the graph is up, the Curve frame clicks through every mode tab once and ends on
-the mode you were on (the app only stores the active mode), while the page is hidden. The host keeps its existing loading spinner
-meanwhile (js/main.js, Curve.show / message handler: removed on {mtCurveReady} from the frame, 4 s safety timeout). The page then fades
-in (opacity only). Touching the panel (mouse, key, wheel, touch) stops it at once and restores the mode.
-- Only inside the Curve tab frame. The Large Graph Editor and Settings windows are never cycled (they are synced with the main panel).
-- nc-morph.js v23: no morph while warming. Cost: about a second of spinner the first time the Curve tab is opened in a session.
-- Off: WARM = false at the top of nc-warm.js, or localStorage neucurve_noWarm = "1", or delete the nc-warm lines in neucurve/index.html.
-Not measured inside AE (no AE / CEF here): the warm-up logic itself was tested with stubs (order, restore, flags, failsafe).
-
-fix5 (1.8.30): IDLE SCREENSAVER enter / exit smooth + squashed widgets on exit; CURVE TAB first mode switch lag.
-1) Squashed widgets when leaving idle. Cause: .idle-clock only had its full-screen box (top/right/bottom/left: 0) while body.is-idle was set.
-   When is-idle was removed the box collapsed to hug its content while it was still fading out (0.25 s); the widget grids use
-   width: min(100%, 36rem) (a percentage of a shrink-to-fit parent), so they were re-laid out narrow and short = "gepeng".
-   Fix: css/mt-idle-motion.css (new) keeps the SAME full-screen geometry in both states. Nothing resizes, only opacity + transform move.
-2) Idle enter / exit motion (motion-design: calm / premium, same curves as css/mt-idle-adjust.css --ia-in / --ia-out):
-   - enter: panel fades + sinks 0.5 rem (300 ms accelerate), clock arrives 120 ms later (480 ms decelerate); date, time, then the five boxes
-     rise in one after the other (45 ms apart, 225 ms total). Panel is parked after the fade (PARK_DELAY_MS 450 > 300).
-   - leave: clock fades + sinks (220 ms accelerate); the panel rises + fades in (360 ms decelerate, 60 ms delay). It no longer pops in.
-   - js/main.js v30 Idle.exit(): .app is un-parked with transitions switched off for one frame, so it never slides in from -200vw; the
-     message card keeps its "is-in" class until the clock has faded (was removed on the first frame = it vanished at once).
-   - js/mt-idle-adjust.js v8: the auto-hide state (is-quiet) is cleared 420 ms AFTER leaving idle (was at once): hidden boxes no longer
-     jump back to visible, nor replay their entrance, while the clock is still fading out. Cleared again at once on the next entry.
-   - prefers-reduced-motion and Settings > Animations OFF: no transform, no stagger, instant.
-   Cache-bust: css/mt-idle-motion.css ?v=1 (new), js/main.js ?v=30, js/mt-idle-adjust.js ?v=8 (html/index.html).
-3) Curve tab: first graph mode switch after opening AE lagged. Cause: nc-warm.js (fix4) cycled every mode behind the spinner, but nc-morph.js
-   was switched OFF while warming, so the morph itself (start / render / moveHandles / fadeBack and the .nc-morphing / .nc-morph-out style
-   changes) was still cold on the first real switch.
-   Fix: nc-morph.js v24 runs the real morph while warming, 70 ms long (WARM_DURATION). nc-warm.js v2 (comment only). neucurve/index.html:
-   nc-morph.js ?v=24, nc-warm.js ?v=2. Adds well under a second to the first-open spinner; the 4 s safety timeout is unchanged.
-Not measured inside AE (no AE / CEF here): syntax-checked only (node --check). If a widget still looks off on exit, tell me the idle position
-(Settings > Clock Position) and whether Auto-hide was on at that moment.
-
-fix6 (1.8.30): CURVE TAB - the graph got heavy while changing the curve on a layer (Auto Apply / live).
-Cause: every live apply ran applyCubicBezier, which walks EVERY layer and EVERY property of the comp (thousands of After Effects DOM calls
-in a busy comp) and checks keySelected on each key, only to skip everything that has no selected keyframe. While dragging, that ran every
-500 ms (Bezier) and kept AE's main thread busy, so AE and the panel graph stuttered.
-Fix (jsx/host.jsx only):
-- _ncCollectSel() now also returns the Property objects it already found (transient, never stored in __NC_LIVE).
-- applyCubicBezierProps(jsonParams, props) (new): same undo group + the same applyBezierSimple() code, but only on those properties.
-- NC_liveRun(): Bezier live apply uses the fast path. If it errors or modifies 0 keyframes it falls back to the old full walk, so the
-  result is never worse than before. The manual APPLY button and the other models (Elastic / Bounce / Wave / Steps / Custom) are unchanged.
-- The mock test (stubbed AE objects) covered: fast path, identical-request skip, new params, zero-keyframe fallback.
-host.jsx is read when the panel loads: close and reopen the MultiTool panel (or restart AE) after installing.
-Not measured inside AE. If it is still heavy, tell me: comp size (layers), how many keyframes are selected, and whether the lag is in the
-graph itself or in AE's timeline.
-
-fix7 (1.8.30): CURVE TAB - the first mode switch (e.g. Bezier -> Custom) after the warm-up spinner still lagged once.
-Cause: during the warm-up the page was visibility:hidden. A hidden page is not painted, so paint / raster of the morphing curve stayed
-cold and the first REAL switch paid for it. The morph code itself was already warmed (fix5), only 70 ms long.
-- neucurve/nc-warm.css v2: while warming, body is opacity 0.01 (invisible, but still painted) instead of visibility:hidden.
-- neucurve/nc-warm.js v3: the mode cycle runs twice (2nd pass runs on code the engine has started to optimise). Still ends on your mode.
-- neucurve/nc-morph.js v25: WARM_DURATION 70 -> 120 ms (more frames per warm-up morph).
-Cost: the first-open spinner is a little longer (about 0.3 - 0.5 s). Touching the panel still stops it at once.
-Off: WARM = false at the top of nc-warm.js, or localStorage neucurve_noWarm = "1".
-Not measured inside AE. If the first switch still lags, tell me which mode pair (from -> to) and whether it is every time or once.
-
-fix26 (idle icons): IDLE SCREENSAVER - icons had no motion (they just appeared / swapped / jumped).
-New css/mt-idle-icons.css v1 (CSS only, linked in html/index.html after mt-idle-motion.css; no JS touched). Calm / premium, light-icon timing.
-- Play <-> pause (stopwatch + timer): new icon pops in with a small turn (0.34 s). Hover leans the icon forward, press sinks it.
-- "+" (alarm / note / task): turns 90 deg on hover. Alarm "+" turns into "x" (135 deg) and takes the accent colour while the form is open.
-- Delete "x": turns 90 deg on hover. Task check: pops when ticked. "Unfinished" chevron: premium curve.
-- Adjust button: grid leans on hover, the check draws itself when Adjust is on.
-- Unlock arrow: leans on hover, glides gently while idle (slide / both mode).
-- Running stopwatch / timer button: soft ring breathes (2.6 s), only while idle. Round buttons pop in 0.6 s after idle starts.
-- Off: prefers-reduced-motion and the app's Animations switch (data-reduce-motion) disable all of it. To remove: delete the <link> line.
-Not run inside AE (no AE / CEF here): CSS only, Chromium-74 safe syntax. If an icon looks off, tell me which one.
-
-fix27 (idle adjust): IDLE SCREEN - after moving widgets and pressing Done, boxes ended up on top of each other (e.g. Alarms over Time in After Effects).
-Cause: while adjusting, hidden widgets stay on screen as dimmed ghosts, and the no-stacking check (resolveAll) ran with the ghosts present.
-Pressing Done removes the ghosts, the grid reflows, and a moved box (stored as an offset from its old grid place) landed on another box.
-Nothing re-checked the layout at that moment.
-Fix (js/mt-idle-adjust.js, setAdjust): when adjust mode ends, settle() runs once (resolveAll + FLIP glide + save), so no box stays stacked.
-Not run inside AE (no AE / CEF here): syntax-checked only (node --check). If boxes still overlap, tell me which widgets were hidden / moved.
-
-fix28 (idle screen): the CLOCK and the cards are now set only with the Adjust button; Settings > Clock Scale and Card Scale are removed.
-- html/index.html: date, time, session chip and message are wrapped in #idle-hero (one widget). html/settings.html: both sliders removed.
-- js/mt-idle-adjust.js: new widget "clock" (first in WIDGETS). Move = drag (snap, guides, never stacked, like the cards). Resize = the grip, which
-  changes the TEXT SCALE 50 - 220 % (it grows away from the edge the clock is anchored to; a readout shows the %; arrow keys 5 %, Shift 10 %;
-  double-click the grip = 100 %; near 100 % it snaps). The eye hides the clock (key mtx.showClock). "Reset layout" brings it back.
-  Layout key mtx.wLayout gets "clock":{"s":scale,"x":..,"y":..}. The cards keep their own resize (columns + height) and move.
-- css/mt-idle-adjust.css v8: .idle-hero (inherits the Clock Position alignment) + the adjust outline / ghost styles.
-- js/main.js: a saved idleScale is ignored and removed (no slider to change it any more). js/mt-idle-focus.js: cardScale() is fixed at 100.
-Clock Position (Settings) stays: it picks the corner the clock is anchored to; Adjust then moves / sizes it from there.
-Not run inside AE (no AE / CEF here): syntax-checked only (node --check). If the clock jumps when resized, tell me the Clock Position.
-
-fix29 (settings > Background): "Background image" and "Animated background" are now ONE row "Background": a single Choose file + Remove.
-- html/index.html + html/settings.html: ids bg-media-set / bg-media-clear / bg-media-file (replace bg-image-set / -clear, bg-motion-set / -clear, bg-file,
-  bg-motion-file). The hint line (#bg-motion-note) stays under it.
-- js/main.js: the picker accepts image, GIF, MP4 and WebM. The type decides the layer (still image = #bg-layer, GIF / video = #bg-motion-layer).
-  Picking one now clears the other, so only one background is ever active; Remove clears both. The save / backup logic of each type is unchanged
-  (loadImageFile / loadMotionFile / clearImageMedia / clearMotionMedia).
-- Tested in headless Chromium: png -> gif -> png -> Remove switch layers correctly, no JS error. Not run inside AE.
-Note: an image and a GIF can no longer be shown together (the GIF used to sit on top of the image).
-
-fix30 (idle screen): the clock sat slightly to the right of the widgets (date, time and message did not line up with the cards' edge).
-Cause: fix28 gave the clock block (#idle-hero) 0.4 rem of side padding (room for the adjust outline), pushing the text in.
-Fix (css/mt-idle-adjust.css v9): no side padding on .idle-hero; the big time digits are pulled out by their side bearing (-0.05em) so the ink lines up too.
-Measured in headless Chromium: date, message chip and the Time-in-After-Effects card share the same left edge (16 px) for Top left, and the same right edge for Top right.
-
-fix31 (idle clock): when the time changes, each changed digit now rolls: the old digit moves UP and fades out, the new digit rises in FROM BELOW.
-- js/main.js: Idle.renderTime() draws #idle-time as one slot per character (.it-c > .it-n, plus .it-o while rolling). The text is compared with
-  this._timeStr (not read back from the DOM). First draw after the idle screen opens is plain; only a real change while idle rolls.
-- css/mt-idle-time.css v1 (new, linked after mt-idle-icons.css): out 380 ms accelerate (--ia-out), in 520 ms decelerate (--ia-in) starting 60 ms later,
-  several digits (18:59 -> 19:00) follow 70 ms apart, left to right. Slot is clipped (clip-path) only while rolling, so the resting text-shadow is
-  never cut and the baseline never moves. prefers-reduced-motion / the Animations switch: the digit just changes.
-- Tested in headless Chromium with a fake clock (18:59 -> 19:00): 3 digits rolled with the right stagger, slots collapsed to plain text afterwards, no JS error. Not run inside AE.
-
-fix32 (idle screen): the digit roll of the clock (fix31) now also runs on every other live number of the idle screen.
-Numbers: date (day number), Time in After Effects (hours / minutes / seconds), Timer, Stopwatch, To-Do count ("3 of 8 done"), "Unfinished (n)".
-- js/mt-idle-roll.js (new, loaded before main.js): MTRoll.set(node, text [, "fast"]) / MTRoll.reset(node). One slot per digit (.mr-c > .mr-n, + .mr-o while rolling),
-  words around the numbers (.mr-s) just change. First draw of every idle session is plain; a change in the number of digits (9 -> 10) is drawn plain;
-  outside idle mode it is always plain. The text is kept in node._mr, never read back from the DOM.
-- css/mt-idle-roll.css (new, linked after mt-idle-time.css): same motion as the clock. Standard (date, counts): out 380 ms / in 520 ms, travel 85 %, 60 ms apart.
-  "fast" (stopwatch, timer, time in AE; they tick every second): out 180 ms / in 260 ms, travel 60 %, 35 ms apart. No overshoot. Clip only while rolling.
-  Animations switch / prefers-reduced-motion: the digit just changes.
-- js/mt-idle-focus.js: rollText() helper; renderElapsed, renderTimerChip, renderStopwatch, the To-Do count and the Unfinished label use it (v=15).
-- js/main.js: Idle.updateClock() draws the date with MTRoll; Idle.stopClock() resets it (v=31). html/index.html: new link + script, cache versions bumped.
-- Not changed: the big clock (Idle.renderTime, css/mt-idle-time.css), alarm times (static), Settings readouts (not on the idle screen).
-- Tested in headless Chromium (MTRoll alone): plain when not idle / first draw, 1 and 2 digits roll with the right delays, slots collapse afterwards, words change in place,
-  digit-count change and reset draw plain, no JS error. node --check on all changed JS. Not run inside AE.
-
-fix33 (idle screen > Adjust): opening Adjust made visible widgets jump (e.g. the stopwatch moved down ~200 px).
-Cause: Adjust shows every hidden widget (Time in After Effects, Timer, ...) as a dimmed ghost IN its normal place in the flow, so the ghosts pushed the visible widgets down.
-Fix: ghosts never take space above a visible widget.
-- js/mt-idle-adjust.js (v9): ghostsApart() (called from refresh() and when Adjust closes). While adjusting, ghosts of the chips row (#idle-elapsed, #idle-timer) are moved into
-  #idle-ghost-tray (a second .idle-chips row built on demand, below the dashboard); they go back to .idle-chips when switched on (eye) or when Adjust closes.
-  A dashboard made only of ghosts gets .wa-allghost.
-- css/mt-idle-adjust.css (v10): ghosts inside the dashboard get order 2 (after the visible boxes); .idle-fold.wa-allghost, #idle-ghost-tray and the hidden clock block (.idle-hero.wa-off) are ordered after the visible blocks.
-- Tested in headless Chromium (312 px wide, real html/index.html): elapsed+timer hidden / only one hidden / all shown / stopwatch+alarms hidden too: no visible widget moves when Adjust opens;
-  eye on a ghost moves it into its row (the widgets below make room, as intended); Done puts every ghost back. No JS error. Not run inside AE.
-Not reproduced: the clock block shifting ~15 px sideways in the screenshot (the hero stays at the same x in both modes here). If it still happens, send the Clock Position setting.
+Removed features: falling / shooting stars (js/falling-stars.js, js/global-bg.js), Motion Tools tab.
+fix (ES3): "Function parts.some is undefined" when applying presets. Cause: ES3 has no Array.some. Fix: _arrayHasInvalidPart().
+fix (wheel): wheel blocked over cards and buttons. Cause: CEF swallows wheel events over native controls. Fix: ScrollForward.
+fix (Invert): spamming Invert drifted the curve. Cause: it inverted the in-between value. Fix: invert the animation target.
+fix (drag): handles slammed to 0 / 1 after a lost mouse-up. Cause: stale drag. Fix: a mousemove with no button ends the drag.
+fix (updater): "Could not reach GitHub" while AE is open. Cause: one dead address. Fix: try all IPv4 addresses + second source.
+fix (compat): glitch in the Curve tab on AE 2021. Cause: ae2021-compat.js re-triggered its own observer. Fix: write on change only.
+fix (manifest): slow Settings windows. Cause: they loaded host.jsx. Fix: no <ScriptPath> for both.
+fix (idle): widgets squashed on leaving idle, stacked or jumping in Adjust, timer finish popping the UI back.
+  Fix: fixed full-screen idle geometry, free solid canvas, no wake on finish.
+fix46 (README): README had grown to about 1660 lines. Fix: rewrote it sentence by sentence into current-state notes
+  (no removed features, no superseded text, no test reports). HAND-OFF RULES (zip name Multi_Tool.zip) kept as they were.
+fix47 (island switch): new option Settings > Motion > "Show dynamic island" (key mtx.island, "0" = off, default on). Off hides the capsule
+  (html.mt-island-off, MTIsland.setEnabled) and the Curve tab returns to its original layout (no --mi-reserve strip, frame fills the pane).
+  Idle widgets no longer fly to the island when it is off. "Reset everything" turns it back on.
+fix48 (island): Timer / Stopwatch tabs became ONE switch with rolling labels and a fade-out / rise-in view change; it no longer
+  jumps to the feature that just started (a dot shows when the other one runs). Update banner moved into the island
+  (update card, progress, retry, restart note, "Updated" confirmation); banner kept as fallback when the island is off.
+fix49 (navigation position): new option Settings > Appearance > "Navigation position" (cards Left / Right / Top / Bottom, key mtx.navPos,
+  missing = left). Logic: js/mt-navpos.js (sets <html data-nav-pos>, aria-orientation on .tabs, MTNavPos.get/set/reset), layout: css/mt-navpos.css
+  (loaded after every other stylesheet; an inline script at the top of html/index.html applies the saved side before first paint).
+  The cards exist in #settings-modal and in html/settings.html (key attribute data-nav-pos-opt, added to KEY_ATTRS / the selector list in
+  js/mt-settings-remote.js and js/mt-settings-window.js). "Reset everything" puts it back on Left (MTNavPos.reset in main.js).
+  Right: same rail on the right edge, icons stay on the right edge, names open towards the left (still after 5 s of hovering).
+  Top / Bottom: the rail becomes a bar as thick as the rail was wide (--nav-bar-h = --sidebar-w). Tabs scroll sideways when the panel is narrow
+  (active tab is scrolled into view), Refresh + Settings sit at the end, names never expand (sidebar-expand.js skips it) so the tab name is a tooltip
+  instead (mt-tooltip.js findTarget; a rail still shows no tooltip). The dynamic island moves below a top bar (mt-island.js barDrop for the idle fly-to point).
+  Highlight: main.js moveIndicator writes translate(-50%, Ypx) in a rail and translate(Xpx, -50%) + width in a bar; mt-smooth.js (spring) and mt-anim.js
+  (Glide direction, moving right = "down") read the one px value. Drag-to-reorder uses X in a bar; ArrowLeft / ArrowRight switch tabs too.
+  AE 2021 (Chromium 74): bar spacing is margins with !important, not flex gap, because ae2021-compat.js writes inline margins for the vertical list.
+
+fix50 (top / bottom bar: tab names + cut tabs): two bugs in Settings > Navigation position = Top / Bottom.
+  1) Tab name tooltip never showed (worst in the Bottom bar, glitchy in the Top bar) whenever UI scale was not 100%.
+     Cause: ".app { zoom: var(--ui-scale) }" - older Chromium/CEF (AE 2021) returns getBoundingClientRect() already divided by the zoom, but the
+     mouse x/y and the fixed tooltip use real screen pixels, so mt-tooltip.js decided "cursor is not on the tab" and dropped the tooltip.
+     Fix: js/mt-tooltip.js vrect() / zoomOf() (same idea as pointerBox() in main.js) used in track(), show() and place().
+  2) Tab list was cut through the middle of an icon at its left / right end (tabs overflow the bar and the list scrolled by pixels).
+     Fix: js/mt-navpos.js fit() gives .tabs the exact width of N whole tabs, css/mt-navpos.css adds scroll-snap (x mandatory, snap-align start),
+     no margin after the last tab, and two quiet arrows (.mt-nav-arrow, hidden when every tab fits). reveal(el) scrolls by whole tabs; main.js
+     scrollTabIntoView() calls MTNavPos.reveal() in a bar. fit() runs on resize, load, nav change and a ResizeObserver on .sidebar (UI scale).
+  Refresh stays on the far edge (margin-left:auto) even when every tab fits. Cache-busting: mt-tooltip.js ?v=5 (index.html + neucurve/index.html),
+  mt-navpos.js/css ?v=2 (index.html, settings.html), main.js ?v=34.
+
+fix51 (idle stopwatch Hide / Show animation): clicking Hide / Show on the idle-screen stopwatch now plays the same motion as the dynamic island's
+  eye button: the digits flip in out of a blur (sw-flip = island mi-flip, 0.42s, cubic-bezier(0.05,0.7,0.1,1)) and the label pops (sw-pop = mi-pop, 0.4s
+  spring). Classes is-flip / is-pop are added by js/mt-idle-focus.js (bindStopwatch > swAnim), keyframes in css/mt-idle-focus.css. The dimmed
+  "masked" look also eases (opacity 0.3s, letter-spacing 0.42s). Off when Settings > Enable animations is off. mt-idle-focus.css ?v=15, .js ?v=20.
+
+fix52 (navigation style): new option Settings > Appearance > "Navigation style" (cards Classic / Dock / Line / Square, key mtx.navStyle, missing = classic),
+  works with every Navigation position. Logic: js/mt-navstyle.js (sets <html data-nav-style>, MTNavStyle.get/set/reset; an inline script at the top of
+  html/index.html applies the saved style before first paint), looks: css/mt-navstyle.css (also loaded by html/settings.html for the card previews).
+  The cards exist in #settings-modal and in html/settings.html (key attribute data-nav-style-opt, added to KEY_ATTRS / the selector lists in
+  js/mt-settings-remote.js and js/mt-settings-window.js). "Reset everything" puts it back on Classic (MTNavStyle.reset in main.js).
+  Classic = original circle highlight. Dock = the navigation floats as one glass capsule (.sidebar::before), icons grow 1x to 1.5x as the pointer nears
+  (--dk written on each .sidebar .tab, zoom-aware rect maths), a dot on the screen-edge side marks the active tab, names are tooltips: findTarget() in
+  mt-tooltip.js now also serves a Dock rail (right rail opens the tooltip to the left, new .is-left in mt-tooltip.css) and sidebar-expand.js never
+  expands a Dock rail. Line = no circles, thin accent line on the screen-edge side of the active tab. Square = rounded-square highlights.
+  Colours follow Glass and Material You (--nv-line / --nv-fg). Cache-busting: mt-navstyle.css/js ?v=1, mt-tooltip.js ?v=6, mt-tooltip.css ?v=4,
+  sidebar-expand.js ?v=3, main.js ?v=35.

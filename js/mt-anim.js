@@ -90,7 +90,7 @@
 
   /* ---------- Glide: which way did the sidebar highlight move? ---------- */
   function readY(t) {
-    var m = /,\s*(-?[\d.]+)px/.exec(t || "");
+    var m = /(-?[\d.]+)px/.exec(t || "");      // the one px value: Y in a rail, X in a top / bottom bar (moving right counts as "down")
     return m ? parseFloat(m[1]) : null;
   }
   function watchDirection() {

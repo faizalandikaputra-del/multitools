@@ -13,14 +13,14 @@
    Digits use MTRoll (js/mt-idle-roll.js) when it is loaded. Styles: css/mt-island.css. Chromium-74 safe (no flex gap, no inset). */
 (function () {
   "use strict";
-  var PAD = 16, COL_H = 36, X_MAX = 288, SEL_KEY = "mtx.islandSel";
+  var PAD = 16, PAD_C = 13, COL_H = 36, X_MAX = 288, SEL_KEY = "mtx.islandSel";
   var PLAY = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></svg>';
   var PAUSE = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>';
   var RESET = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M5 4.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager;
+  var cTw, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "timer", view = "timer", lastVis = false;
   var cfg = { h: 1, m: 0 };
 
@@ -44,7 +44,9 @@
     // ---- collapsed: ONE icon + digits ----
     cEl = el("div", "mi-c");
     cIco = el("span", "mi-ico"); cTime = el("span", "mi-time");
-    cEl.appendChild(cIco); cEl.appendChild(cTime);
+    cUtx = el("span", "mi-utxt"); var badge = el("i", "mi-badge");
+    cTw = el("span", "mi-tw"); cTw.appendChild(cTime); cTw.appendChild(cUtx);        // digits live in a wrapper that is closed until the pointer is on the island
+    cEl.appendChild(cIco); cEl.appendChild(cTw); cEl.appendChild(badge);
 
     // ---- expanded ----
     xEl = el("div", "mi-x");
@@ -52,8 +54,9 @@
     sw = btn("mi-swap", '<span class="mi-swwin"><span class="mi-swtrack">' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-t"></span><span class="mi-tname">Timer</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-s"></span><span class="mi-tname">Stopwatch</span><i class="mi-live"></i></span>' +
-      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer and stopwatch");
-    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1];
+      '<span class="mi-swrow"><span class="mi-tico mi-tico-u"></span><span class="mi-tname">Update</span><i class="mi-live"></i></span>' +
+      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch and update");
+    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabU = rows[2];
     var views = el("div", "mi-views");
 
     // timer view: setter + running state
@@ -106,13 +109,30 @@
     sb.appendChild(sRst); sb.appendChild(sPlay);
     swrap.appendChild(sBig); swrap.appendChild(sb); vS.appendChild(swrap);
 
-    views.appendChild(vT); views.appendChild(vS);
+    vU = el("div", "mi-view mi-view-u");
+    banner = $("mt-update");
+    if (banner) {                                              // js/mt-updater.js keeps working: same element, same ids, same classes - it just lives in the island now
+      vU.appendChild(banner);
+      var nw = banner.querySelector("#mt-update-now"), lt = banner.querySelector("#mt-update-later"), mr = banner.querySelector("#mt-update-more");   // the island is not in the document yet: search inside the banner
+      [nw, lt, mr].forEach(function (b) { if (b) { b.classList.remove("btn", "btn-primary", "btn-ghost"); } });
+      if (nw) { nw.classList.add("mi-go", "mi-go-u"); } if (lt) { lt.classList.add("mi-ghost"); } if (mr) { mr.classList.add("mi-link"); }
+      if (lt) { lt.addEventListener("click", function () { setTimeout(function () { setOpen(false); }, 0); }); }   // "Later" / "OK": collapse
+      bEl.title = banner.querySelector("#mt-update-title"); bEl.sub = banner.querySelector("#mt-update-sub");
+      try {
+        var q = 0;
+        new MutationObserver(function () { if (!q) { q = requestAnimationFrame(function () { q = 0; if (root) { paint(false); } }); } })
+          .observe(banner, { attributes: true, attributeFilter: ["class"], subtree: true, childList: true, characterData: true });
+      } catch (e) { }
+    }
+    views.appendChild(vT); views.appendChild(vS); views.appendChild(vU);
     xEl.appendChild(sw); xEl.appendChild(views);
 
     root.appendChild(cEl); root.appendChild(xEl); body().appendChild(root);
 
-    sw.addEventListener("click", function () { pick(view === "timer" ? "sw" : "timer"); });
+    sw.addEventListener("click", function () { var c = cycle(), i = c.indexOf(view); pick(c[(i + 1) % c.length]); });
     root.addEventListener("click", function (e) { if (!open) { setOpen(true); } e.stopPropagation(); });
+    root.addEventListener("mouseenter", function () { setHover(true); });
+    root.addEventListener("mouseleave", function () { setHover(false); });
     root.addEventListener("keydown", function (e) { if (!open && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setOpen(true); } });
     document.addEventListener("pointerdown", function (e) { if (open && !root.contains(e.target)) { setOpen(false); } }, true);
     window.addEventListener("keydown", function (e) {
@@ -159,17 +179,21 @@
     var o = sel === "timer" ? "sw" : "timer";
     return activeOf(o) ? o : sel;
   }
+  function cycle() { return upd ? ["timer", "sw", "u"] : ["timer", "sw"]; }
   function pick(k) {
     if (view === k) { return; }
-    sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { }
-    root.setAttribute("data-dir", k === "sw" ? "next" : "prev");
+    var c = cycle();
+    if (k !== "u") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
+    root.setAttribute("data-dir", (c.indexOf(k) > c.indexOf(view) || view === "u" || c.indexOf(view) < 0) ? "next" : "prev");
+    spin++; sw.style.setProperty("--mi-spin", (spin * 180) + "deg");
     view = k; paint(true);
   }
 
   // ---------- geometry ----------
   function collapsedSize() {
-    var w = cEl.offsetWidth + 2 * PAD;
-    return { w: Math.max(96, w), h: COL_H };
+    var hov = cEl.classList.contains("is-hov"), base = cEl.offsetWidth - cTw.offsetWidth;      // everything but the wrapper (its width is animating)
+    var w = base + (hov ? cTw.scrollWidth : 0) + 2 * (hov ? PAD : PAD_C);
+    return { w: Math.max(COL_H, w), h: COL_H };
   }
   function expandedSize() {
     var w = Math.min(X_MAX, Math.max(220, window.innerWidth - 16));
@@ -179,7 +203,8 @@
   var sizeKey = "";
   function applySize(force) {
     if (!root) { return; }
-    var key = open ? ("x|" + view + "|" + (tSet.hidden ? 1 : 0) + "|" + window.innerWidth) : ("c|" + root.getAttribute("data-tool") + "|" + cTime.textContent.length);
+    var key = open ? ("x|" + view + "|" + (tSet.hidden ? 1 : 0) + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : ""))
+                   : ("c|" + (cEl.className) + "|" + cTime.textContent.length + "|" + cUtx.textContent.length);
     if (!force && key === sizeKey) { return; }                  // no layout read when nothing changed (the 1 s tick)
     sizeKey = key;
     var s = open ? expandedSize() : collapsedSize();
@@ -187,11 +212,16 @@
     root.style.borderRadius = (open ? 26 : Math.round(s.h / 2)) + "px";
   }
 
+  function setHover(h) {                                      // pointer on the island -> the time opens; pointer away -> icon only
+    hover = h; if (!cEl) { return; }
+    cEl.classList.toggle("is-hov", h);
+    if (!open) { applySize(); }
+  }
   function setOpen(o) {
     if (o === open) { return; }
     build(); open = o;
     root.classList.toggle("is-open", o); root.setAttribute("aria-expanded", o ? "true" : "false");
-    if (o) { view = effective(); sel = view; }
+    if (o) { view = upd ? "u" : effective(); if (view !== "u") { sel = view; } root.setAttribute("data-dir", "next"); }
     paint(false);
     if (!o) {
       try { if (root.contains(document.activeElement)) { document.activeElement.blur(); } } catch (e) { }
@@ -211,7 +241,7 @@
     }
   }
   var holdUntil = 0;                                          // stay on screen until the collapse animation has finished
-  function visibleWanted() { return open || Date.now() < holdUntil || ((activeOf("timer") || activeOf("sw")) && (!idle() || quiet())); }
+  function visibleWanted() { return open || Date.now() < holdUntil || !idle() || quiet(); }      // always on screen (also after the timer finished); only the idle screen's own widgets replace it
 
   // ---------- paint ----------
   function stateBtn(b, running, label, running_txt, idle_txt) {
@@ -223,10 +253,20 @@
 
   function paint(viewChanged) {
     build();
-    var t = data.timer, s = data.sw, want = visibleWanted(), was = shown, eff = effective();
+    var t = data.timer, s = data.sw, eff = effective(), was = shown;
+    upd = !!(banner && banner.classList.contains("is-show")); updBusy = upd && banner.classList.contains("is-busy");
+    if (updBusy && !open && root.classList && (idle() ? quiet() : true)) { setOpen(true); }      // an install started: show its progress
+    if (view === "u" && !upd) { view = effective(); root.setAttribute("data-dir", "prev"); viewChanged = true; }
+    var want = visibleWanted();
     if (t && typeof t.h === "number" && document.activeElement !== hIn && document.activeElement !== mIn) { cfg.h = t.h; cfg.m = t.m; }
 
     if (!open) {                                                // collapsed: ONE icon + digits (the hidden panel is not touched every second)
+      var showU = upd && (updBusy || !(activeOf("timer") || activeOf("sw")));
+      cEl.classList.toggle("is-u", showU); cEl.classList.toggle("has-upd", upd); cEl.classList.toggle("is-busy", showU && updBusy);
+      if (showU) {
+        var ti = bEl.title ? bEl.title.textContent : "Update", sb = bEl.sub ? bEl.sub.textContent : "", vm = /v[\d.]+\s*$/.exec(sb);
+        setTxt(cUtx, ti === "Update available" ? "Update" + (vm ? " " + vm[0].replace(/\s+/g, "") : "") : ti);
+      }
       root.setAttribute("data-tool", eff);
       cEl.classList.toggle("is-t", eff === "timer"); cEl.classList.toggle("is-s", eff === "sw");
       var cdd = eff === "timer" ? t : s;
@@ -240,9 +280,10 @@
     } else {
       // expanded: switch (one button, the rows slide)
       tabT.classList.toggle("is-live", !!(t && t.active)); tabS.classList.toggle("is-live", !!(s && s.active));
+      tabU.classList.toggle("is-live", upd); tabU.style.display = upd ? "" : "none";
       sw.setAttribute("data-on", view);
-      vT.hidden = view !== "timer"; vS.hidden = view !== "sw";
-      if (viewChanged) { var v = view === "timer" ? vT : vS; v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
+      vT.hidden = view !== "timer"; vS.hidden = view !== "sw"; vU.hidden = view !== "u";
+      if (viewChanged) { var v = view === "timer" ? vT : (view === "sw" ? vS : vU); v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
 
       if (view === "timer" && t) {
         var run = !!t.active;
@@ -265,9 +306,10 @@
     }
 
     applySize();
-    if (want !== shown) { shown = want; root.classList.toggle("is-on", want); }
+    shown = want; root.classList.toggle("is-on", want);        // written every time: a missed change can never leave the island hidden
+    var arrived = upd && !updWas; updWas = upd;
     var done = !!(t && t.done);
-    if (done && !wasDone && want && !open && root.animate && !reduce()) {            // time is up: one jelly pulse
+    if ((arrived || (done && !wasDone)) && want && !open && root.animate && !reduce()) {            // time is up: one jelly pulse
       try { root.animate([{ transform: "scale(1)" }, { transform: "scale(1.09,1.12)", offset: 0.35 }, { transform: "scale(0.98,0.97)", offset: 0.65 }, { transform: "scale(1)" }], { duration: 620, easing: "cubic-bezier(0.34, 1.3, 0.64, 1)" }); } catch (e) { }
     }
     wasDone = done;

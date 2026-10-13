@@ -1678,3 +1678,20 @@ fix47 (dynamic island): opening the island lagged; two switch buttons.
   size (width / height / radius) is written only when it changes (no layout read on the tick), and only the visible part (capsule OR the shown tool) is updated each second.
 - ONE switch button: press = Timer <-> Stopwatch. The two labels slide up / down in a window, the arrows turn half a turn, the new tool slides in from the side (right = forward, left = back) while the panel height morphs.
 Tested in jsdom (logic only). Not run inside AE; the smoothness was not seen in a real browser.
+
+fix48 (dynamic island): the update notification now lives in the dynamic island.
+- js/mt-island.js (v5) + css/mt-island.css (v5): at start the island MOVES the old banner element (#mt-update) into its panel and restyles it. js/mt-updater.js is NOT changed: same ids, same classes
+  (is-show / is-busy / is-open), same buttons. A MutationObserver on the banner tells the island when an update is offered, installing, done or failed.
+- Collapsed: no timer / stopwatch running -> pulsing dot + "Update v1.9.0". A timer / stopwatch is running -> it stays in the capsule and a small pulsing dot marks the pending update.
+  The capsule appears with one jelly pulse when an update is found. While installing the capsule shows a spinner + the step ("Downloading update...").
+- Expanded: opens on the Update view when one is pending: title, "v1.8 -> v1.9.0", [Later] [Update Now], What's new (notes slide open, panel grows), progress bar while installing.
+  The ONE switch button now cycles Timer -> Stopwatch -> Update (the Update row exists only while an update is pending). Later / OK collapses the island. Update Now (also from Settings > Updates) opens the island to show progress.
+- html/index.html: ?v=5 on the island css / js.
+Tested in jsdom (logic only: banner adopted, collapsed text, open on Update, cycle, Later closes + island leaves, busy auto-opens). Not run inside AE; the look was not checked in a real browser.
+
+fix49 (dynamic island): island vanished after the timer finished; always show the time.
+- Cause: the island showed only while a timer / stopwatch was active. When the finished timer reset itself (3 s after 00:00:00) nothing was active any more, so the island hid and had no reason to come back.
+- Fix (js/mt-island.js v6, css/mt-island.css v6): the island is ALWAYS on screen (idle with visible widgets hides it, as before: the widgets show the same numbers; idle auto-hide shows it). With nothing running it shows the set timer time / 00:00:00 stopwatch.
+  The "is-on" class is now written on every update, so a missed change can never leave it hidden.
+- Simpler look: the pointer OUTSIDE the island = icon only (small round pill, symmetric). Pointer ON the island = the digits (or "Update v1.9.0") open out smoothly (width + fade, same curve). Update dot / spinner stay visible in the icon pill.
+Tested in jsdom (logic only: timer done -> reset keeps island on, hover class on / off, idle / quiet rules). Not run inside AE.

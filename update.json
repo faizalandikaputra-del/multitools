@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.50",
-    "changelog":  "- Update 1.8.50",
+    "latest_version":  "1.8.51",
+    "changelog":  "- Update 1.8.51",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -84,7 +84,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "b3db2ab6a8013e60cbc1b743e1a4d86abd20a1203f5c20dce067d408d65e6fa3"
+                      "sha256":  "cbae413bae53ba162c8b8b402b9b53294c78eb49e676559fd89bab0a54d4e192"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -188,7 +188,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "e325e51b796fa3dba2acd79f5189454c0e9c4d0a018729e2a3d6740191d24da8"
+                      "sha256":  "74f27d8d48af415606b1d95946e44a0c601e37fad45ee06cf2040828fd66ba4f"
                   },
                   {
                       "path":  "html/settings.html",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "b9e2af46893822927cc188145a8c72b938cb58995dfc0149d39526c24c45d5ab"
+                      "sha256":  "7b0fa0c15c1afa4d0b7170b11869ca4689ab07f86d874735806e9febc30a1756"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -588,7 +588,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "559ac4fae7faa347a5ee5df9bf5725d02f2aca4a0a42c27a05f5049b2be88217"
+                      "sha256":  "1422bbd64194a9d24e6691b304a8d68eb8f2ca46701014c60e3d28f5d0ac5544"
                   }
               ]
 }

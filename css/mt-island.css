@@ -43,6 +43,8 @@
   transition: opacity 0.2s linear 0.2s, transform 0.46s var(--mi-ease) 0.12s;
 }
 .mt-island.is-open .mi-c { opacity: 0; transform: translate(-50%, -50%) scale(0.88); pointer-events: none; transition: opacity 0.12s linear, transform 0.2s var(--mi-ease); }
+.mi-tw { display: flex; align-items: center; overflow: hidden; max-width: 0; opacity: 0; transition: max-width 0.46s var(--mi-ease), opacity 0.16s linear; }
+.mi-c.is-hov .mi-tw { max-width: 12rem; opacity: 1; transition: max-width 0.46s var(--mi-ease), opacity 0.3s linear 0.1s; }
 .mi-time { margin-left: 0.5rem; font-size: 0.9rem; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; color: #fff; }
 .mi-c.is-paused .mi-time { opacity: 0.55; }
 .mi-ico { position: relative; flex: 0 0 auto; width: 1.1rem; height: 1.1rem; border-radius: 50%; }
@@ -73,14 +75,15 @@
 .mi-swwin { flex: 1 1 auto; height: 36px; overflow: hidden; text-align: left; }
 .mi-swtrack { display: block; transform: translate3d(0, 0, 0); will-change: transform; transition: transform 0.5s var(--mi-ease); }
 .mi-swap[data-on="sw"] .mi-swtrack { transform: translate3d(0, -36px, 0); }
+.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -72px, 0); }
 .mi-swrow { display: flex; align-items: center; height: 36px; opacity: 0.35; transition: opacity 0.3s linear; }
 .mi-swrow.is-live { opacity: 0.35; }
-.mi-swap[data-on="timer"] .mi-swrow:first-child, .mi-swap[data-on="sw"] .mi-swrow:last-child { opacity: 1; }
-.mi-swarrows { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; margin-left: 8px; border-radius: 50%; color: rgba(255, 255, 255, 0.7); transform: rotate(0deg); transition: transform 0.5s var(--mi-ease); }
-.mi-swap[data-on="sw"] .mi-swarrows { transform: rotate(180deg); }
+.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="u"] .mi-swrow:nth-child(3) { opacity: 1; }
+.mi-swarrows { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; margin-left: 8px; border-radius: 50%; color: rgba(255, 255, 255, 0.7); transform: rotate(var(--mi-spin, 0deg)); transition: transform 0.5s var(--mi-ease); }
 .mi-tname { margin-left: 6px; }
 .mi-tico { flex: 0 0 auto; width: 13px; height: 13px; border-radius: 50%; }
 .mi-tico-t { border: 2px solid var(--accent, #5b8cff); box-sizing: border-box; }
+.mi-tico-u { background: radial-gradient(circle, var(--accent, #fff) 0 3.4px, transparent 4px); }
 .mi-tico-s { background: radial-gradient(circle, #ffb340 0 3.4px, transparent 4px); }
 .mi-live { display: none; width: 5px; height: 5px; margin-left: 6px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 6px rgba(61, 220, 132, 0.8); }
 .mi-swrow.is-live .mi-live { display: block; }
@@ -149,8 +152,45 @@ body.is-quiet .idle-chips > #idle-timer.is-live, body.is-quiet .idle-dash > #idl
   transition: transform 0.46s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s linear 0.26s;
 }
 
+/* ---------- update notification (the old banner of js/mt-updater.js now lives here; same ids / classes, it is only restyled) ---------- */
+.mi-utxt { display: none; margin-left: 0.5rem; font-size: 0.84rem; line-height: 1; font-weight: 600; color: #fff; }
+.mi-c.is-u .mi-time { display: none; }
+.mi-c.is-u .mi-utxt { display: block; }
+.mi-c.is-u .mi-ico { background: radial-gradient(circle, var(--accent, #fff) 0 0.27rem, transparent 0.3rem); animation: mi-upd-pulse 1.8s ease-in-out infinite; }
+.mi-c.is-u.is-busy .mi-ico { background: conic-gradient(var(--accent, #fff) 0 28%, rgba(255, 255, 255, 0.2) 0); -webkit-mask: radial-gradient(circle, transparent 0.3rem, #000 0.33rem); mask: radial-gradient(circle, transparent 0.3rem, #000 0.33rem); animation: mi-spin 0.9s linear infinite; }
+.mi-badge { display: none; flex: 0 0 auto; width: 6px; height: 6px; margin-left: 9px; border-radius: 50%; background: var(--accent, #fff); box-shadow: 0 0 8px rgba(255, 255, 255, 0.7); animation: mi-upd-pulse 1.8s ease-in-out infinite; }
+.mi-c.has-upd:not(.is-u) .mi-badge { display: block; }
+@keyframes mi-upd-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.6; } }
+@keyframes mi-spin { to { transform: rotate(360deg); } }
+
+.mt-island .mi-view-u .mt-update, body.is-idle .mt-island .mi-view-u .mt-update {
+  position: static; display: block; width: auto; margin: 0; padding: 0; overflow: visible; z-index: auto;
+  background: none; border: 0; border-radius: 0; box-shadow: none; color: #fff;
+  transform: none; opacity: 1; pointer-events: auto; transition: none;
+}
+.mi-view-u .mt-update-head { display: flex; align-items: center; margin: 0 0 14px; }
+.mi-view-u .mt-update-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-right: 12px; border-radius: 50%; background: var(--accent, #fff); box-shadow: 0 0 12px rgba(255, 255, 255, 0.6); animation: mi-upd-pulse 1.8s ease-in-out infinite; }
+.mi-view-u .mt-update.is-busy .mt-update-dot { animation-duration: 0.8s; }
+.mi-view-u .mt-update-title { font-size: 0.95rem; font-weight: 700; line-height: 1.25; color: #fff; }
+.mi-view-u .mt-update-sub { margin-top: 2px; font-size: 0.74rem; line-height: 1.35; color: rgba(255, 255, 255, 0.55); font-variant-numeric: tabular-nums; word-break: break-word; }
+.mi-view-u .mt-update-actions { display: flex; flex-wrap: wrap; align-items: center; margin: 0; }
+.mi-view-u .mt-update-actions .mi-ghost { order: 1; flex: 0 0 auto; height: 40px; margin: 0 10px 0 0; padding: 0 18px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: #fff; font: inherit; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease, transform 0.18s var(--mi-ease), opacity 0.2s ease; }
+.mi-view-u .mt-update-actions .mi-ghost:hover { background: rgba(255, 255, 255, 0.22); }
+.mi-view-u .mt-update-actions .mi-ghost:active { transform: scale(0.95); }
+.mi-view-u .mt-update-actions .mi-go { order: 2; margin: 0; }
+.mi-view-u .mt-update-actions .mi-link { order: 3; width: 100%; height: 26px; margin: 10px 0 0; padding: 0; border: 0; background: none; color: rgba(255, 255, 255, 0.6); font: inherit; font-size: 0.74rem; cursor: pointer; transition: color 0.15s ease; }
+.mi-view-u .mt-update-actions .mi-link:hover { color: #fff; }
+.mi-view-u .mt-update-actions button:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+.mi-view-u .mt-update-actions button:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.mi-view-u .mt-update-notes { max-height: 0; opacity: 0; overflow: hidden; margin: 0; padding: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.07); white-space: pre-wrap; font-family: inherit; font-size: 0.72rem; line-height: 1.5; color: rgba(255, 255, 255, 0.75); transition: opacity 0.3s linear 0.1s; }
+.mi-view-u .mt-update.is-open .mt-update-notes { max-height: 132px; opacity: 1; margin-top: 12px; padding: 10px 12px; overflow-y: auto; }
+.mi-view-u .mt-update-track { display: none; position: relative; left: auto; right: auto; bottom: auto; height: 4px; margin-top: 14px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.14); }
+.mi-view-u .mt-update.is-busy .mt-update-track { display: block; }
+.mi-view-u .mt-update-bar { background: var(--accent, #fff); }
+
 /* the app's own Animations switch (NOT prefers-reduced-motion, see top) */
 :root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
-:root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
+:root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
+:root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mi-view-u .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }

@@ -1,0 +1,41 @@
+/* Multi Tool - mt-nav.css (v1)
+   Settings > Appearance > Navigation: the tab rail on the LEFT (default) or on the RIGHT. Logic: js/mt-nav.js (localStorage "mtx.navPos"),
+   which puts data-nav="right" on <html>. Everything below only applies with that attribute, so "Left" is exactly the old layout.
+   On the right the rail is mirrored: the panel row is reversed, the edge line moves to the other side, the icon sits on the right end of
+   a tab with its name to the LEFT of it (so the icon stays put while the rail opens), and the rail opens towards the LEFT, over the tools
+   (same overlay trick as css/sidebar-expand.css: width + margin = constant flow width).
+   Loaded after css/material-theme.css. Delete this file + its <link> + js/mt-nav.js to undo. */
+
+:root[data-nav="right"] .app { flex-direction: row-reverse; }
+
+:root[data-nav="right"] .sidebar.sidebar {
+  border-right: 0 !important;
+  border-left: 1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.32);
+  box-shadow: inset 1px 0 0 var(--highlight-top, rgba(255, 255, 255, 0.06));
+  margin-right: 0 !important;
+  transition: width var(--sbx-dur, 0.4s) var(--sbx-ease, cubic-bezier(0.22, 1, 0.36, 1)), margin-left var(--sbx-dur, 0.4s) var(--sbx-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+:root[data-nav="right"][data-ui-theme="material"][data-theme] .sidebar.sidebar { border-left-color: transparent; box-shadow: none; }
+:root[data-nav="right"] .sidebar.sidebar.is-expanded { margin-left: calc(var(--sidebar-w) - var(--sbx-w, 12.5rem)); }
+
+:root[data-nav="right"] .sidebar .tab { flex-direction: row-reverse; justify-content: flex-start; }
+:root[data-nav="right"] .sidebar .tab > svg { margin-left: 0; margin-right: calc((var(--tab-size) - 1.15rem) / 2); }
+:root[data-nav="right"] .sidebar .tab-label {
+  margin-left: 0; margin-right: 0.7rem; padding-right: 0; padding-left: 0.6rem; text-align: right;
+  -webkit-transform: translateX(6px) translateZ(0); transform: translateX(6px) translateZ(0);
+}
+:root[data-nav="right"] .sidebar.is-expanded .tab-label { -webkit-transform: translateX(0) translateZ(0); transform: translateX(0) translateZ(0); }
+
+/* tooltip of a rail tab opens to the LEFT of the rail (js/mt-tooltip.js adds .is-left) */
+.mt-tip.is-left { transform-origin: 100% var(--mt-a); transform: translate3d(7px, 0, 0) scale(0.86); }
+.mt-tip.is-left.is-in { transform: translate3d(0, 0, 0) scale(1); }
+.mt-tip.is-left::after { top: var(--mt-a); right: -5.5px; left: auto; margin-top: -4px; transform: rotate(45deg); border-bottom: 0; border-left: 0; border-radius: 0 3px 0 0; }
+
+/* Settings cards: a tiny panel with the rail on the chosen side */
+.mt-nav-pv { position: relative; display: block; height: 48px; border-radius: 10px; overflow: hidden; background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.mt-nav-pv::before { content: ""; position: absolute; top: 0; bottom: 0; width: 24%; background: rgba(var(--accent-rgb, 255, 255, 255), 0.55); }
+.mt-nav-pv::after { content: ""; position: absolute; top: 9px; width: 46%; height: 11px; border-radius: 5px; background: rgba(255, 255, 255, 0.16); }
+.mt-nav-pv--left::before { left: 0; }
+.mt-nav-pv--left::after { left: 36%; box-shadow: 0 16px 0 -1px rgba(255, 255, 255, 0.10); }
+.mt-nav-pv--right::before { right: 0; }
+.mt-nav-pv--right::after { left: 10%; box-shadow: 0 16px 0 -1px rgba(255, 255, 255, 0.10); }

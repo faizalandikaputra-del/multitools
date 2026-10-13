@@ -149,7 +149,8 @@
 @keyframes mi-pop { from { transform: scale(0.5); opacity: 0; } }
 
 /* live idle widgets fly into the island when the idle UI auto-hides (beats the plain auto-hide fade of css/mt-idle-adjust.css) */
-body.is-quiet .idle-chips > #idle-timer.is-live, body.is-quiet .idle-dash > #idle-sw.is-live {
+/* (not when the island is switched off in Settings: html[data-island="off"] - then they fade like every other widget) */
+:root:not([data-island="off"]) body.is-quiet .idle-chips > #idle-timer.is-live, :root:not([data-island="off"]) body.is-quiet .idle-dash > #idle-sw.is-live {
   opacity: 0; pointer-events: none; transform-origin: 50% 50%;
   transform: translate3d(var(--mi-dx, 0px), var(--mi-dy, 0px), 0) scale(0.18);
   transition: transform 0.46s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s linear 0.26s;
@@ -198,5 +199,7 @@ body.is-quiet .idle-chips > #idle-timer.is-live, body.is-quiet .idle-dash > #idl
 :root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mi-view-u .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }
 
-/* NeuCurve brings its own toolbar to the very top of the panel: the pane starts BELOW the island (8 px + 36 px + 6 px) so the island never covers it. */
-.curve-pane { top: 50px; }
+/* NeuCurve brings its own toolbar to the very top of the panel: the pane starts BELOW the island (8 px + 36 px + 6 px) so the island never covers it.
+   Island switched off in Settings > Appearance (html[data-island="off"]): nothing to make room for, so NeuCurve keeps its default full-height layout
+   (css/style.css: top 0) and the solid band of css/mt-curve-top.css is hidden too. */
+:root:not([data-island="off"]) .curve-pane { top: 50px; }

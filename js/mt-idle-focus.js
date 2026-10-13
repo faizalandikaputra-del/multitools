@@ -7,7 +7,7 @@
        the day changed move to "Unfinished history" (mtx.missed): finish them later from the idle screen. Ticking today's
        task with the same text also clears its history entry.
      - the Today list and the Notes card on the idle screen are interactive (tick, edit, add, remove); the way out of the
-       idle screen is Esc or a click on an empty spot, handled by the Idle module in js/main.js.
+       idle screen is Esc, handled by the Idle module in js/main.js.
      - tasks + notes + history are also written to Documents/MyMultitoolExtension/DailyTasks.json (and kept in memory), so
        they survive a cleared or full localStorage (a big GIF background can fill it) and are restored on the next start.
    - idle dashboard: stopwatch (start / pause / reset, Hide masks the digits), alarms (time, label, repeat every day; rings with the

@@ -1,0 +1,24 @@
+/* NeuCurve - nc-status.css (v3)
+   The red / green status pill ("Not connected to After Effects", "0 keyframes affected.", "Applied!" ...) used to float at top:-10px
+   (half on the graph edge, half on the toolbar). v1 laid it over the APPLY button, v2 in the top-left corner INSIDE the graph box, where it
+   covered the top handle and the end of the curve. v3: a SMALL pill (14px) in the strip UNDER the graph, centred between the "0" and "1"
+   axis labels. Nothing of the curve, the handles or the toolbar is under it.
+   js/nc-status.js copies that strip into left / top and the free width into max-width; the numbers below are only the fallback.
+   pointer-events: none -> the graph stays fully usable under it. Off switch: remove the <link> / <script> in index.html. */
+html body .action-container .status-overlay {
+  position: absolute; z-index: 100; box-sizing: border-box;
+  left: 8px; top: -150px; right: auto; bottom: auto; transform: none;
+  width: auto; max-width: calc(100% - 16px); height: 14px;
+  display: block; padding: 0 7px; border-radius: 8px;
+  font-size: 9px; font-weight: 700; line-height: 12px; letter-spacing: .1px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  animation: nc-status-in .18s cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+html body .action-container .status-overlay.error   { background: rgba(43, 19, 21, .92); color: #ff7b7b; border: 1px solid rgba(239, 68, 68, .5); }
+html body .action-container .status-overlay.success { background: rgba(15, 42, 34, .92); color: #34d399; border: 1px solid rgba(16, 185, 129, .45); }
+html.mt-light body .action-container .status-overlay.error   { background: #fdeaea !important; color: #c62828 !important; border-color: rgba(198, 40, 40, .45) !important; }
+html.mt-light body .action-container .status-overlay.success { background: #e6f6ee !important; color: #1b7f55 !important; border-color: rgba(27, 127, 85, .45) !important; }
+@keyframes nc-status-in { from { opacity: 0; transform: translate3d(0, 4px, 0) scale(.96); } to { opacity: 1; transform: none; } }
+:root[data-reduce-motion="true"] .status-overlay { animation: none !important; }

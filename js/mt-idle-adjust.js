@@ -1,4 +1,4 @@
-/* Multi Tool - mt-idle-adjust.js  (v15: FREE CANVAS)
+/* Multi Tool - mt-idle-adjust.js  (v19: FREE CANVAS + zoom on resize)
    Idle screen: move, resize and show / hide every widget without opening Settings, all from the "Adjust widgets" button
    (#ia-btn, bottom right of the idle screen).
 
@@ -9,7 +9,7 @@
    - First time Adjust opens: every visible widget is "frozen" where it stands (position: absolute inside #idle-clock, class
      .wa-canvas). From then on each widget is placed by its OWN left / top / width / height and depends on no other widget:
      moving, resizing, hiding or showing one widget can never push, stretch or shift another one.
-     Hidden widgets (ghosts) are put in a free spot while adjusting.
+     Hidden widgets have NO box while adjusting (v19): their icons wait in the shelf at the bottom left (#ia-shelf); a click shows the widget in the nearest free spot.
    - Move: drag a widget anywhere inside the panel (soft snap to the panel edges and to the other widgets, guide lines).
      Arrow keys nudge the focused widget (Shift = bigger).
    - Resize: drag the grip (bottom right). Width and height are free; the text follows the width (--wa-s = width / start width,
@@ -29,6 +29,10 @@
    Old v1 layouts (grid span + offsets) are ignored on purpose. Load AFTER js/mt-idle-focus.js. ES5, Chromium-74 safe. */
 (function () {
   "use strict";
+  /* v19 (fix53): PANEL RESIZE. The whole canvas now scales like one picture. The layout stores the panel width it was made at (ref); the cards are zoomed by
+     panel width / ref (CSS var --wa-zoom, same zoom property as Card scale) and the clock text scale is multiplied by the same factor. Positions, widths and heights are
+     fractions of the panel width, so every box AND its text shrink / grow together: wrapping, heights and gaps stay the same, nothing overlaps and nothing is
+     re-sorted (v18 only moved the boxes: text kept its size, wrapped more, grew taller, then the overlap check threw widgets around). */
   var P = "mtx.", LAYOUT_KEY = P + "wLayout", TIMER_KEY = P + "showTimer", CLOCK_KEY = P + "showClock";
   var SC_MIN = 0.5, SC_MAX = 2.2, S_MIN = 0.68, S_MAX = 1.3, MIN_W = 110, MIN_H = 56, GAP = 8, EDGE = 4, EDGE_B = 12, GAP2 = 6, SNAP = 10, GRID_Y = 8, GRID_M = 16, STEP = 10, STEP_BIG = 40;
   var WIDGETS = [
@@ -41,6 +45,16 @@
   ];
   var ICON_EYE = '<svg class="wa-ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>' +
     '<svg class="wa-ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4"/><path d="M6.5 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+  // one glyph per widget for the hidden-widget shelf (24 px grid, stroke only)
+  var SHELF_ICON = {
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+    elapsed: '<path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/>',
+    timer: '<path d="M9.5 2.5h5"/><circle cx="12" cy="13.5" r="8"/><path d="M12 13.5V9.5"/>',
+    sw: '<path d="M9.5 2.5h5M12 2.5v3"/><circle cx="12" cy="13.5" r="8"/><path d="M12 13.5l3-3"/><path d="M19 6l1.4-1.4"/>',
+    al: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21a2 2 0 0 0 4 0"/>',
+    tabs: '<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M9 8.5h6M9 12.5h6M9 16.5h3.5"/>'
+  };
+  var shelf = null, shelfBtns = {};
   var ICON_GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10 10 20"/><path d="M20 16l-4 4"/></svg>';
 
   function $(id) { return document.getElementById(id); }
@@ -52,6 +66,7 @@
   function r1(v) { return Math.round(v * 10) / 10; }
 
   var AH_KEY = P + "autoHide", AH_OPTS = [0, 3, 6, 10];
+  var refW = null, Z = 1, zClamped = false;
   var items = {}, dirty = false, adjusting = false, drag = null, mv = null, guides = null, ui = {};
   var ahSec = 6, ahTimer = 0, quiet = false, swallowClick = false, lastMove = 0, iaTimer = 0, IA_MS = 2500, switching = false;
 
@@ -60,7 +75,7 @@
   function num(v, lo, hi) { v = parseFloat(v); return isFinite(v) && v >= lo && v <= hi ? v : null; }
   function loadLayout() {
     var o = null, it;
-    items = {}; dirty = false;
+    items = {}; dirty = false; refW = null;
     try { o = JSON.parse(lsGet(LAYOUT_KEY) || "null"); } catch (e) { o = null; }
     if (!o || o.v !== 3 || !o.items || typeof o.items !== "object") { return; }
     WIDGETS.forEach(function (w) {
@@ -75,6 +90,7 @@
       }
       items[w.id] = it;
     });
+    refW = num(o.ref, 120, 6000);
     dirty = hasItems();
   }
   function saveLayout() {
@@ -87,6 +103,7 @@
       else { c.w = Math.round(it.w * 10000) / 10000; c.w0 = Math.round(it.w0 * 10000) / 10000; if (it.h) { c.h = Math.round(it.h * 10000) / 10000; } }
       out.items[w.id] = c;
     });
+    if (refW) { out.ref = Math.round(refW); }
     if (any && dirty) { lsSet(LAYOUT_KEY, JSON.stringify(out)); } else { lsDel(LAYOUT_KEY); }
   }
 
@@ -104,10 +121,30 @@
     try { v = parseFloat(box.style.getPropertyValue("--idle-card-scale")) || 1; } catch (e) { v = 1; }
     return v;
   }
+  // the gap two boxes must keep shrinks with the canvas (a layout scaled to 50 % has 4 px gaps, which are not an overlap)
+  function g2() { return GAP2 * Math.min(1, Z); }
+  // Z = panel width / the width the layout was made at. Written as --wa-zoom (cards: zoom) and used for the clock text scale. Returns true when the
+  // panel went beyond the 0.4 - 2.4 range (then ref follows, the layout is re-checked once).
+  var Z_MIN = 0.4, Z_MAX = 2.4;
+  function syncZoom() {
+    var p = panel(), o, z = 1, base, c = false;
+    if (!p) { return false; }
+    if (hasItems()) {
+      o = origin();
+      if (o.W < 60) { return false; }                                // panel hidden / collapsed: keep the last zoom
+      if (!refW) { refW = o.W; }
+      z = o.W / refW;
+      if (z < Z_MIN || z > Z_MAX) { z = clamp(z, Z_MIN, Z_MAX); refW = o.W / z; c = true; }
+    }
+    Z = z; zClamped = c;
+    if (hasItems()) { base = cardScale(); p.style.setProperty("--wa-zoom", String(Math.round(base * Z * 1000) / 1000)); }
+    else { p.style.removeProperty("--wa-zoom"); }
+    return c;
+  }
   // screen px per layout px (the cards are zoomed by Settings > Card scale): measured, with the scale as fallback
   function pxRatio(el) {
     var r = el.getBoundingClientRect(), ow = el.offsetWidth, k = ow ? r.width / ow : 1;
-    return (isFinite(k) && k > 0.3 && k < 3) ? k : cardScale();
+    return (isFinite(k) && k > 0.2 && k < 4) ? k : cardScale() * Z;
   }
   function visible(w) { var el = $(w.el); return !!(el && el.offsetParent !== null); }
   // Where a widget IS. A widget that has its own place is read from the stored item (left / top / width) + its height, never from the
@@ -184,7 +221,7 @@
     if (!it) { clearInline(el); return; }
     o = origin(); k = pxRatio(el.parentNode) || 1;
     el.style.left = r1(it.x * o.W / k) + "px"; el.style.top = r1(it.y * o.W / k) + "px";
-    s = scaleFor(w, it);
+    s = scaleFor(w, it); if (w.clock) { s *= Z; }                  // the clock has no zoomed wrapper: its text scale carries the panel zoom
     if (Math.abs(s - 1) > 0.02) { el.style.setProperty("--wa-s", String(Math.round(s * 100) / 100)); el.classList.add("wa-scaled"); }
     else { el.style.removeProperty("--wa-s"); el.classList.remove("wa-scaled"); }
     if (!w.clock) {
@@ -207,6 +244,7 @@
   function applyAll() {
     var p = panel(); if (!p) { return; }
     p.classList.toggle("wa-canvas", hasItems());
+    syncZoom();
     applying = true; WIDGETS.forEach(apply); applying = false; syncEnd();
     syncEnd();
   }
@@ -215,12 +253,50 @@
     el.style.minHeight = ""; n = el.offsetHeight * k; el.style.minHeight = keep; return n;
   }
   // MOTION (Premium archetype, same curves as css/mt-idle-adjust.css): enter = decelerate 420 ms, settle = standard 300 ms
-  var EASE_IN = "cubic-bezier(0.05, 0.7, 0.1, 1)", EASE_STD = "cubic-bezier(0.2, 0, 0, 1)";
-  function popIn(w) {                              // a widget that appears: rises 0.6 rem, scales up from 96 %, fades in
-    var el = $(w.el), end;
+  var EASE_IN = "cubic-bezier(0.05, 0.7, 0.1, 1)", EASE_STD = "cubic-bezier(0.2, 0, 0, 1)", EASE_ACC = "cubic-bezier(0.3, 0, 1, 1)";
+  var emergeFrom = null, leaving = {};              // emergeFrom: centre of the shelf icon that was clicked (the widget grows out of it)
+  // A widget that comes back: from the shelf icon it was called with (emergeFrom) it GROWS out of that icon (scale 0.18 -> 1, 380 ms, decelerate, opacity 0 -> 1);
+  // from anywhere else (Settings switch) it rises 0.6 rem and scales up from 96 % (420 ms). transform + opacity only, one element.
+  function popIn(w) {
+    var el = $(w.el), end, from = emergeFrom, r, k, dx, dy;
+    emergeFrom = null;
     if (!el || !el.animate || reduceMotion()) { return; }
     try { end = window.getComputedStyle(el).opacity; } catch (e) { end = "1"; }
+    if (from) {
+      r = el.getBoundingClientRect(); k = pxRatio(el.parentNode) || 1;
+      if (r.width > 2) {
+        dx = (from.x - (r.left + r.width / 2)) / k; dy = (from.y - (r.top + r.height / 2)) / k;
+        el.animate([{ opacity: 0, transform: "translate3d(" + dx + "px," + dy + "px,0) scale(0.18)" }, { opacity: end, transform: "none" }], { duration: 380, easing: EASE_IN });
+        return;
+      }
+    }
     el.animate([{ opacity: 0, transform: "translate3d(0, 0.6rem, 0) scale(0.96)" }, { opacity: end, transform: "none" }], { duration: 420, easing: EASE_IN });
+  }
+  // A widget that goes away (the eye, while adjusting): it shrinks into the shelf (scale -> 0.18, fades, 260 ms, accelerate) and only THEN is switched off,
+  // so the icon appears where the widget just vanished. done() runs once, also when the animation never finishes (guard timer).
+  function flyTarget() {
+    var r;
+    if (shelf && !shelf.classList.contains("is-empty")) { r = shelf.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+    return { x: 40, y: (window.innerHeight || 600) - 44 };       // where the shelf will appear (bottom left)
+  }
+  function hideAnim(w, done) {
+    var el = $(w.el), r, k, t, dx, dy, a, fin = false, tm;
+    if (!adjusting || !el || !el.animate || reduceMotion() || !visible(w)) { done(); return; }
+    r = el.getBoundingClientRect();
+    if (r.width < 2) { done(); return; }
+    k = pxRatio(el.parentNode) || 1; t = flyTarget();
+    dx = (t.x - (r.left + r.width / 2)) / k; dy = (t.y - (r.top + r.height / 2)) / k;
+    leaving[w.id] = true;
+    function end() {
+      if (fin) { return; } fin = true; clearTimeout(tm); delete leaving[w.id];
+      done();
+      try { a.cancel(); } catch (e) { }
+    }
+    try {
+      a = el.animate([{ opacity: 1, transform: "translate3d(0,0,0) scale(1)" }, { opacity: 0, transform: "translate3d(" + dx + "px," + dy + "px,0) scale(0.18)" }], { duration: 260, easing: EASE_ACC, fill: "forwards" });
+      a.onfinish = end;
+    } catch (e2) { end(); return; }
+    tm = setTimeout(end, 380);
   }
   function dropAnim(w) {                           // set down: lift (1.025) -> tiny press (0.992) -> rest. Follow-through, no bounce
     var el = $(w.el);
@@ -271,18 +347,20 @@
     measureNow(function () {
       WIDGETS.forEach(function (w) { if (visible(w)) { list.push({ w: w, r: rectOf(w, o) }); } });
     });
+    refW = o.W; Z = 1;
     list.forEach(function (m) {
       var it = { x: m.r.l / o.W, y: m.r.t / o.W };
       if (!m.w.clock) { it.w = m.r.w / o.W; it.w0 = it.w; }
       items[m.w.id] = it;
     });
     dirty = false;
-    panel().classList.add("wa-canvas");
+    panel().classList.add("wa-canvas"); syncZoom();
     applying = true; WIDGETS.forEach(apply); applying = false; syncEnd();
   }
   function unfreeze() {
-    items = {}; dirty = false;
+    items = {}; dirty = false; refW = null;
     var p = panel(); if (p) { p.classList.remove("wa-canvas"); p.scrollTop = 0; }
+    syncZoom();
     WIDGETS.forEach(apply); syncEnd();
   }
   // a widget with no place yet (it was hidden when the canvas was made): natural size, nearest free spot
@@ -310,7 +388,7 @@
     var it = items[w.id], el = $(w.el), r, f, others;
     if (!it || !el || !visible(w)) { return false; }
     r = rectOf(w, o); f = fit(r, o); others = otherRects(w, o);
-    if (hit(f, others, GAP2)) { f = findSpot(f, others, o); }
+    if (hit(f, others, g2())) { f = findSpot(f, others, o); }
     if (Math.abs(f.l - r.l) > 0.5 || Math.abs(f.t - r.t) > 0.5) { glide(w); setPos(w, o, f.l, f.t); return true; }
     return false;
   }
@@ -353,7 +431,7 @@
     var el = $(w.el), it = items[w.id], others, ow, oh, hasH, lo, hi, i, mid, wv, r;
     if (!el || !it) { return; }
     others = otherRects(w, o);
-    function ok() { return !hit(rectOf(w, o), others, GAP2); }
+    function ok() { return !hit(rectOf(w, o), others, g2()); }
     ow = it.w * o.W; hasH = !!it.h; oh = hasH ? it.h * o.W : null;
     r = rectOf(w, o);
     var startOk = ok(), startH = r.h;
@@ -379,7 +457,7 @@
     if (Math.abs(v - 1) < 0.03) { delete it.s; } else { it.s = v; }
     dirty = true; apply(w);
     o = origin(); others = otherRects(w, o);
-    if (v > (prev || 1) && hit(rectOf(w, o), others, GAP2)) { if (prev) { it.s = prev; } else { delete it.s; } apply(w); }   // the clock may not grow onto another widget
+    if (v > (prev || 1) && hit(rectOf(w, o), others, g2())) { if (prev) { it.s = prev; } else { delete it.s; } apply(w); }   // the clock may not grow onto another widget
   }
 
   function onDown(w, e) {
@@ -546,7 +624,7 @@
     e.preventDefault(); e.stopPropagation();
     var o = origin(), r = rectOf(w, o), others = otherRects(w, o), T = targets(o, others), p = panel();
     // r, xs, ys are CONTENT coordinates (they do not change when the panel scrolls); sc0 = scroll position at the start
-    mv = { w: w, id: e.pointerId, sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, r: r, tx: T.x, ty: T.y, others: others, free: hit(r, others, GAP2), vl: r.l, vt: r.t, sc0: p.scrollTop, tl: r.l, tt: r.t, cl: r.l, ct: r.t, ov: e.currentTarget, raf: 0, released: false };
+    mv = { w: w, id: e.pointerId, sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, r: r, tx: T.x, ty: T.y, others: others, free: hit(r, others, g2()), vl: r.l, vt: r.t, sc0: p.scrollTop, tl: r.l, tt: r.t, cl: r.l, ct: r.t, ov: e.currentTarget, raf: 0, released: false };
     raise(w); el.classList.add("wa-drag", "wa-lift");
     try { mv.ov.setPointerCapture(e.pointerId); } catch (e1) { }
     readout(w);
@@ -570,9 +648,9 @@
       if (by) { f.t += by.d; gy = o.t + by.at; }
       f = fit(f, o);
       // other widgets are solid: if the wanted spot touches one, try sliding along it (x only, y only), else stay at the last free spot
-      if (!mv.free && hit({ l: f.l, t: f.t, w: r.w, h: r.h }, mv.others, GAP2)) {
-        if (!hit({ l: f.l, t: mv.vt, w: r.w, h: r.h }, mv.others, GAP2)) { f.t = mv.vt; }
-        else if (!hit({ l: mv.vl, t: f.t, w: r.w, h: r.h }, mv.others, GAP2)) { f.l = mv.vl; }
+      if (!mv.free && hit({ l: f.l, t: f.t, w: r.w, h: r.h }, mv.others, g2())) {
+        if (!hit({ l: f.l, t: mv.vt, w: r.w, h: r.h }, mv.others, g2())) { f.t = mv.vt; }
+        else if (!hit({ l: mv.vl, t: f.t, w: r.w, h: r.h }, mv.others, g2())) { f.l = mv.vl; }
         else { f.l = mv.vl; f.t = mv.vt; }
         blocked = true;
       }
@@ -609,7 +687,7 @@
     e.preventDefault(); e.stopPropagation();
     if (!ensure(w)) { return; }
     o = origin(); r = rectOf(w, o); f = fit({ l: r.l + dx, t: r.t + dy, w: r.w, h: r.h }, o);
-    if (hit(f, otherRects(w, o), GAP2)) { return; }
+    if (hit(f, otherRects(w, o), g2())) { return; }
     setPos(w, o, f.l, f.t); settle(w);
   }
 
@@ -628,6 +706,11 @@
     saveLayout();
   }
   function setOn(w, on) {
+    if (leaving[w.id]) { return; }                                  // the exit is still playing
+    if (!on && isOn(w) && adjusting) { hideAnim(w, function () { switchTo(w, false); }); return; }
+    switchTo(w, on);
+  }
+  function switchTo(w, on) {
     if (w.key) { lsSet(w.key, on ? "1" : "0"); refresh(); afterToggle(w); return; }
     var c = $(w.box);
     if (!c) { return; }
@@ -650,6 +733,40 @@
         eye.setAttribute("title", (on ? "Hide " : "Show ") + w.noun);
       }
     });
+    syncShelf();
+  }
+
+  // ---------- hidden-widget shelf ----------
+  // A hidden widget has no box on the canvas (so it can never be in the way while adjusting); its icon waits here instead. Click = show it again.
+  function buildShelf() {
+    if (shelf) { return; }
+    shelf = document.createElement("div"); shelf.id = "ia-shelf"; shelf.className = "ia-shelf is-empty";
+    shelf.setAttribute("role", "group"); shelf.setAttribute("aria-label", "Hidden widgets");
+    WIDGETS.forEach(function (w) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "ia-sh"; b.hidden = true;
+      b.setAttribute("data-name", w.name); b.setAttribute("aria-label", "Show " + w.noun);
+      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (SHELF_ICON[w.id] || "") + "</svg>";
+      b.addEventListener("click", function (e) {
+        var r = b.getBoundingClientRect(); e.stopPropagation();
+        emergeFrom = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        setOn(w, true);
+        emergeFrom = null;
+      });
+      shelf.appendChild(b); shelfBtns[w.id] = b;
+    });
+    document.body.appendChild(shelf);
+  }
+  function syncShelf() {
+    var any = false;
+    if (!shelf) { return; }
+    WIDGETS.forEach(function (w) {
+      var b = shelfBtns[w.id], off = !isOn(w); if (!b) { return; }
+      if (off && b.hidden) { b.hidden = false; b.classList.remove("is-pop"); void b.offsetWidth; b.classList.add("is-pop"); }
+      else if (!off && !b.hidden) { b.hidden = true; b.classList.remove("is-pop"); }
+      if (off) { any = true; }
+    });
+    shelf.classList.toggle("is-empty", !any);
   }
 
   // ---------- chrome on each widget ----------
@@ -753,9 +870,8 @@
     if (on) {
       freeze();                                                    // visible widgets stay exactly where they are
       setClass("is-adjusting", true);
-      refresh(); placeAllMissing();                                // ghosts (hidden widgets) get a free spot of their own
+      refresh(); placeAllMissing();                                // a widget that was hidden when the canvas was made gets its place
       resolveAll();                                                // a saved layout from an older version may overlap: separate it
-      WIDGETS.forEach(function (w) { if (!isOn(w)) { popIn(w); } });   // ghosts fade in; the visible widgets do not move
     } else {
       if (mv) { finishMove(); }
       else if (drag) {
@@ -783,7 +899,7 @@
     ui.btn = $("ia-btn"); ui.reset = $("ia-reset"); ui.tidy = $("ia-tidy"); ui.auto = $("ia-auto");
     loadAH();
     loadLayout();
-    WIDGETS.forEach(build);
+    WIDGETS.forEach(build); buildShelf();
     refresh(); applyAll();
     if (ui.btn) { ui.btn.addEventListener("click", function (e) { setAdjust(!adjusting); if (e.detail) { ui.btn.blur(); } }); }
     if (ui.reset) { ui.reset.addEventListener("click", resetAll); }
@@ -794,7 +910,7 @@
     window.addEventListener("keydown", function (e) {
       if ((e.key === "Escape" || e.keyCode === 27) && adjusting) { e.stopImmediatePropagation(); e.preventDefault(); setAdjust(false); }
     }, true);
-    // A click on an empty spot normally leaves the idle screen; not while adjusting.
+    // (A click on an empty spot of the idle screen no longer leaves it at all; this guard only covers the Adjust mode.)
     var clock = $("idle-clock");
     if (clock) {
       clock.addEventListener("click", function (e) {
@@ -832,8 +948,20 @@
       }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     } catch (e2) { }
     // the panel (or Card scale) changed: positions are fractions of the panel, so they follow; then keep everything inside and unstacked
-    var rzT = 0;
-    window.addEventListener("resize", function () { clearTimeout(rzT); rzT = setTimeout(function () { if (hasItems()) { applyAll(); if (isIdle()) { settle(); } } }, 160); });
+    // v19: the canvas is zoomed by panel width / ref, so a resize needs no overlap check at all (everything scales together). One frame per burst, so the
+    // widgets follow the panel edge while it is dragged. Only when the zoom hit its limit (very small / very large panel) the layout is checked once.
+    var rzRaf = 0, lastW = 0;
+    function onResize() {
+      rzRaf = 0;
+      if (!hasItems() || !panel()) { return; }
+      var o = origin(); if (o.W < 60 || Math.abs(o.W - lastW) < 0.5) { return; }
+      lastW = o.W;
+      applyAll();
+      if (zClamped && isIdle()) { settle(); } else { syncEnd(); }
+    }
+    function schedResize() { if (!rzRaf) { rzRaf = requestAnimationFrame(onResize); } }
+    window.addEventListener("resize", schedResize);
+    try { if (window.ResizeObserver && panel()) { new ResizeObserver(schedResize).observe(panel()); } } catch (e3) { }
     // "Reset everything" in Settings
     var rs = $("settings-reset");
     if (rs) { rs.addEventListener("click", function () { lsDel(LAYOUT_KEY); lsDel(TIMER_KEY); lsDel(CLOCK_KEY); lsDel(AH_KEY); unfreeze(); loadAH(); if (ui.auto) { ui.auto.textContent = ahLabel(); } refresh(); }); }

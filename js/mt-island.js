@@ -23,6 +23,12 @@
   var cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "timer", view = "timer", lastVis = false;
   var cfg = { h: 1, m: 0 };
+  // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
+  // (html[data-island="off"]: the live idle widgets then fade with the others instead of flying up). An update notice STILL uses the capsule, so an update is never missed.
+  var ON_KEY = "mtx.islandOn";
+  function enabled() { try { return localStorage.getItem(ON_KEY) !== "0"; } catch (e) { return true; } }
+  function markEnabled() { var r = document.documentElement; if (enabled()) { r.removeAttribute("data-island"); } else { r.setAttribute("data-island", "off"); } }
+  markEnabled();                                             // before the first paint
 
   function $(id) { return document.getElementById(id); }
   function body() { return document.body; }
@@ -237,6 +243,7 @@
 
   // widgets that are live fly toward the island when the idle UI hides: where is the island centre relative to each widget centre?
   function aim() {
+    if (!enabled()) { return; }
     var ids = [["idle-timer", data.timer], ["idle-sw", data.sw]], i, e, r, cx = window.innerWidth / 2, cy = 8 + 18;
     for (i = 0; i < ids.length; i++) {
       e = $(ids[i][0]); if (!e) { continue; }
@@ -264,10 +271,11 @@
     if (updBusy && !open && root.classList && (idle() ? quiet() : true)) { setOpen(true); }      // an install started: show its progress
     if (view === "u" && !upd) { view = effective(); root.setAttribute("data-dir", "prev"); viewChanged = true; }
     var want = visibleWanted();
+    if (!enabled() && !upd) { want = false; }                   // switched off in Settings: only an update notice may show it
     if (t && typeof t.h === "number" && document.activeElement !== hIn && document.activeElement !== mIn) { cfg.h = t.h; cfg.m = t.m; }
 
     if (!open) {                                                // collapsed: ONE icon + digits (the hidden panel is not touched every second)
-      var showU = upd && (updBusy || !(activeOf("timer") || activeOf("sw")));
+      var showU = upd && (!enabled() || updBusy || !(activeOf("timer") || activeOf("sw")));
       cEl.classList.toggle("is-u", showU); cEl.classList.toggle("has-upd", upd); cEl.classList.toggle("is-busy", showU && updBusy);
       if (showU) {
         var ti = bEl.title ? bEl.title.textContent : "Update", sb = bEl.sub ? bEl.sub.textContent : "", vm = /v[\d.]+\s*$/.exec(sb);
@@ -331,14 +339,43 @@
   }
 
   function init() {
-    build();
+    build(); bindSetting();
     try {
       new MutationObserver(function () { aim(); paint(false); }).observe(body(), { attributes: true, attributeFilter: ["class"] });   // idle / quiet changed
     } catch (e) { }
     window.addEventListener("resize", function () { aim(); applySize(true); });
+    /* v8: a click INSIDE the NeuCurve iframe never reaches this document, so the "click outside" listener (pointerdown, above)
+       could not collapse the island. Two ways in: (1) focus moving into an iframe blurs this window; (2) a pointerdown listener
+       inside the (same-origin file://) frame itself, re-attached on every frame load, covers a frame that already had focus. */
+    window.addEventListener("blur", function () {
+      var a = document.activeElement;
+      if (open && a && a.tagName === "IFRAME") { setOpen(false); }
+    });
+    var cf = document.getElementById("curve-frame");
+    function hookFrame() {
+      try {
+        var d = cf.contentDocument;
+        if (d && !d.__mtIsl) { d.__mtIsl = 1; d.addEventListener("pointerdown", function () { if (open) { setOpen(false); } }, true); }
+      } catch (e) { }
+    }
+    if (cf) { cf.addEventListener("load", hookFrame); hookFrame(); }
     paint(false);
   }
 
-  window.MTIsland = { update: update, aim: aim, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
+  function applyEnabled() {
+    markEnabled();
+    if (!enabled() && open && view !== "u") { setOpen(false); }   // an open timer / stopwatch panel closes with it
+    paint(false);
+  }
+  function bindSetting() {
+    var c = $("island-enabled"), rs = $("settings-reset");
+    if (c) {
+      c.checked = enabled();
+      c.addEventListener("change", function () { try { if (c.checked) { localStorage.removeItem(ON_KEY); } else { localStorage.setItem(ON_KEY, "0"); } } catch (e) { } applyEnabled(); });
+    }
+    if (rs) { rs.addEventListener("click", function () { try { localStorage.removeItem(ON_KEY); } catch (e) { } if (c) { c.checked = true; } applyEnabled(); }); }   // Reset everything
+  }
+
+  window.MTIsland = { update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

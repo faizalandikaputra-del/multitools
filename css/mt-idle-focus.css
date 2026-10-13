@@ -3,7 +3,7 @@
    Today list (with unfinished history) and notes. They stack under the clock inside #idle-clock and use the same frosted-chip
    look as .idle-session / .idle-message (css/style.css > Idle Screensaver). The clock, time and timer chips are display-only;
    the Today list and Notes cards take clicks and typing (pointer-events: auto while body.is-idle). Mouse movement no longer
-   leaves the idle screen: the unlock bar (#idle-unlock: slide, tap, or both, see Idle in js/main.js), Esc, or a click on an empty spot does. */
+   leaves the idle screen: the unlock bar (#idle-unlock: slide, tap, or both, see Idle in js/main.js), or Esc does. */
 
 /* ---- scrolling ----
    The idle box is the scroll container. Three things used to stop it from scrolling:
@@ -180,7 +180,7 @@ html[data-theme="light"]:not(.has-bg-media) .idle-fold-btn[aria-checked="true"] 
 .idle-fold-btn[hidden], .idle-dash[hidden] { display: none; }
 
 /* Card Scale (Settings > Idle screen): scales the chips and dashboard cards, not the clock text */
-.idle-chips, .idle-fold .idle-dash { zoom: var(--idle-card-scale, 1); }
+.idle-chips, .idle-fold .idle-dash { zoom: var(--wa-zoom, var(--idle-card-scale, 1)); }   /* --wa-zoom = card scale x panel width / layout width (js/mt-idle-adjust.js, only once the widgets were adjusted) */
 
 /* mouse-move mode: no bar, the cursor itself is the way out */
 .idle-unlock[data-mode="move"] { display: none; }
@@ -362,6 +362,7 @@ html[data-theme="light"]:not(.has-bg-media) .iu-track {
   margin-top: auto; font-size: calc(var(--idle-scale) * clamp(1.8rem, 7.2vw, 3.1rem)); font-weight: 700; line-height: 1; letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.25);
 }
+.sw-time { transition: opacity 0.22s ease, letter-spacing 0.22s ease; }
 .idle-sw.is-hidden .sw-time { opacity: 0.5; letter-spacing: 0.04em; }
 .idle-sw.is-running .ic-round--lg { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); }
 .sw-foot { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 1.4rem; margin-top: auto; }

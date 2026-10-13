@@ -5304,6 +5304,7 @@
         Idle.reset();
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass
         if (window.MTAnim) { window.MTAnim.reset(); }            // Settings > Tab animation back to Smooth / 100% / Soft
+        if (window.MTNav) { window.MTNav.reset(); }              // Settings > Navigation back to Left
         Motion.set(true);
         if ($("anim-enabled")) { $("anim-enabled").checked = true; }
         Store.remove("autoParent"); Store.remove("presetFolder");
@@ -5968,7 +5969,7 @@
   // After N seconds without mouse activity the whole UI (.app) fades out and is then display:none'd, so
   // CEF stops styling / laying out / painting it - the only thing still animating is the background
   // video/GIF, which keeps playing underneath the clock overlay (#idle-clock). Any mouse movement brings
-  // the UI back only through the unlock bar at the bottom ("slide", "tap" or "both"), Esc, or a click on an empty spot.
+  // the UI back only through the unlock bar at the bottom ("slide", "tap" or "both"), or Esc.
   // Mouse movement does not leave Idle Mode, so notes and tasks on the idle screen can be clicked and edited.
   // Saved in localStorage (via Store): "idleEnabled" = "1"/"0", "idleTimeout" = seconds, "idleExit" = "both"/"slide"/"tap".
   // ---------------------------------------------------------
@@ -6182,7 +6183,7 @@
 
     markActive: function () {
       if (!this.enabled) { return; }
-      if (this.isIdle && this.exitMode !== "move") { return; }          // only the unlock bar / Esc / a click on an empty spot leave Idle Mode (any activity in "move" mode)
+      if (this.isIdle && this.exitMode !== "move") { return; }          // only the unlock bar / Esc leave Idle Mode (any activity in "move" mode)
       this.lastActive = Date.now();       // cheap: no timer is touched on every mousemove
       if (this.isIdle) { if (Date.now() - this.idleSince < 700) { return; } this.exit(); }   // "move" mode: ignore the synthetic mousemove Chromium fires while the UI hides
     },
@@ -6497,20 +6498,10 @@
     },
 
     // ----- leaving the idle screen -----
-    // Also: Esc (bound in init) or a click on an empty spot: anything that is not a card, chip, input or button.
-    bindLeave: function () {
-      var self = this;
-      this.clockEl.addEventListener("click", function (e) {
-        if (!self.isIdle) { return; }
-        var t = e.target, sel = ".idle-card, .idle-timer, .idle-elapsed, .idle-message, button, input, textarea, select, a";
-        if (t && t.closest && t.closest(sel)) { return; }
-        // A button that re-draws its own icon on click (stopwatch / timer play-pause) is already detached from the page when the click
-        // reaches here, so closest() finds nothing and the click looked like an empty spot. The event path is fixed at dispatch: use it.
-        var path = e.composedPath ? e.composedPath() : [], i;
-        for (i = 0; i < path.length; i++) { if (path[i] && path[i].matches && path[i].matches(sel)) { return; } }
-        self.exit();
-      });
-    },
+    // Leaving is ONLY done by: the unlock bar (bindUnlock), Esc (bound in init) or, in "move" mode, mouse activity.
+    // A click on an empty spot of the idle screen does NOT leave any more: it used to open the panel even when the click was
+    // nowhere near the "Tap to open" / "Slide to open" bar (tap + slide modes). Clicks on cards, chips and buttons never left either.
+    bindLeave: function () { /* intentionally empty: see above */ },
 
     setEnabled: function (on) {
       this.enabled = !!on;

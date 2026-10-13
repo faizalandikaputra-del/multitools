@@ -92,6 +92,9 @@
   /* Walk up from the hovered node to the nearest element that has a name to show. */
   function findTarget(node) {
     var n = node, t;
+    // v4: an <iframe> (the NeuCurve pane has title="NeuCurve") draws its own tooltips inside its own document; the cursor resting over it
+    // must never raise one here - it popped up a stray "NeuCurve" pill above the pane (the 120 ms watchdog below found the iframe under the cursor).
+    if (node && node.nodeType === 1 && (node.tagName === "IFRAME" || (node.closest && node.closest(".curve-pane")))) { return null; }
     // The left navigation never shows tooltips (its expanded view shows the tab names instead).
     if (node && node.nodeType === 1 && node.closest && node.closest(".sidebar")) { return null; }
     while (n && n.nodeType === 1 && n !== document.documentElement) {
@@ -160,7 +163,14 @@
     var side = "top", x, y, ax, ay, anchorX;
     var inSidebar = !!(el.closest && el.closest(".sidebar"));
 
-    if (inSidebar && r.right + GAP + w < vw - EDGE) {
+    if (inSidebar && document.documentElement.getAttribute("data-nav") === "right" && r.left - GAP - w > EDGE) {       // Settings > Navigation: rail on the right -> tip opens to its left
+      side = "left";
+      x = r.left - GAP - w;
+      y = r.top + r.height / 2 - h / 2;
+      y = Math.max(EDGE, Math.min(vh - h - EDGE, y));
+      ay = Math.max(9, Math.min(h - 9, r.top + r.height / 2 - y));
+      tip.style.setProperty("--mt-a", ay + "px");
+    } else if (inSidebar && r.right + GAP + w < vw - EDGE) {
       side = "right";
       x = r.right + GAP;
       y = r.top + r.height / 2 - h / 2;

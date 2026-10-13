@@ -4,8 +4,8 @@
 (function () {
   "use strict";
   var bus = window.MTSettingsBus, root = document.documentElement, body = document.getElementById("settingsBody");
-  var KEY_ATTRS = ["data-ui-theme-opt", "data-mu-seed", "data-mu-mode", "data-anim-style-opt", "data-anim-ease-opt", "data-label-select"];
-  var KEYED = "[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-label-select]";
+  var KEY_ATTRS = ["data-ui-theme-opt", "data-mu-seed", "data-mu-mode", "data-anim-style-opt", "data-anim-ease-opt", "data-nav-opt", "data-label-select"];
+  var KEYED = "[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-nav-opt],[data-label-select]";
 
   function keyOf(el) {
     if (el.id && el.id.indexOf("win") !== 0 && el.id.indexOf("settings") !== 0 || el.id === "settings-reset") { return "#" + el.id; }
@@ -173,7 +173,8 @@
     root.classList.toggle("is-offline", !ok);
   }
   bus.on("state", apply);
-  function hello(first) { bus.send("hello", { first: first === true }); if (Date.now() - lastState > 2500) { setStatus(false); } }
+  bus.on("alive", function () { setStatus(true); });          // keep-alive: the panel only sends a state when something changed, so a quiet panel used to flip the header text to "waiting for the panel" every few seconds
+  function hello(first) { bus.send("hello", { first: first === true }); if (Date.now() - lastState > 7000) { setStatus(false); } }
   hello(true); helloTimer = setInterval(hello, 2000);
   setTimeout(function () { hello(true); }, 400);
   window.addEventListener("focus", function () { hello(); });

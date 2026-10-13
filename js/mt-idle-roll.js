@@ -98,23 +98,43 @@
     }
     return out;
   }
+  // Rising-in half of a swap: draws `shown` as single characters and lets them rise from below (decelerate), then hands the node back to the normal roll markup.
+  function land(node, shown, dur, st, mode, always) {
+    var inn = chars(node, shown), last = 0, EASE_IN = "cubic-bezier(0.05, 0.7, 0.1, 1)";
+    node._swPhase = 2;
+    inn.forEach(function (c, i) { last = dur + i * st; c.animate([{ opacity: 0, transform: "translate3d(0,60%,0)" }, { opacity: 1, transform: "none" }], { duration: dur, delay: i * st, easing: EASE_IN, fill: "backwards" }); });
+    node._swT = setTimeout(function () {
+      var t = node._swPend;                                            // the newest text (a ticking stopwatch keeps refreshing it through set())
+      node._swT = 0; node._swBusy = false; node._swPhase = 0; node._swPend = null;
+      reset(node); set(node, t, mode, always);
+    }, last + 30);
+  }
   function swap(node, text, mode, always) {
     if (!node) { return; }
     text = String(text);
     var reduce = document.documentElement.getAttribute("data-reduce-motion") === "true";
-    if (!node.animate || reduce) { reset(node); set(node, text, mode, always); return; }
-    var old = node._mr ? node._mr.text : node.textContent, out, EASE_OUT = "cubic-bezier(0.3, 0, 1, 1)", EASE_IN = "cubic-bezier(0.05, 0.7, 0.1, 1)", st = 32;
+    var old, out, EASE_OUT = "cubic-bezier(0.3, 0, 1, 1)", st = 32, kids, i;
     if (node._swT) { clearTimeout(node._swT); node._swT = 0; }
-    node._swBusy = true; node._swPend = text;
+    if (!node.animate || reduce) {
+      node._swBusy = false; node._swPhase = 0; node._swPend = null;
+      reset(node); set(node, text, mode, always); return;
+    }
+    // Hide / Show pressed again while a swap is still playing. Retarget at once: stop what is running, throw away the half-gone characters
+    // and let the NEWEST text rise in right now (short and tight). One layer of characters exists at any time, so digits and dots can never
+    // be on screen together, and the display never lags behind the button. (Before, a second swap() restarted from node._mr.text - the text
+    // from BEFORE the first swap - so old characters snapped back on screen; the waiting version of the fix lagged a swap behind the clicks.)
+    if (node._swBusy) {
+      kids = node.children;
+      for (i = 0; i < kids.length; i++) { try { if (kids[i].getAnimations) { kids[i].getAnimations().forEach(function (a) { a.cancel(); }); } } catch (e) { } }
+      node._swPend = text;
+      land(node, text, 200, 16, mode, always);
+      return;
+    }
+    old = node._mr ? node._mr.text : node.textContent;
+    node._swBusy = true; node._swPhase = 1; node._swPend = text;
     out = chars(node, old);
     out.forEach(function (c, i) { c.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translate3d(0,-60%,0)" }], { duration: 190, delay: i * st, easing: EASE_OUT, fill: "forwards" }); });
-    node._swT = setTimeout(function () {
-      var inn = chars(node, node._swPend), last = 0;
-      inn.forEach(function (c, i) { last = 300 + i * st; c.animate([{ opacity: 0, transform: "translate3d(0,60%,0)" }, { opacity: 1, transform: "none" }], { duration: 300, delay: i * st, easing: EASE_IN, fill: "backwards" }); });
-      node._swT = setTimeout(function () {
-        node._swT = 0; node._swBusy = false; var t = node._swPend; node._swPend = null; reset(node); set(node, t, mode, always);
-      }, last + 30);
-    }, 190 + Math.max(0, old.length - 1) * st);
+    node._swT = setTimeout(function () { land(node, node._swPend, 300, st, mode, always); }, 190 + Math.max(0, old.length - 1) * st);
   }
 
   window.MTRoll = { set: set, reset: reset, swap: swap };

@@ -1709,3 +1709,72 @@ fix50 (NeuCurve + dynamic island + idle screen): island covered the NeuCurve too
   * reduceMotion() in js/mt-idle-adjust.js reads only the app's Animations switch (OS setting ignored), so glide / drop / pop-in run with Windows animations off.
 Other idle css files (mt-idle-motion.css, mt-idle-time.css, mt-idle-icons.css, mt-idle-adjust.css) still contain their own prefers-reduced-motion blocks; not touched.
 Tested in jsdom (logic only: roll outside idle, swap, island Hide button). The tidy-up / snap math and all motion were NOT run in a browser or AE.
+
+fix51 (idle screen + NeuCurve + stopwatch): a click on the idle screen opened the panel; NeuCurve status pill moved; fast Hide / Show of the stopwatch.
+- Idle screen (js/main.js, Idle.bindLeave): a click on an EMPTY spot of the idle screen left Idle Mode in every mode (tap, slide, both), also far away from the "Tap to open" / "Slide to open" bar.
+  Cause: bindLeave() had a click listener on #idle-clock that called exit() for anything that was not a card / chip / button.
+  Fix: bindLeave() is empty now. The ways out are only: the unlock bar (slide / tap / both), Esc, and mouse activity in "Mouse move" mode. Comments and the Settings note (html/index.html) no longer mention the empty-spot click.
+  Also touched (comments only): js/mt-idle-adjust.js, js/mt-idle-focus.js, css/mt-idle-focus.css.
+- NeuCurve status pill (neucurve/nc-status.css v1 + neucurve/nc-status.js v1, linked in neucurve/index.html): the red (and green) message pill sat at top:-10px with a 7px font, half on the graph edge, half on the toolbar.
+  Now it sits exactly on the APPLY button (js copies the button's box; CSS has a fallback), 11px, pointer-events: none so APPLY stays clickable underneath. Red = error, green = success, light theme has its own colours.
+  The bundle (neucurve/assets/index.js) is not touched. Off switch: remove the <link> / <script> in neucurve/index.html.
+- Stopwatch Hide / Show pressed quickly (js/mt-idle-roll.js, MTRoll.swap; used by the idle screen and the island):
+  Cause: a second swap() restarted from node._mr.text, which is only refreshed when the whole swap ends. So the text from BEFORE the first swap snapped back on screen, then left and rose in again.
+  Fix: a running swap is never restarted. Pressed during the leave phase: only the newest text is remembered (it is drawn when the leave ends). Pressed during the rise phase: that phase finishes, then ONE more swap plays, only if the kind of text changed (digits <-> dots).
+  Tested with a mock DOM + fake timers (logic only). The motion itself was NOT run in a browser or AE.
+
+fix52 (NeuCurve status pill v2 + Settings > Navigation + stopwatch swap): the pill is small and in the graph corner; the tab rail can sit on the right; digits and dots can no longer mix.
+- NeuCurve status pill (neucurve/nc-status.css v2, nc-status.js v2): v1 laid the pill over the APPLY button, which looked odd. Now it is a SMALL pill (9px, 16px high) in the top-left corner INSIDE the graph box (.canvas-area): the emptiest corner of an easing graph.
+  nc-status.js copies that corner into left / top and the box width into max-width; with no graph on screen (presets-only view) it falls back to just above the action bar. pointer-events: none. Entrance: 180 ms, rises 4px + fades (MD3 emphasized curve). Red = error, green = success.
+- Settings > Appearance > Navigation (new): Left (default) / Right.  Files: css/mt-nav.css v1, js/mt-nav.js v1 (localStorage "mtx.navPos" -> data-nav="right" on <html>), cards [data-nav-opt] in html/index.html (modal) and html/settings.html (window),
+  "data-nav-opt" added to the key lists of js/mt-settings-remote.js and js/mt-settings-window.js (that is how the window mirrors a control), reset hook in js/main.js (Reset everything -> MTNav.reset()), tooltip of a rail tab opens to the LEFT when the rail is on the right (js/mt-tooltip.js, class .mt-tip.is-left in css/mt-nav.css).
+  Right = .app is row-reverse, the edge line moves to the other side, a tab has its icon on the right and its name on the left, the rail opens towards the LEFT over the tools (margin-left instead of margin-right).
+  Switching slides the rail and the tools past each other (FLIP, 380 ms, cubic-bezier(0.2, 0, 0, 1)); no slide when data-reduce-motion="true".
+  Only left / right. Top / bottom would need the vertical tab list, the sliding highlight (moveIndicator in js/main.js) and the tab drag-reorder rebuilt for a horizontal bar.
+- Stopwatch Hide / Show pressed fast (js/mt-idle-roll.js, MTRoll.swap v3): the fix of fix51 made the display wait for the running swap, so it lagged behind the buttons and numbers / dots showed in the wrong order.
+  Now a second press RETARGETS at once: running animations are cancelled, the half-gone characters are dropped and the newest text rises in immediately (200 ms, 16 ms stagger). Only one layer of characters exists, so digits and dots can never be on screen together.
+  css/mt-idle-focus.css: .sw-time now eases opacity + letter-spacing (0.22 s) when Hide / Show flips the .is-hidden class (it jumped before).
+  Tested with a mock DOM + fake timers (logic only). Motion, the nav slide and the pill position were NOT run in a browser or AE.
+
+fix53 (Settings > Navigation animation + NeuCurve status pill v3 + idle widgets on panel resize):
+- Navigation switch (js/mt-nav.js v2): the old slide swept the whole rail across the tools. Now the rail fades out through its old edge (150 ms, accelerate), the side flips while the rail is invisible,
+  the tools glide to their new place (440 ms, cubic-bezier(0.2, 0, 0, 1), dim 0.82 -> 1) and the rail fades in from 28 px beyond the new edge (380 ms, MD3 emphasized decelerate), every tab following 28 ms after the previous one (max 170 ms).
+  Only transform + opacity. A second click while it plays lands the first one at once. No motion when data-reduce-motion="true".
+- NeuCurve status pill (neucurve/nc-status.css v3, nc-status.js v3): it sat in the graph corner and covered the top handle / end of the curve. Now it is a 14 px pill in the strip UNDER the graph, centred between the "0" and "1" labels,
+  max-width = space between the labels. Re-centres when its text changes. Fallback (no graph on screen) unchanged. Checked at 420x700, 300x520 and 760x420.
+- Idle widgets, panel resized (js/mt-idle-adjust.js v19, css/mt-idle-focus.css v15): boxes followed the panel width but their text kept its size, so text wrapped more, boxes grew taller, the overlap check then threw widgets around.
+  Cause: x / y / w / h are fractions of the panel width, content is not. Fix: the layout stores the panel width it was made at ("ref" in mtx.wLayout, v3 stays valid; a layout without it adopts the first width it is shown at).
+  The cards are zoomed by panel width / ref (--wa-zoom, the same CSS zoom as Card scale), the clock text scale is multiplied by the same factor, so the whole canvas scales like one picture: same wrapping, heights and gaps, no overlap, no re-sorting.
+  Resize runs one frame per burst (window resize + ResizeObserver), no 160 ms delay. The overlap gap shrinks with the zoom (g2()). Zoom is limited to 0.4 - 2.4 (beyond that ref follows and the layout is checked once).
+  Tested in headless Chromium (real html/index.html): layout made at 800 px shown at 500 / 380 / 1000 px: every box is exactly 0.625 / 0.475 / 1.25 of its size and position, nothing overlaps. Nav switch sampled at 60 / 140 / 240 / 380 / 600 ms and with 3 quick clicks.
+  Not run inside AE.
+
+fix54 (idle screen > Adjust): hidden widgets are grouped as icons in a shelf and no longer get a box on the canvas.
+Cause: a widget switched off with the eye stayed on the canvas as a dimmed ghost box, so it took space, had to be moved around and got in the way of arranging the visible ones.
+Fix (js/mt-idle-adjust.js v22, css/mt-idle-adjust.css v19):
+- While adjusting, a hidden widget is really hidden (the ghost CSS is gone). Nothing else moves when a widget is hidden.
+- Shelf #ia-shelf (bottom left, vertical glass capsule, only while something is hidden and Adjust is open): one round icon per hidden widget (clock, hourglass, timer, stopwatch, bell, notes). Hover / focus shows the name beside it.
+  Click = widget returns to the canvas (its old place if free, else the nearest free spot) with the usual rise-in. A newly hidden widget's icon pops in (420 ms). Hidden when the unlock mode is "Mouse move"; no motion with data-reduce-motion="true".
+- Reset layout no longer reserves slots for hidden widgets; they are placed when shown.
+Tested in headless Chromium (640 x 620): hide Stopwatch, Alarms, Timer: no other widget moved, 3 icons in the shelf; click Timer icon: it returns, icon leaves the shelf. Not run inside AE.
+
+fix55 (idle screen > Adjust): hide and show of a widget are animated (js/mt-idle-adjust.js v23).
+- Hide (the eye): the widget shrinks into the shelf corner (scale 1 -> 0.18, fades out, 260 ms, accelerate cubic-bezier(0.3, 0, 1, 1)) and is switched off only when that ends, so its shelf icon appears where it vanished.
+  A second click during the 260 ms is ignored. A guard timer (380 ms) finishes the switch if the animation never ends.
+- Show (shelf icon): the widget grows out of the clicked icon (scale 0.18 -> 1, opacity 0 -> 1, 380 ms, decelerate cubic-bezier(0.05, 0.7, 0.1, 1)); the icon leaves at once. A widget switched on from the Settings window keeps the old rise-in (0.6 rem, 420 ms).
+- Light: Web Animations on ONE element, transform + opacity only, no layout, no extra DOM, no clone. No motion with data-reduce-motion="true".
+Tested in headless Chromium (640 x 620): Stopwatch hide sampled at 60 / 130 / 200 / 260 ms (opacity 0.87 -> 0.23, moves toward the bottom left, then hidden, icon in the shelf); show sampled at 30 - 630 ms (grows from the icon to its place); double click on the eye ends hidden. Not run inside AE.
+
+fix56 (Settings > Idle screen > Dynamic island): new switch "Show dynamic island" (js/mt-island.js v9, css/mt-island.css v8).
+- Key mtx.islandOn ("0" = off, default on). Control #island-enabled in html/index.html (modal: field "Dynamic island") and html/settings.html (Settings window: group "Dynamic island", before "Idle screen cards"); the window mirrors it by id like every other switch.
+- Off: the capsule never shows for the timer / stopwatch, an open timer / stopwatch panel closes, <html data-island="off"> is set. The live idle widgets then fade with the others on auto-hide instead of flying up (css/mt-island.css).
+  An update notice STILL uses the capsule (it is where the updater banner lives), so an update is never missed.
+- Settings > Reset everything switches it on again. MTIsland.refresh() re-applies the setting.
+Tested in headless Chromium: stopwatch active -> island on; switch off -> island off; update notice shown -> island on; notice gone -> off; switch on -> on, key removed. Not run inside AE.
+
+fix57 (dynamic island off = NeuCurve default layout, island switch moved to Appearance, settings text flicker).
+1. Island off: the Curve tab starts 50 px below the top only while the island is on. With Settings > Appearance > Show dynamic island off (<html data-island="off">), .curve-pane is back to top 0 (css/style.css default) and the solid band behind the island (css/mt-curve-top.css) is hidden. Files: css/mt-island.css v9, css/mt-curve-top.css v2. An update notice still opens the island while it is off; it then covers the top of the Curve tab until dismissed.
+2. The "Dynamic island" group of html/settings.html moved from the Idle screen section to the Appearance section (between Navigation and Colors). Same control id #island-enabled, so js/mt-island.js and the mirror in js/mt-settings-remote.js are unchanged in behaviour.
+3. Flicker, Multi Tool settings window. Cause: the panel only sends a state message when something changed, but the window switched its header text to "Multi Tool / Settings - waiting for the panel" after 2.5 s without a state, then back on the next change. Fix: js/mt-settings-remote.js v5 answers every keep-alive hello with a small "alive" message; js/mt-settings-window.js v4 treats it as proof the panel is there and only shows "waiting" after 7 s of silence.
+4. Flicker, NeuCurve settings window. Cause: refreshAll() runs every second and rewrote the same text again (slider values, dropdown labels, profile name / bio) and reassigned the avatar src, which repaints the text each time. Fix (neucurve/nc-settings.js v16): new helper txt() writes only when the text changed; avatar src is only set when different.
+Tested in headless Chromium: Curve pane top 50 px with the island on, 0 px off, 50 px again after switching back; the island switch sits in the Appearance section; Settings window header text stayed unchanged for 15 s. Not run inside AE.

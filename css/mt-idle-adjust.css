@@ -179,16 +179,7 @@ body.is-adjusting .idle-chips > *, body.is-adjusting .idle-dash > * { outline-co
 body.is-adjusting .idle-chips > *:hover, body.is-adjusting .idle-dash > *:hover, body.is-adjusting .wa-drag { outline-color: var(--accent, #5b8cff); }
 body.is-adjusting .wa-drag { outline-style: solid; z-index: 4; }
 
-/* a hidden widget stays in place as a dimmed ghost, so it can be switched back on */
-body.is-adjusting .idle-elapsed[hidden] { display: flex !important; }
-body.is-adjusting .idle-timer[hidden], body.is-adjusting .idle-timer.wa-off { display: flex !important; }
-body.is-adjusting .idle-dash[hidden] { display: grid !important; }
-body.is-adjusting .idle-dash.no-sw #idle-sw { display: flex !important; }
-body.is-adjusting .idle-dash.no-al #idle-alarms, body.is-adjusting .idle-dash.no-tabs #idle-tabs { display: flex !important; }
-body.is-adjusting .idle-clock.is-folded .idle-elapsed { display: flex !important; }
-body.is-adjusting .idle-chips > .wa-ghost, body.is-adjusting .idle-dash > .wa-ghost { opacity: 0.4; }
-body.is-adjusting .idle-chips > .wa-ghost:hover, body.is-adjusting .idle-dash > .wa-ghost:hover,
-body.is-adjusting .idle-chips > .wa-ghost:focus-within, body.is-adjusting .idle-dash > .wa-ghost:focus-within { opacity: 0.75; }
+/* a hidden widget is really hidden while adjusting too (v19): it has no box on the canvas to bump into. Its icon waits in the shelf (#ia-shelf, bottom left) - click it to bring the widget back. */
 
 .wa-eye, .wa-grip {
   box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
@@ -280,14 +271,11 @@ body.is-idle .idle-clock[data-position] { top: 0; right: 0; bottom: 0; left: 0; 
   outline: 1px dashed transparent; outline-offset: 4px;
 }
 .idle-hero.wa-off { display: none !important; }
-body.is-adjusting .idle-hero.wa-off { display: flex !important; }
 body.is-adjusting .idle-hero { outline-color: rgba(var(--accent-rgb, 91, 140, 255), 0.7); transition: transform 0.3s var(--ia-in), outline-color 0.25s ease, opacity 0.25s var(--ia-std); }
 body.is-adjusting .idle-hero:hover, body.is-adjusting .idle-hero.wa-drag { outline-color: var(--accent, #5b8cff); }
 body.is-adjusting .idle-hero.wa-drag { outline-style: solid; z-index: 4; }
 body.is-adjusting .idle-hero.wa-lift { box-shadow: none; }
 body.is-adjusting .idle-hero.wa-clash { outline-style: solid; outline-color: rgba(255, 107, 107, 0.95); }
-body.is-adjusting .idle-hero.wa-ghost { opacity: 0.4; }
-body.is-adjusting .idle-hero.wa-ghost:hover, body.is-adjusting .idle-hero.wa-ghost:focus-within { opacity: 0.75; }
 body.is-adjusting .idle-hero:hover .wa-name { opacity: 1; transform: none; }
 :root[data-reduce-motion="true"] body.is-adjusting .idle-hero { transition: none !important; }
 @media (prefers-reduced-motion: reduce) { body.is-adjusting .idle-hero { transition: none !important; } }
@@ -353,3 +341,49 @@ html body .idle-clock.wa-canvas { overflow-x: hidden; overflow-y: auto; }
 .wa-measure .idle-dash > *, .wa-measure .idle-hero, .wa-measure .idle-fold, .wa-measure #idle-ghost-tray { order: 0 !important; }
 .wa-measure .idle-dash > #idle-sw, .wa-measure .idle-dash > #idle-alarms { grid-column: span 6 !important; }
 :root[data-reduce-motion="true"] .wa-canvas .wa-glide { transition: none !important; }
+
+
+/* ---------- hidden-widget shelf (v19) ----------
+   While adjusting, every hidden widget is one round icon in a slim vertical capsule at the bottom left (the adjust button is bottom right, the unlock bar
+   centre, so nothing collides). The capsule only exists while something is hidden. Click an icon: the widget returns to the canvas (nearest free spot).
+   The name appears beside the icon on hover / keyboard focus. Enter: capsule rises 0.5 rem (300 ms, decelerate), a newly hidden widget's icon pops in
+   (scale 0.5 -> 1, 420 ms). Only transform + opacity. */
+.ia-shelf {
+  position: fixed; z-index: 42; left: var(--space-4); bottom: calc(var(--space-4) + 0.5rem);
+  box-sizing: border-box; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.3rem; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translate3d(-0.5rem, 0.5rem, 0) scale(0.94); transform-origin: 0 100%;
+  transition: opacity 0.2s var(--ia-out), transform 0.2s var(--ia-out), visibility 0s linear 0.2s;
+}
+body.is-adjusting .ia-shelf:not(.is-empty) {
+  opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+  transition: opacity 0.3s var(--ia-in), transform 0.3s var(--ia-in), visibility 0s;
+}
+.ia-sh {
+  position: relative; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 2rem; height: 2rem; margin: 0; padding: 0; color: #fff; font: inherit; cursor: pointer;
+  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 50%;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s var(--ia-std), border-color 0.15s ease;
+}
+.ia-sh[hidden] { display: none; }
+.ia-sh svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; transition: opacity 0.15s ease; }
+.ia-sh:hover { background: var(--accent, #5b8cff); border-color: transparent; color: var(--on-accent, #fff); }
+.ia-sh:hover svg, .ia-sh:focus-visible svg { opacity: 1; }
+.ia-sh:active { transform: scale(0.92); }
+.ia-sh:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.ia-sh.is-pop { animation: ia-sh-pop 0.42s var(--ia-in) both; }
+@keyframes ia-sh-pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+.ia-sh::after {
+  content: attr(data-name); position: absolute; left: calc(100% + 0.55rem); top: 50%; padding: 0.22rem 0.55rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 500; line-height: 1.2; white-space: nowrap; color: #fff; background: rgba(30, 30, 36, 0.86); pointer-events: none;
+  opacity: 0; transform: translate3d(-0.25rem, -50%, 0); transition: opacity 0.16s var(--ia-out), transform 0.2s var(--ia-in);
+}
+.ia-sh:hover::after, .ia-sh:focus-visible::after { opacity: 1; transform: translate3d(0, -50%, 0); }
+html[data-theme="light"]:not(.has-bg-media) .ia-shelf { background: rgba(255, 255, 255, 0.6); border-color: rgba(0, 0, 0, 0.1); }
+html[data-theme="light"]:not(.has-bg-media) .ia-sh { color: var(--text, #1c1b20); background: rgba(255, 255, 255, 0.7); border-color: rgba(0, 0, 0, 0.1); }
+html[data-theme="light"]:not(.has-bg-media) .ia-sh:hover { background: var(--accent, #5b8cff); color: var(--on-accent, #fff); border-color: transparent; }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .ia-shelf { -webkit-backdrop-filter: blur(12px) saturate(140%); backdrop-filter: blur(12px) saturate(140%); }
+}
+.idle-unlock[data-mode="move"] ~ .ia-shelf { display: none; }
+:root[data-reduce-motion="true"] .ia-shelf, :root[data-reduce-motion="true"] .ia-sh, :root[data-reduce-motion="true"] .ia-sh::after { transition: none !important; animation: none !important; }

@@ -201,7 +201,7 @@
     inp.addEventListener("input", function () { set(key, toStore ? toStore(inp.value) : inp.value); refreshAll(); });
     return function () {
       if (document.activeElement !== inp) { inp.value = valueFor(key, toStore); }
-      $(valueId).textContent = fmt(parseFloat(inp.value));
+      txt($(valueId), fmt(parseFloat(inp.value)));
     };
   }
   function valueFor(key, toStore) {
@@ -209,6 +209,8 @@
     if (/^g[WH][pl]$/.test(key)) { return String(num(read(key), 25, 100, 100)); }
     return read(key);
   }
+  /* v16: refreshAll() runs every second. Writing the same text again still replaces the text node and repaints it = visible flicker. Write only when it changed. */
+  function txt(node, t) { if (node && node.textContent !== t) { node.textContent = t; } }
   function pct(v) { return Math.round(v) + "%"; }
   function deg(v) { return Math.round(v) + "\u00b0"; }
 
@@ -264,10 +266,11 @@
   function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) { } }
   function refreshProfile(fields) {
     var src = profile.image || DEFAULT_AVATAR;
-    els.avatar.src = src; els.editorAvatar.src = src;
+    if (els.avatar.getAttribute("src") !== src) { els.avatar.src = src; }
+    if (els.editorAvatar.getAttribute("src") !== src) { els.editorAvatar.src = src; }
     if (fields !== false) { els.pName.value = profile.name; els.pBio.value = profile.bio; }
-    els.pNameShow.textContent = cleanText(profile.name, DEFAULT_PROFILE.name, 40, false);
-    els.pBioShow.textContent = cleanText(profile.bio, DEFAULT_PROFILE.bio, 120, true);
+    txt(els.pNameShow, cleanText(profile.name, DEFAULT_PROFILE.name, 40, false));
+    txt(els.pBioShow, cleanText(profile.bio, DEFAULT_PROFILE.bio, 120, true));
     els.pClear.disabled = !profile.image;
   }
   function initProfile() {
@@ -341,7 +344,7 @@
         }
       }
       for (i = 0; i < n; i++) { kids[i].classList.toggle("is-selected", i === sel.selectedIndex); }
-      label.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : "";
+      txt(label, sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : "");
     }
     function pick(i) {
       if (i < 0 || i >= sel.options.length) { return; }

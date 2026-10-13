@@ -1,0 +1,12 @@
+/* Multi Tool - mt-curve-top.css (v1)
+   The NeuCurve pane starts 50px below the top (css/mt-island.css: ".curve-pane { top: 50px }") so the island never covers NeuCurve's
+   toolbar. That 50px band had NO backdrop of its own, so the wallpaper showed through it like a hole around the island.
+   Fix: a solid band behind the island, painted only while the Curve tab is open. Its colour is the real colour of NeuCurve's own
+   backdrop (js/mt-curve-top.js copies it, opaque, into --curve-top-bg), so the band and the toolbar below it read as one surface in
+   every theme (dark, light, custom Background colour). Off switch: remove the <link> / <script> in html/index.html. */
+.main.is-curve::before {
+  content: ""; position: absolute; top: 0; right: 0; left: 0; height: 50px; z-index: 1; pointer-events: none;
+  background-color: var(--curve-top-bg, #1a1a1a);
+}
+/* Island off (Settings > Appearance): no band, NeuCurve is back to its default layout (see css/mt-island.css). */
+:root[data-island="off"] .main.is-curve::before { display: none; }

@@ -66,8 +66,8 @@
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
   <link rel="stylesheet" href="../css/mt-anim-styles.css?v=1">
   <link rel="stylesheet" href="../css/mt-bg-editor.css?v=1">
-  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=14">
-  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=18">
+  <link rel="stylesheet" href="../css/mt-idle-focus.css?v=15">
+  <link rel="stylesheet" href="../css/mt-idle-adjust.css?v=19">
   <!-- Idle enter / exit motion + the "squashed widgets on exit" fix (loads after mt-idle-adjust.css) -->
   <link rel="stylesheet" href="../css/mt-idle-motion.css?v=1">
   <!-- Idle icon motion: swap / hover / ambient (loads after mt-idle-motion.css) -->
@@ -77,9 +77,12 @@
   <!-- Idle live numbers (date, time in AE, timer, stopwatch, counts): digit roll, same motion as the clock (loads after mt-idle-time.css) -->
   <link rel="stylesheet" href="../css/mt-idle-roll.css?v=2">
   <!-- Dynamic island for a running Timer / Stopwatch (loads after mt-idle-adjust.css and mt-idle-roll.css) -->
-  <link rel="stylesheet" href="../css/mt-island.css?v=7">
+  <link rel="stylesheet" href="../css/mt-island.css?v=9">
+  <link rel="stylesheet" href="../css/mt-curve-top.css?v=2">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=6">
+  <!-- Settings > Navigation (rail left / right). Needs js/mt-nav.js -->
+  <link rel="stylesheet" href="../css/mt-nav.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -335,6 +338,16 @@
         </div>
       </div>
 
+      <!-- Navigation: tab rail on the left (default) or the right. Logic: js/mt-nav.js, look: css/mt-nav.css -->
+      <div class="field field-column" id="nav-pos-field">
+        <span class="field-label">Navigation</span>
+        <div class="ui-theme-cards" role="radiogroup" aria-label="Navigation position">
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="true" data-nav-opt="left"><i class="mt-nav-pv mt-nav-pv--left" aria-hidden="true"></i><span>Left</span></button>
+          <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-nav-opt="right"><i class="mt-nav-pv mt-nav-pv--right" aria-hidden="true"></i><span>Right</span></button>
+        </div>
+        <p class="field-note">Moves the tab bar to the other side of the panel. When it opens it grows towards the tools.</p>
+      </div>
+
       <!-- Material You only (hidden on Glass): palette swatches set Theme color; Light/Dark picks the scheme. Logic: js/mt-uitheme.js + js/mt-material.js -->
       <div class="field field-column" id="mu-palette-field">
         <span class="field-label">Palette</span>
@@ -499,9 +512,20 @@
             <option value="center">Center</option>
           </select>
         </div>
-        <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Slide or tap the bar at the bottom to bring it back (Esc or a click on an empty spot also works). With Mouse move, any cursor movement leaves at once, so notes and tasks cannot be edited on the idle screen.</p>
+        <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Slide or tap the bar at the bottom to bring it back (Esc also works). With Mouse move, any cursor movement leaves at once, so notes and tasks cannot be edited on the idle screen.</p>
       </div>
 
+
+      <!-- Dynamic island on / off. Logic: js/mt-island.js (key mtx.islandOn). -->
+      <div class="field field-column" id="island-field">
+        <span class="field-label">Dynamic island</span>
+        <label class="switch-row" for="island-enabled">
+          <span>Show dynamic island</span>
+          <input type="checkbox" id="island-enabled" checked>
+          <span class="switch-track"></span>
+        </label>
+        <p class="field-note">The capsule at the top of the panel that shows a running timer or stopwatch. Update notices still appear in it when it is off.</p>
+      </div>
 
       <!-- Idle screen extras: time in After Effects (live h/m/s), countdown timer with sound, notes, daily list.
            Logic: js/mt-idle-focus.js (keys mtx.timer*, mtx.notes, mtx.todo*). Shown by css/mt-idle-focus.css while body.is-idle. -->
@@ -701,7 +725,7 @@
   <!-- Wheel over the left tab bar switches tabs. Loaded BEFORE main.js / smooth-scroll.js on purpose. -->
   <script src="../js/tab-wheel.js?v=2"></script>
   <script src="../js/mt-away.js?v=3"></script>
-  <script src="../js/mt-tooltip.js?v=3"></script>
+  <script src="../js/mt-tooltip.js?v=4"></script>
   <script src="../js/mt-select.js?v=1"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
@@ -713,10 +737,12 @@
   <script src="../js/mt-material.js?v=3"></script>
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
+  <script src="../js/mt-nav.js?v=2"></script>
   <script src="../js/mt-anim.js?v=1"></script>
   <script src="../js/mt-idle-roll.js?v=2"></script>
-  <script src="../js/mt-island.js?v=7"></script>
+  <script src="../js/mt-island.js?v=10"></script>
   <script src="../js/main.js?v=31"></script>
+  <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=2"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
@@ -727,9 +753,9 @@
   <script src="../js/mt-updater.js?v=17"></script>
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
   <script src="../js/mt-idle-focus.js?v=18"></script>
-  <script src="../js/mt-idle-adjust.js?v=20"></script>
+  <script src="../js/mt-idle-adjust.js?v=23"></script>
   <script src="../js/mt-settings-bus.js?v=3"></script>
-  <script src="../js/mt-settings-remote.js?v=4"></script>
+  <script src="../js/mt-settings-remote.js?v=5"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->

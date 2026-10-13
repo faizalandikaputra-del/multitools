@@ -3,7 +3,7 @@
    the divider pill under it is the native NeuCurve one, skinned in nc-flow.css.
    Tokens copied from Flow _variables.css. Loaded after nc-fix22.css. Off switch: remove the <link> in index.html. */
 :root {
-  --gb-surface: rgba(18, 18, 20, .78);
+  --gb-surface: #121214;   /* v21: SOLID (was rgba .78 = backdrop showed through) */
   --gb-line: rgba(255, 255, 255, .105);
   --gb-radius: 10px;
 }
@@ -16,7 +16,7 @@ html body svg.curve-svg > rect:first-of-type {
   rx: var(--gb-radius);
   ry: var(--gb-radius);
 }
-html.mt-light body svg.curve-svg > rect:first-of-type { fill: rgba(255, 255, 255, .72); stroke: rgba(0, 0, 0, .12); }
+html.mt-light body svg.curve-svg > rect:first-of-type { fill: #f4f4f4; stroke: rgba(0, 0, 0, .12); }
 
 /* v20 FLOOR FILLS THE BOX (nc-gfill.js): the plot stays small and centred, but the floor rect (and the Graph Background image,
    see nc-bg.js) is stretched to the whole graph box plus a little overshoot, so the background shows edge to edge.

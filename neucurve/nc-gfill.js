@@ -11,7 +11,7 @@
 (function () {
   "use strict";
   if (/[?&]ext=settings/.test(location.search)) { return; }
-  var OVERSHOOT = 6;     /* px beyond the box edge on each side; raise for more, 0 = exactly the box */
+  var OVERSHOOT = 12;    /* px beyond the box edge on each side; raise for more, 0 = exactly the box */
   var last = "", pend = false;
 
   function off() { try { return localStorage.getItem("neucurve_gFill") === "0"; } catch (e) { return false; } }

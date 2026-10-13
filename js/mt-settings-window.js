@@ -124,7 +124,7 @@
   }
 
   // ---------- apply the panel's state ----------
-  var lastList = null;
+  var lastList = null, qc = {};
   function apply(s) {
     if (!s) { return; }
     var attrs = s.attrs || {}, vars = s.vars || {}, key, i, el;
@@ -143,8 +143,11 @@
     var k = s.k || {};
     for (key in k) {
       if (!k.hasOwnProperty(key)) { continue; }
-      try { el = document.querySelector(key); } catch (e) { el = null; }
-      if (!el) { continue; }
+      el = qc[key];                                   /* cached lookup: ~200 attribute selectors per state were re-run every time */
+      if (!el || !el.isConnected) {
+        try { el = document.querySelector(key); } catch (e) { el = null; }
+        if (el) { qc[key] = el; } else { continue; }
+      }
       var o = k[key], tag = el.tagName, type = (el.type || "").toLowerCase();
       if (o.c !== undefined && el.checked !== o.c) { el.checked = o.c; }
       if (o.v !== undefined && el.value !== o.v && el !== dragging && el !== document.activeElement) { el.value = o.v; }
@@ -170,10 +173,10 @@
     root.classList.toggle("is-offline", !ok);
   }
   bus.on("state", apply);
-  function hello() { bus.send("hello", {}); if (Date.now() - lastState > 2500) { setStatus(false); } }
-  hello(); helloTimer = setInterval(hello, 2000);
-  setTimeout(hello, 400);
-  window.addEventListener("focus", hello);
+  function hello(first) { bus.send("hello", { first: first === true }); if (Date.now() - lastState > 2500) { setStatus(false); } }
+  hello(true); helloTimer = setInterval(hello, 2000);
+  setTimeout(function () { hello(true); }, 400);
+  window.addEventListener("focus", function () { hello(); });
 
   // version in the sidebar footer
   try {

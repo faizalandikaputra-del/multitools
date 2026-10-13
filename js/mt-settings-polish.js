@@ -95,7 +95,7 @@
       }, true);
     }
     /* values are also set from script (loading saved settings), which fires no event: re-check a few times a second */
-    setInterval(function () { syncAccent(); fillAll(); }, 300);
+    setInterval(function () { if (document.hidden) { return; } syncAccent(); fillAll(); }, 1000);   /* v5: was 300 ms getComputedStyle + every slider */
   }
 
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }

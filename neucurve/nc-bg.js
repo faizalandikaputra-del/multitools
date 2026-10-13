@@ -301,7 +301,7 @@
       if (window.__ncAway && window.__ncAway()) { return; }
       var st = state(), box = "";
       if (!IS_SETTINGS) { var s = document.querySelector("svg.curve-svg"); if (s) { box = s.getAttribute("width") + "x" + s.getAttribute("height"); } }
-      var k = JSON.stringify(st) + box;
+      var pth = st.path, k = [pth.length, pth.slice(0, 48), pth.slice(-48), st.op, st.zoom, st.x, st.y].join("|") + box;   /* not JSON.stringify(st): the path can be a multi-MB data URL, copied every 300 ms */
       if (k !== last) { last = k; refresh(); }
       else if (!IS_SETTINGS && st.path) { fitGraph(); }
     }, 300);

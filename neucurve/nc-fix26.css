@@ -1,0 +1,23 @@
+/* NeuCurve - nc-fix26.css (loaded LAST, after nc-theme-fix.css)
+   GRAPH BOX MUST NOT BE SEE-THROUGH. The backdrop (panel wallpaper / what sits behind the box) showed through the graph because:
+     1. the floor <rect> was rgba(.78)                      -> nc-gbox.css now uses a solid colour
+     2. nc-grad.css turned the floor rect + .canvas-area translucent (rgba .18 / .30 / fill rgba(0,0,0,0)) when a gradient mode was on
+     3. the Graph Background image + floor only covered the plot, not the whole box
+   Here: .canvas-area and the floor rect are always opaque (themed + light variants kept), and the floor / background image are
+   stretched over the whole box by nc-gfill.js (OVERSHOOT 12px, the rounded .canvas-area crops the extra). */
+
+/* box backing: opaque in every mode (beats nc-grad.css, which is (0,3,2) !important) */
+html body .shell.shell .canvas-area.canvas-area { background-color: #0e0e0e !important; }
+html.mt-bg-themed body .shell.shell .canvas-area.canvas-area { background-color: rgb(var(--mt-bg-canvas-rgb, 14, 14, 14)) !important; }
+html.mt-light body .shell.shell .canvas-area.canvas-area { background-color: rgb(241, 241, 241) !important; }
+
+/* the plot svg + its container never paint a translucent layer of their own */
+html body .shell.shell .canvas-container.canvas-container { background-color: transparent !important; }
+
+/* floor rect: solid even when a gradient mode is on */
+html.nc-grad-on.nc-grad-on body svg.curve-svg.curve-svg > rect:first-of-type { fill: var(--gb-surface, #121214) !important; }
+html.mt-light.nc-grad-on.nc-grad-on body svg.curve-svg.curve-svg > rect:first-of-type { fill: #f4f4f4 !important; }
+html.mt-bg-themed.nc-grad-on.nc-grad-on body svg.curve-svg.curve-svg > rect:first-of-type { fill: rgb(var(--mt-bg-canvas-rgb, 14, 14, 14)) !important; }
+
+/* the graph background image must paint over the whole floor, never leave a gap */
+html body svg.curve-svg > image { image-rendering: auto; }

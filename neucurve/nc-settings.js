@@ -514,7 +514,7 @@
     });
 
     refreshAll();
-    setInterval(refreshAll, 500);   /* picks up changes made in other windows / the Adjust Background editor */
+    setInterval(function () { if (!document.hidden) { refreshAll(); } }, 1000);   /* picks up changes made in other windows / the Adjust Background editor (was 500 ms, also while hidden) */
     window.addEventListener("storage", function (e) { if (!e.key || e.key.indexOf("neucurve_") === 0) { refreshAll(); } });
     try {
       if (window.CSInterface) {
@@ -530,21 +530,23 @@
 
   /* ---------------- refresh ---------------- */
   var lastSig = "";
+  /* style write only when the value really changed: an identical setProperty every tick still invalidates style for the whole window */
+  function sp(el, k, v) { var c = el.__sp || (el.__sp = {}); if (c[k] === v) { return; } c[k] = v; el.style.setProperty(k, v); }
   function refreshAll() {
     var root = document.documentElement;
     var ui = colorOf("uiColor");
-    root.style.setProperty("--settings-theme", ui);
-    root.style.setProperty("--settings-theme-soft", hexToRgba(ui, 0.26));
-    root.style.setProperty("--ui-color", ui);
+    sp(root, "--settings-theme", ui);
+    sp(root, "--settings-theme-soft", hexToRgba(ui, 0.26));
+    sp(root, "--ui-color", ui);
 
     /* gradient preview (same variables Flow's preview uses) */
     var gd = Math.round(num(read("gradDir"), 0, 360, 160)), gi = Math.round(num(read("gradInt"), 0, 100, 100));
-    root.style.setProperty("--settings-background-start", colorOf("gradC1"));
-    root.style.setProperty("--settings-background-end", colorOf("gradC2"));
-    root.style.setProperty("--settings-background-direction", gd + "deg");
-    root.style.setProperty("--settings-background-dim", (1 - gi / 100).toFixed(3));
+    sp(root, "--settings-background-start", colorOf("gradC1"));
+    sp(root, "--settings-background-end", colorOf("gradC2"));
+    sp(root, "--settings-background-direction", gd + "deg");
+    sp(root, "--settings-background-dim", (1 - gi / 100).toFixed(3));
     var btns = document.querySelectorAll("[data-color-edit]");   /* every color button (UI, graph line, handle, gradient, effect), not only the gradient ones */
-    for (var i = 0; i < btns.length; i++) { btns[i].style.setProperty("--settings-edit-color", colorOf(btns[i].getAttribute("data-color-edit"))); }
+    for (var i = 0; i < btns.length; i++) { sp(btns[i], "--settings-edit-color", colorOf(btns[i].getAttribute("data-color-edit"))); }
 
     /* swatches */
     var sw = document.querySelectorAll("[data-quick-preset]");
@@ -583,7 +585,7 @@
     hdz.classList.toggle("is-selected", style === "image");
     hdz.setAttribute("aria-pressed", style === "image" ? "true" : "false");
     $("settingsClearHandleImage").disabled = !img;
-    root.style.setProperty("--settings-handle-preview-size", clamp(Math.round(num(read("hSize"), 2, 9, 4.5) * 14 / 4.5), 12, 24) + "px");
+    sp(root, "--settings-handle-preview-size", clamp(Math.round(num(read("hSize"), 2, 9, 4.5) * 14 / 4.5), 12, 24) + "px");
 
   }
 

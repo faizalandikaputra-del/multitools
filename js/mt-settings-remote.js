@@ -116,10 +116,14 @@
     if (Date.now() - alive > 7000) { clearInterval(timer); timer = 0; return; }
     push(false);
   }
-  bus.on("hello", function () {
-    alive = Date.now(); lastJson = ""; lastBgJson = "";
-    push(true);
-    if (!timer) { timer = setInterval(tick, 350); }
+  /* v2: the window says hello every 2 s and on every focus. Only a NEW window (first:true) or one we had stopped serving
+     (timer off) gets a forced full state; a keep-alive just refreshes "alive". Before, every hello rebuilt + re-sent ~200
+     controls (and re-sent the background) twice a second-ish, which made the panel and the window stutter. */
+  bus.on("hello", function (m) {
+    var fresh = !timer || !!(m && m.first);
+    alive = Date.now();
+    if (fresh) { lastJson = ""; lastBgJson = ""; push(true); } else { push(false); }
+    if (!timer) { timer = setInterval(tick, 500); }
   });
 
   // ---------- window action -> real control ----------

@@ -4,8 +4,8 @@
 (function () {
   "use strict";
   var bus = window.MTSettingsBus, root = document.documentElement, body = document.getElementById("settingsBody");
-  var KEY_ATTRS = ["data-ui-theme-opt", "data-mu-seed", "data-mu-mode", "data-anim-style-opt", "data-anim-ease-opt", "data-nav-pos-opt", "data-nav-style-opt", "data-label-select"];
-  var KEYED = "[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-nav-pos-opt],[data-nav-style-opt],[data-label-select]";
+  var KEY_ATTRS = ["data-ui-theme-opt", "data-mu-seed", "data-mu-mode", "data-anim-style-opt", "data-anim-ease-opt", "data-label-select"];
+  var KEYED = "[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-label-select]";
 
   function keyOf(el) {
     if (el.id && el.id.indexOf("win") !== 0 && el.id.indexOf("settings") !== 0 || el.id === "settings-reset") { return "#" + el.id; }

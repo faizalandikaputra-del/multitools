@@ -1,5 +1,5 @@
 /**
- * sidebar-expand.js - navigation rail auto-expand (left or right edge; not in a top / bottom bar).
+ * sidebar-expand.js - left navigation auto-expand.
  * - Adds a name label (taken from aria-label) to every sidebar button; the native title="" tooltips of the
  *   sidebar were removed on purpose (they flickered), the expanded rail shows the names instead.
  * - Cursor stays on the sidebar for 5 s -> class "is-expanded" (grows to the right, see css/sidebar-expand.css).
@@ -28,10 +28,7 @@
   }
 
   function dragging() { return document.documentElement.classList.contains("is-tab-dragging"); }
-  // Settings > Navigation position (js/mt-navpos.js): a top / bottom bar has no room for names, so it never expands.
-  // Settings > Navigation style = Dock (js/mt-navstyle.js): names are tooltips there, the rail never expands either.
-  function inBar() { var r = document.documentElement, d = r.getAttribute("data-nav-pos"); return d === "top" || d === "bottom" || r.getAttribute("data-nav-style") === "dock"; }
-  function open() { timer = 0; if (inside && bar && !inBar()) { bar.classList.add("is-expanded"); } }
+  function open() { timer = 0; if (inside && bar) { bar.classList.add("is-expanded"); } }
   function close() {
     if (timer) { clearTimeout(timer); timer = 0; }
     if (bar) { bar.classList.remove("is-expanded"); }
@@ -39,7 +36,6 @@
 
   function enter() {
     inside = true;
-    if (inBar()) { return; }
     if (timer || bar.classList.contains("is-expanded")) { return; }
     timer = setTimeout(open, DWELL);
   }

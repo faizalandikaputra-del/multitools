@@ -456,18 +456,27 @@
     if (clr) { clr.addEventListener("click", function () { writeMissed([]); persist(); renderLists(); }); }
   }
 
-  // Dynamic island (js/mt-island.js): name + live digits of a running timer / stopwatch, shown outside idle mode and while the idle UI is auto-hidden
+  // Dynamic island (js/mt-island.js): feeds BOTH tools (the island shows one in the capsule, the expanded panel lets you pick one and set / start / reset it).
+  // active = running / paused / done (timer) or running / paused (stopwatch); the island capsule shows while one of them is active.
   function renderIsland() {
     if (!window.MTIsland) { return; }
-    var t = null, w = null, st = swState(), total = num0(get("tTotal")) || 1;
-    if (state !== "idle") {
-      t = { name: state === "done" ? "Time is up" : (state === "paused" ? "Timer paused" : "Timer"), text: state === "done" ? "00:00:00" : clock(leftMs()),
-            frac: state === "done" ? 1 : Math.max(0, Math.min(1, 1 - leftMs() / total)), done: state === "done", paused: state === "paused", running: state === "running" };
-    }
-    if (st !== "idle") { w = { name: "Stopwatch", text: get("swHidden") === "1" ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), running: st === "running" }; }
+    var st = swState(), total = num0(get("tTotal")) || 1, on = state !== "idle", left = leftMs();
+    var t = { active: on, name: state === "done" ? "Time is up" : (state === "paused" ? "Timer paused" : "Timer"), text: state === "done" ? "00:00:00" : clock(left),
+              frac: state === "done" ? 1 : (on ? Math.max(0, Math.min(1, 1 - left / total)) : 0), done: state === "done", paused: state === "paused", running: state === "running",
+              h: num(get("tH"), 0, 23, 1), m: num(get("tM"), 0, 59, 0) };
+    var w = { active: st !== "idle", name: "Stopwatch", text: get("swHidden") === "1" ? "\u2022\u2022:\u2022\u2022:\u2022\u2022" : clock(swElapsed()), running: st === "running", paused: st === "paused" };
     window.MTIsland.update({ timer: t, sw: w });
   }
-  if (window.MTIsland) { window.MTIsland.onToggle = function (which) { if (which === "timer") { start(); } else { swToggle(); tickerCheck(); } }; }
+  if (window.MTIsland) {
+    window.MTIsland.onToggle = function (which) { if (which === "timer") { start(); } else { swToggle(); tickerCheck(); } };
+    window.MTIsland.onReset = function (which) { if (which === "timer") { reset(); } else { swReset(); tickerCheck(); } };
+    window.MTIsland.onSetTime = function (h, m) {                       // only while the timer is not started (same rule as the Settings fields)
+      if (state === "running" || state === "paused") { return; }
+      set("tH", num(h, 0, 23, 1)); set("tM", num(m, 0, 59, 0));
+      if (el.h) { el.h.value = num(get("tH"), 0, 23, 1); } if (el.m) { el.m.value = num(get("tM"), 0, 59, 0); }
+      render();
+    };
+  }
   function renderIdle() { renderIsland(); if (!isIdle()) { return; } renderElapsed(); renderTimerChip(); renderStopwatch(); }
 
   // ================= settings controls =================

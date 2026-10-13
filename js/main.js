@@ -5325,7 +5325,6 @@
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass
         if (window.MTAnim) { window.MTAnim.reset(); }            // Settings > Tab animation back to Smooth / 100% / Soft
         if (window.MTNavPos) { window.MTNavPos.reset(); }        // Settings > Navigation position back to Left
-        if (window.MTNavStyle) { window.MTNavStyle.reset(); }    // Settings > Navigation style back to Classic
         Motion.set(true);
         if ($("anim-enabled")) { $("anim-enabled").checked = true; }
         if (window.MTIsland && window.MTIsland.setEnabled) { window.MTIsland.setEnabled(true); }

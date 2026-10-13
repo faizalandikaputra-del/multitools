@@ -122,7 +122,7 @@
     // position) cannot expand, so there the tab's name (aria-label) is the tooltip.
     if (node && node.nodeType === 1 && node.closest && node.closest(".sidebar")) {
       var navPos = document.documentElement.getAttribute("data-nav-pos"), tab = node.closest(".tab");
-      if ((navPos === "top" || navPos === "bottom" || document.documentElement.getAttribute("data-nav-style") === "dock") && tab && tab.getAttribute("aria-label")) { return { el: tab, raw: tab.getAttribute("aria-label"), aria: true }; }
+      if ((navPos === "top" || navPos === "bottom") && tab && tab.getAttribute("aria-label")) { return { el: tab, raw: tab.getAttribute("aria-label"), aria: true }; }
       return null;
     }
     while (n && n.nodeType === 1 && n !== document.documentElement) {
@@ -193,14 +193,7 @@
     var navPos = document.documentElement.getAttribute("data-nav-pos");      // Settings > Navigation position
     // A rail (left / right) shows names by expanding, never as a tooltip. A top / bottom bar has no room for that, so its tabs get the
     // tooltip (see findTarget) and it must open centred under (top bar) or over (bottom bar) the tab, not beside it.
-    if (inSidebar && navPos === "right" && r.left - GAP - w > EDGE) {          // Dock on the right edge: the name opens towards the panel
-      side = "left";
-      x = r.left - GAP - w;
-      y = r.top + r.height / 2 - h / 2;
-      y = Math.max(EDGE, Math.min(vh - h - EDGE, y));
-      ay = Math.max(9, Math.min(h - 9, r.top + r.height / 2 - y));
-      tip.style.setProperty("--mt-a", ay + "px");
-    } else if (inSidebar && navPos !== "top" && navPos !== "bottom" && navPos !== "right" && r.right + GAP + w < vw - EDGE) {
+    if (inSidebar && navPos !== "top" && navPos !== "bottom" && r.right + GAP + w < vw - EDGE) {
       side = "right";
       x = r.right + GAP;
       y = r.top + r.height / 2 - h / 2;

@@ -41,7 +41,6 @@
 .mt-tip.is-top    { transform-origin: var(--mt-a) 100%; }
 .mt-tip.is-bottom { transform-origin: var(--mt-a) 0;    transform: translate3d(0, -5px, 0) scale(0.86); }
 .mt-tip.is-right  { transform-origin: 0 var(--mt-a);    transform: translate3d(-7px, 0, 0) scale(0.86); }
-.mt-tip.is-left   { transform-origin: 100% var(--mt-a); transform: translate3d(7px, 0, 0) scale(0.86); }
 
 /* Visible state: soft overshoot "pop" */
 .mt-tip.is-in {
@@ -59,7 +58,6 @@
 }
 .mt-tip.is-top::after    { left: var(--mt-a); bottom: -5.5px; margin-left: -4px; transform: rotate(45deg); border-top: 0; border-left: 0; border-radius: 0 0 3px 0; }
 .mt-tip.is-bottom::after { left: var(--mt-a); top: -5.5px;    margin-left: -4px; transform: rotate(45deg); border-bottom: 0; border-right: 0; border-radius: 3px 0 0 0; }
-.mt-tip.is-left::after   { top: var(--mt-a);  right: -5.5px;  margin-top: -4px;  transform: rotate(45deg); border-bottom: 0; border-left: 0; border-radius: 0 3px 0 0; }
 .mt-tip.is-right::after  { top: var(--mt-a);  left: -5.5px;   margin-top: -4px;  transform: rotate(45deg); border-top: 0; border-right: 0; border-radius: 0 0 0 3px; }
 
 /* Light theme of the main panel */

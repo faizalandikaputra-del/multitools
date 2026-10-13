@@ -299,10 +299,6 @@
       if (!t || t.nodeType !== 1) { continue; }
       if (typeof SVGElement !== "undefined" && t instanceof SVGElement) { continue; }
       if (t.id === "nc-gsize" || t.tagName === "CANVAS") { continue; }
-      // Nav Dock magnify writes --dk on every .sidebar .tab on each pointer move, and the tab highlight moves #tab-indicator:
-      // style-only changes there never alter flex gaps, so they must not re-run the whole shim (it froze the panel on AE 2021).
-      if (r.type === "attributes" && r.attributeName === "style" &&
-          (t.id === "tab-indicator" || (t.classList && t.classList.contains("tab") && t.closest && t.closest(".sidebar")))) { continue; }
       return true;
     }
     return false;

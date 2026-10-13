@@ -271,23 +271,3 @@ fix51 (idle stopwatch Hide / Show animation): clicking Hide / Show on the idle-s
   eye button: the digits flip in out of a blur (sw-flip = island mi-flip, 0.42s, cubic-bezier(0.05,0.7,0.1,1)) and the label pops (sw-pop = mi-pop, 0.4s
   spring). Classes is-flip / is-pop are added by js/mt-idle-focus.js (bindStopwatch > swAnim), keyframes in css/mt-idle-focus.css. The dimmed
   "masked" look also eases (opacity 0.3s, letter-spacing 0.42s). Off when Settings > Enable animations is off. mt-idle-focus.css ?v=15, .js ?v=20.
-
-fix52 (navigation style): new option Settings > Appearance > "Navigation style" (cards Classic / Dock / Line / Square, key mtx.navStyle, missing = classic),
-  works with every Navigation position. Logic: js/mt-navstyle.js (sets <html data-nav-style>, MTNavStyle.get/set/reset; an inline script at the top of
-  html/index.html applies the saved style before first paint), looks: css/mt-navstyle.css (also loaded by html/settings.html for the card previews).
-  The cards exist in #settings-modal and in html/settings.html (key attribute data-nav-style-opt, added to KEY_ATTRS / the selector lists in
-  js/mt-settings-remote.js and js/mt-settings-window.js). "Reset everything" puts it back on Classic (MTNavStyle.reset in main.js).
-  Classic = original circle highlight. Dock = the navigation floats as one glass capsule (.sidebar::before), icons grow 1x to 1.5x as the pointer nears
-  (--dk written on each .sidebar .tab, zoom-aware rect maths), a dot on the screen-edge side marks the active tab, names are tooltips: findTarget() in
-  mt-tooltip.js now also serves a Dock rail (right rail opens the tooltip to the left, new .is-left in mt-tooltip.css) and sidebar-expand.js never
-  expands a Dock rail. Line = no circles, thin accent line on the screen-edge side of the active tab. Square = rounded-square highlights.
-  Colours follow Glass and Material You (--nv-line / --nv-fg). Cache-busting: mt-navstyle.css/js ?v=1, mt-tooltip.js ?v=6, mt-tooltip.css ?v=4,
-  sidebar-expand.js ?v=3, main.js ?v=35.
-
-fix53 (freeze with Dock style): panel froze / hitched while the pointer moved over the navigation (Settings > Navigation style = Dock), worst on AE 2021.
-  Cause: Dock writes --dk on every .sidebar .tab on each pointer move; the MutationObserver in js/ae2021-compat.js watches "style" on the whole
-  document, so every move re-ran the full flex-gap / aspect-ratio shim (many getComputedStyle + forced layouts per frame). mt-navstyle.js also
-  read the zoom of every tab through the whole ancestor chain each frame.
-  Fix: ae2021-compat.js relevant() ignores style-only changes on .sidebar .tab and #tab-indicator; mt-navstyle.js grow() looks up the zoom once per
-  frame and writes --dk only when the value changed (2 decimals). Measured on a forced AE 2021 fallback, 4x CPU throttle: 200 pointer moves
-  19.7 s -> 4.7 s. Cache-busting: ae2021-compat.js ?v=11 (all four html files), mt-navstyle.js ?v=2.

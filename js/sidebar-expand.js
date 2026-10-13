@@ -29,8 +29,7 @@
 
   function dragging() { return document.documentElement.classList.contains("is-tab-dragging"); }
   // Settings > Navigation position (js/mt-navpos.js): a top / bottom bar has no room for names, so it never expands.
-  // Settings > Navigation style = Dock (js/mt-navstyle.js): names are tooltips there, the rail never expands either.
-  function inBar() { var r = document.documentElement, d = r.getAttribute("data-nav-pos"); return d === "top" || d === "bottom" || r.getAttribute("data-nav-style") === "dock"; }
+  function inBar() { var d = document.documentElement.getAttribute("data-nav-pos"); return d === "top" || d === "bottom"; }
   function open() { timer = 0; if (inside && bar && !inBar()) { bar.classList.add("is-expanded"); } }
   function close() {
     if (timer) { clearTimeout(timer); timer = 0; }

@@ -1832,3 +1832,9 @@ fix3 (Quick Resolution, 3D layer still off-centre): QCE_settleResize now runs 3 
   resize; the last call forgets the capture) because AE can apply its late 3D shift at any moment in the first second.
   A toast "Re-centered N position value(s) after the resize." appears whenever a pass had to correct something.
   NOTE: after installing, close and reopen the panel (or restart After Effects) so the new host.jsx is loaded.
+
+fix4 (Quick Resolution, 3D layer): the first pass (inside setCompResolution) no longer moves 3D layers, cameras or
+  lights - a manual Composition Settings change keeps them centred, so AE shifts them itself and our own shift made it
+  twice. Only the 3 settle passes verify them (target = value before resize + half the size change) and correct what
+  is still off. If something is still off after the last pass a red toast says so ("N position value(s) are still
+  off-centre after the resize.").

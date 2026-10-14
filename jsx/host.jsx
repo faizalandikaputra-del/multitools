@@ -437,6 +437,8 @@ var QCE_RES_MAX = 30000;  // ...and above this
 // the resize and adds only what is still missing (wanted shift - shift AE already made). Works for 2D layers, 3D
 // layers, Separate Dimensions, keyframes (every key moves by the same amount), camera / light Point of Interest.
 // Z is untouched. Layers whose Position is driven by an expression are only counted. Returns { moved, skipped }.
+// 3D layers (and cameras / lights) are NOT touched by the first pass: AE shifts those itself, at its own moment (a
+// manual Composition Settings change keeps them centred), so only the settle passes verify and correct them.
 // Properties are stored as DESCRIPTORS (layer index + match name + axis), never as property handles: a handle taken
 // before the resize can be stale afterwards. Every check is absolute: target = value BEFORE the resize + wanted shift,
 // so running it twice changes nothing the second time (idempotent). That matters because AE can apply its own shift
@@ -454,7 +456,7 @@ function _qceTrack(list, comp, li, prop, mn, axis, want) {
   return 1;
 }
 function _qceCapture(comp, dx, dy) {
-  var cap = { compId: comp.id, items: [], skipped: 0 }, i, L, tg, pos, r, list, poi;
+  var cap = { compId: comp.id, items: [], skipped: 0 }, i, L, tg, pos, r, list, poi, is3d, q;
   for (i = 1; i <= comp.numLayers; i++) {
     L = comp.layer(i);
     try {
@@ -477,6 +479,8 @@ function _qceCapture(comp, dx, dy) {
           _qceTrack(list, comp, i, poi, "Point of Interest", 1, dy);
         }
       }
+      is3d = (L instanceof CameraLayer || L instanceof LightLayer || L.threeDLayer === true);
+      for (q = 0; q < list.length; q++) { list[q].is3d = is3d; }   // 3D: AE moves these itself, see _qceApply(skip3d)
       cap.items = cap.items.concat(list);
     } catch (eL) { cap.skipped++; }
   }
@@ -490,10 +494,11 @@ function _qceAdd(v, axis, d) {
   return r;
 }
 // One pass over the captured layers. dryRun = only report how many still need a fix. Returns { moved, skipped, todo }.
-function _qceApply(comp, cap, dryRun) {
+function _qceApply(comp, cap, dryRun, skip3d) {
   var res = { moved: 0, skipped: cap.skipped, todo: 0 }, k, it, p, cur, now, fix, n, j;
   for (k = 0; k < cap.items.length; k++) {
     it = cap.items[k];
+    if (skip3d && it.is3d) { continue; }
     try {
       p = _qceGet(comp, it);
       if (!p) { continue; }
@@ -525,7 +530,11 @@ function QCE_settleResize(last) {
       app.beginUndoGroup("Change Comp Resolution (recenter)");
       try { r = _qceApply(comp, cap, false); } finally { app.endUndoGroup(); }
     }
-    if (_isTrue(last)) { _QCE_CAP = null; }
+    if (_isTrue(last)) {
+      var left = _qceApply(comp, cap, true).todo;
+      _QCE_CAP = null;
+      if (left > 0) { return _err(new Error(left + " position value(s) are still off-centre after the resize.")); }
+    }
     return _ok("Settled.", { moved: r.moved });
   } catch (e) {
     return _err(e);
@@ -551,7 +560,7 @@ function setCompResolution(width, height) {
       if (dx !== 0 || dy !== 0) { cap = _qceCapture(comp, dx, dy); }   // Positions BEFORE the resize
       comp.width = w;
       comp.height = h;
-      if (cap) { _QCE_CAP = cap; moved = _qceApply(comp, cap, false); }   // keep Nulls / cameras / 2D + 3D layers where they were relative to the centre
+      if (cap) { _QCE_CAP = cap; moved = _qceApply(comp, cap, false, true); }   // keep Nulls / cameras / 2D + 3D layers where they were relative to the centre
     } finally {
       app.endUndoGroup();
     }

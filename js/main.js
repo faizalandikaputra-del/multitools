@@ -1055,6 +1055,7 @@
                 setTimeout(function () {
                   Bridge.call("QCE_settleResize", [idx === arr.length - 1]).then(function (r2) {
                     if (r2 && r2.ok && r2.data && r2.data.moved) { toast("Re-centered " + r2.data.moved + " position value(s) after the resize.", false); }
+                    else if (r2 && !r2.ok && r2.message) { toast(r2.message, true); }
                   });
                 }, ms);
               });

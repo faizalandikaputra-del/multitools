@@ -429,53 +429,71 @@ function updateCompSettings(startFrame, durationFrames) {
 var QCE_RES_MIN = 4;      // After Effects rejects a comp width/height below this
 var QCE_RES_MAX = 30000;  // ...and above this
 
-// Setting comp.width / comp.height from a script anchors the frame at its TOP-LEFT corner: every layer keeps its
-// old Position, so a Null (or camera, light, 3D layer) that sat in the middle of the old frame ends up off-centre in
-// the new one. Composition Settings > Advanced > Anchor (centre) avoids that, so do the same here: move every layer
-// that has no parent by half of the size change (parented layers follow their parent). Position keyframes move with it,
-// camera / light Point of Interest too; Z is untouched. Layers whose Position is driven by an expression cannot be
-// shifted safely and are only counted. Returns { moved, skipped }.
-function _qceShiftProp(prop, dx, dy) {
+// Setting comp.width / comp.height from a script does NOT reliably keep layers centred: depending on the layer type
+// (2D vs 3D, camera, light) After Effects either leaves Position untouched (top-left anchor) or shifts it by itself.
+// Blindly adding half of the size change therefore double-shifted 3D layers. Composition Settings > Advanced >
+// Anchor (centre) is the behaviour we want, so measure instead of assume: _qceCapture() records the Position of every
+// layer that has no parent (parented layers follow their parent) BEFORE the resize, _qceApply() reads it again AFTER
+// the resize and adds only what is still missing (wanted shift - shift AE already made). Works for 2D layers, 3D
+// layers, Separate Dimensions, keyframes (every key moves by the same amount), camera / light Point of Interest.
+// Z is untouched. Layers whose Position is driven by an expression are only counted. Returns { moved, skipped }.
+function _qceTrack(list, prop, comp, want) {
   if (!prop) { return 0; }
   if (prop.expressionEnabled) { return -1; }
-  var i, v, n;
-  if (prop.propertyValueType === PropertyValueType.OneD) { return 0; }
-  function sh(val) { var r = [], j; for (j = 0; j < val.length; j++) { r.push(val[j]); } r[0] += dx; r[1] += dy; return r; }
-  n = prop.numKeys;
-  if (n > 0) { for (i = 1; i <= n; i++) { prop.setValueAtKey(i, sh(prop.keyValue(i))); } }
-  else { prop.setValue(sh(prop.value)); }
+  var v = (prop.numKeys > 0) ? prop.keyValue(1) : prop.value;
+  var before = (comp < 0) ? v : v[comp];
+  list.push({ prop: prop, comp: comp, want: want, before: before });
   return 1;
 }
-function _qceShiftScalar(prop, d) {
-  if (!prop) { return 0; }
-  if (prop.expressionEnabled) { return -1; }
-  var i, n = prop.numKeys;
-  if (n > 0) { for (i = 1; i <= n; i++) { prop.setValueAtKey(i, prop.keyValue(i) + d); } }
-  else { prop.setValue(prop.value + d); }
-  return 1;
-}
-function _qceRecenterLayers(comp, dx, dy) {
-  var res = { moved: 0, skipped: 0 }, i, L, tg, r, poi, p0, p1;
+function _qceCapture(comp, dx, dy) {
+  var cap = { items: [], skipped: 0 }, i, L, tg, pos, r, list, poi;
   for (i = 1; i <= comp.numLayers; i++) {
     L = comp.layer(i);
     try {
       if (L.parent) { continue; }
       tg = L.property("ADBE Transform Group");
       if (!tg) { continue; }
-      var pos = tg.property("ADBE Position");
+      list = [];
+      pos = tg.property("ADBE Position");
       if (pos && pos.dimensionsSeparated) {
-        p0 = tg.property("ADBE Position_0"); p1 = tg.property("ADBE Position_1");
-        r = Math.min(_qceShiftScalar(p0, dx), _qceShiftScalar(p1, dy));
-      } else { r = _qceShiftProp(pos, dx, dy); }
-      if (r < 0) { res.skipped++; continue; }
+        r = Math.min(_qceTrack(list, tg.property("ADBE Position_0"), -1, dx), _qceTrack(list, tg.property("ADBE Position_1"), -1, dy));
+      } else {
+        r = Math.min(_qceTrack(list, pos, 0, dx), _qceTrack(list, pos, 1, dy));
+      }
+      if (r < 0) { cap.skipped++; continue; }
       if (L instanceof CameraLayer || L instanceof LightLayer) {
         poi = tg.property("Point of Interest");
-        if (poi) { _qceShiftProp(poi, dx, dy); }
+        if (poi && !poi.expressionEnabled) { _qceTrack(list, poi, 0, dx); _qceTrack(list, poi, 1, dy); }
       }
-      if (r > 0) { res.moved++; }
-    } catch (eL) { res.skipped++; }
+      cap.items = cap.items.concat(list);
+    } catch (eL) { cap.skipped++; }
+  }
+  return cap;
+}
+function _qceApply(cap) {
+  var res = { moved: 0, skipped: cap.skipped }, k, it, p, now, fix, n, j, cur, out, q;
+  for (k = 0; k < cap.items.length; k++) {
+    it = cap.items[k]; p = it.prop;
+    try {
+      cur = (p.numKeys > 0) ? p.keyValue(1) : p.value;
+      now = (it.comp < 0) ? cur : cur[it.comp];
+      fix = it.want - (now - it.before);                    // what AE did not already move
+      if (Math.abs(fix) < 0.000001) { continue; }
+      n = p.numKeys;
+      if (n > 0) {
+        for (j = 1; j <= n; j++) { p.setValueAtKey(j, _qceAdd(p.keyValue(j), it.comp, fix)); }
+      } else { p.setValue(_qceAdd(p.value, it.comp, fix)); }
+      res.moved++;
+    } catch (eA) { res.skipped++; }
   }
   return res;
+}
+function _qceAdd(v, comp, d) {
+  if (comp < 0) { return v + d; }
+  var r = [], q;
+  for (q = 0; q < v.length; q++) { r.push(v[q]); }
+  r[comp] += d;
+  return r;
 }
 
 // Instantly sets the active composition's frame size (used by the aspect-ratio preset tiles in
@@ -491,12 +509,13 @@ function setCompResolution(width, height) {
     w = Math.max(QCE_RES_MIN, Math.min(QCE_RES_MAX, w));
     h = Math.max(QCE_RES_MIN, Math.min(QCE_RES_MAX, h));
 
-    var dx = (w - comp.width) / 2, dy = (h - comp.height) / 2, moved = null;
+    var dx = (w - comp.width) / 2, dy = (h - comp.height) / 2, moved = null, cap = null;
     app.beginUndoGroup("Change Comp Resolution");
     try {
+      if (dx !== 0 || dy !== 0) { cap = _qceCapture(comp, dx, dy); }   // Positions BEFORE the resize
       comp.width = w;
       comp.height = h;
-      if (dx !== 0 || dy !== 0) { moved = _qceRecenterLayers(comp, dx, dy); }   // keep Nulls / cameras / 3D layers where they were relative to the centre
+      if (cap) { moved = _qceApply(cap); }   // keep Nulls / cameras / 2D + 3D layers where they were relative to the centre
     } finally {
       app.endUndoGroup();
     }

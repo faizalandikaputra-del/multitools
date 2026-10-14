@@ -1812,3 +1812,10 @@ fix63 (dynamic island: mouse wheel switches the tool).
 With the island open, scroll the mouse wheel over it: down = next, up = previous in the order Timer, Stopwatch, Clock, Update (Update only while an update is offered). One notch = one step, a touchpad collects ~60 px per step, 380 ms pause after each switch, stops at the first / last tool (no wrap). Same slide animation as the switch button.
 js/mt-island.js v13: window-capture wheel listener (runs before js/smooth-scroll.js, so the panel behind does not scroll). Not intercepted: the hour / minute steppers (wheel changes the number there) and the scrollable release notes; Ctrl+wheel is left alone.
 Tested in headless Chromium: wheel down/up walks the tools and stops at both ends, three fast notches = one step. Not run inside AE.
+
+fix (Easy Layer + Quick Resolution): Null / layer with 3D Layer ON moved off-centre after a Quick Resolution preset
+  cause: setCompResolution added a fixed half-size shift to every Position. After Effects already shifts some layers
+         (3D layers) when comp.width / comp.height change from a script, so those layers were shifted twice.
+  fix:   jsx/host.jsx - _qceCapture() records Position (and camera / light Point of Interest) before the resize,
+         _qceApply() reads it after the resize and adds only the missing part. Same result for 2D and 3D layers,
+         keyframes, Separate Dimensions. Z untouched.

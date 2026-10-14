@@ -1819,3 +1819,11 @@ fix (Easy Layer + Quick Resolution): Null / layer with 3D Layer ON moved off-cen
   fix:   jsx/host.jsx - _qceCapture() records Position (and camera / light Point of Interest) before the resize,
          _qceApply() reads it after the resize and adds only the missing part. Same result for 2D and 3D layers,
          keyframes, Separate Dimensions. Z untouched.
+
+fix2 (Quick Resolution, 3D layers still off-centre after the first fix):
+  cause: the first fix kept property handles from before the resize and measured right after the script resize; AE
+         can apply its own shift to 3D layers later, so the measurement was too early / the handles stale.
+  fix:   jsx/host.jsx - layers are tracked by descriptor (layer index + match name + axis); target is absolute
+         (value before resize + half the size change), so every pass is idempotent. New QCE_settleResize() re-checks
+         after AE has settled and fixes only what is still off (no undo step when nothing to fix).
+         js/main.js - resolution tile calls QCE_settleResize 250 ms after setCompResolution.

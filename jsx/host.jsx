@@ -437,16 +437,24 @@ var QCE_RES_MAX = 30000;  // ...and above this
 // the resize and adds only what is still missing (wanted shift - shift AE already made). Works for 2D layers, 3D
 // layers, Separate Dimensions, keyframes (every key moves by the same amount), camera / light Point of Interest.
 // Z is untouched. Layers whose Position is driven by an expression are only counted. Returns { moved, skipped }.
-function _qceTrack(list, prop, comp, want) {
+// Properties are stored as DESCRIPTORS (layer index + match name + axis), never as property handles: a handle taken
+// before the resize can be stale afterwards. Every check is absolute: target = value BEFORE the resize + wanted shift,
+// so running it twice changes nothing the second time (idempotent). That matters because AE can apply its own shift
+// to 3D layers a moment after the script returns: the panel runs QCE_settleResize() again once AE has settled.
+var _QCE_CAP = null;
+function _qceGet(comp, d) {
+  var L = comp.layer(d.li), tg = L.property("ADBE Transform Group");
+  return tg ? tg.property(d.mn) : null;
+}
+function _qceTrack(list, comp, li, prop, mn, axis, want) {
   if (!prop) { return 0; }
   if (prop.expressionEnabled) { return -1; }
   var v = (prop.numKeys > 0) ? prop.keyValue(1) : prop.value;
-  var before = (comp < 0) ? v : v[comp];
-  list.push({ prop: prop, comp: comp, want: want, before: before });
+  list.push({ li: li, mn: mn, axis: axis, want: want, before: (axis < 0) ? v : v[axis] });
   return 1;
 }
 function _qceCapture(comp, dx, dy) {
-  var cap = { items: [], skipped: 0 }, i, L, tg, pos, r, list, poi;
+  var cap = { compId: comp.id, items: [], skipped: 0 }, i, L, tg, pos, r, list, poi;
   for (i = 1; i <= comp.numLayers; i++) {
     L = comp.layer(i);
     try {
@@ -456,44 +464,70 @@ function _qceCapture(comp, dx, dy) {
       list = [];
       pos = tg.property("ADBE Position");
       if (pos && pos.dimensionsSeparated) {
-        r = Math.min(_qceTrack(list, tg.property("ADBE Position_0"), -1, dx), _qceTrack(list, tg.property("ADBE Position_1"), -1, dy));
+        r = Math.min(_qceTrack(list, comp, i, tg.property("ADBE Position_0"), "ADBE Position_0", -1, dx),
+                     _qceTrack(list, comp, i, tg.property("ADBE Position_1"), "ADBE Position_1", -1, dy));
       } else {
-        r = Math.min(_qceTrack(list, pos, 0, dx), _qceTrack(list, pos, 1, dy));
+        r = Math.min(_qceTrack(list, comp, i, pos, "ADBE Position", 0, dx), _qceTrack(list, comp, i, pos, "ADBE Position", 1, dy));
       }
       if (r < 0) { cap.skipped++; continue; }
       if (L instanceof CameraLayer || L instanceof LightLayer) {
         poi = tg.property("Point of Interest");
-        if (poi && !poi.expressionEnabled) { _qceTrack(list, poi, 0, dx); _qceTrack(list, poi, 1, dy); }
+        if (poi && !poi.expressionEnabled) {
+          _qceTrack(list, comp, i, poi, "Point of Interest", 0, dx);
+          _qceTrack(list, comp, i, poi, "Point of Interest", 1, dy);
+        }
       }
       cap.items = cap.items.concat(list);
     } catch (eL) { cap.skipped++; }
   }
   return cap;
 }
-function _qceApply(cap) {
-  var res = { moved: 0, skipped: cap.skipped }, k, it, p, now, fix, n, j, cur, out, q;
+function _qceAdd(v, axis, d) {
+  if (axis < 0) { return v + d; }
+  var r = [], q;
+  for (q = 0; q < v.length; q++) { r.push(v[q]); }
+  r[axis] += d;
+  return r;
+}
+// One pass over the captured layers. dryRun = only report how many still need a fix. Returns { moved, skipped, todo }.
+function _qceApply(comp, cap, dryRun) {
+  var res = { moved: 0, skipped: cap.skipped, todo: 0 }, k, it, p, cur, now, fix, n, j;
   for (k = 0; k < cap.items.length; k++) {
-    it = cap.items[k]; p = it.prop;
+    it = cap.items[k];
     try {
+      p = _qceGet(comp, it);
+      if (!p) { continue; }
       cur = (p.numKeys > 0) ? p.keyValue(1) : p.value;
-      now = (it.comp < 0) ? cur : cur[it.comp];
-      fix = it.want - (now - it.before);                    // what AE did not already move
+      now = (it.axis < 0) ? cur : cur[it.axis];
+      fix = (it.before + it.want) - now;                    // what is still missing, after whatever AE already moved
       if (Math.abs(fix) < 0.000001) { continue; }
+      res.todo++;
+      if (dryRun) { continue; }
       n = p.numKeys;
       if (n > 0) {
-        for (j = 1; j <= n; j++) { p.setValueAtKey(j, _qceAdd(p.keyValue(j), it.comp, fix)); }
-      } else { p.setValue(_qceAdd(p.value, it.comp, fix)); }
+        for (j = 1; j <= n; j++) { p.setValueAtKey(j, _qceAdd(p.keyValue(j), it.axis, fix)); }
+      } else { p.setValue(_qceAdd(p.value, it.axis, fix)); }
       res.moved++;
     } catch (eA) { res.skipped++; }
   }
   return res;
 }
-function _qceAdd(v, comp, d) {
-  if (comp < 0) { return v + d; }
-  var r = [], q;
-  for (q = 0; q < v.length; q++) { r.push(v[q]); }
-  r[comp] += d;
-  return r;
+// Second pass, called by the panel a moment after the resize. Does nothing (and opens no undo step) when every
+// layer is already where it should be.
+function QCE_settleResize() {
+  try {
+    var cap = _QCE_CAP, comp = _activeComp(), r;
+    if (!cap || cap.compId !== comp.id) { return _ok("Nothing to settle.", null); }
+    r = _qceApply(comp, cap, true);
+    if (r.todo > 0) {
+      app.beginUndoGroup("Change Comp Resolution (recenter)");
+      try { r = _qceApply(comp, cap, false); } finally { app.endUndoGroup(); }
+    }
+    _QCE_CAP = null;
+    return _ok("Settled.", { moved: r.moved });
+  } catch (e) {
+    return _err(e);
+  }
 }
 
 // Instantly sets the active composition's frame size (used by the aspect-ratio preset tiles in
@@ -515,7 +549,7 @@ function setCompResolution(width, height) {
       if (dx !== 0 || dy !== 0) { cap = _qceCapture(comp, dx, dy); }   // Positions BEFORE the resize
       comp.width = w;
       comp.height = h;
-      if (cap) { moved = _qceApply(cap); }   // keep Nulls / cameras / 2D + 3D layers where they were relative to the centre
+      if (cap) { _QCE_CAP = cap; moved = _qceApply(comp, cap, false); }   // keep Nulls / cameras / 2D + 3D layers where they were relative to the centre
     } finally {
       app.endUndoGroup();
     }

@@ -1048,6 +1048,8 @@
             toast((res && res.message) || (res && res.ok ? "Done." : "Something went wrong."), !(res && res.ok));
             if (res && res.ok && res.data) { updateResTiles(res.data.width, res.data.height); }
             refresh();
+            // AE can shift 3D layers a moment after the resize: re-check once it has settled (no-op if all is centred).
+            if (res && res.ok) { setTimeout(function () { Bridge.call("QCE_settleResize", []); }, 250); }
           });
         });
       });

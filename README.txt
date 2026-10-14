@@ -1827,3 +1827,8 @@ fix2 (Quick Resolution, 3D layers still off-centre after the first fix):
          (value before resize + half the size change), so every pass is idempotent. New QCE_settleResize() re-checks
          after AE has settled and fixes only what is still off (no undo step when nothing to fix).
          js/main.js - resolution tile calls QCE_settleResize 250 ms after setCompResolution.
+
+fix3 (Quick Resolution, 3D layer still off-centre): QCE_settleResize now runs 3 times (150 / 600 / 1500 ms after the
+  resize; the last call forgets the capture) because AE can apply its late 3D shift at any moment in the first second.
+  A toast "Re-centered N position value(s) after the resize." appears whenever a pass had to correct something.
+  NOTE: after installing, close and reopen the panel (or restart After Effects) so the new host.jsx is loaded.

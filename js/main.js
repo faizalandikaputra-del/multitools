@@ -1048,8 +1048,17 @@
             toast((res && res.message) || (res && res.ok ? "Done." : "Something went wrong."), !(res && res.ok));
             if (res && res.ok && res.data) { updateResTiles(res.data.width, res.data.height); }
             refresh();
-            // AE can shift 3D layers a moment after the resize: re-check once it has settled (no-op if all is centred).
-            if (res && res.ok) { setTimeout(function () { Bridge.call("QCE_settleResize", []); }, 250); }
+            // AE can shift 3D layers a moment after the resize: re-check three times while it settles
+            // (each pass is a no-op if everything is already centred).
+            if (res && res.ok) {
+              [150, 600, 1500].forEach(function (ms, idx, arr) {
+                setTimeout(function () {
+                  Bridge.call("QCE_settleResize", [idx === arr.length - 1]).then(function (r2) {
+                    if (r2 && r2.ok && r2.data && r2.data.moved) { toast("Re-centered " + r2.data.moved + " position value(s) after the resize.", false); }
+                  });
+                }, ms);
+              });
+            }
           });
         });
       });

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.60",
-    "changelog":  "- Update 1.8.60",
+    "latest_version":  "1.8.61",
+    "changelog":  "- Update 1.8.61",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -216,7 +216,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "0cb9605c2e6f24bac8cfca921307d7c0db32f2e53ca46827cc1261d5305cacc9"
+                      "sha256":  "be4de01c75f9e9bbf087691fe0ea56349f3e65583cfea2ac4e10483f2344c4a7"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -340,7 +340,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "a7ad2686923c168cd75c41dc7e9b7bc39b1d84f2427512f0320994ed29f8f0d8"
+                      "sha256":  "dd0ed5f4b4067b6fc09d87dcbae68c690f01dcc3a185b961d8554d4cf98523fa"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -620,7 +620,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "57dc14f531935ce47ced86d4725997edcb44d6ac9abd43c91e97a8081d0363e8"
+                      "sha256":  "20b4cc17f1413ea9f049ac0d7984caa145e4ac589e7a8847d91a149388c7cfea"
                   }
               ]
 }

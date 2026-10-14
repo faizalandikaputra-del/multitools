@@ -514,16 +514,18 @@ function _qceApply(comp, cap, dryRun) {
 }
 // Second pass, called by the panel a moment after the resize. Does nothing (and opens no undo step) when every
 // layer is already where it should be.
-function QCE_settleResize() {
+// The panel calls it several times (last = true on the final call, which forgets the capture), because AE can
+// apply its late 3D shift at any moment during the first second after the resize.
+function QCE_settleResize(last) {
   try {
     var cap = _QCE_CAP, comp = _activeComp(), r;
-    if (!cap || cap.compId !== comp.id) { return _ok("Nothing to settle.", null); }
+    if (!cap || cap.compId !== comp.id) { return _ok("Nothing to settle.", { moved: 0 }); }
     r = _qceApply(comp, cap, true);
     if (r.todo > 0) {
       app.beginUndoGroup("Change Comp Resolution (recenter)");
       try { r = _qceApply(comp, cap, false); } finally { app.endUndoGroup(); }
     }
-    _QCE_CAP = null;
+    if (_isTrue(last)) { _QCE_CAP = null; }
     return _ok("Settled.", { moved: r.moved });
   } catch (e) {
     return _err(e);

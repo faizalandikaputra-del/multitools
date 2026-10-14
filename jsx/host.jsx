@@ -425,117 +425,148 @@ function updateCompSettings(startFrame, durationFrames) {
   }
 }
 
-// ---------- Quick Comp Edit: Quick Resolution Presets ----------
+// ---------- Quick Comp Edit: Quick Resolution Presets (rebuilt) ----------
+// Goal: after a resize every layer keeps its place RELATIVE TO THE COMP CENTRE, exactly like Composition Settings with
+// Anchor = centre. A Null that sat in the middle stays in the middle - 2D or 3D, any aspect ratio.
+//
+// How it works (nothing here guesses what AE does on its own):
+//   1. SNAPSHOT  before the resize, every layer without a parent gets an ABSOLUTE target:
+//                    target = current Position + half of the size change     (X and Y only, Z is never touched)
+//                camera / light Point of Interest get the same. Keyframed values move together by the same amount.
+//                Layers with a parent follow their parent. Layers with a Position expression are only counted.
+//   2. RESIZE    comp.width / comp.height.
+//   3. NUDGE     2D layers are written to their target right away. 3D layers, cameras and lights are NOT written yet:
+//                AE can recentre those by itself, so writing now could move them twice.
+//   4. SETTLE    the panel calls QCE_settleResize() a few times in the next seconds. Each pass compares every channel
+//                with its target; a channel that is off is corrected only once its value has stopped changing (AE is
+//                done moving it). The last pass corrects whatever is left and reports anything that cannot be fixed.
+// Every write is "set to target", never "add an amount", so repeating a pass can never move a layer twice.
 var QCE_RES_MIN = 4;      // After Effects rejects a comp width/height below this
 var QCE_RES_MAX = 30000;  // ...and above this
+var QCE_EPS = 0.001;
+var _QCE_JOB = null;
+var _QCE_JOB_SEQ = 0;
 
-// Setting comp.width / comp.height from a script does NOT reliably keep layers centred: depending on the layer type
-// (2D vs 3D, camera, light) After Effects either leaves Position untouched (top-left anchor) or shifts it by itself.
-// Blindly adding half of the size change therefore double-shifted 3D layers. Composition Settings > Advanced >
-// Anchor (centre) is the behaviour we want, so measure instead of assume: _qceCapture() records the Position of every
-// layer that has no parent (parented layers follow their parent) BEFORE the resize, _qceApply() reads it again AFTER
-// the resize and adds only what is still missing (wanted shift - shift AE already made). Works for 2D layers, 3D
-// layers, Separate Dimensions, keyframes (every key moves by the same amount), camera / light Point of Interest.
-// Z is untouched. Layers whose Position is driven by an expression are only counted. Returns { moved, skipped }.
-// 3D layers (and cameras / lights) are NOT touched by the first pass: AE shifts those itself, at its own moment (a
-// manual Composition Settings change keeps them centred), so only the settle passes verify and correct them.
-// Properties are stored as DESCRIPTORS (layer index + match name + axis), never as property handles: a handle taken
-// before the resize can be stale afterwards. Every check is absolute: target = value BEFORE the resize + wanted shift,
-// so running it twice changes nothing the second time (idempotent). That matters because AE can apply its own shift
-// to 3D layers a moment after the script returns: the panel runs QCE_settleResize() again once AE has settled.
-var _QCE_CAP = null;
-function _qceGet(comp, d) {
-  var L = comp.layer(d.li), tg = L.property("ADBE Transform Group");
-  return tg ? tg.property(d.mn) : null;
+function _qceIs3D(L) {
+  return (L instanceof CameraLayer) || (L instanceof LightLayer) || L.threeDLayer === true;
 }
-function _qceTrack(list, comp, li, prop, mn, axis, want) {
-  if (!prop) { return 0; }
-  if (prop.expressionEnabled) { return -1; }
-  var v = (prop.numKeys > 0) ? prop.keyValue(1) : prop.value;
-  list.push({ li: li, mn: mn, axis: axis, want: want, before: (axis < 0) ? v : v[axis] });
-  return 1;
-}
-function _qceCapture(comp, dx, dy) {
-  var cap = { compId: comp.id, items: [], skipped: 0 }, i, L, tg, pos, r, list, poi, is3d, q;
-  for (i = 1; i <= comp.numLayers; i++) {
-    L = comp.layer(i);
-    try {
-      if (L.parent) { continue; }
-      tg = L.property("ADBE Transform Group");
-      if (!tg) { continue; }
-      list = [];
-      pos = tg.property("ADBE Position");
-      if (pos && pos.dimensionsSeparated) {
-        r = Math.min(_qceTrack(list, comp, i, tg.property("ADBE Position_0"), "ADBE Position_0", -1, dx),
-                     _qceTrack(list, comp, i, tg.property("ADBE Position_1"), "ADBE Position_1", -1, dy));
-      } else {
-        r = Math.min(_qceTrack(list, comp, i, pos, "ADBE Position", 0, dx), _qceTrack(list, comp, i, pos, "ADBE Position", 1, dy));
-      }
-      if (r < 0) { cap.skipped++; continue; }
-      if (L instanceof CameraLayer || L instanceof LightLayer) {
-        poi = tg.property("Point of Interest");
-        if (poi && !poi.expressionEnabled) {
-          _qceTrack(list, comp, i, poi, "Point of Interest", 0, dx);
-          _qceTrack(list, comp, i, poi, "Point of Interest", 1, dy);
-        }
-      }
-      is3d = (L instanceof CameraLayer || L instanceof LightLayer || L.threeDLayer === true);
-      for (q = 0; q < list.length; q++) { list[q].is3d = is3d; }   // 3D: AE moves these itself, see _qceApply(skip3d)
-      cap.items = cap.items.concat(list);
-    } catch (eL) { cap.skipped++; }
-  }
-  return cap;
-}
-function _qceAdd(v, axis, d) {
+function _qceReadProp(prop) { return (prop.numKeys > 0) ? prop.keyValue(1) : prop.value; }
+function _qceAddAxis(v, axis, d) {
   if (axis < 0) { return v + d; }
   var r = [], q;
   for (q = 0; q < v.length; q++) { r.push(v[q]); }
   r[axis] += d;
   return r;
 }
-// One pass over the captured layers. dryRun = only report how many still need a fix. Returns { moved, skipped, todo }.
-function _qceApply(comp, cap, dryRun, skip3d) {
-  var res = { moved: 0, skipped: cap.skipped, todo: 0 }, k, it, p, cur, now, fix, n, j;
-  for (k = 0; k < cap.items.length; k++) {
-    it = cap.items[k];
-    if (skip3d && it.is3d) { continue; }
+// Moves every keyframe (or the static value) of prop by d on one axis (axis -1 = one-dimensional property).
+function _qceWriteProp(prop, axis, d) {
+  var n = prop.numKeys, j;
+  if (n > 0) { for (j = 1; j <= n; j++) { prop.setValueAtKey(j, _qceAddAxis(prop.keyValue(j), axis, d)); } }
+  else { prop.setValue(_qceAddAxis(prop.value, axis, d)); }
+}
+// Properties are looked up again by layer index + match name on every pass (a handle kept across the resize can be stale).
+function _qceGetProp(comp, c) {
+  var tg = comp.layer(c.li).property("ADBE Transform Group");
+  return tg ? tg.property(c.mn) : null;
+}
+// Adds one channel (a single X or Y value) to list. Returns -1 when the property is driven by an expression.
+function _qceChannel(list, li, prop, mn, axis, want) {
+  if (!prop) { return 0; }
+  if (prop.expressionEnabled) { return -1; }
+  var v = _qceReadProp(prop);
+  list.push({ li: li, mn: mn, axis: axis, target: ((axis < 0) ? v : v[axis]) + want, last: null });
+  return 1;
+}
+function _qceSnapshot(comp, dx, dy) {
+  var job = { id: ++_QCE_JOB_SEQ, compId: comp.id, layers: [], skipped: 0 }, i, L, tg, pos, r, ch, poi;
+  for (i = 1; i <= comp.numLayers; i++) {
+    L = comp.layer(i);
     try {
-      p = _qceGet(comp, it);
-      if (!p) { continue; }
-      cur = (p.numKeys > 0) ? p.keyValue(1) : p.value;
-      now = (it.axis < 0) ? cur : cur[it.axis];
-      fix = (it.before + it.want) - now;                    // what is still missing, after whatever AE already moved
-      if (Math.abs(fix) < 0.000001) { continue; }
-      res.todo++;
-      if (dryRun) { continue; }
-      n = p.numKeys;
-      if (n > 0) {
-        for (j = 1; j <= n; j++) { p.setValueAtKey(j, _qceAdd(p.keyValue(j), it.axis, fix)); }
-      } else { p.setValue(_qceAdd(p.value, it.axis, fix)); }
-      res.moved++;
-    } catch (eA) { res.skipped++; }
+      if (L.parent) { continue; }
+      tg = L.property("ADBE Transform Group");
+      if (!tg) { continue; }
+      ch = [];
+      pos = tg.property("ADBE Position");
+      if (pos && pos.dimensionsSeparated) {
+        r = Math.min(_qceChannel(ch, i, tg.property("ADBE Position_0"), "ADBE Position_0", -1, dx),
+                     _qceChannel(ch, i, tg.property("ADBE Position_1"), "ADBE Position_1", -1, dy));
+      } else {
+        r = Math.min(_qceChannel(ch, i, pos, "ADBE Position", 0, dx), _qceChannel(ch, i, pos, "ADBE Position", 1, dy));
+      }
+      if (r < 0) { job.skipped++; continue; }
+      if (L instanceof CameraLayer || L instanceof LightLayer) {
+        poi = tg.property("Point of Interest");
+        if (poi && !poi.expressionEnabled) {
+          _qceChannel(ch, i, poi, "Point of Interest", 0, dx);
+          _qceChannel(ch, i, poi, "Point of Interest", 1, dy);
+        }
+      }
+      if (ch.length) { job.layers.push({ li: i, name: L.name, is3d: _qceIs3D(L), ch: ch }); }
+    } catch (eS) { job.skipped++; }
+  }
+  return job;
+}
+// Step 3: 2D layers go to their target now; for 3D layers just remember what the value looks like right after the resize.
+function _qceNudge(comp, job) {
+  var a, b, e, c, p, now;
+  for (a = 0; a < job.layers.length; a++) {
+    e = job.layers[a];
+    for (b = 0; b < e.ch.length; b++) {
+      c = e.ch[b];
+      try {
+        p = _qceGetProp(comp, c);
+        if (!p) { continue; }
+        var cur2 = _qceReadProp(p); now = (c.axis < 0) ? cur2 : cur2[c.axis];
+        if (e.is3d) { c.last = now; continue; }
+        if (Math.abs(c.target - now) > QCE_EPS) { _qceWriteProp(p, c.axis, c.target - now); }
+      } catch (eN) { job.skipped++; }
+    }
+  }
+}
+// Step 4: one settle pass. Returns { fixed, off, worst } (off = channels still not at their target after this pass).
+function _qceSettlePass(comp, job, final) {
+  var res = { fixed: 0, off: 0, worst: "" }, todo = [], a, b, e, c, p, cur, now, diff, k, after;
+  for (a = 0; a < job.layers.length; a++) {
+    e = job.layers[a];
+    for (b = 0; b < e.ch.length; b++) {
+      c = e.ch[b];
+      try {
+        p = _qceGetProp(comp, c);
+        if (!p) { continue; }
+        cur = _qceReadProp(p); now = (c.axis < 0) ? cur : cur[c.axis];
+        diff = c.target - now;
+        if (Math.abs(diff) <= QCE_EPS) { c.last = now; continue; }
+        if (final || (c.last !== null && Math.abs(c.last - now) <= QCE_EPS)) { todo.push({ e: e, c: c, p: p, diff: diff }); }
+        else { c.last = now; res.off++; }                    // value is still changing: AE is not done yet
+      } catch (eP) { res.off++; }
+    }
+  }
+  if (todo.length) {
+    app.beginUndoGroup("Change Comp Resolution (recenter)");
+    try {
+      for (k = 0; k < todo.length; k++) {
+        try {
+          _qceWriteProp(todo[k].p, todo[k].c.axis, todo[k].diff);
+          todo[k].c.last = null;
+          res.fixed++;
+          cur = _qceReadProp(todo[k].p); after = (todo[k].c.axis < 0) ? cur : cur[todo[k].c.axis];
+          if (Math.abs(todo[k].c.target - after) > QCE_EPS) { res.off++; res.worst = todo[k].e.name + " is " + Math.round(todo[k].c.target - after) + " px off"; }
+        } catch (eW) { res.off++; res.worst = todo[k].e.name + " could not be moved"; }
+      }
+    } finally { app.endUndoGroup(); }
   }
   return res;
 }
-// Second pass, called by the panel a moment after the resize. Does nothing (and opens no undo step) when every
-// layer is already where it should be.
-// The panel calls it several times (last = true on the final call, which forgets the capture), because AE can
-// apply its late 3D shift at any moment during the first second after the resize.
-function QCE_settleResize(last) {
+
+// Called by the panel a few times after setCompResolution (jobId = the id it returned; last = true on the final call).
+function QCE_settleResize(jobId, last) {
   try {
-    var cap = _QCE_CAP, comp = _activeComp(), r;
-    if (!cap || cap.compId !== comp.id) { return _ok("Nothing to settle.", { moved: 0 }); }
-    r = _qceApply(comp, cap, true);
-    if (r.todo > 0) {
-      app.beginUndoGroup("Change Comp Resolution (recenter)");
-      try { r = _qceApply(comp, cap, false); } finally { app.endUndoGroup(); }
-    }
-    if (_isTrue(last)) {
-      var left = _qceApply(comp, cap, true).todo;
-      _QCE_CAP = null;
-      if (left > 0) { return _err(new Error(left + " position value(s) are still off-centre after the resize.")); }
-    }
-    return _ok("Settled.", { moved: r.moved });
+    var job = _QCE_JOB, comp = _activeComp(), fin = _isTrue(last), r;
+    if (!job || job.id !== jobId || job.compId !== comp.id) { return _ok("", { fixed: 0, stale: true }); }
+    r = _qceSettlePass(comp, job, fin);
+    if (fin) { _QCE_JOB = null; }
+    if (fin && r.off > 0) { return _err(new Error("Some layers are not centred after the resize" + (r.worst ? " (" + r.worst + ")" : "") + ".")); }
+    return _ok("", { fixed: r.fixed });
   } catch (e) {
     return _err(e);
   }
@@ -554,19 +585,22 @@ function setCompResolution(width, height) {
     w = Math.max(QCE_RES_MIN, Math.min(QCE_RES_MAX, w));
     h = Math.max(QCE_RES_MIN, Math.min(QCE_RES_MAX, h));
 
-    var dx = (w - comp.width) / 2, dy = (h - comp.height) / 2, moved = null, cap = null;
+    var dx = (w - comp.width) / 2, dy = (h - comp.height) / 2, job = null, info;
     app.beginUndoGroup("Change Comp Resolution");
     try {
-      if (dx !== 0 || dy !== 0) { cap = _qceCapture(comp, dx, dy); }   // Positions BEFORE the resize
+      if (dx !== 0 || dy !== 0) { job = _qceSnapshot(comp, dx, dy); }   // targets, BEFORE the resize
       comp.width = w;
       comp.height = h;
-      if (cap) { _QCE_CAP = cap; moved = _qceApply(comp, cap, false, true); }   // keep Nulls / cameras / 2D + 3D layers where they were relative to the centre
+      if (job) { _qceNudge(comp, job); }
     } finally {
       app.endUndoGroup();
     }
+    _QCE_JOB = job;
 
-    var extra = (moved && moved.skipped) ? " " + moved.skipped + " layer(s) with a Position expression or lock were not moved." : "";
-    return _ok('"' + comp.name + '" resized to ' + w + " \u00d7 " + h + "." + extra, _qceInfo(comp));
+    var extra = (job && job.skipped) ? " " + job.skipped + " layer(s) with a Position expression or lock were not moved." : "";
+    info = _qceInfo(comp);
+    info.job = job ? job.id : 0;
+    return _ok('"' + comp.name + '" resized to ' + w + " \u00d7 " + h + "." + extra, info);
   } catch (e) {
     return _err(e);
   }

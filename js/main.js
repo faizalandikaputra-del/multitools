@@ -1048,13 +1048,13 @@
             toast((res && res.message) || (res && res.ok ? "Done." : "Something went wrong."), !(res && res.ok));
             if (res && res.ok && res.data) { updateResTiles(res.data.width, res.data.height); }
             refresh();
-            // AE can shift 3D layers a moment after the resize: re-check three times while it settles
-            // (each pass is a no-op if everything is already centred).
-            if (res && res.ok) {
-              [150, 600, 1500].forEach(function (ms, idx, arr) {
+            // Settle passes: AE can recentre 3D layers by itself a moment after the resize. Each pass checks every layer
+            // against its target and corrects only what is off (see _qceSettlePass in host.jsx).
+            if (res && res.ok && res.data && res.data.job) {
+              [150, 500, 1000, 2000, 3500].forEach(function (ms, idx, arr) {
                 setTimeout(function () {
-                  Bridge.call("QCE_settleResize", [idx === arr.length - 1]).then(function (r2) {
-                    if (r2 && r2.ok && r2.data && r2.data.moved) { toast("Re-centered " + r2.data.moved + " position value(s) after the resize.", false); }
+                  Bridge.call("QCE_settleResize", [res.data.job, idx === arr.length - 1]).then(function (r2) {
+                    if (r2 && r2.ok && r2.data && r2.data.fixed) { toast("Re-centered " + r2.data.fixed + " position value(s) after the resize.", false); }
                     else if (r2 && !r2.ok && r2.message) { toast(r2.message, true); }
                   });
                 }, ms);

@@ -1813,28 +1813,15 @@ With the island open, scroll the mouse wheel over it: down = next, up = previous
 js/mt-island.js v13: window-capture wheel listener (runs before js/smooth-scroll.js, so the panel behind does not scroll). Not intercepted: the hour / minute steppers (wheel changes the number there) and the scrollable release notes; Ctrl+wheel is left alone.
 Tested in headless Chromium: wheel down/up walks the tools and stops at both ends, three fast notches = one step. Not run inside AE.
 
-fix (Easy Layer + Quick Resolution): Null / layer with 3D Layer ON moved off-centre after a Quick Resolution preset
-  cause: setCompResolution added a fixed half-size shift to every Position. After Effects already shifts some layers
-         (3D layers) when comp.width / comp.height change from a script, so those layers were shifted twice.
-  fix:   jsx/host.jsx - _qceCapture() records Position (and camera / light Point of Interest) before the resize,
-         _qceApply() reads it after the resize and adds only the missing part. Same result for 2D and 3D layers,
-         keyframes, Separate Dimensions. Z untouched.
-
-fix2 (Quick Resolution, 3D layers still off-centre after the first fix):
-  cause: the first fix kept property handles from before the resize and measured right after the script resize; AE
-         can apply its own shift to 3D layers later, so the measurement was too early / the handles stale.
-  fix:   jsx/host.jsx - layers are tracked by descriptor (layer index + match name + axis); target is absolute
-         (value before resize + half the size change), so every pass is idempotent. New QCE_settleResize() re-checks
-         after AE has settled and fixes only what is still off (no undo step when nothing to fix).
-         js/main.js - resolution tile calls QCE_settleResize 250 ms after setCompResolution.
-
-fix3 (Quick Resolution, 3D layer still off-centre): QCE_settleResize now runs 3 times (150 / 600 / 1500 ms after the
-  resize; the last call forgets the capture) because AE can apply its late 3D shift at any moment in the first second.
-  A toast "Re-centered N position value(s) after the resize." appears whenever a pass had to correct something.
-  NOTE: after installing, close and reopen the panel (or restart After Effects) so the new host.jsx is loaded.
-
-fix4 (Quick Resolution, 3D layer): the first pass (inside setCompResolution) no longer moves 3D layers, cameras or
-  lights - a manual Composition Settings change keeps them centred, so AE shifts them itself and our own shift made it
-  twice. Only the 3 settle passes verify them (target = value before resize + half the size change) and correct what
-  is still off. If something is still off after the last pass a red toast says so ("N position value(s) are still
-  off-centre after the resize.").
+fix (Quick Resolution Presets rebuilt - Null / 3D layer drifted off-centre after a preset click):
+  cause: setCompResolution added half of the size change to every layer's Position, but AE recentres 3D layers
+         (and cameras/lights) by itself, so those moved twice. Earlier patches that measured AE's move failed
+         because the timing of AE's own move is not predictable.
+  fix:   jsx/host.jsx - whole Quick Resolution block rewritten. Before the resize every parentless layer gets an
+         ABSOLUTE target (Position + half the size change, X/Y only; camera/light Point of Interest too). 2D layers
+         are written to the target at once; 3D layers / cameras / lights are left to AE first. QCE_settleResize(jobId,
+         last) then checks every channel and corrects only what is off AND no longer changing; the last pass fixes
+         the rest and reports anything impossible (red toast). Writes are "set to target", never "add", so a pass
+         can never move a layer twice. Old helpers (_qceRecenterLayers, _qceShiftProp, _qceShiftScalar) removed.
+         js/main.js - resolution tile starts the settle passes (150/500/1000/2000/3500 ms) using the job id that
+         setCompResolution returns. Simulated against 3 AE behaviours (moves 3D at once / later / never): all end centred.

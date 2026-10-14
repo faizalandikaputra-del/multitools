@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.56",
-    "changelog":  "- Update 1.8.56",
+    "latest_version":  "1.8.57",
+    "changelog":  "- Update 1.8.57",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -88,7 +88,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "922460db255009ede68b1aa04b880c3b7bce57a19cbfcff5641b7ded80eae81b"
+                      "sha256":  "95dd8c62f393da64cf2d9403b0f7580733e63980efe74c46d8c57b8023deb913"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -196,11 +196,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "961ec8a574ad567c2a4dc1cce236abecbde583033c4592c6233474f20c0fc8c8"
+                      "sha256":  "d30608e488b83773a91b2741e01aa687fbfe9cf1445fa5ac77521634a6da2c76"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "e56ae85ace84a3ba3a76252f23c6b43d75bceeaab0046a9cb830020174c18f5d"
+                      "sha256":  "c83c610bc394165633e0bddec4e16ede3c31da5f9ea6ff100125fe80d8bd8bd3"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -256,7 +256,7 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "bf67bb7a36406d65e0b4e91ebb64a496d63c3dcdd39a8c84b531ca8f207313c5"
+                      "sha256":  "9d6b92d1fd66edabbf76c57cc39428585d9f63c9c702a69b2fd2edf552e4c6f6"
                   },
                   {
                       "path":  "js/mt-material.js",
@@ -340,7 +340,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "ee7e40b31f04392a55e946e6d9095f11e7e0eb6a20ef11467af383bed8b1837a"
+                      "sha256":  "4aba56c0480e306dabb7ff14880ba3d8b1cecab8690d9d023363c28295b59e1d"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -620,7 +620,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "be6d25879bb730ddc4cb55426e7a4d6b94262a65533ee0855d67045b4ccc75a0"
+                      "sha256":  "2583a50b88229e44ce20a75ac0bcc59ba4c727175fddef10cd8130df8f2115ce"
                   }
               ]
 }

@@ -429,6 +429,55 @@ function updateCompSettings(startFrame, durationFrames) {
 var QCE_RES_MIN = 4;      // After Effects rejects a comp width/height below this
 var QCE_RES_MAX = 30000;  // ...and above this
 
+// Setting comp.width / comp.height from a script anchors the frame at its TOP-LEFT corner: every layer keeps its
+// old Position, so a Null (or camera, light, 3D layer) that sat in the middle of the old frame ends up off-centre in
+// the new one. Composition Settings > Advanced > Anchor (centre) avoids that, so do the same here: move every layer
+// that has no parent by half of the size change (parented layers follow their parent). Position keyframes move with it,
+// camera / light Point of Interest too; Z is untouched. Layers whose Position is driven by an expression cannot be
+// shifted safely and are only counted. Returns { moved, skipped }.
+function _qceShiftProp(prop, dx, dy) {
+  if (!prop) { return 0; }
+  if (prop.expressionEnabled) { return -1; }
+  var i, v, n;
+  if (prop.propertyValueType === PropertyValueType.OneD) { return 0; }
+  function sh(val) { var r = [], j; for (j = 0; j < val.length; j++) { r.push(val[j]); } r[0] += dx; r[1] += dy; return r; }
+  n = prop.numKeys;
+  if (n > 0) { for (i = 1; i <= n; i++) { prop.setValueAtKey(i, sh(prop.keyValue(i))); } }
+  else { prop.setValue(sh(prop.value)); }
+  return 1;
+}
+function _qceShiftScalar(prop, d) {
+  if (!prop) { return 0; }
+  if (prop.expressionEnabled) { return -1; }
+  var i, n = prop.numKeys;
+  if (n > 0) { for (i = 1; i <= n; i++) { prop.setValueAtKey(i, prop.keyValue(i) + d); } }
+  else { prop.setValue(prop.value + d); }
+  return 1;
+}
+function _qceRecenterLayers(comp, dx, dy) {
+  var res = { moved: 0, skipped: 0 }, i, L, tg, r, poi, p0, p1;
+  for (i = 1; i <= comp.numLayers; i++) {
+    L = comp.layer(i);
+    try {
+      if (L.parent) { continue; }
+      tg = L.property("ADBE Transform Group");
+      if (!tg) { continue; }
+      var pos = tg.property("ADBE Position");
+      if (pos && pos.dimensionsSeparated) {
+        p0 = tg.property("ADBE Position_0"); p1 = tg.property("ADBE Position_1");
+        r = Math.min(_qceShiftScalar(p0, dx), _qceShiftScalar(p1, dy));
+      } else { r = _qceShiftProp(pos, dx, dy); }
+      if (r < 0) { res.skipped++; continue; }
+      if (L instanceof CameraLayer || L instanceof LightLayer) {
+        poi = tg.property("Point of Interest");
+        if (poi) { _qceShiftProp(poi, dx, dy); }
+      }
+      if (r > 0) { res.moved++; }
+    } catch (eL) { res.skipped++; }
+  }
+  return res;
+}
+
 // Instantly sets the active composition's frame size (used by the aspect-ratio preset tiles in
 // the panel - 16:9, 9:16, 4:5, 1:1, 4:3). Only width/height change; pixel aspect ratio, frame
 // rate, duration and everything else in Composition Settings is left exactly as it was.
@@ -442,15 +491,18 @@ function setCompResolution(width, height) {
     w = Math.max(QCE_RES_MIN, Math.min(QCE_RES_MAX, w));
     h = Math.max(QCE_RES_MIN, Math.min(QCE_RES_MAX, h));
 
+    var dx = (w - comp.width) / 2, dy = (h - comp.height) / 2, moved = null;
     app.beginUndoGroup("Change Comp Resolution");
     try {
       comp.width = w;
       comp.height = h;
+      if (dx !== 0 || dy !== 0) { moved = _qceRecenterLayers(comp, dx, dy); }   // keep Nulls / cameras / 3D layers where they were relative to the centre
     } finally {
       app.endUndoGroup();
     }
 
-    return _ok('"' + comp.name + '" resized to ' + w + " \u00d7 " + h + ".", _qceInfo(comp));
+    var extra = (moved && moved.skipped) ? " " + moved.skipped + " layer(s) with a Position expression or lock were not moved." : "";
+    return _ok('"' + comp.name + '" resized to ' + w + " \u00d7 " + h + "." + extra, _qceInfo(comp));
   } catch (e) {
     return _err(e);
   }

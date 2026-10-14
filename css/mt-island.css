@@ -56,6 +56,33 @@
 @keyframes mi-breathe { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.35); opacity: 0; } }
 @keyframes mi-done { 50% { transform: scale(1.25); opacity: 0.6; } }
 
+/* ---------- clock: tiny dial in the capsule, big dial in the panel. The hands read --k-h / --k-m / --k-s set on .mt-island by js/mt-island.js ---------- */
+.mi-ico .mi-hh, .mi-ico .mi-hm, .mi-ico .mi-hs { display: none; }
+.mi-c.is-k .mi-ico { --d: 1.1rem; background: none; -webkit-mask: none; mask: none; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.42); }
+.mi-c.is-k .mi-tw { max-width: 12rem; opacity: 1; transition: max-width 0.46s var(--mi-ease), opacity 0.3s linear 0.1s; }
+.mi-c.is-k .mi-ico .mi-hh, .mi-c.is-k .mi-ico .mi-hm, .mi-c.is-k .mi-ico .mi-hs { display: block; }
+.mi-hh, .mi-hm, .mi-hs { position: absolute; left: 50%; bottom: 50%; margin-left: -1px; width: 2px; border-radius: 2px; background: #fff; transform-origin: 50% 100%; will-change: transform; }
+.mi-hh { height: calc(var(--d, 1.1rem) * 0.27); transform: rotate(var(--k-h, 0deg)); transition: transform 0.5s var(--mi-ease); }
+.mi-hm { height: calc(var(--d, 1.1rem) * 0.39); transform: rotate(var(--k-m, 0deg)); transition: transform 0.5s var(--mi-ease); }
+.mi-hs { width: 1px; margin-left: -0.5px; height: calc(var(--d, 1.1rem) * 0.43); background: var(--accent, #5b8cff); transform: rotate(var(--k-s, 0deg)); transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.mi-dial { position: relative; flex: 0 0 auto; border-radius: 50%; }
+.mi-kd { --d: 74px; width: 74px; height: 74px; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.04); }
+.mi-kd::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; background: repeating-conic-gradient(from -0.7deg, rgba(255, 255, 255, 0.5) 0 1.4deg, transparent 1.4deg 30deg); -webkit-mask: radial-gradient(circle, transparent 29px, #000 30px, #000 34px, transparent 35px); mask: radial-gradient(circle, transparent 29px, #000 30px, #000 34px, transparent 35px); }
+.mi-kd::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: var(--accent, #5b8cff); }
+.mi-kd .mi-hh { width: 3px; margin-left: -1.5px; }
+.mi-kd .mi-hm { width: 2px; }
+.mi-k { display: flex; align-items: center; justify-content: center; }
+.mi-kt { margin-left: 16px; min-width: 0; }
+.mi-krow { display: flex; align-items: flex-start; }
+.mi-kbig { font-size: 2.5rem; line-height: 44px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; color: #fff; }
+.mi-kside { margin: 6px 0 0 6px; min-width: 2.1rem; }
+.mi-ksec { display: block; font-size: 0.95rem; line-height: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent, #5b8cff); }
+.mi-kmer { display: block; font-size: 0.72rem; line-height: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.55); }
+.mi-kdate { margin-top: 2px; font-size: 0.76rem; line-height: 16px; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
+.mi-kfmt { margin: 14px 0 0; }
+.mi-chip.is-on { background: #fff; color: #0b0b0d; }
+.mi-chip.is-on:hover { background: #fff; color: #0b0b0d; }
+
 /* ---------- expanded ---------- */
 .mi-x {
   position: absolute; left: 0; top: 0; box-sizing: border-box; padding: 14px 14px 16px; width: 288px;
@@ -75,16 +102,20 @@
 .mi-swwin { flex: 1 1 auto; height: 36px; overflow: hidden; text-align: left; }
 .mi-swtrack { display: block; transform: translate3d(0, 0, 0); will-change: transform; transition: transform 0.5s var(--mi-ease); }
 .mi-swap[data-on="sw"] .mi-swtrack { transform: translate3d(0, -36px, 0); }
-.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -72px, 0); }
+.mi-swap[data-on="clock"] .mi-swtrack { transform: translate3d(0, -72px, 0); }
+.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -108px, 0); }
 .mi-swrow { display: flex; align-items: center; height: 36px; opacity: 0.35; transition: opacity 0.3s linear; }
 .mi-swrow.is-live { opacity: 0.35; }
-.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="u"] .mi-swrow:nth-child(3) { opacity: 1; }
+.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="clock"] .mi-swrow:nth-child(3), .mi-swap[data-on="u"] .mi-swrow:nth-child(4) { opacity: 1; }
 .mi-swarrows { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; margin-left: 8px; border-radius: 50%; color: rgba(255, 255, 255, 0.7); transform: rotate(var(--mi-spin, 0deg)); transition: transform 0.5s var(--mi-ease); }
 .mi-tname { margin-left: 6px; }
 .mi-tico { flex: 0 0 auto; width: 13px; height: 13px; border-radius: 50%; }
 .mi-tico-t { border: 2px solid var(--accent, #5b8cff); box-sizing: border-box; }
 .mi-tico-u { background: radial-gradient(circle, var(--accent, #fff) 0 3.4px, transparent 4px); }
 .mi-tico-s { background: radial-gradient(circle, #ffb340 0 3.4px, transparent 4px); }
+.mi-tico-k { position: relative; border: 2px solid rgba(255, 255, 255, 0.9); box-sizing: border-box; }
+.mi-tico-k::before, .mi-tico-k::after { content: ""; position: absolute; left: 50%; bottom: 50%; width: 1.5px; margin-left: -0.75px; border-radius: 1px; background: #fff; transform-origin: 50% 100%; }
+.mi-tico-k::before { height: 3px; } .mi-tico-k::after { height: 4px; transform: rotate(90deg); }
 .mi-live { display: none; width: 5px; height: 5px; margin-left: 6px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 6px rgba(61, 220, 132, 0.8); }
 .mi-swrow.is-live .mi-live { display: block; }
 
@@ -196,6 +227,7 @@
 :root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
 :root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
+:root[data-reduce-motion="true"] .mi-hh, :root[data-reduce-motion="true"] .mi-hm, :root[data-reduce-motion="true"] .mi-hs { transition: none; }
 :root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mi-view-u .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }
 

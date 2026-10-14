@@ -1783,3 +1783,17 @@ fix58 (settings lost after deleting Windows Temporary Files).
 Cause: CEP keeps the panel's localStorage in %TEMP%\cep_cache. Cleaning Temp (Settings > Storage, Disk Cleanup, manual) empties it, so every setting (mtx.*, NeuCurve nc*, presets, favorites, theme, widgets layout) reset.
 Fix: new js/mt-persist.js v1, loaded FIRST in html/index.html, html/settings.html, neucurve/index.html, neucurve/settings.html. It restores any missing localStorage key, synchronously, from ~/Documents/MyMultitoolExtension/settings-backup.json, then mirrors every setItem/removeItem/clear back to that file (400 ms debounce, atomic write, never overwrites a good backup with an empty one). Needs Node (already enabled in the manifest); without Node it does nothing.
 First run after update: the backup is created from the current settings. Settings lost BEFORE this update cannot be recovered.
+
+fix59 (dynamic island is also a clock).
+Request: see the time without entering the idle screen.
+- Nothing running (no timer / stopwatch): the collapsed capsule shows a tiny dial (hour / minute hands, accent second hand that ticks) + HH:MM, always open (no hover needed). A running timer / stopwatch still takes the capsule over; an update notice still wins when nothing runs.
+- Expanded: new third tool "Clock" in the switch (Timer / Stopwatch / Clock / Update): dial with ticks, big HH:MM, seconds, date, 24 h / 12 h chips. Key mtx.islandClock12 ("1" = 12 h, default 24 h). Opening with nothing running shows the last chosen tool (default Clock).
+- The island repaints once a second only while the clock is what is on screen. Off in Settings > Show dynamic island = no clock either. Second hand never spins back at 59 -> 0; no motion with data-reduce-motion="true".
+Files: js/mt-island.js v11, css/mt-island.css v10, html/index.html + html/settings.html (texts).
+Tested in headless Chromium: capsule 16:59 with dial, expanded Clock view, 12 h switch (04:59 PM). Not run inside AE.
+
+fix60 (Quick Resolution Presets: Null / 3D layers no longer off-centre after a resolution change).
+Cause: setCompResolution() only set comp.width / comp.height. From a script AE anchors the frame at its top-left corner, so every layer kept its old Position: a Null (and its 3D layers) that sat in the middle of the old frame was off-centre in the new one. A NEW comp worked because the Null was added after the resize.
+Fix (jsx/host.jsx _qceRecenterLayers + helpers, called from setCompResolution): after the resize every layer WITHOUT a parent moves by half of the size change (same as Composition Settings > Advanced > Anchor centre). Position keyframes and separated X / Y move too; camera / light Point of Interest moves with them; Z is untouched; parented layers follow their parent. Layers with a Position expression or a lock are not moved and are reported in the toast. One undo step ("Change Comp Resolution").
+Camera Zoom is not changed (it is in pixels, so the field of view changes with the frame, as in AE's own dialog).
+Tested: the shift logic in Node with stub layers (plain, keyframed, parented). Not run inside AE.

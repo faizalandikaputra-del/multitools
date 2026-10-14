@@ -32,7 +32,9 @@
   } catch (e) { }
 
   var L = window.__ncLive = {
-    lastInput: 0, lastRun: 0, busy: false, pending: false,
+    lastInput: 0, lastKey: 0, lastRun: 0, busy: false, pending: false,
+    bootAt: Date.now(),   // page load time: no live apply during the first seconds (startup / connect / warm-up must never write to After Effects)
+    inside: false,        // the pointer is over this panel right now
     down: false,      // a mouse button is held on the graph canvas (a drag in progress)
     // While you DRAG on the graph, applying every 70 ms keeps After Effects busy almost constantly, and AE keeps
     // resetting the mouse cursor (crosshair <-> arrow flicker). So during a drag the apply rate is much lower; the
@@ -43,14 +45,29 @@
     },
     delay: function (model) {
       var now = Date.now();
+      if (window.__ncWarm) { return -1; }                      // nc-warm.js is clicking through the mode tabs: never a user edit
+      if (now - L.bootAt < 2500) { return -1; }                // startup: panel connecting to After Effects, stores loading
       if (now - L.lastInput > 1200) { return -1; }            // not a local edit
+      // Local edit = pointer is on the panel (or a drag / typing is in progress). Clicking a keyframe in the After Effects
+      // timeline moves the pointer OUT of the panel: whatever the panel does in the next second is not a user edit.
+      if (!(L.inside || L.down || now - L.lastKey <= 1200)) { return -1; }
       var wait = L.lastRun + L.gap(model) - now;               // throttle (leading + trailing), not debounce
       return wait > 0 ? wait : 0;
     }
   };
 
   // "Was this change made by the person using THIS window?" - any pointer / key / wheel input counts.
-  function touch() { L.lastInput = Date.now(); }
+  // Synthetic events (element.click() from nc-warm.js, dispatchEvent from helper scripts) are NOT user input: isTrusted is false.
+  function touch(e) {
+    if (e && e.isTrusted === false) { return; }
+    if (window.__ncWarm) { return; }
+    L.lastInput = Date.now();
+    if (e && (e.type === "keydown" || e.type === "input" || e.type === "change")) { L.lastKey = L.lastInput; }
+  }
+  document.addEventListener("mouseenter", function () { L.inside = true; });
+  document.addEventListener("mouseleave", function () { L.inside = false; });
+  window.addEventListener("mousemove", function (e) { if (e.isTrusted !== false) { L.inside = true; } }, true);
+  window.addEventListener("blur", function () { L.inside = false; });
   ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "wheel", "keydown", "input", "change", "click"].forEach(function (t) {
     window.addEventListener(t, touch, true);
   });

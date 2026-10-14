@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.54",
-    "changelog":  "- Update 1.8.54",
+    "latest_version":  "1.8.55",
+    "changelog":  "- Update 1.8.55",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -348,7 +348,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "95dc291ae43b2fc1b318c177749ec521aa29ed0d7db25bbb4c9460ef7d66b1a3"
+                      "sha256":  "f815781dbc946249a8d7e7ecb802857a814a8bf1db95c6900174e49bf4864931"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -512,7 +512,7 @@
                   },
                   {
                       "path":  "neucurve/nc-live.js",
-                      "sha256":  "208fa70862ea4aaefa78ca9e69b98ec1bc428835175dae7f95e1c86436834141"
+                      "sha256":  "fdd8bd05bdf0fc431a1743bb6e7df15b785ec33c70fd5fc06e9156ac17b032d2"
                   },
                   {
                       "path":  "neucurve/nc-morph.css",

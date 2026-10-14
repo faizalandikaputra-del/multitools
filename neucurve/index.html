@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NeuCurve</title>
 
+  <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
+  <script src="../js/mt-persist.js?v=1"></script>
   <!-- Polyfill for older CEF (AE 2019 uses Chromium ~61, globalThis needs Chrome 71+) -->
   <script>
     if (typeof globalThis === 'undefined') { window.globalThis = window; }

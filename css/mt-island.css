@@ -187,6 +187,7 @@
   transition: transform 0.46s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s linear 0.26s;
 }
 
+/* v11: the rules below use #mt-update on purpose. css/material-theme.css paints .mt-update (grey surface, radius, shadow) with a higher specificity than plain classes, which left a grey card with the dot clipped on its edge inside the island (Material You style). */
 /* ---------- update notification (the old banner of js/mt-updater.js now lives here; same ids / classes, it is only restyled) ---------- */
 .mi-utxt { display: none; margin-left: 0.5rem; font-size: 0.84rem; line-height: 1; font-weight: 600; color: #fff; }
 .mi-c.is-u .mi-time { display: none; }
@@ -198,37 +199,37 @@
 @keyframes mi-upd-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.6; } }
 @keyframes mi-spin { to { transform: rotate(360deg); } }
 
-.mt-island .mi-view-u .mt-update, body.is-idle .mt-island .mi-view-u .mt-update {
+.mt-island .mi-view-u #mt-update, body.is-idle .mt-island .mi-view-u #mt-update {
   position: static; display: block; width: auto; margin: 0; padding: 0; overflow: visible; z-index: auto;
-  background: none; border: 0; border-radius: 0; box-shadow: none; color: #fff;
+  background: none; background-color: transparent; background-image: none; border: 0; border-radius: 0; box-shadow: none; color: #fff; overflow: visible; height: auto; top: auto; left: auto; right: auto;
   transform: none; opacity: 1; pointer-events: auto; transition: none;
 }
-.mi-view-u .mt-update-head { display: flex; align-items: center; margin: 0 0 14px; }
-.mi-view-u .mt-update-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-right: 12px; border-radius: 50%; background: var(--accent, #fff); box-shadow: 0 0 12px rgba(255, 255, 255, 0.6); animation: mi-upd-pulse 1.8s ease-in-out infinite; }
-.mi-view-u .mt-update.is-busy .mt-update-dot { animation-duration: 0.8s; }
-.mi-view-u .mt-update-title { font-size: 0.95rem; font-weight: 700; line-height: 1.25; color: #fff; }
-.mi-view-u .mt-update-sub { margin-top: 2px; font-size: 0.74rem; line-height: 1.35; color: rgba(255, 255, 255, 0.55); font-variant-numeric: tabular-nums; word-break: break-word; }
-.mi-view-u .mt-update-actions { display: flex; flex-wrap: wrap; align-items: center; margin: 0; }
-.mi-view-u .mt-update-actions .mi-ghost { order: 1; flex: 0 0 auto; height: 40px; margin: 0 10px 0 0; padding: 0 18px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: #fff; font: inherit; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease, transform 0.18s var(--mi-ease), opacity 0.2s ease; }
-.mi-view-u .mt-update-actions .mi-ghost:hover { background: rgba(255, 255, 255, 0.22); }
-.mi-view-u .mt-update-actions .mi-ghost:active { transform: scale(0.95); }
-.mi-view-u .mt-update-actions .mi-go { order: 2; margin: 0; }
-.mi-view-u .mt-update-actions .mi-link { order: 3; width: 100%; height: 26px; margin: 10px 0 0; padding: 0; border: 0; background: none; color: rgba(255, 255, 255, 0.6); font: inherit; font-size: 0.74rem; cursor: pointer; transition: color 0.15s ease; }
-.mi-view-u .mt-update-actions .mi-link:hover { color: #fff; }
-.mi-view-u .mt-update-actions button:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
-.mi-view-u .mt-update-actions button:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
-.mi-view-u .mt-update-notes { max-height: 0; opacity: 0; overflow: hidden; margin: 0; padding: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.07); white-space: pre-wrap; font-family: inherit; font-size: 0.72rem; line-height: 1.5; color: rgba(255, 255, 255, 0.75); transition: opacity 0.3s linear 0.1s; }
-.mi-view-u .mt-update.is-open .mt-update-notes { max-height: 132px; opacity: 1; margin-top: 12px; padding: 10px 12px; overflow-y: auto; }
-.mi-view-u .mt-update-track { display: none; position: relative; left: auto; right: auto; bottom: auto; height: 4px; margin-top: 14px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.14); }
-.mi-view-u .mt-update.is-busy .mt-update-track { display: block; }
-.mi-view-u .mt-update-bar { background: var(--accent, #fff); }
+.mt-island .mi-view-u #mt-update .mt-update-head { display: flex; align-items: center; margin: 0 0 14px; padding: 0 0 0 8px; }   /* 8 px: the pulsing dot + glow were cut by the overflow of .mi-views */
+.mt-island .mi-view-u #mt-update .mt-update-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-right: 12px; border-radius: 50%; background: var(--accent, #fff); box-shadow: 0 0 8px rgba(255, 255, 255, 0.55); animation: mi-upd-pulse 1.8s ease-in-out infinite; }
+.mt-island .mi-view-u #mt-update.is-busy .mt-update-dot { animation-duration: 0.8s; }
+.mt-island .mi-view-u #mt-update .mt-update-title { font-size: 0.95rem; font-weight: 700; line-height: 1.25; color: #fff; }
+.mt-island .mi-view-u #mt-update .mt-update-sub { margin-top: 2px; font-size: 0.74rem; line-height: 1.35; color: rgba(255, 255, 255, 0.55); font-variant-numeric: tabular-nums; word-break: break-word; }
+.mt-island .mi-view-u #mt-update .mt-update-actions { display: flex; flex-wrap: wrap; align-items: center; margin: 0; }
+.mt-island .mi-view-u #mt-update .mt-update-actions .mi-ghost { order: 1; flex: 0 0 auto; height: 40px; margin: 0 10px 0 0; padding: 0 18px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: #fff; font: inherit; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease, transform 0.18s var(--mi-ease), opacity 0.2s ease; }
+.mt-island .mi-view-u #mt-update .mt-update-actions .mi-ghost:hover { background: rgba(255, 255, 255, 0.22); }
+.mt-island .mi-view-u #mt-update .mt-update-actions .mi-ghost:active { transform: scale(0.95); }
+.mt-island .mi-view-u #mt-update .mt-update-actions .mi-go { order: 2; margin: 0; }
+.mt-island .mi-view-u #mt-update .mt-update-actions .mi-link { order: 3; width: 100%; height: 26px; margin: 10px 0 0; padding: 0; border: 0; background: none; color: rgba(255, 255, 255, 0.6); font: inherit; font-size: 0.74rem; cursor: pointer; transition: color 0.15s ease; }
+.mt-island .mi-view-u #mt-update .mt-update-actions .mi-link:hover { color: #fff; }
+.mt-island .mi-view-u #mt-update .mt-update-actions button:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+.mt-island .mi-view-u #mt-update .mt-update-actions button:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.mt-island .mi-view-u #mt-update .mt-update-notes { max-height: 0; opacity: 0; overflow: hidden; margin: 0; padding: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.07); white-space: pre-wrap; font-family: inherit; font-size: 0.72rem; line-height: 1.5; color: rgba(255, 255, 255, 0.75); transition: opacity 0.3s linear 0.1s; }
+.mt-island .mi-view-u #mt-update.is-open .mt-update-notes { max-height: 132px; opacity: 1; margin-top: 12px; padding: 10px 12px; overflow-y: auto; }
+.mt-island .mi-view-u #mt-update .mt-update-track { display: none; position: relative; left: auto; right: auto; bottom: auto; height: 4px; margin-top: 14px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.14); }
+.mt-island .mi-view-u #mt-update.is-busy .mt-update-track { display: block; }
+.mt-island .mi-view-u #mt-update .mt-update-bar { background: var(--accent, #fff); }
 
 /* the app's own Animations switch (NOT prefers-reduced-motion, see top) */
 :root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
 :root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
 :root[data-reduce-motion="true"] .mi-hh, :root[data-reduce-motion="true"] .mi-hm, :root[data-reduce-motion="true"] .mi-hs { transition: none; }
-:root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mi-view-u .mt-update-dot { animation: none; }
+:root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mt-island .mi-view-u #mt-update .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }
 
 /* NeuCurve brings its own toolbar to the very top of the panel: the pane starts BELOW the island (8 px + 36 px + 6 px) so the island never covers it.

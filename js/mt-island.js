@@ -1,4 +1,4 @@
-/* Multi Tool - mt-island.js (v11: CLOCK)
+/* Multi Tool - mt-island.js (v12: CLOCK + wheel)
    v11: the island is also a CLOCK. Nothing running (no timer / stopwatch) = the collapsed capsule shows the time of day (a tiny dial whose hands move + HH:MM), so the time is
    visible without the idle screen. A running timer / stopwatch still takes the capsule over. Expanded: a third tool "Clock" (dial, big time, seconds, date, 24 h / 12 h chips, key mtx.islandClock12 = "1" for 12 h).
 (v3 notes follow)
@@ -214,6 +214,18 @@
     return "clock";
   }
   function cycle() { return upd ? ["timer", "sw", "clock", "u"] : ["timer", "sw", "clock"]; }
+  // The Start / Update Now buttons are painted with the theme accent, their label with --theme-on-accent. Some themes (Material You, custom colours)
+  // give an accent and an on-accent that are both light (or both dark), so the label melted into the button. Read the colour the button is REALLY painted with
+  // and pick a dark or white label from its luminance.
+  function fixOn() {
+    try {
+      var b = tGo || $("mt-update-now"); if (!b || !root) { return; }
+      var m = /rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)(?:[ ,\/]+([\d.]+))?/.exec(getComputedStyle(b).backgroundColor);
+      if (!m || (m[4] !== undefined && parseFloat(m[4]) < 0.5)) { return; }
+      var l = 0.2126 * (+m[1]) + 0.7152 * (+m[2]) + 0.0722 * (+m[3]);
+      root.style.setProperty("--mi-on", l > 150 ? "#0b0b0d" : "#ffffff");
+    } catch (e) { }
+  }
   // ---------- clock ----------
   function is12() { try { return localStorage.getItem(H12_KEY) === "1"; } catch (e) { return false; } }
   function setH12(on) { try { if (on) { localStorage.setItem(H12_KEY, "1"); } else { localStorage.removeItem(H12_KEY); } } catch (e) { } paint(false); }
@@ -274,7 +286,7 @@
     root.classList.toggle("is-open", o); root.setAttribute("aria-expanded", o ? "true" : "false");
     rollReset(tBig); rollReset(sBig); rollReset(cTime); rollReset(kBig); rollReset(kSec);          // the node that comes into view draws plain once (no roll through old digits)
     if (o) { view = upd ? "u" : ((activeOf("timer") || activeOf("sw")) ? effective() : sel); if (view !== "u") { sel = view; } root.setAttribute("data-dir", "next"); }
-    paint(false);
+    fixOn(); paint(false);
     if (!o) {
       try { if (root.contains(document.activeElement)) { document.activeElement.blur(); } } catch (e) { }
       holdUntil = Date.now() + 460; setTimeout(function () { paint(false); }, 480);
@@ -389,11 +401,30 @@
   }
 
   function init() {
-    build(); bindSetting();
+    build(); bindSetting(); fixOn();
     try {
       new MutationObserver(function () { aim(); paint(false); }).observe(body(), { attributes: true, attributeFilter: ["class"] });   // idle / quiet changed
     } catch (e) { }
     window.addEventListener("resize", function () { aim(); applySize(true); });
+    /* v12: mouse wheel over the OPEN island = next / previous tool (Timer, Stopwatch, Clock, Update). A window-capture listener, so it runs before
+       js/smooth-scroll.js (document capture) and the panel behind never scrolls. Left alone: the hour / minute steppers (they use the wheel to change the number)
+       and the scrollable release notes. One notch = one step; a touchpad collects ~60 px per step; 380 ms pause after each switch, no wrap-around. */
+    var wAcc = 0, wLast = 0, wLock = 0;
+    window.addEventListener("wheel", function (e) {
+      if (!open || !root || !root.contains(e.target) || e.ctrlKey) { return; }
+      var t = e.target, n = t;
+      while (n && n !== root) { if (n.classList && (n.classList.contains("mi-step") || n.classList.contains("mt-update-notes"))) { return; } n = n.parentNode; }
+      e.preventDefault(); e.stopPropagation();
+      var now = Date.now(), dy = e.deltaY || 0;
+      if (e.deltaMode === 1) { dy *= 33; }
+      if (now - wLast > 260) { wAcc = 0; } wLast = now;
+      if (now < wLock) { return; }
+      wAcc += dy;
+      if (Math.abs(wAcc) < 60) { return; }
+      var c = cycle(), i = c.indexOf(view), j = i + (wAcc > 0 ? 1 : -1); wAcc = 0;
+      if (j < 0 || j >= c.length) { return; }
+      wLock = now + 380; pick(c[j]);
+    }, { passive: false, capture: true });
     kTick = setInterval(tickClock, 1000);                       // only repaints while the clock is what is on screen (nothing else ticks when no timer runs)
     /* v8: a click INSIDE the NeuCurve iframe never reaches this document, so the "click outside" listener (pointerdown, above)
        could not collapse the island. Two ways in: (1) focus moving into an iframe blurs this window; (2) a pointerdown listener

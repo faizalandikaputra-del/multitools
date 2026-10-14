@@ -1797,3 +1797,18 @@ Cause: setCompResolution() only set comp.width / comp.height. From a script AE a
 Fix (jsx/host.jsx _qceRecenterLayers + helpers, called from setCompResolution): after the resize every layer WITHOUT a parent moves by half of the size change (same as Composition Settings > Advanced > Anchor centre). Position keyframes and separated X / Y move too; camera / light Point of Interest moves with them; Z is untouched; parented layers follow their parent. Layers with a Position expression or a lock are not moved and are reported in the toast. One undo step ("Change Comp Resolution").
 Camera Zoom is not changed (it is in pixels, so the field of view changes with the frame, as in AE's own dialog).
 Tested: the shift logic in Node with stub layers (plain, keyframed, parented). Not run inside AE.
+
+fix61 (dynamic island, Update view looked cut off).
+Cause: the old update banner (#mt-update) lives inside the island. css/material-theme.css (Style: Material You) paints .mt-update with a grey surface, radius and shadow at a HIGHER specificity than the island's plain-class reset, so a grey card showed inside the black island, with no padding, and the pulsing dot sat on its edge, clipped by overflow of .mi-views. The Material colours for the sub text / notes also won over the island's.
+Fix (css/mt-island.css v11): every island rule for the update banner now starts with .mt-island .mi-view-u #mt-update (id specificity), the banner also resets background colour / image / overflow / height / offsets; head row got 8 px left padding and a softer dot glow so the pulse is not clipped.
+Tested in headless Chromium with Material You dark + light: no grey card, dot fully visible. Not run inside AE.
+
+fix62 (dynamic island: "Update Now" / Start label melted into its button).
+Cause: the button background is the theme --accent, the label is --theme-on-accent. Material You and custom colours can make both light (or both dark), so the label had the same colour as the button.
+Fix (js/mt-island.js v12, fixOn()): read the colour the button is really painted with (getComputedStyle backgroundColor), compute its luminance and set --mi-on on the island to dark (#0b0b0d) or white. Runs at start and every time the island opens. Applies to Start / Pause / Update Now.
+Tested in headless Chromium (Material You, accent and on-accent both white): label dark and readable. Not run inside AE.
+
+fix63 (dynamic island: mouse wheel switches the tool).
+With the island open, scroll the mouse wheel over it: down = next, up = previous in the order Timer, Stopwatch, Clock, Update (Update only while an update is offered). One notch = one step, a touchpad collects ~60 px per step, 380 ms pause after each switch, stops at the first / last tool (no wrap). Same slide animation as the switch button.
+js/mt-island.js v13: window-capture wheel listener (runs before js/smooth-scroll.js, so the panel behind does not scroll). Not intercepted: the hour / minute steppers (wheel changes the number there) and the scrollable release notes; Ctrl+wheel is left alone.
+Tested in headless Chromium: wheel down/up walks the tools and stops at both ends, three fast notches = one step. Not run inside AE.

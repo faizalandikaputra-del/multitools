@@ -1826,39 +1826,6 @@ fix (Quick Resolution Presets rebuilt - Null / 3D layer drifted off-centre after
          js/main.js - resolution tile starts the settle passes (150/500/1000/2000/3500 ms) using the job id that
          setCompResolution returns. Simulated against 3 AE behaviours (moves 3D at once / later / never): all end centred.
 
-feature (new tab "Auto Smooth" - dead-frame remover + Twixtor):
-  what:  dead frames = duplicate frames in anime on 2s/3s that make Twixtor stutter. The tab scans the selected
-         footage layer, removes the duplicates, keeps the unique frames and lets Twixtor Pro rebuild the motion, so
-         the result is smooth and lasts exactly as long as before.
-  files: js/dfr.js (new: UI, ffprobe/ffmpeg, cadence analysis, pipeline), css/dfr.css (new, everything scoped .dfr-*),
-         jsx/host.jsx (appended block "Auto Smooth": DFR_getCompInfo, DFR_getSelectedLayers, DFR_importFootage,
-         DFR_createSmoothComp, DFR_checkTwixtor, DFR_applyTwixtor, DFR_addMarkers, DFR_cleanup, plus DFR_run,
-         DFR_gotoTime, DFR_setCompFps), js/main.js (TABS "auto-smooth" + renderTab branch), html/index.html (sidebar
-         button, css + script links), CSXS/manifest.xml (--mixed-context added to the main panel), bin/README.txt.
-  setup: copy ffmpeg + ffprobe (ffmpeg 5.1+, with prores_ks and libx264) into bin/ (Windows .exe, macOS no extension).
-         Exported clips go to Documents/MultiTool/DeadFrameCache; project items go to the "DeadFrame" folder.
-  notes: scan = ONE ffmpeg decode (showinfo + mpdecimate + scene filter). Time Stretch / Time Remap layers are
-         refused (reset them first). Twixtor effect, match name and parameter names are read from the installed
-         plugin and matched by keyword (nothing hardcoded); when Twixtor is missing, Timewarp (Pixel Motion) is used.
-         Preset values are levels of each parameter's own range. Speed % = (unique / total) x (source fps / target fps).
-         DFR_run is the whole job in one undo group. Quick check = only the first 2 seconds, comp only (no pre-comp,
-         no original change, no Render Queue).
-
-fix (host.jsx: "Illegal use of reserved word" at line 527 when opening Auto Smooth):
+fix (host.jsx: "Illegal use of reserved word" at line 527):
   cause: _qceSettlePass used the parameter name "final", an ES3 reserved word that ExtendScript rejects.
   fix:   jsx/host.jsx - parameter renamed to isLast (same position, callers unchanged).
-
-fix (Auto Smooth: Source card stayed empty after clicking a layer):
-  cause: the selection poll skipped every tick while document.hidden was true (CEP can report that for a visible
-         panel), and host errors were swallowed, so the card kept saying nothing.
-  fix:   js/dfr.js - poll every 1.5 s without the hidden check, an extra refresh when the cursor enters the tab, and
-         a visible message in the Source card when After Effects does not answer.
-
-fix (Auto Smooth: Scan failed with ffmpeg 7+, export failed with ffmpeg 6.1+):
-  cause: (1) the scene-cut output of the scan received no frame on clips without cuts; ffmpeg 7 then aborts with
-         "Could not open encoder before EOF" (exit 234). (2) the export used -r together with -fps_mode passthrough,
-         which ffmpeg 6.1+ rejects as contradictory.
-  fix:   js/dfr.js - scene branch is select='gt(scene,T)+eq(n,0)' (always one frame, frame 0 = scene start anyway);
-         export uses -fps_mode cfr -r F (older ffmpeg: -vsync cfr). ffmpeg's real error line is now shown in the toast.
-         Verified with ffmpeg 6.1.1 and 7.0.2: 240 frames scanned, 100 unique found, export = 100 frames at 24 fps
-         (ProRes and x264).

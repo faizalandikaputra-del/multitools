@@ -86,8 +86,6 @@
   <link rel="stylesheet" href="../css/material-theme.css?v=6">
   <!-- Settings > Navigation (rail left / right). Needs js/mt-nav.js -->
   <link rel="stylesheet" href="../css/mt-nav.css?v=1">
-  <!-- Auto Smooth tab (scoped .dfr-*). Companion: js/dfr.js -->
-  <link rel="stylesheet" href="../css/dfr.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -167,9 +165,6 @@
             <circle cx="4" cy="20" r="1.5" fill="currentColor" stroke="none"/>
             <circle cx="20" cy="4" r="1.5" fill="currentColor" stroke="none"/>
           </svg>
-        </button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="auto-smooth" aria-label="Auto Smooth">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="4.5" height="12" rx="1.2"/><rect x="9.75" y="6" width="4.5" height="12" rx="1.2" stroke-dasharray="2 2"/><rect x="16.5" y="6" width="4.5" height="12" rx="1.2"/></svg>
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="info" aria-label="Info / About">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
@@ -749,8 +744,6 @@
   <script src="../js/mt-anim.js?v=1"></script>
   <script src="../js/mt-idle-roll.js?v=2"></script>
   <script src="../js/mt-island.js?v=13"></script>
-  <!-- Auto Smooth tab logic (ffmpeg/ffprobe via Node). Must load BEFORE main.js: renderTab() calls window.DFR.render() -->
-  <script src="../js/dfr.js?v=1"></script>
   <script src="../js/main.js?v=31"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=2"></script>

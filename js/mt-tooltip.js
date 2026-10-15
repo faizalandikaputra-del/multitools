@@ -12,6 +12,8 @@
  * - Icon-only buttons without a title fall back to their aria-label.
  * - Appears when the cursor rests (~0.3s); moving to a neighbour button swaps instantly.
  * - Animation: transform + opacity only (GPU), no layout work. ES5 on purpose (old CEF).
+ * - v7: tip position is calibrated against the tile's real on-screen edges (zoom-proof), and the title is only
+ *   given back when the cursor really left the tile (a failed hit test used to give it back = native tooltip).
  */
 (function () {
   "use strict";
@@ -56,6 +58,7 @@
   var shown = false;
   var showTimer = 0, aliveTimer = 0, hideStamp = 0;
   var mx = 0, my = 0, startX = 0, startY = 0;
+  var lastTarget = null;   // v7: e.target of the last mouseover / mousemove (null after the cursor left the document)
   var mo = null;
   var rafId = 0, lastR = null;
 
@@ -64,35 +67,81 @@
 
   /* Element rect in the SAME pixels as clientX/Y and as this tooltip (position:fixed, outside .app).
      css/style.css has ".app { zoom: var(--ui-scale) }". Older CEF (before ~Chrome 128) returns getBoundingClientRect()
-     already DIVIDED by that zoom, so the tooltip landed beside its tile and the "cursor is outside the tile" checks
-     failed, which gave the title back to the browser (native tooltip). Same detection as pointerBox() in main.js:
-     rect.width vs offsetWidth ~1 = old engine (multiply by zoom), ~zoom = new engine (already screen pixels). */
-  function zoomOf(el) {
-    var z = 1, n, v;
-    for (n = el; n && n.nodeType === 1; n = n.parentElement) {
-      v = parseFloat(window.getComputedStyle(n).zoom);
-      if (v && v > 0 && v !== 1) { z *= v; }
+     already DIVIDED by that zoom, so the tooltip landed beside its tile and the old "cursor is outside the tile" check
+     failed, which gave the title back to the browser (native tooltip).
+     Which convention the host uses is measured ONCE per --ui-scale on a hidden probe inside .app (a tile cannot be
+     used: it scales 1.07 on hover, which fakes the ratio), then double-checked against the real cursor position
+     (calibrate). Elements outside .app (toast, menus, Curve iframe) are never scaled: k = 1. */
+  var gk = { key: null, k: 1, z: 1 };
+
+  function convK() {
+    var key = document.documentElement.style.getPropertyValue("--ui-scale") || "";
+    var app, probe, z, ratio, v;
+    if (gk.key === key) { return gk.k; }
+    gk.key = key; gk.k = 1; gk.z = 1;
+    app = document.querySelector(".app");
+    if (!app) { return 1; }
+    z = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+    v = parseFloat(window.getComputedStyle(app).zoom);
+    if (!(z > 0)) { z = (v > 0) ? v : 1; }
+    gk.z = z;
+    if (Math.abs(z - 1) < 0.001) { return 1; }
+    probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;left:0;top:0;width:100px;height:10px;visibility:hidden;pointer-events:none;transform:none;";
+    app.appendChild(probe);
+    if (probe.offsetWidth > 0) {
+      ratio = probe.getBoundingClientRect().width / probe.offsetWidth;   // old engine ~1, new engine ~z
+      gk.k = (Math.abs(ratio - 1) < Math.abs(ratio - z)) ? z : 1;
     }
-    if (z === 1 && el.closest && el.closest(".app")) {
-      v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
-      if (v && v > 0) { z = v; }
-    }
-    return z;
+    app.removeChild(probe);
+    return gk.k;
   }
+
   function box(el) {
-    var r = el.getBoundingClientRect(), key = document.documentElement.style.getPropertyValue("--ui-scale") || "1";
-    var c = el.__mtK, k, z, ratio;
-    if (!c || c.key !== key || c.stale) {
-      k = 1;
-      z = zoomOf(el);
-      if (Math.abs(z - 1) > 0.001 && el.offsetWidth > 0 && r.width > 0) {
-        ratio = r.width / el.offsetWidth;                     // old engine ~1, new engine ~z
-        if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
-      }
-      c = el.__mtK = { key: key, k: k, stale: false };
-    }
-    k = c.k;
+    var r = el.getBoundingClientRect();
+    var k = (el.closest && el.closest(".app")) ? convK() : 1;
     return { left: r.left * k, top: r.top * k, right: r.right * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
+  }
+
+  /* v7: which rect convention is right (k = 1 or k = zoom) is decided from the REAL tile on screen.
+     Before, the cursor was only checked against the two candidate rects; near the middle of a tile both rects
+     contain the cursor, so a wrong probe result survived and the tip appeared beside its tile.
+     Now the tile's real left / right / top / bottom edges are found with elementFromPoint (same pixels as the
+     mouse events, so no zoom maths involved) and compared with both candidates. The closer one wins. If the two
+     candidates are nearly identical (tile close to the panel origin) the decision is skipped: the error is tiny. */
+  function hitEl(el, x, y) {
+    var h = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
+    return !!h && (h === el || el.contains(h));
+  }
+
+  function reach(el, dx, dy) {        // px from the cursor to el's edge in one direction (gallop, then bisect)
+    var lo = 0, step = 4, hi, mid, MAXD = 700;
+    while (step <= MAXD && hitEl(el, mx + dx * step, my + dy * step)) { lo = step; step *= 2; }
+    hi = Math.min(step, MAXD + 1);
+    while (hi - lo > 1) {
+      mid = (lo + hi) >> 1;
+      if (hitEl(el, mx + dx * mid, my + dy * mid)) { lo = mid; } else { hi = mid; }
+    }
+    return lo;
+  }
+
+  function calibrate(el) {
+    var r, L, R, T, B, c1, cz, z;
+    if (!(el.closest && el.closest(".app"))) { return; }
+    convK();
+    z = gk.z;
+    if (Math.abs(z - 1) < 0.001 || !hitEl(el, mx, my)) { return; }
+    r = el.getBoundingClientRect();
+    L = mx - reach(el, -1, 0); R = mx + reach(el, 1, 0);
+    T = my - reach(el, 0, -1); B = my + reach(el, 0, 1);
+    function cost(k) { return Math.abs(L - r.left * k) + Math.abs(R - r.right * k) + Math.abs(T - r.top * k) + Math.abs(B - r.bottom * k); }
+    c1 = cost(1); cz = cost(z);
+    if (Math.abs(c1 - cz) >= 8) { gk.k = (c1 < cz) ? 1 : z; }
+  }
+
+  /* Is the pointer on el according to the mouse EVENTS (e.target)? Does not depend on any hit-test maths. */
+  function pointerOn(el) {
+    return (!!lastTarget && (lastTarget === el || el.contains(lastTarget))) || over(el);
   }
 
   /* While the tooltip is visible, follow its element every frame. The sidebar list scrolls smoothly
@@ -104,7 +153,7 @@
     var r = box(cur.el);
     if (!lastR || r.left !== lastR.left || r.top !== lastR.top || r.width !== lastR.width || r.height !== lastR.height) {
       lastR = { left: r.left, top: r.top, width: r.width, height: r.height };
-      if (mx < r.left - 3 || mx > r.right + 3 || my < r.top - 3 || my > r.bottom + 3) { leave(); return; }
+      if (!over(cur.el)) { leave(); return; }
       place(cur.el);
     }
     rafId = raf(track);
@@ -228,8 +277,8 @@
     showTimer = 0;
     if (!cur || cur.suppressed || !cur.text || !ensure()) { return; }
     if (!document.documentElement.contains(cur.el)) { leave(); return; }
-    var rr = box(cur.el);
-    if (mx < rr.left - 3 || mx > rr.right + 3 || my < rr.top - 3 || my > rr.bottom + 3) { leave(); return; }
+    if (!pointerOn(cur.el)) { leave(); return; }
+    calibrate(cur.el);
     if (!textEl.firstChild) { textEl.appendChild(document.createTextNode("")); }
     textEl.firstChild.nodeValue = cur.text;
     // measure while hidden, then pop
@@ -256,14 +305,12 @@
     shown = false;
   }
 
-  function leave() {
-    var hit;
+  function leave(force) {     // force = a real mouseout / blur: the cursor IS gone (mx / my may still be the old spot), give the title back
     hide();
     // Cursor still on the element (re-render, scroll, resize ...): keep the title OFF, otherwise the browser
     // pops its native tooltip. Treat it like a click: hidden, comes back when the cursor moves.
-    if (cur && inside && document.elementFromPoint && document.documentElement.contains(cur.el)) {
-      hit = document.elementFromPoint(mx, my);
-      if (hit && (hit === cur.el || cur.el.contains(hit))) { cur.suppressed = true; startX = mx; startY = my; return; }
+    if (!force && cur && inside && document.elementFromPoint && document.documentElement.contains(cur.el)) {
+      if (pointerOn(cur.el)) { cur.suppressed = true; startX = mx; startY = my; return; }
     }
     if (cur) { restore(cur.el); }
     cur = null;
@@ -285,6 +332,7 @@
 
   document.addEventListener("mouseover", function (e) {
     var t = e.target, found;
+    lastTarget = t;
     found = findTarget(t);
     if (!found) { stripSidebar(t); if (cur) { leave(); } return; }
     if (cur && cur.el === found.el) { return; }
@@ -292,15 +340,17 @@
   }, true);
 
   document.addEventListener("mouseout", function (e) {
+    lastTarget = e.relatedTarget || null;
     if (!cur) { return; }
     var to = e.relatedTarget;
     if (to && cur.el.contains(to)) { return; }
     if (to && findTarget(to)) { return; }                 // next mouseover swaps the tooltip
-    leave();
+    leave(true);
   }, true);
 
   document.addEventListener("mousemove", function (e) {
     mx = e.clientX; my = e.clientY;
+    lastTarget = e.target;
     var found;
     if (!cur) {
       // Self-heal: no mouseover arrives after a panel re-render, a tab switch or a window blur,
@@ -342,9 +392,9 @@
   document.addEventListener("keydown", quiet, true);
   // wheel / scroll: not suppressed any more. While visible, track() follows the element each frame and drops
   // the tooltip if it slides out from under the cursor; a pending one is re-checked in show().
-  window.addEventListener("blur", function () { inside = false; leave(); });
-  window.addEventListener("resize", function () { if (cur && cur.el.__mtK) { cur.el.__mtK.stale = true; } quiet(); });
-  document.addEventListener("mouseleave", function () { inside = false; leave(); });
+  window.addEventListener("blur", function () { inside = false; lastTarget = null; leave(true); });
+  window.addEventListener("resize", function () { gk.key = null; quiet(); });
+  document.addEventListener("mouseleave", function () { inside = false; lastTarget = null; leave(true); });
 
   /* Watchdog: the native tooltip used to slip through whenever no mouseover reached us - a node re-created by the
      app under a resting cursor, a disabled button (browsers send it no mouse events), a titled child inside a

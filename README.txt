@@ -1829,3 +1829,20 @@ fix (Quick Resolution Presets rebuilt - Null / 3D layer drifted off-centre after
 fix (host.jsx: "Illegal use of reserved word" at line 527):
   cause: _qceSettlePass used the parameter name "final", an ES3 reserved word that ExtendScript rejects.
   fix:   jsx/host.jsx - parameter renamed to isLast (same position, callers unchanged).
+
+fix64 (tooltip: tip sat beside its tile + native browser tooltip leaked through):
+  cause 1: js/mt-tooltip.js guessed whether the host reports element rects in screen pixels or divided by the UI scale
+           (".app { zoom: var(--ui-scale) }"). The guess was only corrected when the cursor lay OUTSIDE the guessed rect,
+           so near the middle of a tile a wrong guess stayed and the tip appeared beside the tile (looked like it belonged
+           to the neighbour).
+  fix 1:   calibrate() now finds the tile's real left / right / top / bottom edge on screen with elementFromPoint and
+           uses the convention (k = 1 or k = zoom) whose rect matches those edges. Skipped only when both candidates
+           are almost identical (error then below ~8 px).
+  cause 2: leave() gave the title back to the browser whenever the hit test said "cursor not on the tile" (re-render,
+           tile scaling on hover, edge pixels), so the NATIVE tooltip popped up.
+  fix 2:   the title is only given back when a real mouseout / blur / document leave happens. While the last mouse event
+           target is still inside the tile the title stays removed (tooltip just hides, comes back on the next move).
+  files:   js/mt-tooltip.js (v7); cache-buster ?v=7 in html/index.html and neucurve/index.html.
+  Tested in headless Chromium at UI scale 110% / 120%, rect convention new, old and old-with-wrong-probe (old code was
+  13 px off in the last case, new code exact). Not run inside AE.
+

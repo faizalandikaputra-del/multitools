@@ -524,7 +524,7 @@ function _qceNudge(comp, job) {
   }
 }
 // Step 4: one settle pass. Returns { fixed, off, worst } (off = channels still not at their target after this pass).
-function _qceSettlePass(comp, job, final) {
+function _qceSettlePass(comp, job, isLast) {
   var res = { fixed: 0, off: 0, worst: "" }, todo = [], a, b, e, c, p, cur, now, diff, k, after;
   for (a = 0; a < job.layers.length; a++) {
     e = job.layers[a];
@@ -536,7 +536,7 @@ function _qceSettlePass(comp, job, final) {
         cur = _qceReadProp(p); now = (c.axis < 0) ? cur : cur[c.axis];
         diff = c.target - now;
         if (Math.abs(diff) <= QCE_EPS) { c.last = now; continue; }
-        if (final || (c.last !== null && Math.abs(c.last - now) <= QCE_EPS)) { todo.push({ e: e, c: c, p: p, diff: diff }); }
+        if (isLast || (c.last !== null && Math.abs(c.last - now) <= QCE_EPS)) { todo.push({ e: e, c: c, p: p, diff: diff }); }
         else { c.last = now; res.off++; }                    // value is still changing: AE is not done yet
       } catch (eP) { res.off++; }
     }

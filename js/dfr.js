@@ -122,7 +122,7 @@
       markers: sget("markers", "1") === "1"
     },
     comp: null, sig: "", layers: [], picked: -1,
-    probe: {}, detecting: false,
+    probe: {}, detecting: false, hostErr: "",
     scan: null, scanKey: "",
     busy: "", prog: null, child: null, cancelled: false,
     dismiss: "", report: null, twx: null,
@@ -564,6 +564,11 @@
     return host("DFR_getCompInfo", []).then(function (r) {
       if (!S.root || !document.body.contains(S.root)) { return; }
       var d = r.ok ? r.data : null;
+      if (!r.ok) {
+        if (S.hostErr !== r.message) { S.hostErr = r.message; S.sig = "err"; paintAll(); }
+        return;
+      }
+      if (S.hostErr) { S.hostErr = ""; S.sig = ""; }
       if (!d || !d.hasComp) {
         if (S.sig !== "none") { S.sig = "none"; S.comp = null; S.layers = []; S.picked = -1; paintAll(); }
         return;
@@ -576,7 +581,8 @@
 
   function loadLayers() {
     return host("DFR_getSelectedLayers", []).then(function (r) {
-      if (!r.ok) { S.layers = []; S.comp = null; S.picked = -1; paintAll(); return; }
+      if (!r.ok) { S.layers = []; S.comp = null; S.picked = -1; S.hostErr = r.message; paintAll(); return; }
+      S.hostErr = "";
       var prev = layerKey(pickedLayer()), i, found = -1, first = -1;
       S.comp = r.data.comp; S.layers = r.data.layers;
       for (i = 0; i < S.layers.length; i++) {
@@ -602,7 +608,7 @@
 
   function startPoll() {
     stopPoll();
-    S.timer = setInterval(function () { if (!document.hidden) { tick(false); } }, 2000);
+    S.timer = setInterval(function () { tick(false); }, 1500);
   }
   function stopPoll() { if (S.timer) { clearInterval(S.timer); S.timer = 0; } }
 
@@ -705,6 +711,8 @@
     };
 
     wire(root);
+    var lastEnter = 0;
+    root.addEventListener("mouseenter", function () { var n = Date.now(); if (n - lastEnter > 400) { lastEnter = n; tick(false); } });
     paintAll();
     // run detection after the first paint so opening the tab never blocks
     setTimeout(function () { if (document.body.contains(root)) { paintResult(); tick(true); startPoll(); } }, 60);
@@ -789,6 +797,7 @@
 
   function paintLayers() {
     var box = S.ref.layers, html = "", i, L;
+    if (S.hostErr) { box.innerHTML = '<div class="dfr-empty">After Effects did not answer: ' + esc(S.hostErr) + ' Reload the panel and try again.</div>'; return; }
     if (!S.comp) { box.innerHTML = '<div class="dfr-empty">Open a composition and select a footage layer.</div>'; return; }
     if (!S.layers.length) { box.innerHTML = '<div class="dfr-empty">Select a footage layer in the timeline.</div>'; return; }
     for (i = 0; i < S.layers.length; i++) {

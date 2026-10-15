@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.64",
-    "changelog":  "- Update 1.8.64",
+    "latest_version":  "1.8.65",
+    "changelog":  "- Update 1.8.65",
     "files":  [
                   {
                       "path":  "bin/README.txt",
@@ -224,7 +224,7 @@
                   },
                   {
                       "path":  "js/dfr.js",
-                      "sha256":  "a19b65d25ce533e87e6ff55be5e9e29631912c9c924cfad469ac4064d13b4e2b"
+                      "sha256":  "c21a7c3a11415efd766ff5dde6d1589e693a435df04c3e1ac1d7ebb58275f955"
                   },
                   {
                       "path":  "js/main.js",
@@ -352,7 +352,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "45c6b7efec8bb63163916028cdedfbba1781042f0613da036e26729099fbfba4"
+                      "sha256":  "f7862257f4d9c92bccdf0ae7800701ce975d0950f79325ea4fb3559669389fd5"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -632,7 +632,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "ad61a13c452bf3dca02c1451174385963ac75df0b3aac58b20a2d9dd621ae9bf"
+                      "sha256":  "e67e3e802f04b2499ccde30dfbf342b33dd45c53c484646e68a5e194802c9e5e"
                   }
               ]
 }

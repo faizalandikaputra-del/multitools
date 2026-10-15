@@ -1843,3 +1843,13 @@ feature (new tab "Auto Smooth" - dead-frame remover + Twixtor):
          Preset values are levels of each parameter's own range. Speed % = (unique / total) x (source fps / target fps).
          DFR_run is the whole job in one undo group. Quick check = only the first 2 seconds, comp only (no pre-comp,
          no original change, no Render Queue).
+
+fix (host.jsx: "Illegal use of reserved word" at line 527 when opening Auto Smooth):
+  cause: _qceSettlePass used the parameter name "final", an ES3 reserved word that ExtendScript rejects.
+  fix:   jsx/host.jsx - parameter renamed to isLast (same position, callers unchanged).
+
+fix (Auto Smooth: Source card stayed empty after clicking a layer):
+  cause: the selection poll skipped every tick while document.hidden was true (CEP can report that for a visible
+         panel), and host errors were swallowed, so the card kept saying nothing.
+  fix:   js/dfr.js - poll every 1.5 s without the hidden check, an extra refresh when the cursor enters the tab, and
+         a visible message in the Source card when After Effects does not answer.

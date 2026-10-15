@@ -62,13 +62,46 @@
   function raf(fn) { return (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(fn); }
   function caf(id) { (window.cancelAnimationFrame || clearTimeout)(id); }
 
+  /* Element rect in the SAME pixels as clientX/Y and as this tooltip (position:fixed, outside .app).
+     css/style.css has ".app { zoom: var(--ui-scale) }". Older CEF (before ~Chrome 128) returns getBoundingClientRect()
+     already DIVIDED by that zoom, so the tooltip landed beside its tile and the "cursor is outside the tile" checks
+     failed, which gave the title back to the browser (native tooltip). Same detection as pointerBox() in main.js:
+     rect.width vs offsetWidth ~1 = old engine (multiply by zoom), ~zoom = new engine (already screen pixels). */
+  function zoomOf(el) {
+    var z = 1, n, v;
+    for (n = el; n && n.nodeType === 1; n = n.parentElement) {
+      v = parseFloat(window.getComputedStyle(n).zoom);
+      if (v && v > 0 && v !== 1) { z *= v; }
+    }
+    if (z === 1 && el.closest && el.closest(".app")) {
+      v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+      if (v && v > 0) { z = v; }
+    }
+    return z;
+  }
+  function box(el) {
+    var r = el.getBoundingClientRect(), key = document.documentElement.style.getPropertyValue("--ui-scale") || "1";
+    var c = el.__mtK, k, z, ratio;
+    if (!c || c.key !== key || c.stale) {
+      k = 1;
+      z = zoomOf(el);
+      if (Math.abs(z - 1) > 0.001 && el.offsetWidth > 0 && r.width > 0) {
+        ratio = r.width / el.offsetWidth;                     // old engine ~1, new engine ~z
+        if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
+      }
+      c = el.__mtK = { key: key, k: k, stale: false };
+    }
+    k = c.k;
+    return { left: r.left * k, top: r.top * k, right: r.right * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
+  }
+
   /* While the tooltip is visible, follow its element every frame. The sidebar list scrolls smoothly
      when the tab changes (mouse wheel / click), so the icon can move after the tooltip was placed.
      If the element slides out from under the cursor the tooltip is dropped instead of lingering. */
   function track() {
     rafId = 0;
     if (!shown || !cur) { return; }
-    var r = cur.el.getBoundingClientRect();
+    var r = box(cur.el);
     if (!lastR || r.left !== lastR.left || r.top !== lastR.top || r.width !== lastR.width || r.height !== lastR.height) {
       lastR = { left: r.left, top: r.top, width: r.width, height: r.height };
       if (mx < r.left - 3 || mx > r.right + 3 || my < r.top - 3 || my > r.bottom + 3) { leave(); return; }
@@ -157,7 +190,7 @@
   }
 
   function place(el) {
-    var r = el.getBoundingClientRect();
+    var r = box(el);
     var vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
     var w = tip.offsetWidth, h = tip.offsetHeight;
     var side = "top", x, y, ax, ay, anchorX;
@@ -195,7 +228,7 @@
     showTimer = 0;
     if (!cur || cur.suppressed || !cur.text || !ensure()) { return; }
     if (!document.documentElement.contains(cur.el)) { leave(); return; }
-    var rr = cur.el.getBoundingClientRect();
+    var rr = box(cur.el);
     if (mx < rr.left - 3 || mx > rr.right + 3 || my < rr.top - 3 || my > rr.bottom + 3) { leave(); return; }
     if (!textEl.firstChild) { textEl.appendChild(document.createTextNode("")); }
     textEl.firstChild.nodeValue = cur.text;
@@ -224,7 +257,14 @@
   }
 
   function leave() {
+    var hit;
     hide();
+    // Cursor still on the element (re-render, scroll, resize ...): keep the title OFF, otherwise the browser
+    // pops its native tooltip. Treat it like a click: hidden, comes back when the cursor moves.
+    if (cur && inside && document.elementFromPoint && document.documentElement.contains(cur.el)) {
+      hit = document.elementFromPoint(mx, my);
+      if (hit && (hit === cur.el || cur.el.contains(hit))) { cur.suppressed = true; startX = mx; startY = my; return; }
+    }
     if (cur) { restore(cur.el); }
     cur = null;
     watch(false);
@@ -302,8 +342,8 @@
   document.addEventListener("keydown", quiet, true);
   // wheel / scroll: not suppressed any more. While visible, track() follows the element each frame and drops
   // the tooltip if it slides out from under the cursor; a pending one is re-checked in show().
-  window.addEventListener("blur", leave);
-  window.addEventListener("resize", quiet);
+  window.addEventListener("blur", function () { inside = false; leave(); });
+  window.addEventListener("resize", function () { if (cur && cur.el.__mtK) { cur.el.__mtK.stale = true; } quiet(); });
   document.addEventListener("mouseleave", function () { inside = false; leave(); });
 
   /* Watchdog: the native tooltip used to slip through whenever no mouseover reached us - a node re-created by the

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.65",
-    "changelog":  "- Update 1.8.65",
+    "latest_version":  "1.8.66",
+    "changelog":  "- Update 1.8.66",
     "files":  [
                   {
                       "path":  "bin/README.txt",
@@ -224,7 +224,7 @@
                   },
                   {
                       "path":  "js/dfr.js",
-                      "sha256":  "c21a7c3a11415efd766ff5dde6d1589e693a435df04c3e1ac1d7ebb58275f955"
+                      "sha256":  "6b4f832214a9e1b3143478c11321bed5f3878dbbb8a004d62ef4042f41127887"
                   },
                   {
                       "path":  "js/main.js",
@@ -632,7 +632,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "e67e3e802f04b2499ccde30dfbf342b33dd45c53c484646e68a5e194802c9e5e"
+                      "sha256":  "95e0853879dae6cf556ba9b350af3fa0a9081746e9cabf2010b3ae0a34345ef6"
                   }
               ]
 }

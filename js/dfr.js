@@ -284,7 +284,7 @@
 
     var graph = "[0:v:0]showinfo@all,split=2[a][b];" +
       "[a]mpdecimate=hi=" + P.hi + ":lo=" + P.lo + ":frac=" + P.frac + ",showinfo@dec[dec];" +
-      "[b]select='gt(scene," + P.scene + ")',showinfo@scn[scn]";
+      "[b]select='gt(scene," + P.scene + ")+eq(n,0)',showinfo@scn[scn]";   // eq(n,0): the branch always gets one frame (ffmpeg 7 aborts on an empty output)
     var args = ["-hide_banner", "-nostdin", "-progress", "pipe:1", "-nostats", "-ss", win.srcStart.toFixed(6), "-t", win.srcDur.toFixed(6),
       "-i", L.path, "-an", "-filter_complex", graph, "-map", "[dec]", "-f", "null", "-", "-map", "[scn]", "-f", "null", "-"];
 
@@ -310,7 +310,8 @@
       if (S.cancelled) { setProg(null); paintAll(); toast("Scan cancelled."); return; }
       if (r.code !== 0 || frames.length < 2) {
         setProg(null); paintAll();
-        toast("The scan failed. " + (/Invalid data|moov atom|No such file/i.test(r.err) ? "ffmpeg could not read the file." : "Check the file and try again."), true);
+        var why = lastFfmpegError(r.err);
+        toast("The scan failed" + (why ? ": " + why : ". Check the file and try again."), true);
         return;
       }
       var res;
@@ -323,6 +324,15 @@
       toast("Scan done: " + res.unique + " unique of " + res.total + " frames.");
       if (S.cfg.markers) { sendMarkers(true); }
     });
+  }
+
+  function lastFfmpegError(err) {
+    var lines = String(err || "").split(/\r\n|\n|\r/), i, l;
+    for (i = lines.length - 1; i >= 0; i--) {
+      l = lines[i].replace(/^\s+|\s+$/g, "");
+      if (l && !/showinfo|^frame=|^Conversion failed/i.test(l) && /error|invalid|unrecognized|no such|not found|unknown|failed|denied|moov|cannot/i.test(l)) { return l.slice(0, 160); }
+    }
+    return "";
   }
 
   function classify(holds) {
@@ -484,10 +494,10 @@
     }
 
     // Fallbacks for different ffmpeg builds: -fps_mode (5.1+) vs -vsync, -filter_script vs -/filter (7.0+), missing ProRes encoder.
-    var codec = preset.codec, script = "-filter_script:v", sync = ["-fps_mode", "passthrough"];
+    var codec = preset.codec, script = "-filter_script:v", sync = ["-fps_mode", "cfr"];
     function again(r) {
       if (S.cancelled || r.code === 0) { return r; }
-      if (/Unrecognized option 'fps_mode'|Option fps_mode not found/i.test(r.err) && sync[0] === "-fps_mode") { sync = ["-vsync", "0"]; return attempt(codec, script, sync).then(again); }
+      if (/Unrecognized option 'fps_mode'|Option fps_mode not found/i.test(r.err) && sync[0] === "-fps_mode") { sync = ["-vsync", "cfr"]; return attempt(codec, script, sync).then(again); }
       if (/Unrecognized option 'filter_script|Option filter_script.* not found/i.test(r.err) && script === "-filter_script:v") { script = "-/filter:v"; return attempt(codec, script, sync).then(again); }
       if (/Unknown encoder 'prores_ks'|Encoder not found/i.test(r.err) && codec !== "x264") { codec = "x264"; return attempt(codec, script, sync).then(again); }
       return r;
@@ -495,7 +505,7 @@
     return attempt(codec, script, sync).then(again).then(function (r) {
       try { fs.unlinkSync(filtFile); } catch (e3) { }
       if (S.cancelled) { try { fs.unlinkSync(r.out); } catch (e4) { } throw new Error("cancelled"); }
-      if (r.code !== 0) { throw new Error("ffmpeg could not export the unique frames."); }
+      if (r.code !== 0) { var why2 = lastFfmpegError(r.err); throw new Error("ffmpeg could not export the unique frames" + (why2 ? ": " + why2 : ".")); }
       return r.out;
     });
   }

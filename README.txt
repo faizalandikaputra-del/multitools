@@ -1853,3 +1853,12 @@ fix (Auto Smooth: Source card stayed empty after clicking a layer):
          panel), and host errors were swallowed, so the card kept saying nothing.
   fix:   js/dfr.js - poll every 1.5 s without the hidden check, an extra refresh when the cursor enters the tab, and
          a visible message in the Source card when After Effects does not answer.
+
+fix (Auto Smooth: Scan failed with ffmpeg 7+, export failed with ffmpeg 6.1+):
+  cause: (1) the scene-cut output of the scan received no frame on clips without cuts; ffmpeg 7 then aborts with
+         "Could not open encoder before EOF" (exit 234). (2) the export used -r together with -fps_mode passthrough,
+         which ffmpeg 6.1+ rejects as contradictory.
+  fix:   js/dfr.js - scene branch is select='gt(scene,T)+eq(n,0)' (always one frame, frame 0 = scene start anyway);
+         export uses -fps_mode cfr -r F (older ffmpeg: -vsync cfr). ffmpeg's real error line is now shown in the toast.
+         Verified with ffmpeg 6.1.1 and 7.0.2: 240 frames scanned, 100 unique found, export = 100 frames at 24 fps
+         (ProRes and x264).

@@ -32,6 +32,8 @@
           <CEFCommandLine>
             <Parameter>--allow-file-access-from-files</Parameter>
             <Parameter>--enable-nodejs</Parameter>
+            <!-- Auto Smooth tab: Node (child_process for ffmpeg/ffprobe) in the panel's own page context -->
+            <Parameter>--mixed-context</Parameter>
           </CEFCommandLine>
         </Resources>
         <Lifecycle>

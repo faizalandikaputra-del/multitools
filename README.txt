@@ -1825,3 +1825,21 @@ fix (Quick Resolution Presets rebuilt - Null / 3D layer drifted off-centre after
          can never move a layer twice. Old helpers (_qceRecenterLayers, _qceShiftProp, _qceShiftScalar) removed.
          js/main.js - resolution tile starts the settle passes (150/500/1000/2000/3500 ms) using the job id that
          setCompResolution returns. Simulated against 3 AE behaviours (moves 3D at once / later / never): all end centred.
+
+feature (new tab "Auto Smooth" - dead-frame remover + Twixtor):
+  what:  dead frames = duplicate frames in anime on 2s/3s that make Twixtor stutter. The tab scans the selected
+         footage layer, removes the duplicates, keeps the unique frames and lets Twixtor Pro rebuild the motion, so
+         the result is smooth and lasts exactly as long as before.
+  files: js/dfr.js (new: UI, ffprobe/ffmpeg, cadence analysis, pipeline), css/dfr.css (new, everything scoped .dfr-*),
+         jsx/host.jsx (appended block "Auto Smooth": DFR_getCompInfo, DFR_getSelectedLayers, DFR_importFootage,
+         DFR_createSmoothComp, DFR_checkTwixtor, DFR_applyTwixtor, DFR_addMarkers, DFR_cleanup, plus DFR_run,
+         DFR_gotoTime, DFR_setCompFps), js/main.js (TABS "auto-smooth" + renderTab branch), html/index.html (sidebar
+         button, css + script links), CSXS/manifest.xml (--mixed-context added to the main panel), bin/README.txt.
+  setup: copy ffmpeg + ffprobe (ffmpeg 5.1+, with prores_ks and libx264) into bin/ (Windows .exe, macOS no extension).
+         Exported clips go to Documents/MultiTool/DeadFrameCache; project items go to the "DeadFrame" folder.
+  notes: scan = ONE ffmpeg decode (showinfo + mpdecimate + scene filter). Time Stretch / Time Remap layers are
+         refused (reset them first). Twixtor effect, match name and parameter names are read from the installed
+         plugin and matched by keyword (nothing hardcoded); when Twixtor is missing, Timewarp (Pixel Motion) is used.
+         Preset values are levels of each parameter's own range. Speed % = (unique / total) x (source fps / target fps).
+         DFR_run is the whole job in one undo group. Quick check = only the first 2 seconds, comp only (no pre-comp,
+         no original change, no Render Queue).

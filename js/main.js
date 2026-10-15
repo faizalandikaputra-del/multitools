@@ -89,6 +89,12 @@
       tools: [],
       custom: "curve"      // NeuCurve: full tool, hosted by the Curve module below
     },
+    "auto-smooth": {
+      title: "Auto Smooth",
+      hint: "Select a footage layer, scan for dead frames, then click Auto Smooth.",
+      tools: [],
+      custom: "autoSmooth"     // dead-frame remover + Twixtor: js/dfr.js (window.DFR.render)
+    },
     "info": { title: "Info / About", hint: "", tools: [], info: true }
   };
 
@@ -4282,6 +4288,8 @@
       built = TextFlex.render();
     } else if (cfg.custom === "shortcutz") {
       built = Shortcutz.render();
+    } else if (cfg.custom === "autoSmooth") {
+      built = (window.DFR && window.DFR.render) ? window.DFR.render() : (function () { var e = document.createElement("div"); e.className = "empty"; e.textContent = "Auto Smooth could not be loaded."; return e; })();
     } else if (!cfg.tools.length) {
       var empty = document.createElement("div");
       empty.className = "empty";

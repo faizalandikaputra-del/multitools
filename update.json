@@ -1,7 +1,11 @@
 {
-    "latest_version":  "1.8.63",
-    "changelog":  "- Update 1.8.63",
+    "latest_version":  "1.8.64",
+    "changelog":  "- Update 1.8.64",
     "files":  [
+                  {
+                      "path":  "bin/README.txt",
+                      "sha256":  "eb099551074e34b4e99a22954f1645c5f65e4eaf5782e8e17a2554033b7d5e2a"
+                  },
                   {
                       "path":  "css/ambient-orbs.css",
                       "sha256":  "78b309a50330ebee850cbf041177fcb13b44d7425f28aecc3526677511f2304e"
@@ -9,6 +13,10 @@
                   {
                       "path":  "css/cursor-fix.css",
                       "sha256":  "5aac5b87691fe2c9bfa44b5f811764b3be53d3f93e28578ffdecdc50b49a96b5"
+                  },
+                  {
+                      "path":  "css/dfr.css",
+                      "sha256":  "0a120b406dc14cdfba5b8950ecb66d558002090cac9ec5cc20c3dafe81f79233"
                   },
                   {
                       "path":  "css/fluid-polish.css",
@@ -184,7 +192,7 @@
                   },
                   {
                       "path":  "CSXS/manifest.xml",
-                      "sha256":  "13ec7cf4f2bcf25419a872d86a029e0edeb11a2c41abd38a5ed0fb915bdd7833"
+                      "sha256":  "8fdc1023786291bc5dfa8617985b8cc887910d490dd0c69692dd25050998f6ca"
                   },
                   {
                       "path":  "desktop.ini",
@@ -196,7 +204,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "2a546fcce5d1b6c11960d1a7f1430f44297da80ef5054a7f87a3c131c479801d"
+                      "sha256":  "4e50682a6ae0ebe2e477b24948e5eaeda4c057b50380f5467835c159428e818f"
                   },
                   {
                       "path":  "html/settings.html",
@@ -215,8 +223,12 @@
                       "sha256":  "d6c8e4210e99e7c1fbe34e0e888c87926c51e8a2df8d6c0ef49bef33f632507f"
                   },
                   {
+                      "path":  "js/dfr.js",
+                      "sha256":  "a19b65d25ce533e87e6ff55be5e9e29631912c9c924cfad469ac4064d13b4e2b"
+                  },
+                  {
                       "path":  "js/main.js",
-                      "sha256":  "a76ee409942c5a43aa592b2ce73761085e82076485c1f879165e7c1975fad293"
+                      "sha256":  "a7db4ab23f8e5e29c8faea6fcf95714ed47e53c137c8615c6752e7255dacb1fc"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -340,7 +352,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "03acb2fc68928fbdf28678eff9d1d23851335765a590bb387cdd4ec06210fa4f"
+                      "sha256":  "45c6b7efec8bb63163916028cdedfbba1781042f0613da036e26729099fbfba4"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -620,7 +632,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "9c8f0254b800d9dd858313a7a5bbeed7e7866b1abb323db98452913f22b17fd0"
+                      "sha256":  "ad61a13c452bf3dca02c1451174385963ac75df0b3aac58b20a2d9dd621ae9bf"
                   }
               ]
 }

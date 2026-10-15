@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.69",
-    "changelog":  "- Update 1.8.69",
+    "latest_version":  "1.8.70",
+    "changelog":  "- Update 1.8.70",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -304,7 +304,7 @@
                   },
                   {
                       "path":  "js/mt-tooltip.js",
-                      "sha256":  "557fc88d3a9e3839d0cc3f274ecc3eab28efae87d50976a558fa01c3d7569f1a"
+                      "sha256":  "eb78ca165f49ff298e8e6191887dc2d6ee9ea4b02ccb37db1afdc427fa52f4ac"
                   },
                   {
                       "path":  "js/mt-uitheme.js",

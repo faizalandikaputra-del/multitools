@@ -139,6 +139,12 @@
     if (Math.abs(c1 - cz) >= 8) { gk.k = (c1 < cz) ? 1 : z; }
   }
 
+  /* Is the cursor really on el? Hit test = same pixels as the mouse events, independent of any zoom maths. */
+  function over(el) {
+    var hit = document.elementFromPoint ? document.elementFromPoint(mx, my) : null;
+    return !!hit && (hit === el || el.contains(hit));
+  }
+
   /* Is the pointer on el according to the mouse EVENTS (e.target)? Does not depend on any hit-test maths. */
   function pointerOn(el) {
     return (!!lastTarget && (lastTarget === el || el.contains(lastTarget))) || over(el);

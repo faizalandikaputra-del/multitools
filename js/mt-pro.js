@@ -43,6 +43,40 @@
   function toastMs() { return Math.round(clamp(get(K.tdur, D.tdur), 800, 15000, 2400)); }
   function applyToastPos(v) { if (v === "bottom") { root.removeAttribute("data-mtp-toast-pos"); } else { root.setAttribute("data-mtp-toast-pos", v); } }
 
+  /* ---------------- pin store (tool tiles pinned to the dynamic island "Pin" view) ---------------- */
+  var PIN_KEY = "mtx.pro.fav";                // old key name kept on purpose: tiles pinned before this version stay pinned
+  function favList() {
+    var a; try { a = JSON.parse(get(PIN_KEY, "[]")); } catch (e) { a = []; }
+    if (Object.prototype.toString.call(a) !== "[object Array]") { return []; }
+    return a.filter(function (x) { return typeof x === "string" && x.indexOf("|") > 0; });
+  }
+  function saveFav(a) {
+    if (a.length) { set(PIN_KEY, JSON.stringify(a)); } else { del(PIN_KEY); }
+    try { window.dispatchEvent(new Event("mtx-fav-change")); } catch (e) { }          // the dynamic island Pin view listens
+  }
+  function keyFor(tabId, toolId) { return tabId + "|" + toolId; }
+  function findTool(tabId, toolId) {
+    var T = window.__MT && window.__MT.TABS, tab = T && T[tabId], i;
+    if (!tab || !tab.tools) { return null; }
+    for (i = 0; i < tab.tools.length; i++) { if (tab.tools[i].id === toolId) { return tab.tools[i]; } }
+    return null;
+  }
+  function favAdd(tabId, toolId) {            // true = pinned, false = already pinned / unknown tool
+    var list = favList(), k = keyFor(tabId, toolId);
+    if (list.indexOf(k) >= 0 || !findTool(tabId, toolId)) { return false; }
+    list.push(k); saveFav(list); return true;
+  }
+  function favRemove(tabId, toolId) {
+    var list = favList(), k = keyFor(tabId, toolId), i = list.indexOf(k);
+    if (i < 0) { return false; }
+    list.splice(i, 1); saveFav(list); return true;
+  }
+  function favItems() {                         // [{ tab, tool }] of the pinned tools that still exist
+    var out = [];
+    favList().forEach(function (k) { var p = k.split("|"), t = findTool(p[0], p[1]); if (t) { out.push({ tab: p[0], tool: t }); } });
+    return out;
+  }
+
   /* ---------------- 4. settings profile ---------------- */
   var KEEP = /^(mtx\.|neucurve_|curveEditorPresets$)/;
   var SKIP = /^mtx\.(bgImage|bgMotionGif|toolImg\.)/;
@@ -167,5 +201,5 @@
   function init() { buildControls(); syncControls(); bind(); }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 
-  window.MTPro = { toastMs: toastMs, reset: reset };
+  window.MTPro = { favAdd: favAdd, favRemove: favRemove, favItems: favItems, toastMs: toastMs, reset: reset };
 })();

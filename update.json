@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.74",
-    "changelog":  "- Update 1.8.74",
+    "latest_version":  "1.8.75",
+    "changelog":  "- Update 1.8.75",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -88,7 +88,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "c63bf45fc044a9db9e0f4c47ae8ffe0cdcadf6674d4c9fe67303c2e62f767c11"
+                      "sha256":  "389c0cc390ee78ac10fc719280cb0318f63dec9d4ae10c39ba126fe526ac830c"
                   },
                   {
                       "path":  "css/mt-island-boxes.css",
@@ -228,7 +228,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "5ffd5d1f369f73da10f9c60436f73ec5e84a7e8322fbd37f1af028f759aff879"
+                      "sha256":  "829e344d590c508da78e692a5b0358605dd26ed0c8b983ddfd1b5a12097a8cad"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -268,7 +268,7 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "29c9cc566f89ac081c61d97c267aa9d147c732a790cc1398116549f6573ecb19"
+                      "sha256":  "3e0f3d17db4c8430573e7270418174cd826f6f5b9894da0b02b8d886f1ae367e"
                   },
                   {
                       "path":  "js/mt-island-boxes.js",
@@ -288,7 +288,7 @@
                   },
                   {
                       "path":  "js/mt-pro.js",
-                      "sha256":  "5b43e96fb598c5d3a86777dfb9c24560a9ebb768e82f04301a93f83620f7d079"
+                      "sha256":  "4e361aab8b30ab24dab1af0f3c08e684d1e364c6f2c673729b9672b3062f94ea"
                   },
                   {
                       "path":  "js/mt-scrub.js",
@@ -660,7 +660,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "edaa5815b9826f99fa1015b3c1e75b5e108c94c054d5edc43599591360b94cfd"
+                      "sha256":  "9269644b4e8624a1cd73ae1a9bf0b64569a356b487ae0d4b993725947fecdd45"
                   }
               ]
 }

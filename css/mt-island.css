@@ -63,7 +63,39 @@
 /* while a tile is being dragged: the capsule grows a little and glows, the open island shows a drop ring */
 html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); box-shadow: 0 0 0 2px var(--accent, #5b8cff), 0 0 22px rgba(var(--accent-rgb, 91, 140, 255), 0.55); }
 .mt-island.is-drop { box-shadow: 0 0 0 2px var(--accent, #5b8cff), 0 14px 40px rgba(0, 0, 0, 0.5); }
+.mi-fhead { display: flex; align-items: center; justify-content: space-between; height: 22px; margin: 0 2px 8px; }
+.mi-fcount { font-size: 0.74rem; font-weight: 600; color: rgba(255, 255, 255, 0.55); }
+.mi-fhead .mi-fclear { width: auto; height: 22px; margin: 0; padding: 0 4px; border: 0; background: none; font: inherit; font-size: 0.72rem; font-weight: 600; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.15s ease; }
+.mi-fhead .mi-fclear:hover { color: #ff6b6b; }
+.mi-fgrid { display: flex; flex-wrap: wrap; max-height: 186px; margin: 0 -3px; padding: 3px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.mi-fgrid::-webkit-scrollbar { width: 0; height: 0; }
+.mi-ftile { position: relative; flex: 0 0 25%; box-sizing: border-box; max-width: 25%; padding: 3px; }
+.mi-fbtn { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 62px; margin: 0; padding: 4px 2px; border: 0; border-radius: 14px; overflow: hidden; background: rgba(255, 255, 255, 0.09); color: #fff; font: inherit; cursor: pointer; transition: background-color 0.15s ease, transform 0.18s var(--mi-ease); }
+.mi-fbtn:hover { background: rgba(255, 255, 255, 0.17); }
+.mi-fbtn:active { transform: scale(0.94); }
+.mi-fbtn:focus-visible, .mi-frm:focus-visible, .mi-fclear:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.mi-fbtn.is-pending { opacity: 0.55; pointer-events: none; }
+.mi-fbtn.is-success { background: rgba(61, 220, 132, 0.28); }
+.mi-fbtn.is-error { background: rgba(255, 90, 90, 0.3); }
+.mi-fimg { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-size: cover; background-position: center; opacity: 0; }
+.mi-fbtn.has-img .mi-fimg { opacity: 0.9; }
+.mi-fbtn.has-img .mi-fcode, .mi-fbtn.has-img .mi-fname { position: relative; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85); }
+.mi-fcode { position: relative; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
+.mi-fname { position: relative; max-width: 100%; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6rem; font-weight: 500; color: rgba(255, 255, 255, 0.6); }
+.mi-frm { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: #2b2b30; color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 0 2px #000; cursor: pointer; opacity: 0; transform: scale(0.7); transition: opacity 0.15s ease, transform 0.18s var(--mi-ease), background-color 0.15s ease, color 0.15s ease; }
+.mi-ftile:hover .mi-frm, .mi-frm:focus-visible { opacity: 1; transform: none; }
+.mi-frm:hover { background: #ff5a5a; color: #fff; }
 .mt-island.is-drop .mi-fempty { border-color: var(--accent, #5b8cff); background: rgba(255, 255, 255, 0.06); }
+
+/* pin motion (Corporate: ease (0.2,0,0,1); enter 240 ms, exit 150 ms; stagger 35 ms, 8 tiles max = under 300 ms; one property pair per tile: position + opacity, a pop only for the new pin) */
+.mi-fgrid.is-stag .mi-ftile { animation: mi-tile-in 0.24s cubic-bezier(0.2, 0, 0, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+.mi-ftile.is-new { animation: mi-tile-pop 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+.mi-ftile.is-out { animation: mi-tile-out 0.15s cubic-bezier(0.3, 0, 1, 1) both; pointer-events: none; }
+.mt-island.is-drop .mi-fgrid { opacity: 0.6; transition: opacity 0.15s ease; }
+.mt-island.is-drop .mi-fhead { opacity: 0.6; }
+@keyframes mi-tile-in { from { opacity: 0; transform: translateY(8px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes mi-tile-pop { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: none; } }
+@keyframes mi-tile-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.85); } }
 
 /* ---------- clock: tiny dial in the capsule, big dial in the panel. The hands read --k-h / --k-m / --k-s set on .mt-island by js/mt-island.js ---------- */
 .mi-ico .mi-hh, .mi-ico .mi-hm, .mi-ico .mi-hs { display: none; }
@@ -235,7 +267,7 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 .mt-island .mi-view-u #mt-update .mt-update-bar { background: var(--accent, #fff); }
 
 /* the app's own Animations switch (NOT prefers-reduced-motion, see top) */
-:root[data-reduce-motion="true"] .mi-fempty,
+:root[data-reduce-motion="true"] .mi-fempty, :root[data-reduce-motion="true"] .mi-fbtn, :root[data-reduce-motion="true"] .mi-frm,
 :root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
 :root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
@@ -247,3 +279,5 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
    Island switched off in Settings > Appearance (html[data-island="off"]): nothing to make room for, so NeuCurve keeps its default full-height layout
    (css/style.css: top 0) and the solid band of css/mt-curve-top.css is hidden too. */
 :root:not([data-island="off"]) .curve-pane { top: 50px; }
+
+:root[data-reduce-motion="true"] .mi-ftile, :root[data-reduce-motion="true"] .mi-fgrid.is-stag .mi-ftile { animation: none; }

@@ -509,6 +509,13 @@
     }
 
     btn.addEventListener("click", function () { runTool(btn, tabId, tool); });
+    // Drag a tile onto the dynamic island = pin it there (island "Pin" view, click it to run the tool from anywhere)
+    btn.draggable = true;
+    btn.addEventListener("dragstart", function (e) {
+      try { e.dataTransfer.setData("text/mt-tool", tabId + "|" + tool.id); e.dataTransfer.setData("text/plain", tool.name); e.dataTransfer.effectAllowed = "copy"; } catch (er) { }
+      document.documentElement.classList.add("mt-dragging-tool");
+    });
+    btn.addEventListener("dragend", function () { document.documentElement.classList.remove("mt-dragging-tool"); });
     btn.addEventListener("contextmenu", function (e) { e.preventDefault(); ContextMenu.open(e.clientX, e.clientY, btn); });
     return btn;
   }

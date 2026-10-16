@@ -1,5 +1,7 @@
-/* Multi Tool - mt-island.js (v17: CLOCK ONLY ON HOVER)
-   v17: bug - the collapsed capsule showed the clock time ALL the time (class .is-k forced the time wrapper open, css/mt-island.css + collapsedSize()). Now the time of day opens
+/* Multi Tool - mt-island.js (v18: PIN TILES BACK)
+   v18: tool tiles can be dragged onto the island again (they were lost in v16). The "Pin" view = pinned tool tiles (click = run the tool, x = unpin, Unpin all)
+   + boxes. No star on tiles, no favorites bar, no Settings group (those stay removed). Motion: tiles stagger in, a new pin pops, an unpinned tile shrinks out.
+   v17: bug - the collapsed   v17: bug - the collapsed capsule showed the clock time ALL the time (class .is-k forced the time wrapper open, css/mt-island.css + collapsedSize()). Now the time of day opens
    only while the pointer is on the island, like the timer / stopwatch: pointer away = the small dial icon only.
    v16: the "Favorites" view is now "Pin" and holds boxes only. The favorite feature (star on tool tiles, favorites bar, tile drop) was removed.
    v15: a box (".ta-group" card of the Tools tab, see js/mt-island-boxes.js) can be dragged by its header onto the island. The live box MOVES into the Pin view
@@ -34,7 +36,7 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fEmpty, fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
+  var fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
   // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
@@ -149,12 +151,17 @@
     kf.appendChild(k24); kf.appendChild(k12);
     vK.appendChild(kw); vK.appendChild(kf);
 
-    // pin view: boxes dragged from the Tools tab (js/mt-island-boxes.js) - drop target + empty hint
+    // pin view: tiles of the pinned tools (click = run it), a x on every tile, "Unpin all", a drop target for tiles + boxes dragged from the Tools tab
     vF = el("div", "mi-view mi-view-f");
-    fEmpty = el("div", "mi-fempty", "<b>Nothing pinned yet</b><span>Drag a box here to pin it.</span>");
+    fHead = el("div", "mi-fhead"); fCount = el("span", "mi-fcount");
+    fClear = btn("mi-link mi-fclear", "Unpin all", "Unpin all tools");
+    fClear.addEventListener("click", function () { var a = favItems(), i; for (i = 0; i < a.length; i++) { window.MTPro.favRemove(a[i].tab, a[i].tool.id); } });
+    fHead.appendChild(fCount); fHead.appendChild(fClear);
+    fGrid = el("div", "mi-fgrid");
+    fEmpty = el("div", "mi-fempty", "<b>Nothing pinned yet</b><span>Drag a tool tile or a box here to pin it.</span>");
     fBoxWrap = el("div", "mi-boxwrap"); fBoxWrap.hidden = true;
-    fBoxes = el("div", "mi-boxes ta"); fBoxWrap.appendChild(fBoxes);
-    vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
+    fBoxes = el("div", "mi-boxes ta"); fBoxWrap.appendChild(el("div", "mi-boxlabel", "Boxes")); fBoxWrap.appendChild(fBoxes);
+    vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
     try { if (window.ResizeObserver) { var rq = 0; boxRO = new ResizeObserver(function () { if (!rq) { rq = requestAnimationFrame(function () { rq = 0; if (open && view === "fav") { applySize(true); } }); } }); boxRO.observe(fBoxes); } } catch (eR) { }
 
     vU = el("div", "mi-view mi-view-u");
@@ -186,7 +193,7 @@
     window.addEventListener("keydown", function (e) {
       if (open && (e.key === "Escape" || e.keyCode === 27)) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(false); }
     }, true);
-    bindDrop();
+    bindDrop(); window.addEventListener("mtx-fav-change", onFavChange);
     try { var s = localStorage.getItem(SEL_KEY); if (s === "sw" || s === "timer" || s === "clock" || s === "fav") { sel = s; } } catch (e0) { }
     view = sel;
   }
@@ -271,6 +278,7 @@
     rollReset(k === "timer" ? tBig : (k === "clock" ? kBig : sBig));   // (fav has no digits)
     if (k === "clock") { rollReset(kSec); }
     spin++; sw.style.setProperty("--mi-spin", (spin * 180) + "deg");
+    if (k === "fav") { fKey = "\u0000"; }
     view = k; paint(true);
   }
 
@@ -331,10 +339,38 @@
   function visibleWanted() { return open || Date.now() < holdUntil || !idle() || quiet(); }      // always on screen (also after the timer finished); only the idle screen's own widgets replace it
 
   // ---------- pin ----------
-  function paintFav() { fEmpty.hidden = boxN > 0; }
+  function favItems() { try { return (window.MTPro && window.MTPro.favItems) ? window.MTPro.favItems() : []; } catch (e) { return []; } }
+  function paintFav() {
+    var items = favItems(), ids = items.map(function (it) { return it.tab + "|" + it.tool.id; }), key = ids.join(",");
+    if (key === fKey && fGrid.childNodes.length === items.length) { return; }
+    var first = fKey === "\u0000";                                   // first paint after the view was (re)opened: tiles stagger in; later changes: only the new tile pops
+    fKey = key; fGrid.innerHTML = ""; fGrid.classList.toggle("is-stag", first);
+    items.forEach(function (it, n) {
+      var id = it.tab + "|" + it.tool.id, t = el("div", "mi-ftile"), b = btn("mi-fbtn", "", it.tool.name), img = window.__MT && window.__MT.toolImg ? window.__MT.toolImg(it.tab, it.tool.id) : null, rm = btn("mi-frm", X_SVG, "Unpin " + it.tool.name);
+      t.style.setProperty("--i", String(Math.min(n, 7)));            // stagger budget: 8 x 35 ms < 300 ms
+      if (!first && fPrev.indexOf(id) < 0) { t.classList.add("is-new"); }
+      b.innerHTML = '<span class="mi-fimg"></span><span class="mi-fcode"></span><span class="mi-fname"></span>';
+      b.querySelector(".mi-fcode").textContent = it.tool.code; b.querySelector(".mi-fname").textContent = it.tool.name;
+      if (img) { b.querySelector(".mi-fimg").style.backgroundImage = 'url("' + img + '")'; b.classList.add("has-img"); }
+      b.title = it.tool.name;
+      b.addEventListener("click", function (e) { e.stopPropagation(); if (window.__MT && window.__MT.runTool) { window.__MT.runTool(b, it.tab, it.tool); } });
+      rm.title = "Unpin";
+      rm.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var done = function () { if (window.MTPro) { window.MTPro.favRemove(it.tab, it.tool.id); } };
+        if (document.documentElement.getAttribute("data-reduce-motion") === "true") { done(); return; }
+        t.classList.add("is-out"); setTimeout(done, 150);              // exit is shorter than the entrance: shrink + fade, then the grid closes the gap
+      });
+      t.appendChild(b); t.appendChild(rm); fGrid.appendChild(t);
+    });
+    fPrev = ids;
+    setTxt(fCount, items.length ? (items.length === 1 ? "1 pinned" : items.length + " pinned") : "Pin");
+    fHead.hidden = !items.length && boxN > 0; fClear.hidden = !items.length; fEmpty.hidden = !!items.length || boxN > 0; fGrid.hidden = !items.length;
+  }
+  function onFavChange() { if (!root) { return; } fKey = "\u0001"; if (open && view === "fav") { paint(false); } else if (open) { applySize(); } }
 
-  // a box dragged from the Tools tab: the capsule opens on Pin, the drop moves the box in
-  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-box") { return "box"; } } return ""; }
+  // a tool tile or a box dragged from the Tools tab: the capsule opens on Pin, the drop pins the tile (it stays where it was) / moves the box in
+  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-tool") { return "tool"; } if (t[i] === "text/mt-box") { return "box"; } } return ""; }
   function isToolDrag(e) { return !!dragKind(e); }
   function bindDrop() {
     root.addEventListener("dragenter", function (e) {
@@ -354,6 +390,11 @@
         setTimeout(function () { var ok = window.MTBoxes && window.MTBoxes.pin(bk); if (ok) { try { window.__MT.toast("Pinned."); } catch (er3) { } } }, 0);   // after dragend, so the moved header cannot cancel it
         return;
       }
+      var v = ""; try { v = e.dataTransfer.getData("text/mt-tool"); } catch (er) { }
+      var p = v.split("|"), added = false;
+      if (p.length === 2 && window.MTPro && window.MTPro.favAdd) { added = window.MTPro.favAdd(p[0], p[1]); }
+      try { window.__MT.toast(added ? "Pinned to the island." : "Already pinned."); } catch (er2) { }
+      document.documentElement.classList.remove("mt-dragging-tool");
     });
     document.addEventListener("dragend", function () { dropDepth = 0; if (root) { root.classList.remove("is-drop"); } }, true);
   }
@@ -512,7 +553,7 @@
 
   function boxesChanged(n) {
     boxN = n || 0; if (!root) { return; }
-    fBoxWrap.hidden = !boxN; fKey = "\u0000";
+    fBoxWrap.hidden = !boxN; fKey = "\u0001";
     if (open && view === "fav") { paint(false); } else if (open) { applySize(true); }
   }
   function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }

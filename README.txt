@@ -1973,3 +1973,13 @@ fix (island clock always visible):
   Cause: class .is-k (clock) forced the time wrapper (.mi-tw) open in css/mt-island.css and collapsedSize() in js/mt-island.js widened the capsule for it.
   Fix: both removed. The time (clock, timer, stopwatch) now opens only while the pointer is on the island; pointer away = small icon only (the dial hands still move).
   Files: js/mt-island.js v17, css/mt-island.css. Syntax-checked only; not tested inside After Effects.
+
+fix (tool tiles can be pinned to the dynamic island again):
+  Bug: after the "Favorites removed" change, tool tiles could no longer be dragged onto the island, so a tool could not be run from the island.
+  Now: drag any tool tile from any tab onto the island (it opens on the "Pin" view) -> the tile is pinned there. In the island: click a tile = run the tool
+  (no need to open its tab), x on a tile = unpin, "Unpin all". Boxes dragged from the Tools tab live in the same Pin view.
+  Still removed: the star on tiles, the favorites bar above the tabs, the Settings > Favorites group.
+  Storage: pinned tiles keep the old key mtx.pro.fav, so tiles pinned in earlier versions show up again.
+  Motion (css/mt-island.css): tiles stagger in when the view opens (240 ms, 35 ms apart), a new pin pops (340 ms, small overshoot), an unpinned tile shrinks out (150 ms),
+  the grid dims while a drag is over the island. All off when Settings > Animations is off.
+  Files: js/mt-pro.js (pin store only), js/main.js (tile dragstart), js/mt-island.js v18, css/mt-island.css. Syntax-checked only; not tested inside After Effects.

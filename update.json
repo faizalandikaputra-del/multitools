@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.71",
-    "changelog":  "- Update 1.8.71",
+    "latest_version":  "1.8.72",
+    "changelog":  "- Update 1.8.72",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "50145994bc15d748518de603bc69b62442e7607ccaa659c037b8a858eb817b3f"
+                      "sha256":  "dea6b3376e08862f308cc4c067ce0b9e182d28f1d979081bee78025f3b1d23a8"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -468,7 +468,7 @@
                   },
                   {
                       "path":  "neucurve/nc-flow.js",
-                      "sha256":  "0e81724dbb16c2afc907d633cd62e46530deef44d3f6378a9027f856bfab593d"
+                      "sha256":  "bcf9197f937fbba4746522ed61a8f823db14f953a6504909956bf41da3e3bd50"
                   },
                   {
                       "path":  "neucurve/nc-flowfx.css",
@@ -492,11 +492,11 @@
                   },
                   {
                       "path":  "neucurve/nc-glow.css",
-                      "sha256":  "f99d4bb9daf34cb7ece5ffdad858d7e6ec5d865e899fb476ab7663733d299e64"
+                      "sha256":  "77c96165e2b4c2ff36e52da36b63f35576636739437fa726cab2aeb502cc9ead"
                   },
                   {
                       "path":  "neucurve/nc-glow.js",
-                      "sha256":  "1567d6c3534396aed4e5a0c235890163c3ec3d262bad86111b247503368627ca"
+                      "sha256":  "87fde6c853632e8f4da8a3804e55ac2b4e28e3b6dc6753575c168e2a62d4b3ae"
                   },
                   {
                       "path":  "neucurve/nc-grad.css",
@@ -568,11 +568,11 @@
                   },
                   {
                       "path":  "neucurve/nc-pro.css",
-                      "sha256":  "552aafb010d4a30fbcfd20744521d42458df9216b7ad3f1b279984ce2ba8ce8d"
+                      "sha256":  "49c7753baa9f33cf25ed629730cf1b04fce8a75a23491e4836e69c6b9e3151d6"
                   },
                   {
                       "path":  "neucurve/nc-pro.js",
-                      "sha256":  "4516db636cd234a20a5fb7a606499aa9af3bf1b799246cc7e9e18d46276534e8"
+                      "sha256":  "3e18138e1830697136c43445278dcbe739a09846c2398ae46afcbee67e048338"
                   },
                   {
                       "path":  "neucurve/nc-pro-settings.css",
@@ -660,7 +660,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "a4ed6a48c0cfe3f6a622bf9db691e0afd285d4170fbefb14489940c9fd452b62"
+                      "sha256":  "c7f7e4fae298af5884d18664f2a852eec465058321bfa61afe9cfa28abf14f78"
                   }
               ]
 }

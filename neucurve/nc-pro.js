@@ -3,7 +3,7 @@
      Grid       gridShow gridLabels gridX gridY gridStyle gridOp gridW gridColor
                 gridX / gridY / gridColor are read by the patched grid code in assets/index.js through window.__ncGD (set below, BEFORE the bundle runs);
                 everything else is CSS gated by html[data-nc-*] attributes, so nothing changes until a setting is touched.
-     Line       lineW lineStyle lineGlow
+     Line       lineW lineStyle lineGlow   (lineGlow / hGlow -> window.__ncUG, drawn by nc-glow.js)
      Handles    hGlow hHover hGuides hGuideStyle hGuideOp hLabels
      Hotkeys    hotkeysOn hotkeys = {action: {c:"Ctrl+Shift+K", k:75}}  -> clicks the real toolbar button
    Load BEFORE assets/index.js. Plain ES5. */
@@ -47,9 +47,12 @@
 
     var lw = nm("lineW", 1, 6, 2.5); flag("data-nc-lw", Math.abs(lw - 2.5) > 0.01); cssv("--nc-lw", String(lw));
     var ls2 = rd("lineStyle"); flag("data-nc-ls", ls2 === "dashed" || ls2 === "dotted", ls2);
-    var lg = Math.round(nm("lineGlow", 0, 20, 0)); flag("data-nc-lg", lg > 0); cssv("--nc-lg", lg + "px");
+    var lg = Math.round(nm("lineGlow", 0, 20, 0));   /* glow is drawn by nc-glow.js (SVG strokes); CSS drop-shadow is not rendered in After Effects' CEF */
 
-    var hg = Math.round(nm("hGlow", 0, 20, 0)); flag("data-nc-hglow", hg > 0); cssv("--nc-hglow", hg + "px");
+    var hg = Math.round(nm("hGlow", 0, 20, 0));
+    var ugKey = lg + "|" + hg, ugOld = window.__ncUG ? window.__ncUG.line + "|" + window.__ncUG.handle : "";
+    window.__ncUG = { line: lg, handle: hg };
+    if (ugKey !== ugOld) { try { if (window.__ncGlowSync) { window.__ncGlowSync(); } } catch (eg) { } }
     flag("data-nc-hh", rd("hHover") === "1", "on");
     flag("data-nc-hg", rd("hGuides") === "0", "off");
     flag("data-nc-hgs", rd("hGuideStyle") === "dashed", "dashed");

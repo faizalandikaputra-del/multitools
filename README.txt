@@ -1915,3 +1915,22 @@ Files: js/main.js (ColorWheel.create: .cw-actions row, .cw-reset handler), css/p
 
 
 fixCopy (wording pass): shortened long help texts and messages in html/index.html, html/settings.html, neucurve/settings.html, js/main.js, js/mt-updater.js, js/mt-bg-preview.js, js/mt-idle-focus.js, jsx/host.jsx, neucurve/nc-extras.js, nc-flow.js. Cause: wordy or inconsistent UI copy, some Indonesian error messages in an English UI. Fix: text only, no logic changed. Indonesian errors in host.jsx and neucurve/assets/index.js now English. "Colour" became "Color". Removed "Enjoy the new features!" from the update toast.
+
+
+NEUCURVE SETTINGS THAT DID NOTHING IN AFTER EFFECTS (fix: nc-settings-live)
+What: Settings > Handle Effects > Handle Glow and Settings > Curve Line > Glow had no visible effect in After Effects. Settings > Handle Effects >
+Show Value Labels and Settings > Graph > Show Numbers / Show Grid did not hide the numbers while a handle was pressed.
+Cause: (1) both glows were CSS "filter: drop-shadow()" rules in nc-pro.css. After Effects' CEF does not render drop-shadow on SVG elements (same
+reason nc-glow.js already draws the built-in glow with stacked strokes). (2) nc-handle.css shows the value / axis numbers with a much more specific
+selector than the "off" rules in nc-pro.css, so those rules never won.
+Fix: nc-glow.js (v5) now draws both glows with plain SVG: g.nc-uglow (extra stacked strokes behind the curve, size and strength follow the Glow
+slider) and circle.nc-hglow-u (radial-gradient halo behind every handle, colour = handle colour, stays visible while dragging). nc-pro.js (v2) hands
+the two slider values over in window.__ncUG and calls window.__ncGlowSync(). nc-pro.css (v2): drop-shadow rules removed, label / axis-number "off"
+rules now out-rank nc-handle.css. nc-glow.css (v5): hides g.nc-uglow during drag / morph like the built-in glow. nc-flow.js (v26): its observer
+ignores g.nc-uglow too. neucurve/index.html: cache versions bumped.
+Checked by reading every Settings key -> consumer pair: grid (show, numbers, columns, rows, style, opacity, thickness, colour), line (thickness,
+style), handle guide lines (show, style, opacity), grow on hover, hotkeys targets, colours, handle style / size / line, background, preset cards,
+live ball, view toggles all reach their code and work. Only the four items above were broken.
+Tested in headless Chromium (not inside After Effects): glow on / off / max, no duplicate halos, value labels and axis numbers hidden while pressed.
+Not verified here: the look inside AE's CEF. If the glow looks too strong or too weak, tune userLayers() (line) and syncUserHalos() (handle) in
+neucurve/nc-glow.js.

@@ -330,7 +330,7 @@
       for (var i = 0; i < list.length; i++) {
         var r = list[i], t = r.target;
         if (r.type === "attributes" && r.attributeName === "d") { continue; }
-        if (t && t.closest && t.closest("g.nc-glow")) { continue; }
+        if (t && t.closest && t.closest("g.nc-glow, g.nc-uglow")) { continue; }
         schedule(); return;
       }
     }).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ["x1", "y1", "x2", "y2", "class", "d"] });

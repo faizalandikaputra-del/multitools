@@ -339,6 +339,7 @@
   function visibleWanted() { return open || Date.now() < holdUntil || !idle() || quiet(); }      // always on screen (also after the timer finished); only the idle screen's own widgets replace it
 
   // ---------- pin ----------
+  var X_SVG = '<svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
   function favItems() { try { return (window.MTPro && window.MTPro.favItems) ? window.MTPro.favItems() : []; } catch (e) { return []; } }
   function paintFav() {
     var items = favItems(), ids = items.map(function (it) { return it.tab + "|" + it.tool.id; }), key = ids.join(",");

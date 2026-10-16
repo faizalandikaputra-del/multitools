@@ -1983,3 +1983,9 @@ fix (tool tiles can be pinned to the dynamic island again):
   Motion (css/mt-island.css): tiles stagger in when the view opens (240 ms, 35 ms apart), a new pin pops (340 ms, small overshoot), an unpinned tile shrinks out (150 ms),
   the grid dims while a drag is over the island. All off when Settings > Animations is off.
   Files: js/mt-pro.js (pin store only), js/main.js (tile dragstart), js/mt-island.js v18, css/mt-island.css. Syntax-checked only; not tested inside After Effects.
+
+fix (pinned tile did not show in the island):
+  Cause 1: js/mt-island.js lost the X_SVG constant in v16, so painting the first tile threw "X_SVG is not defined" and the Pin view stayed empty. Re-added.
+  Cause 2: html/index.html still pointed at the old cached files (?v=). Cache-bust bumped: mt-island.css ?v=14, mt-island.js ?v=16, mt-island-boxes.css/js ?v=2,
+  mt-pro.js ?v=3, mt-pro.css ?v=2, main.js ?v=34. Also restored ".mi-fgrid[hidden]" in css/mt-island-boxes.css.
+  Tested in headless Chromium (html/index.html): drop a tile on the island -> 1 tile in the Pin view, 2nd tile pops, x unpins, Unpin all empties it, no page errors.

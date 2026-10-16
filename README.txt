@@ -1934,3 +1934,15 @@ live ball, view toggles all reach their code and work. Only the four items above
 Tested in headless Chromium (not inside After Effects): glow on / off / max, no duplicate halos, value labels and axis numbers hidden while pressed.
 Not verified here: the look inside AE's CEF. If the glow looks too strong or too weak, tune userLayers() (line) and syncUserHalos() (handle) in
 neucurve/nc-glow.js.
+
+
+NEUCURVE HANDLE EFFECTS + GRAPH SETTINGS NEVER REACHED THE PANEL (fix: nc-pro-sync)
+What: after the glow fix, Settings > Handle Effects and Settings > Graph (grid, curve line) still changed nothing in the Curve tab or in the
+Large Graph Editor window.
+Cause: the Settings window, the Large Graph Editor and the main panel are separate CEP extensions with separate localStorage, so the "storage"
+event never fires between them. The only link is the "com.neucurve.sync" CSEvent, which carries {key, val}. nc-pro.js ignored that payload and
+only re-read its own (unchanged) localStorage. nc-ball.js, nc-view.js, nc-extras.js and nc-particles.js already write the payload first.
+Fix: nc-pro.js (v3) onSync() writes {key, val} into this window's localStorage (only keys nc-pro.js owns), then applies. neucurve/index.html:
+nc-pro.js?v=3.
+Tested in headless Chromium with a stub CSInterface: events from "another window" now apply handle glow, line glow, guide lines, grid and hover
+in index.html and in index.html?ext=graph. Before the fix none of them did. Not verified inside After Effects.

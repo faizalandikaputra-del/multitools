@@ -152,7 +152,17 @@
 
   /* ---------------- sync ---------------- */
   window.addEventListener("storage", function (e) { if (e.key && e.key.indexOf(P) === 0) { soon(); } });
-  function hookCep() { try { if (window.CSInterface) { new window.CSInterface().addEventListener("com.neucurve.sync", soon); } } catch (e) { } }
+  /* The Settings window, the Large Graph Editor and the panel are separate CEP extensions with separate localStorage, so the "storage"
+     event never arrives between them. The CSEvent carries the new value ({key, val}): write it into THIS window's localStorage first,
+     exactly like nc-ball.js / nc-view.js / nc-extras.js do. Without this the Handle Effects and Graph settings never reached the panel. */
+  function onSync(ev) {
+    try {
+      var d = ev && ev.data; if (typeof d === "string") { d = JSON.parse(d); }
+      if (d && d.key && DEF.hasOwnProperty(d.key) && ls) { ls.setItem(P + d.key, String(d.val)); }
+    } catch (e) { }
+    soon();
+  }
+  function hookCep() { try { if (window.CSInterface) { new window.CSInterface().addEventListener("com.neucurve.sync", onSync); } } catch (e) { } }
   hookCep();
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { hookCep(); soon(); }); } else { soon(); }
   apply();

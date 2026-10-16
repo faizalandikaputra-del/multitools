@@ -128,15 +128,15 @@
   function apply(s) {
     if (!s) { return; }
     var attrs = s.attrs || {}, vars = s.vars || {}, key, i, el;
-    for (key in attrs) { if (attrs.hasOwnProperty(key)) { root.setAttribute(key, attrs[key]); } }
-    for (key in vars) { if (vars.hasOwnProperty(key)) { root.style.setProperty(key, vars[key]); } }
+    for (key in attrs) { if (attrs.hasOwnProperty(key) && root.getAttribute(key) !== attrs[key]) { root.setAttribute(key, attrs[key]); } }   // same value = no write: every root write restyles the whole window
+    for (key in vars) { if (vars.hasOwnProperty(key) && root.style.getPropertyValue(key) !== vars[key]) { root.style.setProperty(key, vars[key]); } }
     var sw = s.sw || {};
     for (key in sw) {
       if (!sw.hasOwnProperty(key)) { continue; }
       var target = document.querySelector("[data-ui-theme-opt=\"" + key + "\"] .ui-theme-swatch");
       if (!target) { continue; }
-      target.setAttribute("style", sw[key].style || "");
-      if (sw[key].scheme) { target.setAttribute("data-gp-scheme", sw[key].scheme); } else { target.removeAttribute("data-gp-scheme"); }
+      if (target.getAttribute("style") !== (sw[key].style || "")) { target.setAttribute("style", sw[key].style || ""); }
+      if (sw[key].scheme) { if (target.getAttribute("data-gp-scheme") !== sw[key].scheme) { target.setAttribute("data-gp-scheme", sw[key].scheme); } } else if (target.hasAttribute("data-gp-scheme")) { target.removeAttribute("data-gp-scheme"); }
     }
     var list = document.getElementById("label-assign-list");
     if (list && typeof s.list === "string" && s.list !== lastList && s.list.length) { syncLabelList(list, s.list); }
@@ -151,16 +151,16 @@
       var o = k[key], tag = el.tagName, type = (el.type || "").toLowerCase();
       if (o.c !== undefined && el.checked !== o.c) { el.checked = o.c; }
       if (o.v !== undefined && el.value !== o.v && el !== dragging && el !== document.activeElement) { el.value = o.v; }
-      if (o.a !== undefined) { el.setAttribute("aria-checked", o.a); }
+      if (o.a !== undefined && el.getAttribute("aria-checked") !== o.a) { el.setAttribute("aria-checked", o.a); }
       if (tag !== "INPUT" && tag !== "SELECT" && o.t !== undefined && el.hasAttribute("data-mirror") && el.textContent !== o.t) { el.textContent = o.t; }
-      if (el.hasAttribute("data-mirror-hidden")) { el.hidden = !!o.h; }
-      if (tag === "INPUT" || tag === "SELECT" || tag === "BUTTON") { if (!el.hasAttribute("data-local")) { el.disabled = !!o.d; } }
+      if (el.hasAttribute("data-mirror-hidden") && el.hidden !== !!o.h) { el.hidden = !!o.h; }
+      if (tag === "INPUT" || tag === "SELECT" || tag === "BUTTON") { if (!el.hasAttribute("data-local") && el.disabled !== !!o.d) { el.disabled = !!o.d; } }
       if (type === "range" && el.id) {
-        var out = document.getElementById(el.id + "-val"); if (out && el !== dragging) { out.textContent = el.value + "%"; }
+        var out = document.getElementById(el.id + "-val"); if (out && el !== dragging && out.textContent !== el.value + "%") { out.textContent = el.value + "%"; }
       }
     }
     var animOn = document.getElementById("anim-enabled"), anim = document.getElementById("mtx-anim");
-    if (animOn && anim) { anim.classList.toggle("is-disabled", !animOn.checked); }
+    if (animOn && anim && anim.classList.contains("is-disabled") === animOn.checked) { anim.classList.toggle("is-disabled", !animOn.checked); }
     setStatus(true);
   }
 
@@ -170,13 +170,13 @@
     lastState = ok ? Date.now() : lastState;
     var txt = ok ? "Multi Tool / Settings" : "Multi Tool / Settings - waiting for the panel";
     if (statusEl.textContent !== txt) { statusEl.textContent = txt; }
-    root.classList.toggle("is-offline", !ok);
+    if (root.classList.contains("is-offline") === ok) { root.classList.toggle("is-offline", !ok); }
   }
   bus.on("state", apply);
   bus.on("alive", function () { setStatus(true); });          // keep-alive: the panel only sends a state when something changed, so a quiet panel used to flip the header text to "waiting for the panel" every few seconds
   function hello(first) { bus.send("hello", { first: first === true }); if (Date.now() - lastState > 7000) { setStatus(false); } }
   hello(true); helloTimer = setInterval(hello, 2000);
-  setTimeout(function () { hello(true); }, 400);
+  setTimeout(function () { if (!lastState) { hello(true); } }, 400);   // retry only when the panel has not answered yet (a 2nd forced hello made the panel rebuild + re-send the whole state and the window re-apply it)
   window.addEventListener("focus", function () { hello(); });
 
   // version in the sidebar footer

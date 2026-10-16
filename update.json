@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.76",
-    "changelog":  "- Update 1.8.76",
+    "latest_version":  "1.8.77",
+    "changelog":  "- Update 1.8.77",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -208,11 +208,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "7f9ceb1e45aefcbfb7145179ed09db65e85abc794495666e7d278e7d48ae40cd"
+                      "sha256":  "0b431e1fd20d3d96c797928b0f825e582385b12c991f9c0666d0f1f42a15a49c"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "9715bbfbc0655280de31b5a604e1b113fc3356383154b7a7a7a8ec1870e9b06c"
+                      "sha256":  "e57381bb63776c3dca8f26830427ae421f175f281a6997ff0cd6c1cb7138ee10"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -308,11 +308,11 @@
                   },
                   {
                       "path":  "js/mt-settings-remote.js",
-                      "sha256":  "0a97a389f4f6d0b8a8f58b49f3e4cb8c1539adfd88c1287d57b6b83bf820c870"
+                      "sha256":  "3e5289cd1f568ef604b9d9cac17b9b57cf437b9e69983f186a187611a0730c33"
                   },
                   {
                       "path":  "js/mt-settings-window.js",
-                      "sha256":  "357101b5c81501ed9cc9f86b290fe64a41dadc9f9a4c9fc94a978fa26ead1195"
+                      "sha256":  "976cec61c50d1d95b897accf7cbd21ae7d705ba9da82c9572902845865576783"
                   },
                   {
                       "path":  "js/mt-smooth.js",
@@ -660,7 +660,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "2438de29e681b43e67adbfce3907dcd04faf32aa09335af26eb0845c417acbb4"
+                      "sha256":  "e25eb0ddffd128a79bcdbae59d347bbb1bfcae842e43d29b1c713587a32ef0f5"
                   }
               ]
 }

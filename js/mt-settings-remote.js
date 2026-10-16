@@ -48,7 +48,18 @@
 
   // ---------- state -> window ----------
   var alive = 0, lastJson = "", timer = 0;
+  /* getComputedStyle makes the browser finish every pending style change of the whole panel (the animated background orbs keep it dirty),
+     and collect() runs every 500 ms while the window is open. The 21 theme variables and the 3 "hidden by CSS" flags can only change when
+     the root element's class / style / data-* change, so they are re-read only then (or every 4 s as a safety net). */
+  var vSig = "", vAt = 0, vCache = {}, hCache = {};
+  function rootSig(root) {
+    var s = root.className + "|" + (root.getAttribute("style") || ""), i;
+    for (i = 0; i < ROOT_ATTRS.length; i++) { s += "|" + (root.getAttribute(ROOT_ATTRS[i]) || ""); }
+    return s;
+  }
   function collect() {
+    var rootEl = document.documentElement, sig = rootSig(rootEl), now = Date.now(), refresh = sig !== vSig || now - vAt > 4000;
+    if (refresh) { vSig = sig; vAt = now; hCache = {}; }
     var els = modal.querySelectorAll("[id],[data-ui-theme-opt],[data-mu-seed],[data-mu-mode],[data-anim-style-opt],[data-anim-ease-opt],[data-nav-opt],[data-label-select]");
     var k = {}, i, el, key, o, tag, type;
     for (i = 0; i < els.length; i++) {
@@ -60,12 +71,20 @@
       else { o.t = (el.textContent || "").replace(/\s+/g, " ").replace(/^ | $/g, ""); }
       if (el.disabled) { o.d = 1; }
       var ar = el.getAttribute("aria-checked"); if (ar !== null) { o.a = ar; }
-      var hid = el.hidden; if (!hid && HIDE_CHECK[el.id]) { try { hid = getComputedStyle(el).display === "none"; } catch (e) { } }   // computed style only where the window reads it (data-mirror-hidden)
+      var hid = el.hidden;
+      if (!hid && HIDE_CHECK[el.id]) {                                         // computed style only where the window reads it (data-mirror-hidden), and only after a root change
+        if (hCache[el.id] === undefined) { try { hCache[el.id] = getComputedStyle(el).display === "none"; } catch (e) { hCache[el.id] = false; } }
+        hid = hCache[el.id];
+      }
       if (hid) { o.h = 1; }
       k[key] = o;
     }
-    var root = document.documentElement, vars = {}, attrs = {}, cs = getComputedStyle(root);
-    for (i = 0; i < VARS.length; i++) { var v = (cs.getPropertyValue(VARS[i]) || "").trim(); if (v) { vars[VARS[i]] = v; } }
+    var root = rootEl, vars, attrs = {};
+    if (refresh || !vCache.vars) {
+      var cs = getComputedStyle(root); vars = {};
+      for (i = 0; i < VARS.length; i++) { var v = (cs.getPropertyValue(VARS[i]) || "").trim(); if (v) { vars[VARS[i]] = v; } }
+      vCache.vars = vars;
+    } else { vars = vCache.vars; }
     for (i = 0; i < ROOT_ATTRS.length; i++) { var a = root.getAttribute(ROOT_ATTRS[i]); if (a !== null) { attrs[ROOT_ATTRS[i]] = a; } }
     var sw = {}, g = modal.querySelector("[data-ui-theme-opt=\"glass\"] .ui-theme-swatch"), m = modal.querySelector("[data-ui-theme-opt=\"material\"] .ui-theme-swatch");
     if (g) { sw.glass = { style: g.getAttribute("style") || "", scheme: g.getAttribute("data-gp-scheme") || "" }; }
@@ -93,7 +112,11 @@
       else if (gif && gif.classList.contains("is-active")) { kind = "image"; src = gif.getAttribute("src") || ""; }
     }
     if (!src && layer && layer.classList.contains("has-img")) {
-      var m = /^url\((['"]?)([\s\S]*)\1\)$/.exec(layer.style.backgroundImage || ""); if (m) { kind = "image"; src = m[2]; }
+      var bi = layer.style.backgroundImage || "";                 // (no regex here: on a big data: URL it copied + backtracked over MBs every 500 ms)
+      if (bi.indexOf("url(") === 0 && bi.charAt(bi.length - 1) === ")") {
+        var q = bi.charAt(4), a0 = (q === '"' || q === "'") ? 5 : 4, a1 = a0 === 5 ? bi.length - 2 : bi.length - 1;
+        if (a1 > a0) { kind = "image"; src = bi.substring(a0, a1); }
+      }
     }
     return { kind: kind, src: src };
   }

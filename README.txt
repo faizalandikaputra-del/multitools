@@ -1989,3 +1989,14 @@ fix (pinned tile did not show in the island):
   Cause 2: html/index.html still pointed at the old cached files (?v=). Cache-bust bumped: mt-island.css ?v=14, mt-island.js ?v=16, mt-island-boxes.css/js ?v=2,
   mt-pro.js ?v=3, mt-pro.css ?v=2, main.js ?v=34. Also restored ".mi-fgrid[hidden]" in css/mt-island-boxes.css.
   Tested in headless Chromium (html/index.html): drop a tile on the island -> 1 tile in the Pin view, 2nd tile pops, x unpins, Unpin all empties it, no page errors.
+
+fix (lag when opening Multi Tool Settings; NeuCurve settings were fine):
+  Cause: the Multi Tool settings window mirrors ~200 controls from the panel, and opening it did the same work twice and touched the DOM too much:
+   - the window sent "hello first" twice (at start and again after 400 ms), so the panel rebuilt + re-sent the whole state twice and the window re-applied it;
+   - apply() rewrote root attributes, 21 CSS variables, aria-checked, hidden, disabled ... even when the value was the same (each root write restyles the whole window);
+   - the panel read getComputedStyle(root) + 3 element styles every 500 ms, which forces the browser to finish every pending style change of the animated panel;
+   - the background check ran a regex over the whole background image string (can be MBs for a data: URL) every 500 ms.
+  Fix: js/mt-settings-window.js (v5: 2nd hello only when the panel did not answer, writes only when changed) and js/mt-settings-remote.js (v6: theme variables and
+  hidden flags re-read only when the root element changed or every 4 s; no regex on the background string). Cache-bust: mt-settings-window.js ?v=5, mt-settings-remote.js ?v=6.
+  Measured in headless Chromium with the CPU slowed 6x: long-task time while opening Settings about 20-30 % lower (still noisy). Theme sync checked both ways.
+  Not changed: the time CEP needs to create the separate window itself (requestOpenExtension).

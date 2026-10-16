@@ -24,7 +24,7 @@
     var changedMedia = m.id !== view.id || m.has !== view.has;
     for (var k in m) { if (m.hasOwnProperty(k)) { view[k] = m[k]; } }
     btn.disabled = !view.has;
-    if (changedMedia && view.has && media.id !== view.id && !view.blob) { bus.send("bgreq", {}); }
+    if (editing && changedMedia && view.has && media.id !== view.id && !view.blob) { bus.send("bgreq", {}); }   // lazy: the (possibly MBs big) media is only fetched while the editor is open
     if (editing) { layout(); sync(); }
   });
   bus.on("bgsrc", function (m) {
@@ -142,6 +142,7 @@
   function open() {
     if (editing || !view.has) { return; }
     build(); editing = true;
+    if (view.has && !view.blob && media.id !== view.id) { bus.send("bgreq", {}); }   // first open: ask the panel for the media now (was: automatically every time the window opened)
     document.body.classList.add("is-bgp");
     layout(); sync();
   }

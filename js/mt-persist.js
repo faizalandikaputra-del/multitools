@@ -54,7 +54,7 @@
       try { fs.renameSync(tmp, file); } catch (e) { fs.writeFileSync(file, json, "utf8"); }
     } catch (e) { }
   }
-  function schedule() { if (timer === null) { timer = setTimeout(flush, 400); } }
+  function schedule(ms) { if (timer === null) { timer = setTimeout(flush, ms || 400); } }
   function isLS(o) { try { return o === LS; } catch (e) { return false; } }
 
   SP.setItem = function (k, v) { var r = rawSet.apply(this, arguments); if (isLS(this) && !SKIP.test(String(k))) { schedule(); } return r; };
@@ -62,6 +62,6 @@
   SP.clear = function () { var r = rawClear.apply(this, arguments); if (isLS(this)) { schedule(); } return r; };
 
   w.addEventListener("beforeunload", function () { if (timer !== null) { clearTimeout(timer); flush(); } });
-  w.addEventListener("storage", function (e) { if (e.key && SKIP.test(e.key)) { return; } schedule(); });   // changes made by another window of the same origin
+  w.addEventListener("storage", function (e) { if (e.key && SKIP.test(e.key)) { return; } schedule(4000); });   // the other window already schedules its own dump; this is only a slow safety net   // changes made by another window of the same origin
   schedule();                                 // first run: create the backup right away
 })();

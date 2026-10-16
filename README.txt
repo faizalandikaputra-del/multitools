@@ -2010,3 +2010,13 @@ fix (Multi Tool Settings still lagged a few seconds when clicking a menu item; N
   Fix: js/mt-persist.js v2 ignores keys "mtbus.*" everywhere (restore, dump, setItem/removeItem hook, storage event). Real settings are still backed up as before.
    Cache-bust: mt-persist.js ?v=2 in html/index.html, html/settings.html, neucurve/index.html, neucurve/settings.html.
   Checked: script syntax only (node). Not measured inside After Effects.
+
+fix2 (Settings window still lagged right after opening / clicking a menu item such as Background):
+  Cause (most likely, not measured inside After Effects): as soon as the Settings window opened, js/mt-bg-preview.js asked the panel for the whole background media ("bgreq").
+   The panel then sent it ("bgsrc": the image / GIF as a data: URL, can be MBs) through three channels (CEP event, BroadcastChannel, localStorage), and the window parsed it
+   twice - all of this on the main thread of both windows, even if "Adjust background" was never opened. Also every "storage" event from the other window re-ran a full
+   localStorage dump to disk in the Settings window too.
+  Fix: js/mt-bg-preview.js v2 asks for the media only when "Adjust background" is opened (or when the media changes while the editor is open).
+   js/mt-persist.js v3: "storage" events from another window schedule the dump 4 s later (coalesced) instead of 400 ms; own writes still 400 ms; mtbus.* still ignored.
+   Cache-bust: mt-bg-preview.js ?v=2 (html/settings.html), mt-persist.js ?v=3 (4 pages).
+  Quick check if lag remains: Settings > Background > Remove, reopen Settings. Lag gone = the big background media was the cause.

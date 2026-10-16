@@ -139,7 +139,7 @@
   function soundNote() {
     var n = "";
     if (soundMode() === "custom") {
-      n = (get("tSoundPath") && nodeApi && nodeApi.exists(get("tSoundPath"))) ? "Using your file." : (window.__mtIdleSoundBlob ? "Using your file for this session only." : "No file chosen yet. Press Choose file. The built-in chime plays until then.");
+      n = (get("tSoundPath") && nodeApi && nodeApi.exists(get("tSoundPath"))) ? "Using your file." : (window.__mtIdleSoundBlob ? "Using your file for this session only." : "No file chosen. The built-in chime plays until you choose one.");
     }
     if (el.note && el.note.textContent !== n) { el.note.textContent = n; }
   }

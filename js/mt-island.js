@@ -1,3 +1,11 @@
+/* Multi Tool - mt-island.js (v15: BOXES)
+   v15: a box (".ta-group" card of the Tools tab, see js/mt-island-boxes.js) can be dragged by its header onto the island. The live box MOVES into the Favorites view
+   (under the tool tiles, scrolls inside its own area, x = bring it back). Drop type "text/mt-box" -> MTBoxes.pin(key). Exposed here: MTIsland.boxHost(), boxesChanged(n), isEnabled(), focusBoxes().
+(v14 notes follow)
+   v14: FAVORITES   v14: a fourth tool "Favorites" (between Clock and Update). It shows the tools pinned as favorites (the same list as the star on a tool tile, key mtx.pro.fav, js/mt-pro.js).
+   Drag a tool tile (Easy Layer: Null, Solid ...) onto the island = add it; the tile stays where it is (copy, not move). Click a tile in the island = run that tool, so Null / Solid /
+   Text ... can be created while the NeuCurve tab is open. Every tile has a x button (remove) and the header has "Clear all".
+(v12 notes follow)
 /* Multi Tool - mt-island.js (v12: CLOCK + wheel)
    v11: the island is also a CLOCK. Nothing running (no timer / stopwatch) = the collapsed capsule shows the time of day (a tiny dial whose hands move + HH:MM), so the time is
    visible without the idle screen. A running timer / stopwatch still takes the capsule over. Expanded: a third tool "Clock" (dial, big time, seconds, date, 24 h / 12 h chips, key mtx.islandClock12 = "1" for 12 h).
@@ -23,7 +31,7 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
+  var fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
   // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
@@ -66,9 +74,10 @@
       '<span class="mi-swrow"><span class="mi-tico mi-tico-t"></span><span class="mi-tname">Timer</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-s"></span><span class="mi-tname">Stopwatch</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-k"></span><span class="mi-tname">Clock</span><i class="mi-live"></i></span>' +
+      '<span class="mi-swrow"><span class="mi-tico mi-tico-f"></span><span class="mi-tname">Favorites</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-u"></span><span class="mi-tname">Update</span><i class="mi-live"></i></span>' +
-      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock and update");
-    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabK = rows[2]; tabU = rows[3];
+      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock, favorites and update");
+    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabK = rows[2]; tabF = rows[3]; tabU = rows[4];
     var views = el("div", "mi-views");
 
     // timer view: setter + running state
@@ -137,6 +146,19 @@
     kf.appendChild(k24); kf.appendChild(k12);
     vK.appendChild(kw); vK.appendChild(kf);
 
+    // favorites view: tiles of the pinned tools (click = run it), a x on every tile, "Clear all", and a drop target for tiles dragged from the panel
+    vF = el("div", "mi-view mi-view-f");
+    fHead = el("div", "mi-fhead"); fCount = el("span", "mi-fcount");
+    fClear = btn("mi-link mi-fclear", "Clear all", "Remove all favorites");
+    fClear.addEventListener("click", function () { var a = favItems(), i; for (i = 0; i < a.length; i++) { window.MTPro.favRemove(a[i].tab, a[i].tool.id); } });
+    fHead.appendChild(fCount); fHead.appendChild(fClear);
+    fGrid = el("div", "mi-fgrid");
+    fEmpty = el("div", "mi-fempty", "<b>Nothing here yet</b><span>Drag a tool tile or a box here, or press the star on a tile.</span>");
+    fBoxWrap = el("div", "mi-boxwrap"); fBoxWrap.hidden = true;
+    fBoxes = el("div", "mi-boxes ta"); fBoxWrap.appendChild(el("div", "mi-boxlabel", "Boxes")); fBoxWrap.appendChild(fBoxes);
+    vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
+    try { if (window.ResizeObserver) { var rq = 0; boxRO = new ResizeObserver(function () { if (!rq) { rq = requestAnimationFrame(function () { rq = 0; if (open && view === "fav") { applySize(true); } }); } }); boxRO.observe(fBoxes); } } catch (eR) { }
+
     vU = el("div", "mi-view mi-view-u");
     banner = $("mt-update");
     if (banner) {                                              // js/mt-updater.js keeps working: same element, same ids, same classes - it just lives in the island now
@@ -152,7 +174,7 @@
           .observe(banner, { attributes: true, attributeFilter: ["class"], subtree: true, childList: true, characterData: true });
       } catch (e) { }
     }
-    views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vU);
+    views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vU);
     xEl.appendChild(sw); xEl.appendChild(views);
 
     root.appendChild(cEl); root.appendChild(xEl); body().appendChild(root);
@@ -166,7 +188,8 @@
     window.addEventListener("keydown", function (e) {
       if (open && (e.key === "Escape" || e.keyCode === 27)) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(false); }
     }, true);
-    try { var s = localStorage.getItem(SEL_KEY); if (s === "sw" || s === "timer" || s === "clock") { sel = s; } } catch (e0) { }
+    bindDrop(); window.addEventListener("mtx-fav-change", onFavChange);
+    try { var s = localStorage.getItem(SEL_KEY); if (s === "sw" || s === "timer" || s === "clock" || s === "fav") { sel = s; } } catch (e0) { }
     view = sel;
   }
 
@@ -213,7 +236,7 @@
     }
     return "clock";
   }
-  function cycle() { return upd ? ["timer", "sw", "clock", "u"] : ["timer", "sw", "clock"]; }
+  function cycle() { return upd ? ["timer", "sw", "clock", "fav", "u"] : ["timer", "sw", "clock", "fav"]; }
   // The Start / Update Now buttons are painted with the theme accent, their label with --theme-on-accent. Some themes (Material You, custom colours)
   // give an accent and an on-accent that are both light (or both dark), so the label melted into the button. Read the colour the button is REALLY painted with
   // and pick a dark or white label from its luminance.
@@ -247,7 +270,8 @@
     var c = cycle();
     if (k !== "u") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
     root.setAttribute("data-dir", (c.indexOf(k) > c.indexOf(view) || view === "u" || c.indexOf(view) < 0) ? "next" : "prev");
-    rollReset(k === "timer" ? tBig : (k === "clock" ? kBig : sBig)); if (k === "clock") { rollReset(kSec); }
+    rollReset(k === "timer" ? tBig : (k === "clock" ? kBig : sBig));   // (fav has no digits)
+    if (k === "clock") { rollReset(kSec); }
     spin++; sw.style.setProperty("--mi-spin", (spin * 180) + "deg");
     view = k; paint(true);
   }
@@ -266,7 +290,7 @@
   var sizeKey = "";
   function applySize(force) {
     if (!root) { return; }
-    var key = open ? ("x|" + view + "|" + (tSet.hidden ? 1 : 0) + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : ""))
+    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN : "") + "|" + (tSet.hidden ? 1 : 0) + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : ""))
                    : ("c|" + (cEl.className) + "|" + cTime.textContent.length + "|" + cUtx.textContent.length);
     if (!force && key === sizeKey) { return; }                  // no layout read when nothing changed (the 1 s tick)
     sizeKey = key;
@@ -307,6 +331,59 @@
   }
   var holdUntil = 0;                                          // stay on screen until the collapse animation has finished
   function visibleWanted() { return open || Date.now() < holdUntil || !idle() || quiet(); }      // always on screen (also after the timer finished); only the idle screen's own widgets replace it
+
+  // ---------- favorites ----------
+  var X_SVG = '<svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
+  function favItems() { try { return (window.MTPro && window.MTPro.favItems) ? window.MTPro.favItems() : []; } catch (e) { return []; } }
+  function paintFav() {
+    var items = favItems(), key = items.map(function (it) { return it.tab + "|" + it.tool.id; }).join(",");
+    if (key === fKey && fGrid.childNodes.length === items.length) { return; }
+    fKey = key; fGrid.innerHTML = "";
+    items.forEach(function (it) {
+      var t = el("div", "mi-ftile"), b = btn("mi-fbtn", "", it.tool.name), img = window.__MT && window.__MT.toolImg ? window.__MT.toolImg(it.tab, it.tool.id) : null, rm = btn("mi-frm", X_SVG, "Remove " + it.tool.name + " from favorites");
+      b.innerHTML = '<span class="mi-fimg"></span><span class="mi-fcode"></span><span class="mi-fname"></span>';
+      b.querySelector(".mi-fcode").textContent = it.tool.code; b.querySelector(".mi-fname").textContent = it.tool.name;
+      if (img) { b.querySelector(".mi-fimg").style.backgroundImage = 'url("' + img + '")'; b.classList.add("has-img"); }
+      b.title = it.tool.name;
+      b.addEventListener("click", function (e) { e.stopPropagation(); if (window.__MT && window.__MT.runTool) { window.__MT.runTool(b, it.tab, it.tool); } });
+      rm.title = "Remove from favorites";
+      rm.addEventListener("click", function (e) { e.stopPropagation(); if (window.MTPro) { window.MTPro.favRemove(it.tab, it.tool.id); } });
+      t.appendChild(b); t.appendChild(rm); fGrid.appendChild(t);
+    });
+    setTxt(fCount, items.length ? (items.length === 1 ? "1 favorite" : items.length + " favorites") : "Favorites");
+    fHead.hidden = !items.length && boxN > 0; fClear.hidden = !items.length; fEmpty.hidden = !!items.length || boxN > 0; fGrid.hidden = !items.length;
+  }
+  function onFavChange() { if (!root) { return; } fKey = "\u0000"; if (open && view === "fav") { paint(false); } else if (open) { applySize(); } }
+
+  // a tool tile dragged from the panel: the capsule opens on Favorites, the drop adds it (the tile stays where it was)
+  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-tool") { return "tool"; } if (t[i] === "text/mt-box") { return "box"; } } return ""; }
+  function isToolDrag(e) { return !!dragKind(e); }
+  function bindDrop() {
+    root.addEventListener("dragenter", function (e) {
+      if (!isToolDrag(e)) { return; }
+      e.preventDefault(); dropDepth++; root.classList.add("is-drop");
+      if (!open) { setOpen(true); }
+      if (view !== "fav") { pick("fav"); }
+    });
+    root.addEventListener("dragover", function (e) { if (!isToolDrag(e)) { return; } e.preventDefault(); try { e.dataTransfer.dropEffect = dragKind(e) === "box" ? "move" : "copy"; } catch (er) { } });
+    root.addEventListener("dragleave", function (e) { if (!isToolDrag(e)) { return; } dropDepth = Math.max(0, dropDepth - 1); if (!dropDepth) { root.classList.remove("is-drop"); } });
+    root.addEventListener("drop", function (e) {
+      if (!isToolDrag(e)) { return; }
+      e.preventDefault(); e.stopPropagation(); dropDepth = 0; root.classList.remove("is-drop");
+      if (dragKind(e) === "box") {
+        var bk = ""; try { bk = e.dataTransfer.getData("text/mt-box"); } catch (erb) { }
+        document.documentElement.classList.remove("mt-dragging-tool");
+        setTimeout(function () { var ok = window.MTBoxes && window.MTBoxes.pin(bk); if (ok) { try { window.__MT.toast("Moved to the island."); } catch (er3) { } } }, 0);   // after dragend, so the moved header cannot cancel it
+        return;
+      }
+      var v = ""; try { v = e.dataTransfer.getData("text/mt-tool"); } catch (er) { }
+      var p = v.split("|"), added = false;
+      if (p.length === 2 && window.MTPro && window.MTPro.favAdd) { added = window.MTPro.favAdd(p[0], p[1]); }
+      try { window.__MT.toast(added ? "Added to island favorites." : "Already in island favorites."); } catch (er2) { }
+      document.documentElement.classList.remove("mt-dragging-tool");
+    });
+    document.addEventListener("dragend", function () { dropDepth = 0; if (root) { root.classList.remove("is-drop"); } }, true);
+  }
 
   // ---------- paint ----------
   function stateBtn(b, running, label, running_txt, idle_txt) {
@@ -353,8 +430,8 @@
       tabT.classList.toggle("is-live", !!(t && t.active)); tabS.classList.toggle("is-live", !!(s && s.active));
       tabU.classList.toggle("is-live", upd); tabU.style.display = upd ? "" : "none";
       sw.setAttribute("data-on", view);
-      vT.hidden = view !== "timer"; vS.hidden = view !== "sw"; vK.hidden = view !== "clock"; vU.hidden = view !== "u";
-      if (viewChanged) { var v = view === "timer" ? vT : (view === "sw" ? vS : (view === "clock" ? vK : vU)); v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
+      vT.hidden = view !== "timer"; vS.hidden = view !== "sw"; vK.hidden = view !== "clock"; vF.hidden = view !== "fav"; vU.hidden = view !== "u";
+      if (viewChanged) { var v = view === "timer" ? vT : (view === "sw" ? vS : (view === "clock" ? vK : (view === "fav" ? vF : vU))); v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
 
       if (view === "timer" && t) {
         var run = !!t.active;
@@ -368,6 +445,7 @@
           stateBtn(tPlay, !!t.running, t.running ? "Pause timer" : (t.paused ? "Resume timer" : "Start timer again"), "Pause", t.paused ? "Resume" : "Start again");
         }
       }
+      if (view === "fav") { paintFav(); }
       if (view === "clock") {
         var cn = clockNow();
         digits(kBig, cn.hm); digits(kSec, ":" + pad2(cn.s)); setTxt(kMer, cn.mer);
@@ -413,7 +491,7 @@
     window.addEventListener("wheel", function (e) {
       if (!open || !root || !root.contains(e.target) || e.ctrlKey) { return; }
       var t = e.target, n = t;
-      while (n && n !== root) { if (n.classList && (n.classList.contains("mi-step") || n.classList.contains("mt-update-notes"))) { return; } n = n.parentNode; }
+      while (n && n !== root) { if (n.classList && (n.classList.contains("mi-step") || n.classList.contains("mt-update-notes") || ((n.classList.contains("mi-fgrid") || n.classList.contains("mi-boxes")) && n.scrollHeight > n.clientHeight + 1))) { return; } n = n.parentNode; }
       e.preventDefault(); e.stopPropagation();
       var now = Date.now(), dy = e.deltaY || 0;
       if (e.deltaMode === 1) { dy *= 33; }
@@ -446,6 +524,7 @@
 
   function applyEnabled() {
     markEnabled();
+    if (window.MTBoxes) { try { window.MTBoxes.sync(); } catch (eB) { } }          // off: the boxes go back to their tab; on: remembered boxes on screen move in again
     if (!enabled() && open && view !== "u") { setOpen(false); }   // an open timer / stopwatch panel closes with it
     paint(false);
   }
@@ -458,6 +537,12 @@
     if (rs) { rs.addEventListener("click", function () { try { localStorage.removeItem(ON_KEY); } catch (e) { } if (c) { c.checked = true; } applyEnabled(); }); }   // Reset everything
   }
 
-  window.MTIsland = { update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
+  function boxesChanged(n) {
+    boxN = n || 0; if (!root) { return; }
+    fBoxWrap.hidden = !boxN; fKey = "\u0000";
+    if (open && view === "fav") { paint(false); } else if (open) { applySize(true); }
+  }
+  function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }
+  window.MTIsland = { boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

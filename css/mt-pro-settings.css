@@ -1,0 +1,8 @@
+/* Multi Tool - mt-pro-settings.css : previews for the new rows in html/settings.html (Density cards, blur hint). */
+.mtp-dens-pv { display: grid; grid-template-columns: repeat(3, 1fr); width: 56px; height: 38px; align-content: center; justify-content: center; margin: 0 auto 6px; }
+.mtp-dens-pv b { display: block; background: rgba(var(--accent-rgb, 255, 255, 255), 0.55); border-radius: 2px; aspect-ratio: 1 / 1; }
+.mtp-dens-pv--compact { gap: 2px; padding: 0 9px; }
+.mtp-dens-pv--normal { gap: 4px; padding: 0 6px; }
+.mtp-dens-pv--roomy { gap: 8px; padding: 0 2px; }
+.mtp-dens-pv--roomy b { transform: scale(0.82); }
+.mtp-blur-hint { display: flex; justify-content: space-between; font-size: 0.68rem; opacity: 0.6; padding: 0 2px; }

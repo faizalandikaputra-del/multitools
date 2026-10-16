@@ -314,7 +314,7 @@
     var grs = el("button", "nc-x-btn nc-x-btn-ghost", "Reset gradient"); grs.type = "button";
     grs.addEventListener("click", function () { set("gradP", "bw"); set("gradC1", "#000000"); set("gradC2", "#ffffff"); set("gradGlow", "#ffffff"); set("gradDir", "160"); set("gradInt", "100"); set("gradArea", "panel"); set("gradOn", "0"); });
     var gra = el("div", "nc-x-actions"); gra.appendChild(grs); gs.appendChild(gra);
-    gs.appendChild(el("p", "nc-x-note", "Paints a two-colour gradient with fine film grain (Flow style) behind the whole Curve tab (or only behind the graph). Panels turn translucent so it shows through."));
+    gs.appendChild(el("p", "nc-x-note", "Paints a two-color gradient with fine film grain (Flow style) behind the Curve tab or only the graph. Panels turn translucent so it shows through."));
     wrap.appendChild(gs);
 
     // --- white glow (the soft white light behind the preset tiles)

@@ -43,8 +43,18 @@
     root.classList.toggle("nc-hide-pnames", off);
   }
 
+  /* Settings > Behavior > Preset Cards: "cardStyle" (grid | list | compact) and "cardShape" (soft | square | round) -> classes read by nc-cards.css */
+  function applyCards() {
+    var st = "grid", sh = "soft";
+    try { st = localStorage.getItem("neucurve_cardStyle") || "grid"; sh = localStorage.getItem("neucurve_cardShape") || "soft"; } catch (e) { }
+    root.classList.toggle("nc-cs-list", st === "list");
+    root.classList.toggle("nc-cs-compact", st === "compact");
+    root.classList.toggle("nc-cr-square", sh === "square");
+    root.classList.toggle("nc-cr-round", sh === "round");
+  }
+
   function apply() {
-    applyNames();
+    applyNames(); applyCards();
     var hp = on("hidePresets"), hg = on("hideGraph");
     if (hp && hg) { hg = false; }
     var wasG = root.classList.contains("nc-view-graph"), wasP = root.classList.contains("nc-view-presets");
@@ -87,7 +97,7 @@
   function onSync(ev) {
     try {
       var d = ev && ev.data; if (typeof d === "string") { d = JSON.parse(d); }
-      if (d && (d.key === "hidePresets" || d.key === "hideGraph" || d.key === "showPresetNames")) {
+      if (d && (d.key === "hidePresets" || d.key === "hideGraph" || d.key === "showPresetNames" || d.key === "cardStyle" || d.key === "cardShape")) {
         localStorage.setItem("neucurve_" + d.key, String(d.val));
         apply();
       }
@@ -95,7 +105,7 @@
   }
 
   apply();   /* before first paint of the bundle: no flash of the hidden column */
-  window.addEventListener("storage", function (e) { if (!e.key || e.key === "neucurve_hidePresets" || e.key === "neucurve_hideGraph" || e.key === "neucurve_showPresetNames") { apply(); } });
+  window.addEventListener("storage", function (e) { if (!e.key || e.key === "neucurve_hidePresets" || e.key === "neucurve_hideGraph" || e.key === "neucurve_showPresetNames" || e.key === "neucurve_cardStyle" || e.key === "neucurve_cardShape") { apply(); } });
   try { if (window.CSInterface) { new window.CSInterface().addEventListener("com.neucurve.sync", onSync); } } catch (e) { }
   window.__ncView = { apply: apply };
   /* the bundle builds its DOM after this script: keep docking until the strip exists, then only when the layout changes */

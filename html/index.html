@@ -25,7 +25,7 @@
        bubble, in-flight button pending/success/error states) - loaded after
        premium-ornaments.css on purpose, see the file's own header comment for what it does and
        doesn't touch. Companion script: js/panel-refinements.js (loaded at the end of body). -->
-  <link rel="stylesheet" href="../css/panel-refinements.css?v=9">
+  <link rel="stylesheet" href="../css/panel-refinements.css?v=10">
   <!-- Ambient colour circles (random drift + slow blink). Must stay BEFORE glass-theme.css, which hides the old static .app::before pools. -->
   <link rel="stylesheet" href="../css/ambient-orbs.css?v=11">
   <!-- Tab motion: staggered card entrance + quick panel leave on tab switch (opacity/transform only).
@@ -80,12 +80,14 @@
   <!-- Idle live numbers (date, time in AE, timer, stopwatch, counts): digit roll, same motion as the clock (loads after mt-idle-time.css) -->
   <link rel="stylesheet" href="../css/mt-idle-roll.css?v=2">
   <!-- Dynamic island for a running Timer / Stopwatch (loads after mt-idle-adjust.css and mt-idle-roll.css) -->
-  <link rel="stylesheet" href="../css/mt-island.css?v=11">
+  <link rel="stylesheet" href="../css/mt-island.css?v=13">
+  <link rel="stylesheet" href="../css/mt-island-boxes.css?v=1">
   <link rel="stylesheet" href="../css/mt-curve-top.css?v=2">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=6">
   <!-- Settings > Navigation (rail left / right). Needs js/mt-nav.js -->
   <link rel="stylesheet" href="../css/mt-nav.css?v=1">
+  <link rel="stylesheet" href="../css/mt-pro.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -330,7 +332,7 @@
           <button type="button" class="ui-theme-card" role="radio" aria-checked="true" data-ui-theme-opt="glass"><i class="ui-theme-swatch ui-theme-swatch--glass" aria-hidden="true"></i><span>Glass</span></button>
           <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-ui-theme-opt="material"><i class="ui-theme-swatch ui-theme-swatch--material" aria-hidden="true"><b class="mu-pv-rail"></b><b class="mu-pv-card"></b><b class="mu-pv-btn"></b></i><span>Material You</span></button>
         </div>
-        <p class="field-note">Material You builds a Pixel-style palette from Theme color: cards, buttons and accents are tones of it. Background color changes the canvas.</p>
+        <p class="field-note">Material You builds its palette from Theme color. Background color changes the canvas.</p>
       </div>
 
       <div class="field">
@@ -348,7 +350,7 @@
           <button type="button" class="ui-theme-card" role="radio" aria-checked="true" data-nav-opt="left"><i class="mt-nav-pv mt-nav-pv--left" aria-hidden="true"></i><span>Left</span></button>
           <button type="button" class="ui-theme-card" role="radio" aria-checked="false" data-nav-opt="right"><i class="mt-nav-pv mt-nav-pv--right" aria-hidden="true"></i><span>Right</span></button>
         </div>
-        <p class="field-note">Moves the tab bar to the other side of the panel. When it opens it grows towards the tools.</p>
+        <p class="field-note">Puts the tab bar on the left or right. It expands toward the tools.</p>
       </div>
 
       <!-- Material You only (hidden on Glass): palette swatches set Theme color; Light/Dark picks the scheme. Logic: js/mt-uitheme.js + js/mt-material.js -->
@@ -400,7 +402,7 @@
         <div class="field-actions">
           <button class="btn" id="bg-edit-open" type="button">Adjust background</button>
         </div>
-        <p class="field-note">Shows your background full-screen so you can set its position, opacity and zoom. Drag the background to move it, scroll to zoom.</p>
+        <p class="field-note">Shows the background full-screen to set position, opacity and zoom. Drag to move, scroll to zoom.</p>
       </div>
 
       <!-- Scale UI: zooms the whole interface (text, boxes, buttons). While the slider is held this window fades
@@ -416,7 +418,7 @@
         <div class="field-actions">
           <button class="btn btn-ghost" id="ui-scale-reset" type="button">Reset to 100%</button>
         </div>
-        <p class="field-note">Makes the whole interface (text, boxes, buttons) bigger or smaller. This window hides while you hold the slider so you can see the result &mdash; release to bring it back.</p>
+        <p class="field-note">Scales text, boxes and buttons. This window hides while you drag the slider, so you can see the result.</p>
       </div>
 
       <!-- Collapsible: hidden by default, expands smoothly (max-height transition driven by main.js) -->
@@ -430,7 +432,7 @@
         </button>
         <div class="collapse" id="label-collapse" role="region" aria-labelledby="label-toggle" aria-hidden="true">
           <div class="collapse-inner">
-            <p class="field-note">Assign an AE Layer Label color to auto-apply whenever that tool creates a layer.</p>
+            <p class="field-note">Set an AE Layer Label color for each tool. It applies when the tool creates a layer.</p>
             <div class="label-assign-list" id="label-assign-list"></div>
           </div>
         </div>
@@ -444,7 +446,7 @@
           <input type="checkbox" id="anim-enabled" checked>
           <span class="switch-track"></span>
         </label>
-        <p class="field-note">Turns all panel animations and transitions on or off. This ignores your operating system's animation setting.</p>
+        <p class="field-note">Turns every panel animation and transition on or off. Ignores the operating system setting.</p>
       </div>
 
       <!-- Tab animation: how cards enter when you switch tabs. Glide follows the sidebar direction. Greyed out while Enable Animations is OFF.
@@ -461,7 +463,7 @@
           <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="cascade"><i class="mtx-pv mtx-pv--cascade" aria-hidden="true"><b></b><b></b><b></b></i><span>Cascade</span></button>
           <button type="button" class="ui-theme-card mtx-anim-card" role="radio" aria-checked="false" data-anim-style-opt="none"><i class="mtx-pv mtx-pv--none" aria-hidden="true"><b></b><b></b><b></b></i><span>None</span></button>
           </div>
-          <p class="field-note">How cards enter when you switch tabs. Glide follows the sidebar: moving down brings cards up from below, moving up brings them in from above.</p>
+          <p class="field-note">How cards enter when you switch tabs. Glide follows the sidebar: moving down brings cards in from below, moving up from above.</p>
           <div class="bg-editor-row idle-scale-row ui-scale-row">
             <label for="anim-speed">Speed</label>
             <input type="range" id="anim-speed" min="50" max="200" step="10" value="100" aria-label="Tab animation speed">
@@ -515,7 +517,7 @@
             <option value="center">Center</option>
           </select>
         </div>
-        <p class="field-note">Hides the interface and shows a clock over your background after the mouse stops moving. Slide or tap the bar at the bottom to bring it back (Esc also works). With Mouse move, any cursor movement leaves at once, so notes and tasks cannot be edited on the idle screen.</p>
+        <p class="field-note">Hides the interface and shows a clock over your background when the mouse stops. Slide or tap the bottom bar to leave (Esc also works). With Mouse move, any cursor movement leaves at once, so you cannot edit notes and tasks there.</p>
       </div>
 
 
@@ -527,7 +529,7 @@
           <input type="checkbox" id="island-enabled" checked>
           <span class="switch-track"></span>
         </label>
-        <p class="field-note">The capsule at the top of the panel. It shows the time of day, or a running timer or stopwatch. Update notices still appear in it when it is off.</p>
+        <p class="field-note">The capsule at the top of the panel. Shows the time, or a running timer or stopwatch. Update notices still appear when it is off.</p>
       </div>
 
       <!-- Idle screen extras: time in After Effects (live h/m/s), countdown timer with sound, notes, daily list.
@@ -629,7 +631,7 @@
           <span class="field-note" id="idle-missed-summary" data-mirror>Nothing unfinished.</span>
           <button class="btn btn-ghost" type="button" id="idle-missed-clear">Clear history</button>
         </div>
-        <p class="field-note">The timer keeps running while the panel is open. Ticks in the daily list clear at the start of each new day; the tasks stay. A task you did not tick by then moves to Unfinished history on the idle screen, where you can finish it later. Tasks and notes are also saved to a file, so they survive a cleared panel storage.</p>
+        <p class="field-note">The timer runs while the panel is open. Ticks clear each new day; tasks stay. Tasks you did not tick move to Unfinished history on the idle screen. Tasks and notes are also saved to a file, so clearing panel storage does not delete them.</p>
       </div>
 
       <div class="field">
@@ -648,7 +650,7 @@
           <button class="btn" id="expr-backup-export">Backup Expressions</button>
           <button class="btn btn-ghost" id="expr-backup-import">Import Expressions</button>
         </div>
-        <p class="field-note">Custom expression snippets are saved automatically to a JSON file in your Documents folder, so they survive reinstalling or updating the extension. Use these to also export/import that file manually.</p>
+        <p class="field-note">Expression snippets save automatically to a JSON file in your Documents folder, so they survive reinstalling or updating. Use these buttons to export or import that file.</p>
       </div>
 
       <!-- Updates: checks GitHub Releases for a newer version and installs it in place. Logic: js/mt-updater.js -->
@@ -743,8 +745,10 @@
   <script src="../js/mt-nav.js?v=2"></script>
   <script src="../js/mt-anim.js?v=1"></script>
   <script src="../js/mt-idle-roll.js?v=2"></script>
-  <script src="../js/mt-island.js?v=13"></script>
-  <script src="../js/main.js?v=31"></script>
+  <script src="../js/mt-island.js?v=15"></script>
+  <script src="../js/mt-island-boxes.js?v=1"></script>
+  <script src="../js/mt-pro.js?v=2"></script>
+  <script src="../js/main.js?v=33"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=2"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any

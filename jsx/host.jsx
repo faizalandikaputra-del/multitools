@@ -1360,7 +1360,7 @@ function PRE_saveSelection(path) {
     if (!_preHasSelectedProperties(comp)) {
       picked = _preSelectAnimatedProps(sel[0]);
       if (picked.length === 0) {
-        throw new Error("Nothing to save. Select effects or properties in the timeline, or pick a layer that has effects, keyframes or expressions.");
+        throw new Error("Nothing to save. Select effects or properties, or pick a layer with effects, keyframes or expressions.");
       }
     }
 
@@ -2485,7 +2485,7 @@ function COLOR_applyToSelection(hex) {
     }
 
     if (!applied) {
-      return _ok("HEX copied. Select a layer (Solid/Text) or a color property (like Fill Color) in the Timeline to also apply it.");
+      return _ok("HEX copied. To apply it, select a Solid or Text layer, or a color property such as Fill Color.");
     }
     return _ok(hex.toUpperCase() + " applied to " + applied + " target" + (applied === 1 ? "" : "s") + ".");
   } catch (e) {
@@ -3553,7 +3553,7 @@ function getSelectedKeyframes() {
     var result = [];
     var comp = app.project.activeItem;
     if (!comp || !(comp instanceof CompItem)) {
-        return JSON.stringify({ error: "Tidak ada komposisi aktif." });
+        return JSON.stringify({ error: "No active composition." });
     }
     for (var i = 1; i <= comp.numLayers; i++) {
         var layer = comp.layer(i);
@@ -3737,7 +3737,7 @@ function applyCubicBezier(jsonParams) {
         var comp = app.project.activeItem;
         if (!comp || !(comp instanceof CompItem)) {
             ncLog("WARN", "applyCubicBezier: no active comp");
-            return JSON.stringify({ error: "Tidak ada komposisi aktif." });
+            return JSON.stringify({ error: "No active composition." });
         }
 
         var count = 0;
@@ -4295,7 +4295,7 @@ function applySteps(jsonParams) {
     try {
         var comp = app.project.activeItem;
         if (!comp || !(comp instanceof CompItem)) {
-            return JSON.stringify({ error: "Tidak ada komposisi aktif." });
+            return JSON.stringify({ error: "No active composition." });
         }
         var count = 0;
         for (var i = 1; i <= comp.numLayers; i++) {
@@ -4318,7 +4318,7 @@ function applyStepsToGroup(propGroup, steps, position) {
         if (prop.propertyType === PropertyType.PROPERTY && prop.numKeys >= 2) {
             var vt = prop.propertyValueType;
             if (vt === PropertyValueType.CUSTOM_VALUE) {
-                throw new Error("Cannot apply Steps to CUSTOM_VALUE properties (like Mesh Warp or Liquify). Only Bezier curves (Model 0) are supported for this property type.");
+                throw new Error("Cannot apply Steps to CUSTOM_VALUE properties (like Mesh Warp or Liquify). Only Bezier curves (Model 0) work here.");
             }
 
             var firstKey = -1, lastKey = -1;
@@ -4385,7 +4385,7 @@ function applyCustomPath(jsonParams) {
                 var comp = app.project.activeItem;
                 if (!comp || !(comp instanceof CompItem)) {
                     app.endUndoGroup();
-                    return JSON.stringify({ error: "Tidak ada komposisi aktif." });
+                    return JSON.stringify({ error: "No active composition." });
                 }
                 var bezParams = {
                     p1x: p.points[0].cx2,
@@ -4424,7 +4424,7 @@ function applyCustomPath(jsonParams) {
 function bakeCustomPath(points, yStart, yEnd) {
     var comp = app.project.activeItem;
     if (!comp || !(comp instanceof CompItem)) {
-        return { error: "Tidak ada komposisi aktif." };
+        return { error: "No active composition." };
     }
     var totalCreated = 0;
     for (var i = 1; i <= comp.numLayers; i++) {
@@ -4449,7 +4449,7 @@ function bakeToGroup(propGroup, points, yStart, yEnd) {
         if (prop.propertyType === PropertyType.PROPERTY && prop.numKeys >= 2) {
             var vt = prop.propertyValueType;
             if (vt === PropertyValueType.CUSTOM_VALUE) {
-                throw new Error("Cannot apply Custom Path (Model 4) to CUSTOM_VALUE properties (like Mesh Warp or Liquify). Only simple Bezier curves without intermediate keyframes are supported for this property type.");
+                throw new Error("Cannot apply Custom Path (Model 4) to CUSTOM_VALUE properties (like Mesh Warp or Liquify). Only simple Bezier curves without intermediate keyframes work here.");
             }
 
             var selectedKeys = [];
@@ -5019,7 +5019,7 @@ function applyExprToGroup(propGroup, params, type) {
                     }
                     continue;
                 }
-                throw new Error("Cannot apply Elastic, Bounce, Wave, or Custom Path to CUSTOM_VALUE properties (like Mesh Warp or Liquify). Only Bezier curves (Model 0) are supported for this property type.");
+                throw new Error("Cannot apply Elastic, Bounce, Wave, or Custom Path to CUSTOM_VALUE properties (like Mesh Warp or Liquify). Only Bezier curves (Model 0) work here.");
             }
 
             if (type === "remove") {
@@ -5275,12 +5275,12 @@ function readGraphFromAE() {
     try {
         var comp = app.project.activeItem;
         if (!comp || !(comp instanceof CompItem)) {
-            return JSON.stringify({ error: "Tidak ada komposisi aktif." });
+            return JSON.stringify({ error: "No active composition." });
         }
 
         var selProps = comp.selectedProperties;
         if (!selProps || selProps.length === 0) {
-            return JSON.stringify({ error: "Silakan seleksi properti yang memiliki keyframe." });
+            return JSON.stringify({ error: "Select a property with keyframes." });
         }
 
         var prop = null;
@@ -5292,7 +5292,7 @@ function readGraphFromAE() {
         }
 
         if (!prop) {
-            return JSON.stringify({ error: "Properti tidak memiliki cukup keyframe." });
+            return JSON.stringify({ error: "The property has too few keyframes." });
         }
 
         var selKeys = [];
@@ -5318,7 +5318,7 @@ function readGraphFromAE() {
                 selKeys = [];
                 for (var k = 1; k <= prop.numKeys; k++) selKeys.push(k);
             } else {
-                return JSON.stringify({ error: "Butuh minimal 2 keyframe untuk membaca kurva." });
+                return JSON.stringify({ error: "Need at least 2 keyframes to read the curve." });
             }
         }
 
@@ -5328,7 +5328,7 @@ function readGraphFromAE() {
         var t1 = prop.keyTime(kFirst);
         var t2 = prop.keyTime(kLast);
         var duration = t2 - t1;
-        if (duration <= 0) return JSON.stringify({ error: "Durasi antar keyframe adalah 0." });
+        if (duration <= 0) return JSON.stringify({ error: "The duration between keyframes is 0." });
 
         var valType = prop.propertyValueType;
         var isCustom = (valType === PropertyValueType.CUSTOM_VALUE);
@@ -7634,7 +7634,7 @@ function NC_liveRun(fnName, jsonParams) {
     try {
         if (!/^apply[A-Za-z]*$/.test(String(fnName))) { return JSON.stringify({ error: "Fungsi live tidak valid." }); }
         var comp = app.project.activeItem;
-        if (!comp || !(comp instanceof CompItem)) { return JSON.stringify({ error: "Tidak ada komposisi aktif." }); }
+        if (!comp || !(comp instanceof CompItem)) { return JSON.stringify({ error: "No active composition." }); }
         var live = $.global.__NC_LIVE;
         var s = _ncCollectSel(comp);
         var items = null;
@@ -7647,12 +7647,12 @@ function NC_liveRun(fnName, jsonParams) {
             // Nothing is selected right now: go back to the keyframes that were clicked last.
             if (_ncRestoreSel(comp, live.last) === 0) {
                 live.last = null;
-                return JSON.stringify({ error: "Keyframe terakhir yang dipilih sudah tidak ditemukan. Klik keyframe lagi." });
+                return JSON.stringify({ error: "The last selected keyframe no longer exists. Click a keyframe again." });
             }
             items = live.last.items;
             propsList = _ncCollectSel(comp).props;   // the keyframes are selected again now: take the live Property objects
         } else {
-            return JSON.stringify({ error: "Klik sebuah keyframe di timeline dulu." });
+            return JSON.stringify({ error: "Click a keyframe in the timeline first." });
         }
         // Identical request on identical keyframes: nothing to change, so skip it (no extra undo steps).
         var sig = fnName + "#" + jsonParams + "#" + comp.id + "#" + _ncSelSig(items);
@@ -7881,7 +7881,7 @@ function TOOLS_autoMorph(frames, easy, hideLower) {
     var pathA = _amFind(A.property("ADBE Root Vectors Group"), "ADBE Vector Shape");
     var pathB = _amFind(B.property("ADBE Root Vectors Group"), "ADBE Vector Shape");
     if (!pathA || !pathB) {
-      throw new Error("Each layer needs a Path. Rectangle, Ellipse and Star shapes must be converted first (right-click the shape > Convert to Bezier Path).");
+      throw new Error("Each layer needs a Path. Convert Rectangle, Ellipse and Star shapes first (right-click > Convert to Bezier Path).");
     }
     if (pathA.expressionEnabled) { throw new Error("The upper layer's Path has an expression. Remove it first."); }
     if (pathA.numKeys > 0) { throw new Error("The upper layer's Path already has keyframes. Delete them, or use a fresh shape layer."); }
@@ -7921,6 +7921,44 @@ function TOOLS_autoMorph(frames, easy, hideLower) {
     return _ok("Morphed \"" + A.name + "\" into \"" + B.name + "\" over " + frames + " frames (" + target + " vertices" +
       (extras ? ", plus color/stroke" : "") + ").");
   } catch (e) {
+    return _err(e);
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Settings profile (Settings > Data and updates > Settings profile, js/mt-pro.js)
+// The panel builds the JSON (every Multi Tool + NeuCurve setting) and only asks After Effects for the file dialogs.
+// ---------------------------------------------------------------------------
+function PROFILE_FILE_export(json) {
+  try {
+    if (!json || !json.length) { throw new Error("Nothing to save."); }
+    var dest = File.saveDialog("Save Settings Profile As", "JSON:*.json");
+    if (!dest) { return _notice("Export canceled."); }
+    if (!/\.json$/i.test(dest.fsName)) { dest = new File(dest.fsName + ".json"); }
+    dest.encoding = "UTF-8";
+    if (!dest.open("w")) { throw new Error("Could not write the profile file. Check that the destination is writable."); }
+    dest.write(json);
+    dest.close();
+    return _ok("Profile saved as \"" + dest.name + "\".", { saved: true, path: dest.fsName });
+  } catch (e) {
+    try { if (dest && dest.close) { dest.close(); } } catch (e2) {}
+    return _err(e);
+  }
+}
+function PROFILE_FILE_import() {
+  try {
+    var picked = File.openDialog("Select a Multi Tool Profile (.json)", "JSON:*.json");
+    if (!picked) { return _notice("Import canceled."); }
+    if (picked.length > 3000000) { throw new Error("That file is too large to be a settings profile (over 3 MB)."); }
+    picked.encoding = "UTF-8";
+    if (!picked.open("r")) { throw new Error("Could not open the selected file."); }
+    var text = picked.read();
+    picked.close();
+    if (!text || !text.length) { throw new Error("That file is empty."); }
+    return _ok("Profile read from \"" + picked.name + "\".", { json: text });
+  } catch (e) {
+    try { if (picked && picked.close) { picked.close(); } } catch (e2) {}
     return _err(e);
   }
 }

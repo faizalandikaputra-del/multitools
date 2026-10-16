@@ -56,6 +56,38 @@
 @keyframes mi-breathe { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.35); opacity: 0; } }
 @keyframes mi-done { 50% { transform: scale(1.25); opacity: 0.6; } }
 
+/* ---------- favorites ---------- */
+.mi-fhead { display: flex; align-items: center; justify-content: space-between; height: 22px; margin: 0 2px 8px; }
+.mi-fcount { font-size: 0.74rem; font-weight: 600; color: rgba(255, 255, 255, 0.55); }
+.mi-fhead .mi-fclear { width: auto; height: 22px; margin: 0; padding: 0 4px; border: 0; background: none; font: inherit; font-size: 0.72rem; font-weight: 600; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.15s ease; }
+.mi-fhead .mi-fclear:hover { color: #ff6b6b; }
+.mi-fgrid { display: flex; flex-wrap: wrap; max-height: 186px; margin: 0 -3px; padding: 3px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.mi-fgrid::-webkit-scrollbar { width: 0; height: 0; }
+.mi-ftile { position: relative; flex: 0 0 25%; box-sizing: border-box; max-width: 25%; padding: 3px; }
+.mi-fbtn { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 62px; margin: 0; padding: 4px 2px; border: 0; border-radius: 14px; overflow: hidden; background: rgba(255, 255, 255, 0.09); color: #fff; font: inherit; cursor: pointer; transition: background-color 0.15s ease, transform 0.18s var(--mi-ease); }
+.mi-fbtn:hover { background: rgba(255, 255, 255, 0.17); }
+.mi-fbtn:active { transform: scale(0.94); }
+.mi-fbtn:focus-visible, .mi-frm:focus-visible, .mi-fclear:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.mi-fbtn.is-pending { opacity: 0.55; pointer-events: none; }
+.mi-fbtn.is-success { background: rgba(61, 220, 132, 0.28); }
+.mi-fbtn.is-error { background: rgba(255, 90, 90, 0.3); }
+.mi-fimg { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-size: cover; background-position: center; opacity: 0; }
+.mi-fbtn.has-img .mi-fimg { opacity: 0.9; }
+.mi-fbtn.has-img .mi-fcode, .mi-fbtn.has-img .mi-fname { position: relative; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85); }
+.mi-fcode { position: relative; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
+.mi-fname { position: relative; max-width: 100%; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6rem; font-weight: 500; color: rgba(255, 255, 255, 0.6); }
+.mi-frm { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: #2b2b30; color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 0 2px #000; cursor: pointer; opacity: 0; transform: scale(0.7); transition: opacity 0.15s ease, transform 0.18s var(--mi-ease), background-color 0.15s ease, color 0.15s ease; }
+.mi-ftile:hover .mi-frm, .mi-frm:focus-visible { opacity: 1; transform: none; }
+.mi-frm:hover { background: #ff5a5a; color: #fff; }
+.mi-fempty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 96px; margin: 0; padding: 0 12px; box-sizing: border-box; border: 1.5px dashed rgba(255, 255, 255, 0.22); border-radius: 16px; text-align: center; }
+.mi-fempty b { font-size: 0.82rem; font-weight: 600; color: #fff; }
+.mi-fempty span { margin-top: 4px; font-size: 0.72rem; line-height: 1.35; color: rgba(255, 255, 255, 0.55); }
+/* while a tile is being dragged: the capsule grows a little and glows, the open island shows a drop ring */
+html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); box-shadow: 0 0 0 2px var(--accent, #5b8cff), 0 0 22px rgba(var(--accent-rgb, 91, 140, 255), 0.55); }
+.mt-island.is-drop { box-shadow: 0 0 0 2px var(--accent, #5b8cff), 0 14px 40px rgba(0, 0, 0, 0.5); }
+.mt-island.is-drop .mi-fempty { border-color: var(--accent, #5b8cff); background: rgba(255, 255, 255, 0.06); }
+.mt-island.is-drop .mi-fhead { opacity: 0.6; }
+
 /* ---------- clock: tiny dial in the capsule, big dial in the panel. The hands read --k-h / --k-m / --k-s set on .mt-island by js/mt-island.js ---------- */
 .mi-ico .mi-hh, .mi-ico .mi-hm, .mi-ico .mi-hs { display: none; }
 .mi-c.is-k .mi-ico { --d: 1.1rem; background: none; -webkit-mask: none; mask: none; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.42); }
@@ -103,15 +135,17 @@
 .mi-swtrack { display: block; transform: translate3d(0, 0, 0); will-change: transform; transition: transform 0.5s var(--mi-ease); }
 .mi-swap[data-on="sw"] .mi-swtrack { transform: translate3d(0, -36px, 0); }
 .mi-swap[data-on="clock"] .mi-swtrack { transform: translate3d(0, -72px, 0); }
-.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -108px, 0); }
+.mi-swap[data-on="fav"] .mi-swtrack { transform: translate3d(0, -108px, 0); }
+.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -144px, 0); }
 .mi-swrow { display: flex; align-items: center; height: 36px; opacity: 0.35; transition: opacity 0.3s linear; }
 .mi-swrow.is-live { opacity: 0.35; }
-.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="clock"] .mi-swrow:nth-child(3), .mi-swap[data-on="u"] .mi-swrow:nth-child(4) { opacity: 1; }
+.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="clock"] .mi-swrow:nth-child(3), .mi-swap[data-on="fav"] .mi-swrow:nth-child(4), .mi-swap[data-on="u"] .mi-swrow:nth-child(5) { opacity: 1; }
 .mi-swarrows { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; margin-left: 8px; border-radius: 50%; color: rgba(255, 255, 255, 0.7); transform: rotate(var(--mi-spin, 0deg)); transition: transform 0.5s var(--mi-ease); }
 .mi-tname { margin-left: 6px; }
 .mi-tico { flex: 0 0 auto; width: 13px; height: 13px; border-radius: 50%; }
 .mi-tico-t { border: 2px solid var(--accent, #5b8cff); box-sizing: border-box; }
 .mi-tico-u { background: radial-gradient(circle, var(--accent, #fff) 0 3.4px, transparent 4px); }
+.mi-tico-f { border-radius: 0; background: #ffcf33; -webkit-clip-path: polygon(50% 2%, 63% 36%, 98% 38%, 70% 60%, 80% 96%, 50% 75%, 20% 96%, 30% 60%, 2% 38%, 37% 36%); clip-path: polygon(50% 2%, 63% 36%, 98% 38%, 70% 60%, 80% 96%, 50% 75%, 20% 96%, 30% 60%, 2% 38%, 37% 36%); transform: scale(1.2); }
 .mi-tico-s { background: radial-gradient(circle, #ffb340 0 3.4px, transparent 4px); }
 .mi-tico-k { position: relative; border: 2px solid rgba(255, 255, 255, 0.9); box-sizing: border-box; }
 .mi-tico-k::before, .mi-tico-k::after { content: ""; position: absolute; left: 50%; bottom: 50%; width: 1.5px; margin-left: -0.75px; border-radius: 1px; background: #fff; transform-origin: 50% 100%; }
@@ -225,6 +259,7 @@
 .mt-island .mi-view-u #mt-update .mt-update-bar { background: var(--accent, #fff); }
 
 /* the app's own Animations switch (NOT prefers-reduced-motion, see top) */
+:root[data-reduce-motion="true"] .mi-fbtn, :root[data-reduce-motion="true"] .mi-frm,
 :root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
 :root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }

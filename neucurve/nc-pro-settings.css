@@ -1,0 +1,47 @@
+/* NeuCurve - nc-pro-settings.css : hotkey rows for neucurve/settings.html. */
+.ncp-hk-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ncp-hk-name { display: flex; flex-direction: column; min-width: 0; }
+.ncp-hk-name small { opacity: 0.6; font-size: 11px; font-weight: 400; }
+.ncp-hk-ctrl { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.ncp-hk-btn { min-width: 112px; height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: #a3a3a3; font: 500 11px "JetBrains Mono", monospace; cursor: pointer; text-align: center; }
+.ncp-hk-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.09); }
+.ncp-hk-btn.is-set { color: #fff; }
+.ncp-hk-btn.is-rec { color: #fff; background: var(--settings-theme, #3366ff); border-color: transparent; animation: ncp-rec 1s ease-in-out infinite; }
+.ncp-hk-x { width: 24px; height: 24px; border-radius: 50%; border: 0; background: transparent; color: #8b8b8b; font-size: 16px; line-height: 1; cursor: pointer; }
+.ncp-hk-x:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+.ncp-hk-x[hidden] { display: none; }
+@keyframes ncp-rec { 50% { opacity: 0.65; } }
+html[data-reduce-motion="true"] .ncp-hk-btn.is-rec { animation: none; }
+
+/* ---- Reset this page (top right of the section header) ---- */
+.settings-workspace-header { position: relative; }
+.ncp-section-reset { position: absolute; top: 18px; right: 22px; height: 28px; padding: 0 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; background: transparent; color: #a3a3a3; font: 500 11px "Inter", "Segoe UI", sans-serif; cursor: pointer; transition: background-color 150ms, color 150ms, border-color 150ms; }
+.ncp-section-reset:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+.ncp-section-reset.is-armed { color: #fff; border-color: transparent; background: #c0392b; }
+.ncp-section-reset:focus-visible { outline: 2px solid var(--settings-theme, #3366ff); outline-offset: 2px; }
+.settings-workspace-header h1 { padding-right: 130px; }
+
+/* two buttons in one group header (Clear + Reset): the text takes the free space, the buttons sit together on the right */
+.settings-group-header-with-action.ncp-hdr-2 > div { flex: 1 1 auto; }
+.settings-group-header-with-action.ncp-hdr-2 { gap: 8px; }
+.settings-group-header-with-action.ncp-hdr-2 > button:last-child { margin-right: -10px; }
+.settings-group-header-with-action.ncp-hdr-2 > button:not(:last-child) { margin-right: 0; }
+
+/* ---- Preset Cards: three layout tiles with a small drawing of each layout ---- */
+.ncp-card-styles { display: flex; margin: 6px 28px 12px; }
+.ncp-card-styles > button { position: relative; flex: 1 1 0; min-width: 0; margin-right: 8px; padding: 10px 6px 9px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: rgba(255, 255, 255, 0.035); color: #a3a3a3; font: inherit; text-align: center; cursor: pointer; transition: background-color 160ms, border-color 160ms, color 160ms, transform 160ms; }
+.ncp-card-styles > button:last-child { margin-right: 0; }
+.ncp-card-styles > button:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.ncp-card-styles > button:active { transform: scale(0.97); }
+.ncp-card-styles > button.is-selected { color: #fff; border-color: var(--settings-theme, #3366ff); background: var(--settings-theme-soft, rgba(51, 102, 255, 0.22)); }
+.ncp-card-styles > button:focus-visible { outline: 2px solid var(--settings-theme, #3366ff); outline-offset: 2px; }
+.ncp-card-styles b { display: block; margin-top: 8px; font-size: 12px; font-weight: 600; }
+.ncp-card-styles small { display: block; margin-top: 2px; font-size: 10px; opacity: 0.6; }
+.ncp-cs { display: flex; flex-wrap: wrap; align-content: flex-start; width: 72px; height: 46px; margin: 0 auto; padding: 4px; box-sizing: border-box; border-radius: 8px; background: rgba(0, 0, 0, 0.35); font-style: normal; overflow: hidden; }
+.ncp-cs u { display: block; box-sizing: border-box; background: currentColor; opacity: 0.55; text-decoration: none; }
+.ncp-cs-grid u { width: 17px; height: 17px; margin: 0 3px 3px 0; border-radius: 4px; }
+.ncp-cs-grid u:nth-child(3n) { margin-right: 0; }
+.ncp-cs-list { align-content: space-between; }
+.ncp-cs-list u { width: 100%; height: 9px; border-radius: 3px; }
+.ncp-cs-compact u { width: 8px; height: 8px; margin: 0 2px 2px 0; border-radius: 2px; }
+.ncp-card-styles > button.is-selected .ncp-cs u { opacity: 0.95; }

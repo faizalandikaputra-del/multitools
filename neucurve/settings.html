@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="../css/mt-settings-controls.css?v=2">
   <link rel="stylesheet" href="./nc-settings-controls.css?v=1">
   <link rel="stylesheet" href="../css/mt-final-controls.css?v=1">
+  <link rel="stylesheet" href="./nc-pro-settings.css?v=2">
   <script src="../js/ae2021-compat.js?v=10"></script>
   <script src="./CSInterface.js"></script>
 </head>
@@ -41,9 +42,17 @@
         <i><svg viewBox="0 0 24 24"><path d="M5 19c4 0 3-14 14-14"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/></svg></i>
         <span>Handles</span>
       </button>
+      <button class="settings-navigation-item" type="button" data-settings-tab="graph">
+        <i><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15c3 0 3-8 6-8s2 6 6 6"/></svg></i>
+        <span>Graph</span>
+      </button>
       <button class="settings-navigation-item" type="button" data-settings-tab="behavior">
         <i><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></i>
         <span>Behavior</span>
+      </button>
+      <button class="settings-navigation-item" type="button" data-settings-tab="hotkeys">
+        <i><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></i>
+        <span>Hotkeys</span>
       </button>
     </nav>
   </aside>
@@ -53,6 +62,7 @@
       <span class="settings-workspace-kicker">NeuCurve / Settings</span>
       <h1 id="settingsSectionTitle">Appearance</h1>
       <p id="settingsSectionDescription">Customize NeuCurve's interface and graph colors.</p>
+      <button type="button" id="ncpSectionReset" class="ncp-section-reset" title="Put every setting on this page back to its default">Reset this page</button>
     </header>
 
     <div class="settings-body">
@@ -60,9 +70,9 @@
       <!-- APPEARANCE -->
       <section class="settings-section is-active" data-settings-section="appearance" data-settings-title="Appearance" data-settings-description="Customize NeuCurve's interface and graph colors.">
         <div class="settings-group">
-          <header class="settings-group-header">
-            <h2>Interface Colors</h2>
-            <p>Choose the colors used throughout the NeuCurve panel.</p>
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Interface Colors</h2><p>Choose the colors used throughout the NeuCurve panel.</p></div>
+            <button type="button" id="ncpColorsReset">Reset</button>
           </header>
           <div class="settings-row" data-setting-row="uiColor"><span>UI / Theme Color</span><button type="button" data-color-edit="uiColor">Edit</button></div>
           <div class="settings-row" data-setting-row="graphLineColor"><span>Graph Line Color</span><button type="button" data-color-edit="graphLineColor">Edit</button></div>
@@ -115,7 +125,7 @@
           <div class="settings-background-gradient-preview" id="settingsGradientPreview" aria-hidden="true"></div>
           <div class="settings-opacity-head"><span>Gradient Direction</span><b id="settingsGradDirValue">160&deg;</b></div>
           <input id="settingsGradDir" class="settings-range" type="range" min="0" max="360" step="1" />
-          <div class="settings-opacity-head"><span>Colour Intensity</span><b id="settingsGradIntValue">100%</b></div>
+          <div class="settings-opacity-head"><span>Color Intensity</span><b id="settingsGradIntValue">100%</b></div>
           <input id="settingsGradInt" class="settings-range" type="range" min="0" max="100" step="1" />
           <div class="settings-language-row">
             <span class="settings-language-copy"><b>Area</b><small>Where the gradient is painted.</small></span>
@@ -124,9 +134,10 @@
         </div>
 
         <div class="settings-group">
-          <header class="settings-group-header settings-group-header-with-action">
+          <header class="settings-group-header settings-group-header-with-action ncp-hdr-2">
             <div><h2>Graph Background Media</h2><p>Use an image or GIF behind the graph.</p></div>
             <button type="button" id="settingsClearBackground">Clear</button>
+            <button type="button" id="ncpMediaReset">Reset</button>
           </header>
           <label class="settings-toggle-row"><span>Use Original Media Colors</span><input type="checkbox" id="settingsBgOriginal" /><i></i></label>
           <button class="settings-dropzone" id="settingsDropzone" type="button">
@@ -140,16 +151,17 @@
           <div class="settings-opacity-head"><span>Opacity</span><b id="settingsOpacityValue">100%</b></div>
           <input id="settingsOpacity" class="settings-range" type="range" min="0" max="100" step="1" />
           <div class="nc-actions"><button type="button" id="nc-bg-edit-open" class="nc-btn">Adjust Background</button></div>
-          <p class="settings-tip">Set position and zoom with Adjust Background. Use low-resolution images or GIFs for optimal performance.</p>
+          <p class="settings-tip">Use Adjust Background to set position and zoom. Low-resolution images and GIFs run best.</p>
         </div>
       </section>
 
       <!-- HANDLES -->
       <section class="settings-section" data-settings-section="handles" data-settings-title="Handles" data-settings-description="Choose the graph handle shape, image, and size.">
         <div class="settings-group">
-          <header class="settings-group-header settings-group-header-with-action">
+          <header class="settings-group-header settings-group-header-with-action ncp-hdr-2">
             <div><h2>Handle Style</h2><p>Select a preset shape or upload a custom PNG or GIF.</p></div>
             <button type="button" id="settingsClearHandleImage">Clear Custom</button>
+            <button type="button" id="ncpHandleReset">Reset</button>
           </header>
           <div class="settings-handle-presets" id="settingsHandlePresets">
             <button type="button" data-handle-style="heart" aria-label="Heart handle"><i class="settings-handle-shape is-heart"></i><b>Heart</b></button>
@@ -170,16 +182,63 @@
           <input id="settingsHandleSize" class="settings-range" type="range" min="2" max="9" step="0.5" />
           <div class="settings-opacity-head"><span>Handle Line Thickness</span><b id="settingsHandleLineThicknessValue">1.2px</b></div>
           <input id="settingsHandleLineThickness" class="settings-range" type="range" min="0.5" max="6" step="0.1" />
-          <p class="settings-tip">Animated GIFs play on the handles. Use small images (about 64&times;64 px) for best performance.</p>
+          <p class="settings-tip">Animated GIFs play on the handles. Small images (about 64&times;64 px) run best.</p>
+        </div>
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Handle Effects</h2><p>Glow, hover and guide lines for the Bezier handles.</p></div>
+            <button type="button" id="ncpHandleFxReset">Reset</button>
+          </header>
+          <div class="settings-opacity-head"><span>Handle Glow</span><b id="ncpHGlowValue"></b></div>
+          <input id="ncpHGlow" class="settings-range" type="range" min="0" max="20" step="1" />
+          <label class="settings-toggle-row"><span>Grow on Hover<small>The handle gets a little bigger when the pointer is on it.</small></span><input type="checkbox" id="ncpHHover" /><i></i></label>
+          <label class="settings-toggle-row"><span>Show Guide Lines<small>The lines that connect each handle to its keyframe.</small></span><input type="checkbox" id="ncpHGuides" /><i></i></label>
+          <div class="settings-language-row"><span class="settings-language-copy"><b>Guide Line Style</b><small></small></span><div class="nc-seg" id="ncpHGuideStyle"><button type="button" data-v="solid">Solid</button><button type="button" data-v="dashed">Dashed</button></div></div>
+          <div class="settings-opacity-head"><span>Guide Line Opacity</span><b id="ncpHGuideOpValue"></b></div>
+          <input id="ncpHGuideOp" class="settings-range" type="range" min="10" max="100" step="1" />
+          <label class="settings-toggle-row"><span>Show Value Labels<small>The numbers that appear next to a handle while you drag it.</small></span><input type="checkbox" id="ncpHLabels" /><i></i></label>
+        </div>
+      </section>
+
+      <!-- GRAPH -->
+      <section class="settings-section" data-settings-section="graph" data-settings-title="Graph" data-settings-description="Grid and curve line of the main graph.">
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Grid</h2><p>The lines behind the curve. Columns and rows set how many squares the graph has.</p></div>
+            <button type="button" id="ncpGridReset">Reset</button>
+          </header>
+          <label class="settings-toggle-row"><span>Show Grid<small>Turn off to hide the grid lines and their numbers.</small></span><input type="checkbox" id="ncpGridShow" /><i></i></label>
+          <label class="settings-toggle-row"><span>Show Numbers<small>The small values at the left and bottom edge of the graph.</small></span><input type="checkbox" id="ncpGridLabels" /><i></i></label>
+          <div class="settings-opacity-head"><span>Columns</span><b id="ncpGridXValue"></b></div>
+          <input id="ncpGridX" class="settings-range" type="range" min="2" max="16" step="1" />
+          <div class="settings-opacity-head"><span>Rows</span><b id="ncpGridYValue"></b></div>
+          <input id="ncpGridY" class="settings-range" type="range" min="2" max="16" step="1" />
+          <div class="settings-language-row"><span class="settings-language-copy"><b>Line Style</b><small>Solid, dashed or dotted grid lines.</small></span><div class="nc-seg" id="ncpGridStyle"><button type="button" data-v="solid">Solid</button><button type="button" data-v="dashed">Dashed</button><button type="button" data-v="dotted">Dotted</button></div></div>
+          <div class="settings-opacity-head"><span>Opacity</span><b id="ncpGridOpValue"></b></div>
+          <input id="ncpGridOp" class="settings-range" type="range" min="10" max="100" step="1" />
+          <div class="settings-opacity-head"><span>Thickness</span><b id="ncpGridWValue"></b></div>
+          <input id="ncpGridW" class="settings-range" type="range" min="0.5" max="3" step="0.1" />
+          <div class="settings-row" data-setting-row="gridColor"><span>Grid Color</span><button type="button" data-color-edit="gridColor">Edit</button></div>
+        </div>
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Curve Line</h2><p>Thickness, style and glow of the curve itself. The color is set in Appearance.</p></div>
+            <button type="button" id="ncpLineReset">Reset</button>
+          </header>
+          <div class="settings-opacity-head"><span>Thickness</span><b id="ncpLineWValue"></b></div>
+          <input id="ncpLineW" class="settings-range" type="range" min="1" max="6" step="0.5" />
+          <div class="settings-language-row"><span class="settings-language-copy"><b>Line Style</b><small>Solid, dashed or dotted curve.</small></span><div class="nc-seg" id="ncpLineStyle"><button type="button" data-v="solid">Solid</button><button type="button" data-v="dashed">Dashed</button><button type="button" data-v="dotted">Dotted</button></div></div>
+          <div class="settings-opacity-head"><span>Glow</span><b id="ncpLineGlowValue"></b></div>
+          <input id="ncpLineGlow" class="settings-range" type="range" min="0" max="20" step="1" />
         </div>
       </section>
 
       <!-- BEHAVIOR -->
       <section class="settings-section" data-settings-section="behavior" data-settings-title="Behavior" data-settings-description="Control how NeuCurve responds while you work.">
         <div class="settings-group">
-          <header class="settings-group-header">
-            <h2>Panel Behavior</h2>
-            <p>Adjust layout, automatic actions and graph limits.</p>
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Panel Behavior</h2><p>Adjust layout, automatic actions and graph limits.</p></div>
+            <button type="button" id="ncpBehaviorReset">Reset</button>
           </header>
           <div class="settings-language-row">
             <span class="settings-language-copy"><b>Layout Mode</b><small>Auto follows the panel width.</small></span>
@@ -195,20 +254,26 @@
         </div>
 
         <div class="settings-group">
-          <header class="settings-group-header">
-            <h2>Curve Tab View</h2>
-            <p>Show only the graph or only the presets. Turning one on turns the other off.</p>
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Curve Tab View</h2><p>Show only the graph or only the presets. Turning one on turns the other off.</p></div>
+            <button type="button" id="ncpViewReset">Reset</button>
           </header>
           <label class="settings-toggle-row"><span>Hide Preset Graphs<small>Only the graph and its settings stay.</small></span><input type="checkbox" id="settingsHidePresets" /><i></i></label>
           <label class="settings-toggle-row"><span>Hide Graph Settings<small>Only the preset graphs stay.</small></span><input type="checkbox" id="settingsHideGraph" /><i></i></label>
         </div>
 
         <div class="settings-group">
-          <header class="settings-group-header">
-            <h2>Preset Names</h2>
-            <p>Show or hide the name under each preset graph.</p>
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Preset Cards</h2><p>How the preset graphs are laid out in the Curve tab.</p></div>
+            <button type="button" id="ncpCardsReset">Reset</button>
           </header>
-          <label class="settings-toggle-row"><span>Show Preset Names<small>Turn off to show only the graph tiles.</small></span><input type="checkbox" id="settingsShowPresetNames" /><i></i></label>
+          <div class="ncp-card-styles" id="ncpCardStyle" role="radiogroup" aria-label="Card Style">
+            <button type="button" data-v="grid" role="radio"><i class="ncp-cs ncp-cs-grid"><u></u><u></u><u></u><u></u><u></u><u></u></i><b>Grid</b><small>Square tiles</small></button>
+            <button type="button" data-v="list" role="radio"><i class="ncp-cs ncp-cs-list"><u></u><u></u><u></u></i><b>List</b><small>One per row</small></button>
+            <button type="button" data-v="compact" role="radio"><i class="ncp-cs ncp-cs-compact"><u></u><u></u><u></u><u></u><u></u><u></u><u></u><u></u><u></u></i><b>Compact</b><small>Tiny, no names</small></button>
+          </div>
+          <div class="settings-language-row"><span class="settings-language-copy"><b>Card Corners</b><small>Shape of every preset tile.</small></span><div class="nc-seg" id="ncpCardShape"><button type="button" data-v="square">Square</button><button type="button" data-v="soft">Soft</button><button type="button" data-v="round">Round</button></div></div>
+          <label class="settings-toggle-row"><span>Show Preset Names<small>Turn off to show only the graph tiles. Compact never shows names.</small></span><input type="checkbox" id="settingsShowPresetNames" /><i></i></label>
         </div>
 
         <div class="settings-group">
@@ -232,13 +297,27 @@
         </div>
       </section>
 
+      <!-- HOTKEYS -->
+      <section class="settings-section" data-settings-section="hotkeys" data-settings-title="Hotkeys" data-settings-description="Keys that press NeuCurve buttons while the panel has focus.">
+        <div class="settings-group">
+          <header class="settings-group-header settings-group-header-with-action">
+            <div><h2>Keyboard Shortcuts</h2><p>Click a button, then press the keys you want. Hotkeys work when the NeuCurve panel is focused and you are not typing in a field.</p></div>
+            <button type="button" id="ncpHkReset">Clear All</button>
+          </header>
+          <label class="settings-toggle-row"><span>Enable Hotkeys<small>Turn all shortcuts off without losing them.</small></span><input type="checkbox" id="ncpHkOn" /><i></i></label>
+          <div id="ncpHkList"></div>
+          <p class="settings-tip" id="ncpHkNote"></p>
+        </div>
+      </section>
+
     </div>
   </section>
 </main>
 </div>
 <script src="../js/mt-colorpicker.js?v=1"></script>
 <script src="./nc-bg.js?v=16"></script>
-<script src="./nc-settings.js?v=16"></script>
+<script src="./nc-settings.js?v=17"></script>
+<script src="./nc-pro-settings.js?v=2"></script>
 <script src="../js/mt-settings-polish.js?v=5"></script>
 </body>
 </html>

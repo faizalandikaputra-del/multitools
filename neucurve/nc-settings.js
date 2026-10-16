@@ -99,7 +99,7 @@
     var buttons = document.querySelectorAll("[data-settings-tab]");
     var sections = document.querySelectorAll("[data-settings-section]");
     var title = $("settingsSectionTitle"), desc = $("settingsSectionDescription"), body = document.querySelector(".settings-body");
-    var order = ["appearance", "background", "handles", "behavior"];
+    var order = ["appearance", "background", "handles", "graph", "behavior", "hotkeys"];
 
     function activate(name) {
       var i, on, found = false;

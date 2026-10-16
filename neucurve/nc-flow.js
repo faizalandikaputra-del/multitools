@@ -267,7 +267,7 @@
     else if (!on && has) { r.className = r.className.replace(/\s*nc-auto-on/g, ""); }
     var b = q(".apply-btn");
     if (b) {
-      var tt = on ? "Auto Apply is ON - the graph is applied to After Effects live. Click to apply manually." : "";
+      var tt = on ? "Auto Apply is on. The graph applies live. Click to apply manually." : "";
       if ((b.title || b.__mtTitle || "") !== tt) { b.title = tt; }
     }
     fitApply();

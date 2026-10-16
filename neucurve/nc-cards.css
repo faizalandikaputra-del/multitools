@@ -1,0 +1,40 @@
+/* NeuCurve - nc-cards.css (v1)  PRESET CARD STYLE. Driven by nc-view.js (classes on <html>), set from Settings > Behavior > Preset Cards.
+     html.nc-cs-list / nc-cs-compact   layout (Grid = no class = the old look)
+     html.nc-cr-square / nc-cr-round   corner shape (Soft = no class)
+   Loaded LAST. The doubled ".preset-grid.preset-grid" / ".preset-item.preset-item" lift the specificity over nc-fix22 / nc-fix24 (both use !important).
+   Chromium 74 safe: no gap on flex, no inset, no min()/max(). */
+
+/* ---- LIST: one preset per row, small thumbnail on the left, name beside it ---- */
+html.nc-cs-list body .shell.shell .content-wrapper .preset-grid.preset-grid {
+  grid-template-columns: minmax(0, 1fr) !important; row-gap: 4px; column-gap: 0;
+}
+html.nc-cs-list body .shell.shell .content-wrapper .preset-item.preset-item {
+  flex-direction: row; align-items: center; justify-content: flex-start;
+  padding: 4px 8px 4px 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.04);
+  transition: background-color 150ms ease;
+}
+html.nc-cs-list body .shell.shell .content-wrapper .preset-item.preset-item:hover { background: rgba(255, 255, 255, 0.09); }
+html.nc-cs-list body .shell.shell .content-wrapper .preset-item.preset-item .preset-thumbnail {
+  flex: 0 0 46px; width: 46px; height: 46px;
+}
+html.nc-cs-list body .shell.shell .content-wrapper .preset-item.preset-item .preset-name {
+  flex: 1 1 auto; width: auto; margin: 0 0 0 12px; font-size: 12px; line-height: 16px; text-align: left; padding: 0;
+}
+html.nc-cs-list.nc-hide-pnames body .shell.shell .content-wrapper .preset-item.preset-item { display: flex; }
+
+/* ---- COMPACT: many tiny tiles, no names ---- */
+html.nc-cs-compact body .shell.shell .content-wrapper .preset-grid.preset-grid {
+  grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)) !important; row-gap: 4px; column-gap: 4px;
+}
+html.nc-cs-compact body .shell.shell .content-wrapper .preset-item.preset-item .preset-name { display: none !important; }
+
+/* ---- CORNERS ---- */
+html.nc-cr-square body .shell.shell .preset-item .preset-thumbnail,
+html.nc-cr-square body .shell.shell .content-wrapper .preset-item.preset-item .preset-thumbnail { border-radius: 3px; }
+html.nc-cr-square body .shell.shell .content-wrapper .preset-item.selected::before,
+html.nc-cr-square body .shell.shell .content-wrapper .preset-item.ctx-target::before { border-radius: 3px !important; }
+html.nc-cr-round body .shell.shell .preset-item .preset-thumbnail,
+html.nc-cr-round body .shell.shell .content-wrapper .preset-item.preset-item .preset-thumbnail { border-radius: 34%; }
+html.nc-cr-round body .shell.shell .content-wrapper .preset-item.selected::before,
+html.nc-cr-round body .shell.shell .content-wrapper .preset-item.ctx-target::before { border-radius: 34% !important; }
+html.nc-cs-list.nc-cr-round body .shell.shell .content-wrapper .preset-item.preset-item { border-radius: 999px; }

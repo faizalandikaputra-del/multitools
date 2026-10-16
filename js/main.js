@@ -37,7 +37,7 @@
     },
     "color-palette": {
       title: "Color Palette",
-      hint: "Click a Layer Label color to apply it to the selection, or click a HEX swatch to copy/apply it.",
+      hint: "Click a Layer Label color to apply it to the selection. Click a HEX swatch to copy or apply it.",
       tools: [],
       custom: "colorPalette"
     },
@@ -79,7 +79,7 @@
     },
     "shortcutz": {
       title: "Shortcutz",
-      hint: "Your Speed Dial: one-click expressions, effects and utilities, plus pinned presets/snippets and your own custom shortcuts.",
+      hint: "Speed Dial: one-click expressions, effects and utilities, pinned presets and snippets, and your own shortcuts.",
       tools: [],
       custom: "shortcutz"
     },
@@ -441,8 +441,22 @@
     el.classList.toggle("is-error", !!isError);
     el.classList.add("is-show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove("is-show"); }, 2400);
+    toastTimer = setTimeout(function () { el.classList.remove("is-show"); }, (window.MTPro && window.MTPro.toastMs ? window.MTPro.toastMs() : 2400));   // Settings > Toast > Time (js/mt-pro.js)
   }
+  // Small bridge for js/mt-pro.js (Favorite pin bar): the tool table, the tile builder and the current tab.
+  window.__MT = {
+    TABS: TABS, buildTool: buildTool, toast: toast, runTool: runTool,
+    toolImg: function (tabId, toolId) { return Store.get(imgKey(tabId, toolId)); },
+    current: function () { return currentTab; },
+    panel: function () { return panel; },
+    // Builds a tab's content WITHOUT showing it (js/mt-island-boxes.js uses it once at start to rebuild the boxes that were left in the island).
+    renderDetached: function (tabId) {
+      var cfg = TABS[tabId], b = null;
+      if (cfg && cfg.custom === "utilityTools") { b = UtilityTools.render(); }
+      if (b && window.PanelRefinements && window.PanelRefinements.groupifyTaSections) { window.PanelRefinements.groupifyTaSections(b, { tabId: tabId }); }
+      return b;
+    }
+  };
 
 
   // ---------------------------------------------------------
@@ -456,6 +470,22 @@
   function applyToolImage(el, dataUrl) {
     el.querySelector(".tool-img").style.backgroundImage = dataUrl ? 'url("' + dataUrl + '")' : "";
     el.classList.toggle("has-img", !!dataUrl);
+  }
+
+  // Runs one tool tile. btn may be a grid tile or a tile in the dynamic island (any element with classList / flashButtonResult support).
+  function runTool(btn, tabId, tool) {
+    if (btn && btn.classList.contains("is-pending")) { return; }
+    if (btn) { btn.classList.add("is-pending"); }
+
+    var args = tool.args.slice();
+    // Easy Layer: label color (Settings > Easy Layer Label) and the Auto Parent switch travel with every click
+    if (tabId === "easy-layer") { args.push(EasyLayerLabels.get(tool.id)); args.push(AutoParent.get()); }
+    if (tool.autoFill) { args.push(ActivePalette.get()); }   // EL_create(type, label, autoParent, colorHex)
+
+    Bridge.call(tool.jsx, args).then(function (res) {
+      if (btn) { flashButtonResult(btn, !!res.ok); }
+      toast(res.message || (res.ok ? "Done." : "Something went wrong."), !res.ok);
+    });
   }
 
   function buildTool(tabId, tool) {
@@ -478,21 +508,16 @@
         '<span class="tool-fill-dot" style="background:' + ActivePalette.get() + '"></span>');
     }
 
-    btn.addEventListener("click", function () {
-      if (btn.classList.contains("is-pending")) { return; }
-      btn.classList.add("is-pending");
-
-      var args = tool.args.slice();
-      // Easy Layer: label color (Settings > Easy Layer Label) and the Auto Parent switch travel with every click
-      if (tabId === "easy-layer") { args.push(EasyLayerLabels.get(tool.id)); args.push(AutoParent.get()); }
-      if (tool.autoFill) { args.push(ActivePalette.get()); }   // EL_create(type, label, autoParent, colorHex)
-
-      Bridge.call(tool.jsx, args).then(function (res) {
-        flashButtonResult(btn, !!res.ok);
-        toast(res.message || (res.ok ? "Done." : "Something went wrong."), !res.ok);
-      });
+    btn.addEventListener("click", function () { runTool(btn, tabId, tool); });
+    // Drag a tile onto the dynamic island = add it to the island Favorites (the tile itself never leaves the grid; copy only).
+    btn.draggable = true;
+    btn.addEventListener("dragstart", function (e) {
+      try { e.dataTransfer.setData("text/mt-tool", tabId + "|" + tool.id); e.dataTransfer.setData("text/plain", tool.name); e.dataTransfer.effectAllowed = "copy"; } catch (er) { }
+      document.documentElement.classList.add("mt-dragging-tool");
     });
+    btn.addEventListener("dragend", function () { document.documentElement.classList.remove("mt-dragging-tool"); });
     btn.addEventListener("contextmenu", function (e) { e.preventDefault(); ContextMenu.open(e.clientX, e.clientY, btn); });
+    if (window.MTPro) { window.MTPro.decorateTool(btn, tabId, tool); }   // Favorite pin star (js/mt-pro.js)
     return btn;
   }
 
@@ -538,8 +563,8 @@
       '<div class="info-divider"></div>' +
       '<p><strong>Multi Tool</strong> v' + infoVersion() + '</p>' +
       '<p class="info-caps">Includes Quick Comp Edit, Anchor Point &amp; Align, Color Palette Pro, and other layer utilities.</p>' +
-      '<p>Left-click a tool to run it in After Effects. Right-click a tool square to set its own image.</p>' +
-      '<p>Use the gear icon to change the panel background.</p>';
+      '<p>Left-click a tool to run it. Right-click a tool to set its image.</p>' +
+      '<p>Use the gear icon to change the background.</p>';
 
     // Placeholder-image safety net: if assets/profile.jpg hasn't been swapped in yet (or was
     // removed), show a plain initial instead of a broken-image icon.
@@ -1530,7 +1555,10 @@
         '</div>' +
         '<label class="switch-row" for="' + id + '"><span>Live Fill update while dragging</span>' +
           '<input type="checkbox" id="' + id + '"' + (liveOn ? " checked" : "") + '><span class="switch-track"></span></label>' +
-        '<button type="button" class="btn btn-primary cw-save">Save to Custom Swatches</button>';
+        '<div class="cw-actions">' +
+          '<button type="button" class="btn btn-primary cw-save">Save to Custom Swatches</button>' +
+          '<button type="button" class="btn cw-reset" title="Set the color back to neutral white (#FFFFFF)" aria-label="Reset color to white"><span class="cw-reset-dot" aria-hidden="true"></span>Reset</button>' +
+        '</div>';
 
       var canvas = root.querySelector(".cw-wheel"), ctx = canvas.getContext("2d");
       var valEl = root.querySelector(".cw-val"), knob = root.querySelector(".cw-knob");
@@ -1635,6 +1663,12 @@
       root.querySelector("#" + id).addEventListener("change", function (e) {
         liveOn = e.target.checked;
         Store.set(LIVE_KEY, liveOn ? "1" : "0");
+      });
+      // Reset: back to neutral white (no hue, no saturation, full brightness). Same path as typing #FFFFFF: Fill effects follow, then it is stored.
+      root.querySelector(".cw-reset").addEventListener("click", function () {
+        st.s = 0; st.v = 1;
+        changed(true); commit();
+        toast("Color reset to white.");
       });
       root.querySelector(".cw-save").addEventListener("click", function () { if (opts.onSave) { opts.onSave(current()); } });
 
@@ -3024,7 +3058,7 @@
       });
 
       wrap.querySelector("#tf-help").addEventListener("click", function () {
-        toast("Select a text layer, check the properties to animate, then click Animate. Markers uses the layer's first/last marker as the in/out point. Re-applying replaces the old animator.");
+        toast("Select a text layer, check the properties to animate, then click Animate. Markers uses the layer's first and last markers as in and out points. Re-applying replaces the old animator.");
       });
 
       wrap.querySelector("#tf-animate").addEventListener("click", function () {
@@ -3271,7 +3305,7 @@
         code: "n = 0;\nif (numKeys > 0){\n  n = nearestKey(time).index;\n  if (key(n).time > time) n--;\n}\nif (n == 0){\n  t = 0;\n}else{\n  t = time - key(n).time;\n}\nif (n > 0 && t < 4){\n  v = velocityAtTime(key(n).time - thisComp.frameDuration/10);\n  amp = 0.15;\n  freq = 3;\n  decay = 8;\n  value + v*amp*Math.sin(freq*t*2*Math.PI)/Math.exp(decay*t);\n}else{\n  value;\n}",
         icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16c2-6 4 6 6 0s4-10 6 0 4-6 4-6"/></svg>' },
       { id: "wiggle", name: "Wiggle(2, 30)",
-        note: "value + wiggle(2, 30) - classic quick jitter, applied as-is.",
+        note: "Quick jitter: value + wiggle(2, 30).",
         code: "wiggle(2, 30)",
         icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2-5 4 5 6 0s4-5 6 0 4-5 6 0"/></svg>' },
       { id: "loopout", name: "Loop Out",
@@ -3294,7 +3328,7 @@
         run: function () { return Bridge.call("AA_setAnchor", ["mm"]); } },
       { id: "autoparent", name: "Auto Parent", note: "Parents every other selected layer to the topmost selected one.",
         run: function () { return Bridge.call("SHTZ_autoParentToTop", []); } },
-      { id: "audiobeats", name: "Convert Audio to Beats", note: "Adds keyframes/markers at audio peaks (default settings - see the Tools tab for full control).",
+      { id: "audiobeats", name: "Convert Audio to Beats", note: "Adds keyframes or markers at audio peaks with default settings. The Tools tab has full control.",
         run: function () { return Bridge.call("TOOLS_convertAudioToKeyframes", [25, "layer"]); } }
     ],
 
@@ -3819,7 +3853,7 @@
           this.myGridHtml() +
           restoreHtml +
         "</div>" +
-        builtinSection("Expression Shortcuts", "Select the target properties on your selected layer(s), then click a card to inject that expression.", "expr", this.EXPR_PRESETS) +
+        builtinSection("Expression Shortcuts", "Select the target properties, then click a card to apply that expression.", "expr", this.EXPR_PRESETS) +
         builtinSection("Quick Effect Shortcuts", "Adds the native effect to every selected layer's Effect Parade.", "effect", this.EFFECT_PRESETS) +
         builtinSection("Utility Shortcuts", "Instant one-click workflow commands.", "util", this.UTIL_PRESETS);
 
@@ -4305,7 +4339,9 @@
     if (window.PanelRefinements && window.PanelRefinements.groupifyTaSections) {
       window.PanelRefinements.groupifyTaSections(built, { tabId: tabId });
     }
+    if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
     FormState.restore(tabId, panel);
+    if (window.MTPro) { try { window.MTPro.afterRender(tabId); } catch (e) { } }   // Favorites bar above the tab content (js/mt-pro.js)
     queueScrollRestore(tabId);
 
     // fade in + slide up (panel and header; opacity + transform only)
@@ -5200,7 +5236,7 @@
               Store.remove("bgMotionGif");
               Store.remove("bgMotionType");
               self.applyMotion("video", Node.toFileUrl(destV));
-              $("bg-motion-note").textContent = "Video saved - it will reload automatically the next time you open the panel.";
+              $("bg-motion-note").textContent = "Video saved. It loads again next time you open the panel.";
               return;
             }
           }
@@ -5212,7 +5248,7 @@
           Store.remove("bgMotionGif");
           Store.remove("bgMotionType");
           Store.remove("bgMotionVideoPath");
-          $("bg-motion-note").textContent = "Video applied for this session only (not saved between reloads).";
+          $("bg-motion-note").textContent = "Video applied for this session only.";
         } else {
           fileToRawDataURL(file).then(function (dataUrl) {
             self.applyMotion("gif", dataUrl);
@@ -5220,7 +5256,7 @@
             Store.remove("bgMotionVideoPath");
             if (Node) { Node.clearSlot("bg-motion-video"); }
             var saved = Store.set("bgMotionGif", dataUrl) && Store.set("bgMotionType", "gif");
-            $("bg-motion-note").textContent = saved ? "" : "Storage is full - this GIF won't be kept after closing.";
+            $("bg-motion-note").textContent = saved ? "" : "Storage is full. This GIF will not be kept after closing.";
           }).catch(function () { toast("Could not read that file.", true); });
         }
       };
@@ -5317,6 +5353,7 @@
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass
         if (window.MTAnim) { window.MTAnim.reset(); }            // Settings > Tab animation back to Smooth / 100% / Soft
         if (window.MTNav) { window.MTNav.reset(); }              // Settings > Navigation back to Left
+        if (window.MTPro) { window.MTPro.reset(); }              // Settings > Density / Glass blur / Toast / Favorites back to default
         Motion.set(true);
         if ($("anim-enabled")) { $("anim-enabled").checked = true; }
         Store.remove("autoParent"); Store.remove("presetFolder");
@@ -5647,7 +5684,7 @@
         var uncategorized = (presets && presets.uncategorized) || [];
         var total = uncategorized.length + categorized.reduce(function (n, g) { return n + g.files.length; }, 0);
         if (!total) {
-          showMessage("No .ffx files in this folder yet. Copy some in (loose, or inside a subfolder to group them) and hit Refresh, or use Save as Preset.");
+          showMessage("No .ffx files in this folder. Copy some in (or into subfolders to group them), then click Refresh. You can also use Save as Preset.");
           return;
         }
         lastPresets = { categorized: categorized, uncategorized: uncategorized };
@@ -6131,7 +6168,7 @@
       if (this.messageInputEl) {
         this.messageInputEl.addEventListener("input", function () {
           var saved = Store.set(self.messageKey, self.messageInputEl.value.slice(0, 140));
-          if (!saved) { toast("Storage is full - this message won't be kept after closing. Removing a GIF background will free up space.", true); }
+          if (!saved) { toast("Storage is full. This message will not be kept after closing. Remove the GIF background to free space.", true); }
         });
       }
 

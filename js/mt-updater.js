@@ -238,7 +238,7 @@
     var m = e && e.message;
     if (m === "offline") { return "Could not reach the update server. Check your internet connection." + (e.detail ? " (" + e.detail + ")" : ""); }
     if (m === "hash") { return "A downloaded file did not match its checksum, so nothing was installed" + (e.file ? " (" + e.file + ")" : "") + ". The server may still be updating: try again in a few minutes."; }
-    if (m === "http 404") { return "The update file was not found (404). Check that update.json and the files are pushed to the public repository." + (e.url ? " " + e.url : ""); }
+    if (m === "http 404") { return "The update file was not found (404). Push update.json and the update files to the public repository." + (e.url ? " " + e.url : ""); }
     if (m === "badjson") { return "The update information is not valid JSON. Run Make-Update.bat again and push update.json."; }
     if (m === "nofiles") { return "update.json has no file list. Run Make-Update.bat and push update.json."; }
     if (m === "badpath") { return "update.json contains a file path that is not allowed, so the update was refused."; }
@@ -370,7 +370,7 @@
       if (restartNeeded) {
         setBusyUi(false); el.now.hidden = true; el.later.textContent = "OK";
         el.title.textContent = "Updated to v" + info.version;
-        el.sub.textContent = "This update changed the panel manifest: restart After Effects to finish.";
+        el.sub.textContent = "The update changed the panel manifest. Restart After Effects to finish.";
         el.status.textContent = "Updated to v" + info.version + ". Restart After Effects to finish.";
         setBar(1);
       } else {
@@ -425,7 +425,7 @@
   // just-updated confirmation after the reload
   try {
     var done = localStorage.getItem(K_DONE);
-    if (done) { localStorage.removeItem(K_DONE); setTimeout(function () { say("Updated to v" + done + ". Enjoy the new features!"); }, 1600); }
+    if (done) { localStorage.removeItem(K_DONE); setTimeout(function () { say("Updated to v" + done + "."); }, 1600); }
   } catch (e) { }
 
   var forced = false;

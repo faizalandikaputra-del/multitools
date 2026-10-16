@@ -1846,3 +1846,72 @@ fix64 (tooltip: tip sat beside its tile + native browser tooltip leaked through)
   Tested in headless Chromium at UI scale 110% / 120%, rect convention new, old and old-with-wrong-probe (old code was
   13 px off in the last case, new code exact). Not run inside AE.
 
+
+feature (new settings + Favorite pin; Multi Tool and NeuCurve):
+  Multi Tool > Settings
+    Density        Compact / Normal / Roomy. Scales the spacing tokens (--space-*, --gap-fluid-*) and the tile size.
+    Glass blur     0-100% slider (50% = the old look). Overrides --glass-blur-card / --sidebar-glass-blur, Glass style only.
+    Toast          position (6 places) and time on screen (1.5 / 2.4 / 4 / 6 s) + a "Show a test toast" button.
+    Favorites      hover a tool tile and click its star. Pinned tools appear in a bar at the top of every tab except Curve.
+                   Settings has a switch to hide the bar and a "Clear all favorites" button. Pins work on tool tiles (Easy Layer).
+    Settings profile  Data and updates > Export / Import profile. One .json with every mtx.* and neucurve_* setting plus the
+                   saved NeuCurve presets. Images / GIFs (mtx.bgImage, mtx.bgMotionGif, mtx.toolImg.*, anything over 150 KB) are
+                   left out. Import only accepts keys with those prefixes, then reloads the panel.
+  NeuCurve > Settings
+    Graph (new tab)  Grid: show / numbers / columns 2-16 / rows 2-16 / solid-dashed-dotted / opacity / thickness / color.
+                     Curve line: thickness / solid-dashed-dotted / glow.
+    Handles          new "Handle Effects": glow, grow on hover, guide lines (show, style, opacity), value labels.
+    Hotkeys (new tab) 10 actions (Apply, Ease, Ease In, Ease Out, Invert, Preview, Read from AE, Save as preset, Remove expressions,
+                   Speed graph). Click a button, press the keys; Esc cancels, Backspace clears; a key already used moves to
+                   the new action. Hotkeys are ignored while typing in a field. All unassigned by default.
+  How it is built (nothing existing was rewritten):
+    js/mt-pro.js, css/mt-pro.css, css/mt-pro-settings.css            Multi Tool side. The real controls are created inside the hidden
+                                                                      #settings-modal, so js/mt-settings-remote.js mirrors them to html/settings.html.
+    neucurve/nc-pro.js, nc-pro.css, nc-pro-settings.js, nc-pro-settings.css   NeuCurve side. Same neucurve_* keys and the same
+                                                                      com.neucurve.sync event as the other NeuCurve modules.
+    js/main.js       toast() reads MTPro.toastMs(); window.__MT bridge; buildTool() decorates tiles; renderTab() calls MTPro.afterRender();
+                     "Reset everything" calls MTPro.reset().
+    jsx/host.jsx     PROFILE_FILE_export / PROFILE_FILE_import (file dialogs only).
+    neucurve/assets/index.js  three small patches: grid columns / rows / color read window.__ncGD, and window.__ncGRedraw exposes the
+                     existing viewport nudge so a changed grid redraws at once. Defaults give the exact old grid (7 x 6 lines).
+    Cache-busters raised: html/index.html main.js ?v=32, neucurve/index.html assets/index.js ?v=18, neucurve/settings.html nc-settings.js ?v=17.
+  Tested in headless Chromium (not inside After Effects): pins + bar on every tab, density / blur / toast position and time, profile
+  export + import with a faked host (hostile keys and wrong files rejected, images left out), NeuCurve grid 6x5 -> 10x8 with a new
+  color, line / handle CSS, hotkeys fire and stop when switched off, both settings windows. Not verified here: the real File dialogs in
+  AE, and CEP key interception (registerKeyEventsInterest) - if a hotkey does nothing in AE, that is the first place to look.
+
+fix (island favorites + NeuCurve preset cards + resets):
+  1. DYNAMIC ISLAND "Favorites" (4th tool, between Clock and Update). It shows the tools pinned as favorites (same list as the star on a tool tile,
+     key mtx.pro.fav). Drag a tile (Easy Layer Null, Solid, ...) onto the island = add it; the tile STAYS in Easy Layer (copy, not move). Click a
+     tile in the island = run that tool (works while the NeuCurve tab is open). Every tile has a x button (remove), the header has "Clear all".
+     The wheel switches tools as before (the favorites grid scrolls with the wheel only when it is taller than its box).
+     Files: js/mt-island.js v14, css/mt-island.css v12, js/mt-pro.js v2 (favAdd / favRemove / favItems, event mtx-fav-change),
+            js/main.js v33 (runTool() split out of buildTool(), tiles are draggable, window.__MT.runTool / toolImg).
+  2. NEUCURVE SETTINGS > Behavior > "Preset Cards": Card Style Grid / List / Compact (keys neucurve_cardStyle) and Card Corners
+     Square / Soft / Round (neucurve_cardShape), plus Show Preset Names. Files: neucurve/nc-cards.css (new, loaded last), nc-view.js v6,
+     settings.html, nc-pro-settings.js v2 / .css v2.
+  3. NEUCURVE SETTINGS "reset per section": a Reset button on every group (Interface Colors, Graph Background Media, Handle Style,
+     Panel Behavior, Curve Tab View, Preset Cards were new) and "Reset this page" top right (two clicks) which presses every Reset of the
+     open page. The Clear buttons only clear the image; the group Reset also restores size / opacity / position.
+  Tested in headless Chromium (not inside After Effects): drag + drop of the Null tile (fav saved, tile stays), click runs the tool, remove,
+  clear all, empty state; all three card styles and corner shapes on the real NeuCurve page (21 presets); group + page resets.
+  Not verified here: real HTML5 drag from the AE panel into the island (CEP Chromium) - if dragging does nothing, press the star on the tile instead.
+
+BOXES IN THE DYNAMIC ISLAND (fix: boxes-island)
+What: every box (collapsible card) of the Tools tab can be dragged by its header onto the dynamic island. The box MOVES: the live card (all its
+controls still work) sits in the island's Favorites view under the tool tiles; the tab shows a "In the island / Bring back" row in its place.
+The x in the island or "Bring back" returns it. The list is remembered (key mtx.island.boxes) and rebuilt at start. Turning the island off in
+Settings returns the boxes to the tab.
+Cause of the design: tab modules read their inputs with wrap.querySelector(...) on the element they built, so a moved box would break. Every tab
+root gets a querySelector / querySelectorAll shim that also searches moved boxes (js/mt-island-boxes.js).
+Files: NEW js/mt-island-boxes.js, NEW css/mt-island-boxes.css. Changed: js/mt-island.js (v15: boxHost, boxesChanged, focusBoxes, isEnabled, drop type
+"text/mt-box", wheel over the boxes area scrolls it), js/main.js (MTBoxes.afterRender hook in renderTab, __MT.renderDetached), html/index.html (links).
+Other tabs: add the tab id to PIN_TABS in js/mt-island-boxes.js (only for tabs whose render() keeps using the element it returned).
+
+COLOR WHEEL RESET (fix: color-reset-white)
+What: Color Palette tab > Custom Colors: a "Reset" button next to "Save to Custom Swatches". It sets the wheel colour back to neutral white (#FFFFFF),
+same path as typing the hex: the active palette colour (SOL tile dot), the selected Fill effects and the stored colour all follow. Saved custom swatches are not touched.
+Files: js/main.js (ColorWheel.create: .cw-actions row, .cw-reset handler), css/panel-refinements.css (v10), html/index.html (cache version).
+
+
+fixCopy (wording pass): shortened long help texts and messages in html/index.html, html/settings.html, neucurve/settings.html, js/main.js, js/mt-updater.js, js/mt-bg-preview.js, js/mt-idle-focus.js, jsx/host.jsx, neucurve/nc-extras.js, nc-flow.js. Cause: wordy or inconsistent UI copy, some Indonesian error messages in an English UI. Fix: text only, no logic changed. Indonesian errors in host.jsx and neucurve/assets/index.js now English. "Colour" became "Color". Removed "Enjoy the new features!" from the update toast.

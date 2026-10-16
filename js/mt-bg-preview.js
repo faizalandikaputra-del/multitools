@@ -84,7 +84,7 @@
     if (box) { return; }
     box = document.createElement("div"); box.id = "bgp";
     frame = document.createElement("div"); frame.id = "bgp-frame"; box.appendChild(frame);
-    var note = document.createElement("div"); note.id = "bgp-note"; note.textContent = "Preview not available for this background in this session. The sliders still adjust the panel."; box.appendChild(note);
+    var note = document.createElement("div"); note.id = "bgp-note"; note.textContent = "No preview for this background in this session. The sliders still adjust the panel."; box.appendChild(note);
     card = document.createElement("div"); card.id = "bgp-card";
     var h = '<div class="bgp-head"><strong>Adjust Background</strong><span>Drag to move &middot; scroll to zoom</span></div>';
     ROWS.forEach(function (r) {

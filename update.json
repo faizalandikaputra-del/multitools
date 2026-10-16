@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.77",
-    "changelog":  "- Update 1.8.77",
+    "latest_version":  "1.8.78",
+    "changelog":  "- Update 1.8.78",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -208,11 +208,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "0b431e1fd20d3d96c797928b0f825e582385b12c991f9c0666d0f1f42a15a49c"
+                      "sha256":  "5973072e9cb54d832a26468b20c075b30f51e72c7f0e6e8d5a4b223228478112"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "e57381bb63776c3dca8f26830427ae421f175f281a6997ff0cd6c1cb7138ee10"
+                      "sha256":  "d6d33e50ff3ec2f16ecaa1005bf4f1e67f0a1e9d881a490bbffcd4cd7eda042e"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -284,7 +284,7 @@
                   },
                   {
                       "path":  "js/mt-persist.js",
-                      "sha256":  "7a06831247641318399fb6cbfadb7e43bc3ad20bb533e5209e3b0c4a11c51ca5"
+                      "sha256":  "79a6c8809ea9189a42e795a286e8f89e052128c979d98b33d316d4d47f23d158"
                   },
                   {
                       "path":  "js/mt-pro.js",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "af211f4618990c43e8b7df044a338d9554f096945941230ea4b1678dbad2251b"
+                      "sha256":  "67b0bdf52c3682084f4ebfa85ca97b017b4fa0e3db6230c8b44509a9c399eea0"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -656,11 +656,11 @@
                   },
                   {
                       "path":  "neucurve/settings.html",
-                      "sha256":  "a4fedb471d9dc34724a4dc5472c1c3bac950464b2d8c52d92cc088bbfe4f33ee"
+                      "sha256":  "96c123c91ad261bde2c6287985808b24819b898190f8041da9234775135e677b"
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "e25eb0ddffd128a79bcdbae59d347bbb1bfcae842e43d29b1c713587a32ef0f5"
+                      "sha256":  "400c75eb7a13b40cb86cce0582a27c5dfdb01c9962b8f0ec413ed57c1d5f17a1"
                   }
               ]
 }

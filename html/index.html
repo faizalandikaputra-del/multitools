@@ -8,7 +8,7 @@
        Material You sets data-theme to its palette scheme (light or dark; js/mt-material.js). Logic + picker: js/mt-uitheme.js -->
   <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
   <script>/* Node shim */try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }</script>
-  <script src="../js/mt-persist.js?v=1"></script>
+  <script src="../js/mt-persist.js?v=2"></script>
   <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=2">

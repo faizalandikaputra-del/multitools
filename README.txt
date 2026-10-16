@@ -2000,3 +2000,13 @@ fix (lag when opening Multi Tool Settings; NeuCurve settings were fine):
   hidden flags re-read only when the root element changed or every 4 s; no regex on the background string). Cache-bust: mt-settings-window.js ?v=5, mt-settings-remote.js ?v=6.
   Measured in headless Chromium with the CPU slowed 6x: long-task time while opening Settings about 20-30 % lower (still noisy). Theme sync checked both ways.
   Not changed: the time CEP needs to create the separate window itself (requestOpenExtension).
+
+fix (Multi Tool Settings still lagged a few seconds when clicking a menu item; NeuCurve settings were fine):
+  Cause: js/mt-persist.js mirrors the WHOLE localStorage to Documents/MyMultitoolExtension/settings-backup.json (synchronous writeFileSync, debounced 400 ms).
+   The Multi Tool settings window talks to the panel through js/mt-settings-bus.js, which also writes every message (hello every 2 s, alive, state, bgview,
+   bgsrc up to 400 KB) into localStorage keys "mtbus.*". Each of those writes (and each "storage" event from the other window) re-scheduled a full dump, so with a big
+   localStorage (background image, tool images as data URLs) the main thread was blocked for seconds, right when a menu item was clicked.
+   NeuCurve settings does not use the bus, so it never triggered the dump.
+  Fix: js/mt-persist.js v2 ignores keys "mtbus.*" everywhere (restore, dump, setItem/removeItem hook, storage event). Real settings are still backed up as before.
+   Cache-bust: mt-persist.js ?v=2 in html/index.html, html/settings.html, neucurve/index.html, neucurve/settings.html.
+  Checked: script syntax only (node). Not measured inside After Effects.

@@ -19,6 +19,7 @@
   } catch (e) { return; }
 
   var LS; try { LS = w.localStorage; LS.length; } catch (e) { return; }
+  var SKIP = /^mtbus\./;   // settings-window <-> panel message mailbox: temporary, never worth a full backup dump
   var SP = Storage.prototype, rawSet = SP.setItem, rawRemove = SP.removeItem, rawClear = SP.clear;
 
   // ---- restore: file fills every key localStorage lost ----
@@ -27,7 +28,7 @@
       var saved = JSON.parse(fs.readFileSync(file, "utf8"));
       if (saved && typeof saved === "object") {
         Object.keys(saved).forEach(function (k) {
-          if (typeof saved[k] === "string" && LS.getItem(k) === null) { try { rawSet.call(LS, k, saved[k]); } catch (e) { } }
+          if (!SKIP.test(k) && typeof saved[k] === "string" && LS.getItem(k) === null) { try { rawSet.call(LS, k, saved[k]); } catch (e) { } }
         });
       }
     }
@@ -37,7 +38,7 @@
   var timer = null;
   function dump() {
     var o = {}, i, k;
-    try { for (i = 0; i < LS.length; i++) { k = LS.key(i); o[k] = LS.getItem(k); } } catch (e) { }
+    try { for (i = 0; i < LS.length; i++) { k = LS.key(i); if (SKIP.test(k)) { continue; } o[k] = LS.getItem(k); } } catch (e) { }
     return o;
   }
   function flush() {
@@ -56,11 +57,11 @@
   function schedule() { if (timer === null) { timer = setTimeout(flush, 400); } }
   function isLS(o) { try { return o === LS; } catch (e) { return false; } }
 
-  SP.setItem = function (k, v) { var r = rawSet.apply(this, arguments); if (isLS(this)) { schedule(); } return r; };
-  SP.removeItem = function (k) { var r = rawRemove.apply(this, arguments); if (isLS(this)) { schedule(); } return r; };
+  SP.setItem = function (k, v) { var r = rawSet.apply(this, arguments); if (isLS(this) && !SKIP.test(String(k))) { schedule(); } return r; };
+  SP.removeItem = function (k) { var r = rawRemove.apply(this, arguments); if (isLS(this) && !SKIP.test(String(k))) { schedule(); } return r; };
   SP.clear = function () { var r = rawClear.apply(this, arguments); if (isLS(this)) { schedule(); } return r; };
 
   w.addEventListener("beforeunload", function () { if (timer !== null) { clearTimeout(timer); flush(); } });
-  w.addEventListener("storage", schedule);   // changes made by another window of the same origin
+  w.addEventListener("storage", function (e) { if (e.key && SKIP.test(e.key)) { return; } schedule(); });   // changes made by another window of the same origin
   schedule();                                 // first run: create the backup right away
 })();

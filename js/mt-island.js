@@ -1,5 +1,8 @@
-/* Multi Tool - mt-island.js (v15: BOXES)
-   v15: a box (".ta-group" card of the Tools tab, see js/mt-island-boxes.js) can be dragged by its header onto the island. The live box MOVES into the Favorites view
+/* Multi Tool - mt-island.js (v17: CLOCK ONLY ON HOVER)
+   v17: bug - the collapsed capsule showed the clock time ALL the time (class .is-k forced the time wrapper open, css/mt-island.css + collapsedSize()). Now the time of day opens
+   only while the pointer is on the island, like the timer / stopwatch: pointer away = the small dial icon only.
+   v16: the "Favorites" view is now "Pin" and holds boxes only. The favorite feature (star on tool tiles, favorites bar, tile drop) was removed.
+   v15: a box (".ta-group" card of the Tools tab, see js/mt-island-boxes.js) can be dragged by its header onto the island. The live box MOVES into the Pin view
    (under the tool tiles, scrolls inside its own area, x = bring it back). Drop type "text/mt-box" -> MTBoxes.pin(key). Exposed here: MTIsland.boxHost(), boxesChanged(n), isEnabled(), focusBoxes().
 (v14 notes follow)
    v14: FAVORITES   v14: a fourth tool "Favorites" (between Clock and Update). It shows the tools pinned as favorites (the same list as the star on a tool tile, key mtx.pro.fav, js/mt-pro.js).
@@ -31,7 +34,7 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
+  var fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fEmpty, fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
   // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
@@ -74,9 +77,9 @@
       '<span class="mi-swrow"><span class="mi-tico mi-tico-t"></span><span class="mi-tname">Timer</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-s"></span><span class="mi-tname">Stopwatch</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-k"></span><span class="mi-tname">Clock</span><i class="mi-live"></i></span>' +
-      '<span class="mi-swrow"><span class="mi-tico mi-tico-f"></span><span class="mi-tname">Favorites</span><i class="mi-live"></i></span>' +
+      '<span class="mi-swrow"><span class="mi-tico mi-tico-f"></span><span class="mi-tname">Pin</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-u"></span><span class="mi-tname">Update</span><i class="mi-live"></i></span>' +
-      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock, favorites and update");
+      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock, pin and update");
     var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabK = rows[2]; tabF = rows[3]; tabU = rows[4];
     var views = el("div", "mi-views");
 
@@ -146,17 +149,12 @@
     kf.appendChild(k24); kf.appendChild(k12);
     vK.appendChild(kw); vK.appendChild(kf);
 
-    // favorites view: tiles of the pinned tools (click = run it), a x on every tile, "Clear all", and a drop target for tiles dragged from the panel
+    // pin view: boxes dragged from the Tools tab (js/mt-island-boxes.js) - drop target + empty hint
     vF = el("div", "mi-view mi-view-f");
-    fHead = el("div", "mi-fhead"); fCount = el("span", "mi-fcount");
-    fClear = btn("mi-link mi-fclear", "Clear all", "Remove all favorites");
-    fClear.addEventListener("click", function () { var a = favItems(), i; for (i = 0; i < a.length; i++) { window.MTPro.favRemove(a[i].tab, a[i].tool.id); } });
-    fHead.appendChild(fCount); fHead.appendChild(fClear);
-    fGrid = el("div", "mi-fgrid");
-    fEmpty = el("div", "mi-fempty", "<b>Nothing here yet</b><span>Drag a tool tile or a box here, or press the star on a tile.</span>");
+    fEmpty = el("div", "mi-fempty", "<b>Nothing pinned yet</b><span>Drag a box here to pin it.</span>");
     fBoxWrap = el("div", "mi-boxwrap"); fBoxWrap.hidden = true;
-    fBoxes = el("div", "mi-boxes ta"); fBoxWrap.appendChild(el("div", "mi-boxlabel", "Boxes")); fBoxWrap.appendChild(fBoxes);
-    vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
+    fBoxes = el("div", "mi-boxes ta"); fBoxWrap.appendChild(fBoxes);
+    vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
     try { if (window.ResizeObserver) { var rq = 0; boxRO = new ResizeObserver(function () { if (!rq) { rq = requestAnimationFrame(function () { rq = 0; if (open && view === "fav") { applySize(true); } }); } }); boxRO.observe(fBoxes); } } catch (eR) { }
 
     vU = el("div", "mi-view mi-view-u");
@@ -188,7 +186,7 @@
     window.addEventListener("keydown", function (e) {
       if (open && (e.key === "Escape" || e.keyCode === 27)) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(false); }
     }, true);
-    bindDrop(); window.addEventListener("mtx-fav-change", onFavChange);
+    bindDrop();
     try { var s = localStorage.getItem(SEL_KEY); if (s === "sw" || s === "timer" || s === "clock" || s === "fav") { sel = s; } } catch (e0) { }
     view = sel;
   }
@@ -278,8 +276,8 @@
 
   // ---------- geometry ----------
   function collapsedSize() {
-    var hov = cEl.classList.contains("is-hov"), kk = cEl.classList.contains("is-k"), base = cEl.offsetWidth - cTw.offsetWidth;      // everything but the wrapper (its width is animating)
-    var w = base + ((hov || kk) ? cTw.scrollWidth : 0) + 2 * ((hov || kk) ? PAD : PAD_C);   // the clock time is always open
+    var hov = cEl.classList.contains("is-hov"), base = cEl.offsetWidth - cTw.offsetWidth;      // everything but the wrapper (its width is animating)
+    var w = base + (hov ? cTw.scrollWidth : 0) + 2 * (hov ? PAD : PAD_C);   // the time (clock too) opens only while the pointer is on the island
     return { w: Math.max(COL_H, w), h: COL_H };
   }
   function expandedSize() {
@@ -332,31 +330,11 @@
   var holdUntil = 0;                                          // stay on screen until the collapse animation has finished
   function visibleWanted() { return open || Date.now() < holdUntil || !idle() || quiet(); }      // always on screen (also after the timer finished); only the idle screen's own widgets replace it
 
-  // ---------- favorites ----------
-  var X_SVG = '<svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
-  function favItems() { try { return (window.MTPro && window.MTPro.favItems) ? window.MTPro.favItems() : []; } catch (e) { return []; } }
-  function paintFav() {
-    var items = favItems(), key = items.map(function (it) { return it.tab + "|" + it.tool.id; }).join(",");
-    if (key === fKey && fGrid.childNodes.length === items.length) { return; }
-    fKey = key; fGrid.innerHTML = "";
-    items.forEach(function (it) {
-      var t = el("div", "mi-ftile"), b = btn("mi-fbtn", "", it.tool.name), img = window.__MT && window.__MT.toolImg ? window.__MT.toolImg(it.tab, it.tool.id) : null, rm = btn("mi-frm", X_SVG, "Remove " + it.tool.name + " from favorites");
-      b.innerHTML = '<span class="mi-fimg"></span><span class="mi-fcode"></span><span class="mi-fname"></span>';
-      b.querySelector(".mi-fcode").textContent = it.tool.code; b.querySelector(".mi-fname").textContent = it.tool.name;
-      if (img) { b.querySelector(".mi-fimg").style.backgroundImage = 'url("' + img + '")'; b.classList.add("has-img"); }
-      b.title = it.tool.name;
-      b.addEventListener("click", function (e) { e.stopPropagation(); if (window.__MT && window.__MT.runTool) { window.__MT.runTool(b, it.tab, it.tool); } });
-      rm.title = "Remove from favorites";
-      rm.addEventListener("click", function (e) { e.stopPropagation(); if (window.MTPro) { window.MTPro.favRemove(it.tab, it.tool.id); } });
-      t.appendChild(b); t.appendChild(rm); fGrid.appendChild(t);
-    });
-    setTxt(fCount, items.length ? (items.length === 1 ? "1 favorite" : items.length + " favorites") : "Favorites");
-    fHead.hidden = !items.length && boxN > 0; fClear.hidden = !items.length; fEmpty.hidden = !!items.length || boxN > 0; fGrid.hidden = !items.length;
-  }
-  function onFavChange() { if (!root) { return; } fKey = "\u0000"; if (open && view === "fav") { paint(false); } else if (open) { applySize(); } }
+  // ---------- pin ----------
+  function paintFav() { fEmpty.hidden = boxN > 0; }
 
-  // a tool tile dragged from the panel: the capsule opens on Favorites, the drop adds it (the tile stays where it was)
-  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-tool") { return "tool"; } if (t[i] === "text/mt-box") { return "box"; } } return ""; }
+  // a box dragged from the Tools tab: the capsule opens on Pin, the drop moves the box in
+  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-box") { return "box"; } } return ""; }
   function isToolDrag(e) { return !!dragKind(e); }
   function bindDrop() {
     root.addEventListener("dragenter", function (e) {
@@ -373,14 +351,9 @@
       if (dragKind(e) === "box") {
         var bk = ""; try { bk = e.dataTransfer.getData("text/mt-box"); } catch (erb) { }
         document.documentElement.classList.remove("mt-dragging-tool");
-        setTimeout(function () { var ok = window.MTBoxes && window.MTBoxes.pin(bk); if (ok) { try { window.__MT.toast("Moved to the island."); } catch (er3) { } } }, 0);   // after dragend, so the moved header cannot cancel it
+        setTimeout(function () { var ok = window.MTBoxes && window.MTBoxes.pin(bk); if (ok) { try { window.__MT.toast("Pinned."); } catch (er3) { } } }, 0);   // after dragend, so the moved header cannot cancel it
         return;
       }
-      var v = ""; try { v = e.dataTransfer.getData("text/mt-tool"); } catch (er) { }
-      var p = v.split("|"), added = false;
-      if (p.length === 2 && window.MTPro && window.MTPro.favAdd) { added = window.MTPro.favAdd(p[0], p[1]); }
-      try { window.__MT.toast(added ? "Added to island favorites." : "Already in island favorites."); } catch (er2) { }
-      document.documentElement.classList.remove("mt-dragging-tool");
     });
     document.addEventListener("dragend", function () { dropDepth = 0; if (root) { root.classList.remove("is-drop"); } }, true);
   }

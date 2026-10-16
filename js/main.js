@@ -443,7 +443,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.classList.remove("is-show"); }, (window.MTPro && window.MTPro.toastMs ? window.MTPro.toastMs() : 2400));   // Settings > Toast > Time (js/mt-pro.js)
   }
-  // Small bridge for js/mt-pro.js (Favorite pin bar): the tool table, the tile builder and the current tab.
+  // Small bridge for js/mt-pro.js (Settings profile): the tool table, the tile builder and the current tab.
   window.__MT = {
     TABS: TABS, buildTool: buildTool, toast: toast, runTool: runTool,
     toolImg: function (tabId, toolId) { return Store.get(imgKey(tabId, toolId)); },
@@ -509,15 +509,7 @@
     }
 
     btn.addEventListener("click", function () { runTool(btn, tabId, tool); });
-    // Drag a tile onto the dynamic island = add it to the island Favorites (the tile itself never leaves the grid; copy only).
-    btn.draggable = true;
-    btn.addEventListener("dragstart", function (e) {
-      try { e.dataTransfer.setData("text/mt-tool", tabId + "|" + tool.id); e.dataTransfer.setData("text/plain", tool.name); e.dataTransfer.effectAllowed = "copy"; } catch (er) { }
-      document.documentElement.classList.add("mt-dragging-tool");
-    });
-    btn.addEventListener("dragend", function () { document.documentElement.classList.remove("mt-dragging-tool"); });
     btn.addEventListener("contextmenu", function (e) { e.preventDefault(); ContextMenu.open(e.clientX, e.clientY, btn); });
-    if (window.MTPro) { window.MTPro.decorateTool(btn, tabId, tool); }   // Favorite pin star (js/mt-pro.js)
     return btn;
   }
 
@@ -4341,7 +4333,6 @@
     }
     if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
     FormState.restore(tabId, panel);
-    if (window.MTPro) { try { window.MTPro.afterRender(tabId); } catch (e) { } }   // Favorites bar above the tab content (js/mt-pro.js)
     queueScrollRestore(tabId);
 
     // fade in + slide up (panel and header; opacity + transform only)
@@ -5353,7 +5344,7 @@
         if (window.MTUiTheme) { window.MTUiTheme.reset(); }      // Settings > Style back to Glass
         if (window.MTAnim) { window.MTAnim.reset(); }            // Settings > Tab animation back to Smooth / 100% / Soft
         if (window.MTNav) { window.MTNav.reset(); }              // Settings > Navigation back to Left
-        if (window.MTPro) { window.MTPro.reset(); }              // Settings > Density / Glass blur / Toast / Favorites back to default
+        if (window.MTPro) { window.MTPro.reset(); }              // Settings > Density / Glass blur / Toast back to default
         Motion.set(true);
         if ($("anim-enabled")) { $("anim-enabled").checked = true; }
         Store.remove("autoParent"); Store.remove("presetFolder");

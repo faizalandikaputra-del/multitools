@@ -1,7 +1,7 @@
 /* Multi Tool - mt-island-boxes.js (v1: BOXES IN THE ISLAND)
    Every box (".ta-group" card, built by PanelRefinements.groupifyTaSections) of a tab listed in PIN_TABS can be dragged by its header onto the
-   dynamic island. The box MOVES (it is not copied): the live element, with all its handlers, lives in the island's Favorites view, and the tab shows a
-   small "Moved to the island" row with a "Bring back" button in its place. The island x button, "Bring back", turning the island off in Settings
+   dynamic island. The box MOVES (it is not copied): the live element, with all its handlers, lives in the island's Pin view, and the tab shows a
+   small "Pinned" row with a "Bring back" button in its place. The island x button, "Bring back", turning the island off in Settings
    (boxes return to the tab) and closing the panel (the list is remembered, key mtx.island.boxes) all keep the box usable.
    Why a shim: the tab modules read their inputs with wrap.querySelector("#id") on the element they built. Once a box has left that element the
    lookup would fail, so every tab root gets a querySelector / querySelectorAll that also searches the boxes that were moved away.
@@ -67,7 +67,7 @@
     var p = el("div", "mi-moved"), b = el("button", "mi-moved-back", "Bring back");
     p.setAttribute("data-box-moved", key);
     p.appendChild(el("span", "mi-moved-label", esc(labelOf(key))));
-    p.appendChild(el("span", "mi-moved-note", "In the island"));
+    p.appendChild(el("span", "mi-moved-note", "Pinned"));
     b.type = "button"; b.setAttribute("aria-label", "Bring " + labelOf(key) + " back to the tab");
     b.addEventListener("click", function () { unpin(key); });
     p.appendChild(b);

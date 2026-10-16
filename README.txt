@@ -1946,3 +1946,30 @@ Fix: nc-pro.js (v3) onSync() writes {key, val} into this window's localStorage (
 nc-pro.js?v=3.
 Tested in headless Chromium with a stub CSInterface: events from "another window" now apply handle glow, line glow, guide lines, grid and hover
 in index.html and in index.html?ext=graph. Before the fix none of them did. Not verified inside After Effects.
+
+
+NEUCURVE HOTKEYS DID NOTHING IN AFTER EFFECTS (fix: nc-hotkey-focus)
+What: shortcuts set in NeuCurve Settings > Hotkeys did not press the buttons in the panel.
+Cause (likely): the Curve tab is an iframe inside the Multi Tool panel. After a click on the tab bar or another part of the panel the keyboard focus
+sits in the parent document, so the iframe never received the key. The list of keys given to After Effects (registerKeyEventsInterest) was only sent
+once, so it could also get lost when the panel was hidden or re-docked.
+Fix: nc-pro.js (v4): while the Curve tab is visible it also listens for keydown on the parent document; a click inside the tab focuses it; the key
+list is sent again on focus, mouseenter, visibilitychange and every 5 s. Console helper: NCPro.debug() shows the stored hotkeys, what AE was told,
+and whether the CEP bridge exists. neucurve/index.html: nc-pro.js?v=4.
+Tested in headless Chromium: key pressed with focus in the parent panel clicks APPLY in the Curve iframe. Not verified inside After Effects.
+Note: if After Effects itself uses the same key combination it keeps it; pick a free combination (for example Ctrl+Shift+letter).
+
+fix (Favorites removed, island view "Pin"):
+  1. Favorite feature removed from Multi Tool: no star on tool tiles, no favorites bar above the tabs, no Settings > Favorites group, tool tiles can no longer be
+     dragged onto the island. Files: js/mt-pro.js (favorite code deleted, window.MTPro now only exposes toastMs + reset; reset() still wipes the old keys
+     mtx.pro.favBar / mtx.pro.fav), css/mt-pro.css, html/settings.html, js/main.js (tile dragstart, decorateTool, afterRender calls removed).
+     NOT touched: the long-press favorites of Animation Presets and of the Expression snippets (separate feature, presetFavStore / it.favorite).
+  2. Dynamic island: the 4th view (key "fav" kept internally so the saved selection still works) is now called "Pin" and shows only the boxes dragged from
+     the Tools tab. Empty text "Drag a box here to pin it.", toast "Pinned.", the placeholder left in the tab says "Pinned" + "Bring back". The yellow star
+     icon in the switcher is now a pin shape. Files: js/mt-island.js v16, js/mt-island-boxes.js, css/mt-island.css, css/mt-island-boxes.css.
+
+fix (island clock always visible):
+  Bug: the collapsed dynamic island kept showing the time of day even when the pointer was away from it.
+  Cause: class .is-k (clock) forced the time wrapper (.mi-tw) open in css/mt-island.css and collapsedSize() in js/mt-island.js widened the capsule for it.
+  Fix: both removed. The time (clock, timer, stopwatch) now opens only while the pointer is on the island; pointer away = small icon only (the dial hands still move).
+  Files: js/mt-island.js v17, css/mt-island.css. Syntax-checked only; not tested inside After Effects.

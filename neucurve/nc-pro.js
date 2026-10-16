@@ -129,10 +129,23 @@
     }
   }
   window.addEventListener("keydown", onKey, true);
+  /* The Curve tab is an iframe inside the Multi Tool panel. After a click on the tab bar / another part of the panel the keyboard focus sits
+     in the PARENT document and the iframe never sees the key. While this tab is visible, listen on the parent document too (same origin). */
+  function hookParent() {
+    try {
+      var fe = window.frameElement, pd = window.parent && window.parent !== window ? window.parent.document : null;
+      if (!fe || !pd || window.__ncPKey) { return; }
+      window.__ncPKey = function (e) { if (fe.offsetWidth > 0 && fe.offsetHeight > 0) { onKey(e); } };
+      pd.addEventListener("keydown", window.__ncPKey, true);
+    } catch (e) { }
+  }
+  hookParent();
+  /* keep the Curve tab's own focus too: a click anywhere in it puts the keyboard here */
+  window.addEventListener("mousedown", function () { try { window.focus(); } catch (e) { } }, true);
 
   /* After Effects keeps most key presses for itself. Telling CEP which keys the panel wants makes them arrive here. */
   var lastInterest = "";
-  function registerKeys() {
+  function registerKeys(force) {
     try {
       if (!window.CSInterface || !window.__adobe_cep__) { return; }
       var map = hkMap(), list = [], a, h;
@@ -144,7 +157,7 @@
         }
       }
       var json = JSON.stringify(list);
-      if (json === lastInterest) { return; }
+      if (json === lastInterest && !force) { return; }
       lastInterest = json;
       if (list.length) { new window.CSInterface().registerKeyEventsInterest(json); }
     } catch (e) { }
@@ -166,5 +179,13 @@
   hookCep();
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { hookCep(); soon(); }); } else { soon(); }
   apply();
-  window.NCPro = { apply: apply, press: press };
+  /* re-send the key list when the tab / panel gets attention again, and now and then */
+  function again() { registerKeys(true); }
+  window.addEventListener("focus", again);
+  window.addEventListener("mouseenter", again, true);
+  document.addEventListener("visibilitychange", again);
+  setInterval(function () { if (!(window.__ncAway && window.__ncAway())) { again(); } }, 5000);
+  /* console helper: NCPro.debug() -> what is stored, what AE was told */
+  function debug() { return { on: rd("hotkeysOn"), map: hkMap(), interest: lastInterest, cep: !!window.__adobe_cep__, framed: window.parent !== window }; }
+  window.NCPro = { apply: apply, press: press, debug: debug };
 })();

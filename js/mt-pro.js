@@ -1,19 +1,17 @@
 /* Multi Tool - mt-pro.js  (PANEL side)
-   Five additions, all controlled from the Settings window (the real controls live in a hidden block inside #settings-modal,
+   Four additions, all controlled from the Settings window (the real controls live in a hidden block inside #settings-modal,
    created below, so js/mt-settings-remote.js mirrors them to html/settings.html exactly like every other control):
      1. Density        compact / normal / roomy spacing  (html[data-mtp-density], tokens in css/mt-pro.css)
      2. Glass blur     slider that scales the Glass blur (a <style> that overrides --glass-blur-card / --sidebar-glass-blur)
      3. Toast          position + how long it stays (main.js toast() asks MTPro.toastMs())
      4. Settings profile  export / import every Multi Tool + NeuCurve setting as one .json file (host.jsx PROFILE_FILE_*)
-     5. Favorite pin   star on a tool tile pins it; pinned tools show in a bar at the top of every tab
    Storage keys: mtx.pro.*  (plain localStorage, mirrored to disk by js/mt-persist.js). ES5, Chromium-74 safe. */
 (function () {
   "use strict";
   var root = document.documentElement;
-  var K = { density: "mtx.pro.density", blur: "mtx.pro.blur", tpos: "mtx.pro.toastPos", tdur: "mtx.pro.toastMs", favBar: "mtx.pro.favBar", fav: "mtx.pro.fav" };
-  var D = { density: "normal", blur: "50", tpos: "bottom", tdur: "2400", favBar: "1" };
+  var K = { density: "mtx.pro.density", blur: "mtx.pro.blur", tpos: "mtx.pro.toastPos", tdur: "mtx.pro.toastMs" };
+  var D = { density: "normal", blur: "50", tpos: "bottom", tdur: "2400" };
   var TOAST_POS = { "bottom": 1, "top": 1, "bottom-right": 1, "top-right": 1, "bottom-left": 1, "top-left": 1 };
-  var STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83L6.62 19.85l1.03-6L3.3 9.6l6-.9z"/></svg>';
 
   function $(id) { return document.getElementById(id); }
   function get(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
@@ -44,73 +42,6 @@
   function toastPos() { var v = get(K.tpos, D.tpos); return TOAST_POS[v] ? v : D.tpos; }
   function toastMs() { return Math.round(clamp(get(K.tdur, D.tdur), 800, 15000, 2400)); }
   function applyToastPos(v) { if (v === "bottom") { root.removeAttribute("data-mtp-toast-pos"); } else { root.setAttribute("data-mtp-toast-pos", v); } }
-
-  /* ---------------- 5. favorites ---------------- */
-  function favList() {
-    var a; try { a = JSON.parse(get(K.fav, "[]")); } catch (e) { a = []; }
-    if (Object.prototype.toString.call(a) !== "[object Array]") { return []; }
-    return a.filter(function (x) { return typeof x === "string" && x.indexOf("|") > 0; });
-  }
-  function saveFav(a) {
-    if (a.length) { set(K.fav, JSON.stringify(a)); } else { del(K.fav); }
-    try { window.dispatchEvent(new Event("mtx-fav-change")); } catch (e) { }          // the dynamic island Favorites view listens
-  }
-  function keyFor(tabId, toolId) { return tabId + "|" + toolId; }
-  function findTool(tabId, toolId) {
-    var T = window.__MT && window.__MT.TABS, tab = T && T[tabId], i;
-    if (!tab || !tab.tools) { return null; }
-    for (i = 0; i < tab.tools.length; i++) { if (tab.tools[i].id === toolId) { return tab.tools[i]; } }
-    return null;
-  }
-  function barOn() { return get(K.favBar, D.favBar) !== "0"; }
-
-  function refreshPins() {
-    var list = favList(), tiles = document.querySelectorAll(".tool[data-tab][data-tool]"), i, t, on, pin;
-    for (i = 0; i < tiles.length; i++) {
-      t = tiles[i]; on = list.indexOf(keyFor(t.getAttribute("data-tab"), t.getAttribute("data-tool"))) >= 0;
-      t.classList.toggle("is-pinned", on);
-      pin = t.querySelector(".mtp-pin");
-      if (pin) { pin.title = on ? "Remove from favorites" : "Pin to favorites"; pin.setAttribute("aria-label", pin.title); pin.setAttribute("aria-pressed", on ? "true" : "false"); }
-    }
-  }
-  function rebuildBar() {
-    var cur = window.__MT && window.__MT.current ? window.__MT.current() : "";
-    var old = $("mtp-fav"); if (old && old.parentNode) { old.parentNode.removeChild(old); }
-    if (!cur) { return; }
-    var panel = window.__MT.panel && window.__MT.panel(); if (!panel) { return; }
-    var T = window.__MT.TABS; if (T[cur] && T[cur].custom === "curve") { return; }
-    if (!barOn()) { return; }
-    var list = favList(), bar = document.createElement("div"), row = document.createElement("div"), lab = document.createElement("span");
-    bar.id = "mtp-fav"; bar.className = "mtp-fav"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "Favorite tools");
-    lab.className = "mtp-fav-label"; lab.textContent = "Favorites"; row.className = "mtp-fav-row";
-    list.forEach(function (k) {
-      var p = k.split("|"), t = findTool(p[0], p[1]), b;
-      if (!t) { return; }
-      b = window.__MT.buildTool(p[0], t); b.classList.add("mtp-fav-tool"); row.appendChild(b);
-    });
-    if (!row.childNodes.length) { return; }
-    bar.appendChild(lab); bar.appendChild(row);
-    panel.insertBefore(bar, panel.firstChild);
-    refreshPins();
-  }
-  function togglePin(tabId, toolId) {
-    var list = favList(), k = keyFor(tabId, toolId), i = list.indexOf(k);
-    if (i >= 0) { list.splice(i, 1); } else { list.push(k); }
-    saveFav(list); rebuildBar(); refreshPins();
-  }
-  function decorateTool(btn, tabId, tool) {
-    if (!btn || btn.querySelector(".mtp-pin")) { return; }
-    var pin = document.createElement("span");
-    pin.className = "mtp-pin"; pin.setAttribute("role", "button"); pin.setAttribute("aria-pressed", "false"); pin.innerHTML = STAR;
-    pin.addEventListener("click", function (e) { e.stopPropagation(); e.preventDefault(); togglePin(tabId, tool.id); });
-    pin.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-    pin.addEventListener("contextmenu", function (e) { e.stopPropagation(); e.preventDefault(); });
-    btn.appendChild(pin);
-    var on = favList().indexOf(keyFor(tabId, tool.id)) >= 0;
-    btn.classList.toggle("is-pinned", on);
-    pin.title = on ? "Remove from favorites" : "Pin to favorites"; pin.setAttribute("aria-label", pin.title); pin.setAttribute("aria-pressed", on ? "true" : "false");
-  }
-  function afterRender() { rebuildBar(); }
 
   /* ---------------- 4. settings profile ---------------- */
   var KEEP = /^(mtx\.|neucurve_|curveEditorPresets$)/;
@@ -192,8 +123,6 @@
         '<option value="1500">Short (1.5 s)</option><option value="2400">Normal (2.4 s)</option>' +
         '<option value="4000">Long (4 s)</option><option value="6000">Very long (6 s)</option></select>' +
       '<button type="button" id="mtp-toast-test">Show a test toast</button>' +
-      '<input type="checkbox" id="mtp-fav-bar" checked>' +
-      '<button type="button" id="mtp-fav-clear">Clear favorites</button>' +
       '<button type="button" id="mtp-profile-export">Export profile</button>' +
       '<button type="button" id="mtp-profile-import">Import profile</button>' +
       '<p id="mtp-profile-note"></p>';
@@ -208,7 +137,6 @@
       var ms = String(toastMs()); el.value = ms;
       if (el.value !== ms) { el.value = "2400"; }
     }
-    if ((el = $("mtp-fav-bar"))) { el.checked = barOn(); }
   }
   function bind() {
     function on(id, ev, fn) { var el = $(id); if (el) { el.addEventListener(ev, fn); } }
@@ -224,16 +152,14 @@
     on("mtp-toast-pos", "change", function (e) { var v = TOAST_POS[e.target.value] ? e.target.value : "bottom"; if (v === "bottom") { del(K.tpos); } else { set(K.tpos, v); } applyToastPos(v); toast("Toasts will appear here."); });
     on("mtp-toast-dur", "change", function (e) { var v = String(Math.round(clamp(e.target.value, 800, 15000, 2400))); if (v === "2400") { del(K.tdur); } else { set(K.tdur, v); } toast("Toasts stay this long."); });
     on("mtp-toast-test", "click", function () { toast("This is how a toast looks."); });
-    on("mtp-fav-bar", "change", function (e) { if (e.target.checked) { del(K.favBar); } else { set(K.favBar, "0"); } rebuildBar(); });
-    on("mtp-fav-clear", "click", function () { saveFav([]); rebuildBar(); refreshPins(); toast("Favorites cleared."); });
     on("mtp-profile-export", "click", function (e) { exportProfile(e.currentTarget); });
     on("mtp-profile-import", "click", function (e) { importProfile(e.currentTarget); });
   }
 
   function reset() {
-    [K.density, K.blur, K.tpos, K.tdur, K.favBar, K.fav].forEach(del);
+    [K.density, K.blur, K.tpos, K.tdur, "mtx.pro.favBar", "mtx.pro.fav"].forEach(del);   // the two old favorite keys are still wiped
     applyDensity("normal"); applyBlur(50); applyToastPos("bottom");
-    syncControls(); rebuildBar(); refreshPins();
+    syncControls();
   }
 
   /* first paint: apply stored values right away (this script loads before main.js) */
@@ -241,20 +167,5 @@
   function init() { buildControls(); syncControls(); bind(); }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 
-  function favAdd(tabId, toolId) {            // true = added, false = already there / unknown tool
-    var list = favList(), k = keyFor(tabId, toolId);
-    if (list.indexOf(k) >= 0 || !findTool(tabId, toolId)) { return false; }
-    list.push(k); saveFav(list); rebuildBar(); refreshPins(); return true;
-  }
-  function favRemove(tabId, toolId) {
-    var list = favList(), k = keyFor(tabId, toolId), i = list.indexOf(k);
-    if (i < 0) { return false; }
-    list.splice(i, 1); saveFav(list); rebuildBar(); refreshPins(); return true;
-  }
-  function favItems() {                         // [{ tab, tool }] of the tools that still exist
-    var out = [];
-    favList().forEach(function (k) { var p = k.split("|"), t = findTool(p[0], p[1]); if (t) { out.push({ tab: p[0], tool: t }); } });
-    return out;
-  }
-  window.MTPro = { favAdd: favAdd, favRemove: favRemove, favItems: favItems, decorateTool: decorateTool, afterRender: afterRender, toastMs: toastMs, reset: reset, togglePin: togglePin };
+  window.MTPro = { toastMs: toastMs, reset: reset };
 })();

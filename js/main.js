@@ -2878,6 +2878,12 @@
       wrap.innerHTML =
         '<div class="ta-section">' +
           '<h2 class="ta-title">Animation Properties</h2>' +
+          '<div class="preset-bar">' +
+            '<button class="btn" type="button" id="tf-preset-save">Save</button>' +
+            '<select class="select" id="tf-preset-select"><option value="">Select Preset…</option></select>' +
+            '<button class="icon-btn" type="button" id="tf-preset-delete" title="Delete preset" aria-label="Delete preset">' + ICON_DELETE_SVG + '</button>' +
+            '<button class="icon-btn" type="button" id="tf-preset-refresh" title="Refresh preset list" aria-label="Refresh preset list">' + ICON_REFRESH_SVG + '</button>' +
+          '</div>' +
           '<button class="btn tf-import" type="button" id="tf-import" title="Read the TextFlex settings from the selected text layer">' + ICON_IMPORT_SVG + '<span>Import from layer</span></button>' +
           '<div class="field field-column">' +
             '<span class="field-label">Based on</span>' +
@@ -2920,13 +2926,6 @@
               '<label class="chip"><input type="radio" name="tf-style" value="overshoot" checked><span>Overshoot</span></label>' +
               '<label class="chip"><input type="radio" name="tf-style" value="ease"><span>Ease</span></label>' +
             '</div>' +
-          '</div>' +
-
-          '<div class="preset-bar">' +
-            '<button class="btn" type="button" id="tf-preset-save">Save</button>' +
-            '<select class="select" id="tf-preset-select"><option value="">Select Preset…</option></select>' +
-            '<button class="icon-btn" type="button" id="tf-preset-delete" title="Delete preset" aria-label="Delete preset">' + ICON_DELETE_SVG + '</button>' +
-            '<button class="icon-btn" type="button" id="tf-preset-refresh" title="Refresh preset list" aria-label="Refresh preset list">' + ICON_REFRESH_SVG + '</button>' +
           '</div>' +
 
           '<div class="prop-list">' +

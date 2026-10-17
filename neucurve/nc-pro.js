@@ -124,6 +124,15 @@
     b.click();
     return true;
   }
+  /* Triggered while another Multi Tool tab is showing: the button flash is invisible there, so say it with the panel toast. */
+  var HK_LABEL = { apply: "Apply", ease: "Ease", easeIn: "Ease In", easeOut: "Ease Out", invert: "Invert", preview: "Preview", readAE: "Read from AE", savePreset: "Save preset", removeExpr: "Remove expressions", speedGraph: "Speed graph", presetNext: "Next preset", presetPrev: "Previous preset", toggleFav: "Toggle favorite" };
+  function notifyOutside(a, ok) {
+    try {
+      var fe = window.frameElement, pane = fe && fe.closest ? fe.closest(".curve-pane") : null, mt = window.parent && window.parent.__MT;
+      if (!pane || !mt || !mt.toast || pane.classList.contains("is-active")) { return; }
+      mt.toast("NeuCurve: " + (HK_LABEL[a] || a) + (ok ? "" : " (not available right now)"), !ok);
+    } catch (e) { }
+  }
   function onKey(e) {
     if (rd("hotkeysOn") === "0" || e.repeat || e.isComposing) { return; }
     var t = e.target, tag = t && t.tagName;
@@ -133,7 +142,8 @@
     for (a in map) {
       if (map.hasOwnProperty(a) && TARGET[a] && map[a] && map[a].c === combo) {
         e.preventDefault(); e.stopPropagation();
-        press(a);
+        var ok = press(a);
+        notifyOutside(a, ok);
         return;
       }
     }

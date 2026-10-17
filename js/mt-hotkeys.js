@@ -5,7 +5,7 @@
      2. Command Palette: a search box over that list. Default key Ctrl+K (change it in Settings > Keyboard shortcuts).
      3. Keyboard shortcuts: any command can get a key. Stored in localStorage "mt.hotkeys" = {on, palette, map:{commandId:{c:"Ctrl+Shift+1", k:49}}}.
      4. Talks to the Settings window over js/mt-settings-bus.js:  hkreq (window asks)  ->  hkstate (panel answers)  /  hkset (window saves).
-   Keys only reach the panel while it has keyboard focus. registerKeyEventsInterest tells After Effects to hand those keys to the panel
+   Keys only reach the panel while it has keyboard focus (any tab; also while focus is inside the Curve iframe). registerKeyEventsInterest tells After Effects to hand those keys to the panel
    instead of using them itself (same method as NeuCurve's hotkeys in neucurve/nc-pro.js).
    Load AFTER js/main.js and js/mt-settings-bus.js. Plain ES5, Chromium-74 safe. */
 (function () {
@@ -171,7 +171,7 @@
       return;                                                   // the palette's own input handles the other keys
     }
     if (typing) { return; }
-    if (core.currentTab() === "curve" && neucurveCombos().indexOf(combo) >= 0) { return; }
+    if (neucurveCombos().indexOf(combo) >= 0) { return; }       // NeuCurve owns its own combos on EVERY tab (its frame is preloaded, see Curve.warm in main.js)
     if (state.palette && state.palette.c === combo) { e.preventDefault(); e.stopPropagation(); openPalette(); return; }
     var id = lookup[combo];
     if (!id) { return; }
@@ -179,6 +179,22 @@
     runCommand(findCommand(id));
   }
   document.addEventListener("keydown", onKey, true);
+
+  // Focus inside the Curve iframe: keys never reach this document, so listen in the frame too (same origin). Re-hooked after every frame (re)load.
+  var hookedWin = null;
+  function hookFrame() {
+    try {
+      var fr = document.getElementById("curve-frame"), w = fr && fr.contentWindow;
+      if (!w || w === hookedWin || !w.document || w.location.href === "about:blank") { return; }
+      w.addEventListener("keydown", onKey, true);
+      hookedWin = w;
+    } catch (e) { }
+  }
+  (function () {
+    var fr = document.getElementById("curve-frame");
+    if (fr) { fr.addEventListener("load", function () { hookedWin = null; hookFrame(); }); }
+    setInterval(hookFrame, 2000);
+  })();
 
   // After Effects keeps most key presses for itself. This tells CEP which keys the panel wants.
   var lastInterest = "";

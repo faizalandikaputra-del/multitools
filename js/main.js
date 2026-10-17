@@ -4267,15 +4267,29 @@
       } catch (e3) { /* not running inside CEP */ }
     },
 
+    // Loads the NeuCurve frame once (used by show() and by warm()). The pane keeps its full size while hidden, so loading it early is safe.
+    start: function () {
+      var self = this;
+      if (this.started) { return; }
+      this.started = true;
+      this.pane.classList.add("is-loading");
+      /* v28: keep the spinner until the frame says its modes are warmed up ({mtCurveReady}, see neucurve/nc-warm.js); 4 s safety net */
+      this.frame.addEventListener("load", function () { self.sync(true); setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000); });
+      this.frame.src = this.frame.getAttribute("data-src");
+    },
+
+    // Background preload at startup: NeuCurve's keyboard shortcuts live inside the frame, so the frame must exist even before the Curve tab is opened.
+    warm: function () {
+      var self = this;
+      function go() { try { self.start(); } catch (e) { } }
+      setTimeout(function () {
+        if (window.requestIdleCallback) { window.requestIdleCallback(go, { timeout: 2500 }); } else { go(); }
+      }, 1200);
+    },
+
     show: function () {
       var self = this, main = $("main");
-      if (!this.started) {
-        this.started = true;
-        this.pane.classList.add("is-loading");
-        /* v28: keep the spinner until the frame says its modes are warmed up ({mtCurveReady}, see neucurve/nc-warm.js); 4 s safety net */
-        this.frame.addEventListener("load", function () { self.sync(true); setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000); });
-        this.frame.src = this.frame.getAttribute("data-src");
-      }
+      this.start();
       main.classList.add("is-curve");
       document.documentElement.classList.add("mt-curve-open");
       /* v27: a playing background video repaints under the NeuCurve iframe every frame - pause it while the Curve tab is open */
@@ -6914,6 +6928,7 @@
     syncTheme();
     if (cs) { try { cs.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, syncTheme); } catch (e) {} }
     initTabs();
+    Curve.warm();
     initResponsiveLayout();
     ContextMenu.init();
     Settings.init();

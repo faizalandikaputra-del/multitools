@@ -2826,10 +2826,14 @@
   // Expression Selector Amount expression does the stagger + bounce/ease (textIndex/textTotal only
   // exist there), and the checked animator properties get the static values typed in this tab.
   // ---------------------------------------------------------
+  var ICON_IMPORT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11M8 10.5l4 4 4-4M4.5 16.5v2.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5"/></svg>';
   var ICON_REFRESH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.66-5.66M20 12a8 8 0 0 1-13.66 5.66M4 4v5h5M20 20v-5h-5"/></svg>';
 
   var TextFlex = {
     PRESET_KEY: "textflexPresets",
+    last: null,         // last collected settings of this tab (kept across tab switches, see render())
+    lastPreset: "",     // preset dropdown selection at that time
+    snapshot: null,     // set by render(): re-reads the live fields into `last`
 
     readPresets: function () {
       try { return JSON.parse(Store.get(this.PRESET_KEY) || "{}") || {}; } catch (e) { return {}; }
@@ -2874,6 +2878,7 @@
       wrap.innerHTML =
         '<div class="ta-section">' +
           '<h2 class="ta-title">Animation Properties</h2>' +
+          '<button class="btn tf-import" type="button" id="tf-import" title="Read the TextFlex settings from the selected text layer">' + ICON_IMPORT_SVG + '<span>Import from layer</span></button>' +
           '<div class="field field-column">' +
             '<span class="field-label">Based on</span>' +
             '<select class="select" id="tf-based-on">' +
@@ -2945,6 +2950,10 @@
         var el = wrap.querySelector("#" + id);
         self.linkSlider(wrap, id, parseFloat(el.min), parseFloat(el.max));
       });
+
+      // TextFlex keeps its own copy of every value (see "keep every value" below), so the generic FormState
+      // restore must not touch these fields: it only knew about trusted input events and could overwrite newer values.
+      Array.prototype.forEach.call(wrap.querySelectorAll("input, select, textarea"), function (el) { el.setAttribute("data-no-restore", ""); });
 
       // ---- collect every field into the config object the JSX side expects ----
       function collect() {
@@ -3069,6 +3078,77 @@
           toast(res.message || (res.ok ? "Done." : "Something went wrong."), !res.ok);
         });
       });
+
+      // ---- Import from layer: read the TextFlex animator of the selected text layer back into the fields ----
+      // Only the values the layer actually provides are changed; everything else keeps its current value.
+      function fire(el, type) { try { el.dispatchEvent(new Event(type, { bubbles: true })); } catch (eFire) { } }
+      function merge(cfg) {
+        if (!cfg) { return; }
+        function setSelect(id, v) {
+          var el = wrap.querySelector(id), o;
+          if (!el || !v) { return; }
+          for (o = 0; o < el.options.length; o++) {
+            if (el.options[o].value === v) { el.value = v; fire(el, "change"); return; }
+          }
+        }
+        function setRadio(name, v) {
+          var el = v ? wrap.querySelector('input[name="' + name + '"][value="' + v + '"]') : null;
+          if (el) { el.checked = true; }
+        }
+        setSelect("#tf-based-on", cfg.basedOn);
+        setSelect("#tf-direction", cfg.direction);
+        [["tf-frequency", cfg.frequency], ["tf-decay", cfg.decay], ["tf-duration", cfg.duration], ["tf-delay", cfg.delay]].forEach(function (t) {
+          if (typeof t[1] === "number" && isFinite(t[1])) {
+            wrap.querySelector("#" + t[0] + "-num").value = t[1];
+            wrap.querySelector("#" + t[0]).value = t[1];
+          }
+        });
+        setRadio("tf-mode", cfg.mode);
+        setRadio("tf-style", cfg.style);
+        if (typeof cfg.markers === "boolean") { wrap.querySelector("#tf-markers").checked = cfg.markers; }
+        if (typeof cfg.threeD === "boolean") { wrap.querySelector("#tf-3d").checked = cfg.threeD; }
+        var p = cfg.props || {};
+        Object.keys(p).forEach(function (key) {
+          var row = wrap.querySelector('.prop-row[data-prop="' + key + '"]');
+          if (!row || !p[key]) { return; }
+          row.querySelector(".prop-on").checked = !!p[key].on;
+          Array.prototype.forEach.call(row.querySelectorAll("[data-axis]"), function (inp) {
+            var v = p[key].v && p[key].v[inp.getAttribute("data-axis")];
+            if (typeof v === "number" && isFinite(v)) { inp.value = v; }
+          });
+        });
+        snapshot();
+      }
+
+      var importBtn = wrap.querySelector("#tf-import");
+      importBtn.addEventListener("click", function () {
+        if (importBtn.classList.contains("is-pending")) { return; }
+        importBtn.classList.add("is-pending");
+        Bridge.call("TF_readFromLayer", []).then(function (res) {
+          var ok = !!(res && res.ok && res.data && res.data.cfg);
+          if (ok) { merge(res.data.cfg); }
+          flashButtonResult(importBtn, ok);
+          toast(ok ? 'Imported from "' + res.data.layer + '".' : ((res && res.message) || "Something went wrong."), !ok);
+        });
+      });
+
+      // ---- keep every value across tab switches ----
+      // renderTab() rebuilds this tab from scratch. The generic FormState only remembers fields changed by a TRUSTED
+      // input event, but the custom dropdowns, number spinners and drag-scrub set their values from script, and presets
+      // and Import fill the fields from code - so all of those were lost on the next tab switch. TextFlex therefore keeps
+      // its own copy (self.last): refreshed after every input / change / pointer / key event in this tab, once more right
+      // before the tab is torn down (renderTab -> TextFlex.snapshot), and re-applied below each time the tab is built.
+      function snapshot() {
+        try { self.last = collect(); self.lastPreset = presetSelect.value; } catch (eSnap) { }
+      }
+      self.snapshot = snapshot;
+      ["input", "change", "pointerup", "keyup"].forEach(function (type) {
+        wrap.addEventListener(type, function () { setTimeout(snapshot, 0); }, true);
+      });
+      if (self.last) {
+        apply(self.last);
+        if (self.lastPreset) { presetSelect.value = self.lastPreset; }
+      }
 
       return wrap;
     }
@@ -4272,6 +4352,7 @@
       tabScroll[currentTab] = $("main").scrollTop;
     }
     // Remember what the user typed in the outgoing tab before its panel is torn down (see FormState).
+    if (currentTab === "textflex" && TextFlex.snapshot) { try { TextFlex.snapshot(); } catch (eTf) { } }   // TextFlex keeps its own copy of its values
     if (currentTab && TABS[currentTab] && TABS[currentTab].custom !== "curve") { FormState.save(currentTab, panel); }
     FormState.watch(panel);
     scrollPending = null;

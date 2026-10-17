@@ -1995,3 +1995,7 @@ body.is-scale-edit .modal-backdrop.is-open {
 /* Scale UI: the floating value bubble (panel-refinements.js) is anchored to the slider inside the faded-out
    Settings window, so it would float over the real UI while the slider is held - hide it in that mode. */
 body.is-scale-edit .range-value-bubble { display: none !important; }
+
+/* TextFlex: "Import from layer" sits right under the Animation Properties title, full width like the Animate button's neighbours. */
+.tf-import { display: flex; align-items: center; justify-content: center; gap: 0.45rem; width: 100%; padding: 0.5rem 0.75rem; font-size: 0.72rem; }
+.tf-import svg { width: 0.9rem; height: 0.9rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--accent); }

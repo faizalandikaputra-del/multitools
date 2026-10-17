@@ -13,7 +13,7 @@
   var uid = Math.random().toString(36).slice(2, 8), seq = 0;
   var handlers = {}, last = {}, started = 0, pollTimer = 0, lastRaw = {};   // lastRaw: mailbox text seen at the last read, so the 250 ms poll parses only when it changed
   var BASELINE = { act: 1, hello: 1, bgreq: 1 };          // never replay old requests left over from an earlier session
-  var KEEP_ONE = { state: 1, bgsrc: 1, bgview: 1 };       // big / "latest wins" messages
+  var KEEP_ONE = { state: 1, bgsrc: 1, bgview: 1, hkstate: 1, hkset: 1 };       // big / "latest wins" messages
   if (cep) {
     try { host = JSON.parse(cep.getHostEnvironment()).appName; } catch (e1) { }
     try { extId = cep.getExtensionId(); } catch (e2) { }

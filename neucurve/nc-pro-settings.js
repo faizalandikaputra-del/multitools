@@ -40,7 +40,15 @@
     ["readAE", "Read from AE", "Read the selected keyframes into the graph"],
     ["savePreset", "Save as preset", "Save the current curve as a preset"],
     ["removeExpr", "Remove expressions", "Remove NeuCurve expressions from the selection"],
-    ["speedGraph", "Speed graph", "Switch to the speed graph"]
+    ["speedGraph", "Speed graph", "Switch to the speed graph"],
+    ["presetNext", "Next preset", "Select the next preset in the grid (then press Apply)"],
+    ["presetPrev", "Previous preset", "Select the previous preset in the grid"],
+    ["toggleFav", "Favorite on / off", "Add or remove the selected preset from Favorites"],
+    ["fav1", "Apply favorite 1", "Select your 1st favorite preset and apply it"],
+    ["fav2", "Apply favorite 2", "Select your 2nd favorite preset and apply it"],
+    ["fav3", "Apply favorite 3", "Select your 3rd favorite preset and apply it"],
+    ["fav4", "Apply favorite 4", "Select your 4th favorite preset and apply it"],
+    ["fav5", "Apply favorite 5", "Select your 5th favorite preset and apply it"]
   ];
   var IS_MAC = /Mac/i.test(navigator.platform || "");
   function $(id) { return document.getElementById(id); }

@@ -2544,6 +2544,50 @@
           '<button class="btn-apply" data-tool-action="optimize">Optimize AE (Purge)</button>' +
         '</div>' +
 
+        // ===================== Batch Rename + Smart Color Coder =====================
+        // Backend: host.jsx TOOLS_batchRename(opts) and TOOLS_autoColorCode(scope).
+        '<div class="ta-section">' +
+          '<h2 class="ta-title">Batch Rename Layers</h2>' +
+          '<p class="field-note">Renames the selected layers, top to bottom. Find &amp; Replace is literal text (no regex). Numbering replaces the name with Base + number.</p>' +
+          '<div class="param"><label for="br-find">Find</label><input class="text-input" type="text" id="br-find" autocomplete="off" spellcheck="false"></div>' +
+          '<div class="param"><label for="br-replace">Replace</label><input class="text-input" type="text" id="br-replace" autocomplete="off" spellcheck="false"></div>' +
+          '<div class="param"><label for="br-prefix">Prefix</label><input class="text-input" type="text" id="br-prefix" autocomplete="off" spellcheck="false"></div>' +
+          '<div class="param"><label for="br-suffix">Suffix</label><input class="text-input" type="text" id="br-suffix" autocomplete="off" spellcheck="false"></div>' +
+          '<label class="switch-row" for="br-seq"><span>Numbering</span><input type="checkbox" id="br-seq"><span class="switch-track"></span></label>' +
+          '<div class="br-seq-fields" id="br-seq-fields" hidden>' +
+            '<div class="param"><label for="br-base">Base name</label><input class="text-input" type="text" id="br-base" placeholder="Layer" autocomplete="off" spellcheck="false"></div>' +
+            '<div class="param"><label for="br-start">Start at</label><input class="num" type="number" id="br-start" min="0" max="9999" step="1" value="1"></div>' +
+            '<div class="param"><label for="br-digits">Digits</label><input class="num" type="number" id="br-digits" min="1" max="6" step="1" value="2"></div>' +
+          '</div>' +
+          '<button class="btn-apply" data-tool-action="batch-rename">Rename Layers</button>' +
+        '</div>' +
+
+        '<div class="ta-section">' +
+          '<h2 class="ta-title">Smart Layer Color Coder</h2>' +
+          '<p class="field-note">Sets the layer label color by type: Shape = Blue, Text = Yellow, Audio only = Green, Adjustment = Purple. Other layers are left as they are.</p>' +
+          '<div class="chips">' +
+            '<label class="chip"><input type="radio" name="acc-scope" value="selected" checked><span>Selected</span></label>' +
+            '<label class="chip"><input type="radio" name="acc-scope" value="all"><span>Whole Comp</span></label>' +
+          '</div>' +
+          '<button class="btn-apply" data-tool-action="auto-color">Color-Code Layers</button>' +
+        '</div>' +
+
+        // ===================== Randomize Transform =====================
+        // Backend: host.jsx SHTZ_randomize(what, a, b). Static values only (layers whose property has keyframes are skipped).
+        '<div class="ta-section">' +
+          '<h2 class="ta-title">Randomize Transform</h2>' +
+          '<p class="field-note" id="rnd-note">Offsets each selected layer by a random amount, so copies do not look identical. Layers whose value is animated are skipped.</p>' +
+          '<div class="chips chips-4">' +
+            '<label class="chip"><input type="radio" name="rnd-what" value="position" checked><span>Position</span></label>' +
+            '<label class="chip"><input type="radio" name="rnd-what" value="rotation"><span>Rotation</span></label>' +
+            '<label class="chip"><input type="radio" name="rnd-what" value="scale"><span>Scale</span></label>' +
+            '<label class="chip"><input type="radio" name="rnd-what" value="opacity"><span>Opacity</span></label>' +
+          '</div>' +
+          '<div class="param"><label for="rnd-a" id="rnd-a-label">Amount (px, plus or minus)</label><input class="num" type="number" id="rnd-a" min="0" max="10000" step="1" value="100"></div>' +
+          '<div class="param" id="rnd-b-row" hidden><label for="rnd-b">Maximum (%)</label><input class="num" type="number" id="rnd-b" min="0" max="10000" step="1" value="120"></div>' +
+          '<button class="btn-apply" data-tool-action="randomize">Randomize</button>' +
+        '</div>' +
+
         // ===================== Project Cleaner & Sanitizer =====================
         // Relocated here from the (removed) Power Workflow Boosters tab - same markup and
         // same Bridge call (TOOLS_projectCleanup), styled via the shared .beat-card class so
@@ -2581,6 +2625,30 @@
             '<button class="btn-apply" data-tool-action="audioToKeyframes">Generate</button>' +
           '</div>' +
         '</div>';
+
+      (function () {
+        var RND = {
+          position: { a: "Amount (px, plus or minus)", av: 100, range: false },
+          rotation: { a: "Amount (degrees, plus or minus)", av: 15, range: false },
+          scale: { a: "Minimum (%)", av: 80, b: "Maximum (%)", bv: 120, range: true },
+          opacity: { a: "Minimum (%)", av: 40, b: "Maximum (%)", bv: 100, range: true }
+        };
+        var rndChips = wrap.querySelectorAll('input[name="rnd-what"]'), ri;
+        function rndSync(kind) {
+          var c = RND[kind], bRow = wrap.querySelector("#rnd-b-row");
+          if (!c || !bRow) { return; }
+          wrap.querySelector("#rnd-a-label").textContent = c.a;
+          wrap.querySelector("#rnd-a").value = c.av;
+          bRow.hidden = !c.range;
+          if (c.range) { wrap.querySelector('label[for="rnd-b"]').textContent = c.b; wrap.querySelector("#rnd-b").value = c.bv; }
+        }
+        for (ri = 0; ri < rndChips.length; ri++) { rndChips[ri].addEventListener("change", function (e) { if (e.target.checked) { rndSync(e.target.value); } }); }
+      })();
+
+      (function () {
+        var seqBox = wrap.querySelector("#br-seq"), seqFields = wrap.querySelector("#br-seq-fields");
+        if (seqBox && seqFields) { seqBox.addEventListener("change", function () { seqFields.hidden = !seqBox.checked; }); }
+      })();
 
       Array.prototype.forEach.call(wrap.querySelectorAll("[data-tool-action]"), function (btn) {
         btn.addEventListener("click", function () {
@@ -2623,6 +2691,25 @@
             if (threshold > 100) { threshold = 100; }
             var markerTarget = wrap.querySelector("#beat-target-comp").checked ? "comp" : "layer";
             call = Bridge.call("TOOLS_convertAudioToKeyframes", [threshold, markerTarget]);
+          } else if (action === "batch-rename") {
+            var brSeq = wrap.querySelector("#br-seq").checked;
+            call = Bridge.call("TOOLS_batchRename", [{
+              find: wrap.querySelector("#br-find").value,
+              replace: wrap.querySelector("#br-replace").value,
+              prefix: wrap.querySelector("#br-prefix").value,
+              suffix: wrap.querySelector("#br-suffix").value,
+              seq: {
+                enabled: brSeq,
+                base: wrap.querySelector("#br-base").value,
+                start: parseInt(wrap.querySelector("#br-start").value, 10),
+                digits: parseInt(wrap.querySelector("#br-digits").value, 10)
+              }
+            }]);
+          } else if (action === "randomize") {
+            var rndWhat = wrap.querySelector('input[name="rnd-what"]:checked').value;
+            call = Bridge.call("SHTZ_randomize", [rndWhat, parseFloat(wrap.querySelector("#rnd-a").value), parseFloat(wrap.querySelector("#rnd-b").value)]);
+          } else if (action === "auto-color") {
+            call = Bridge.call("TOOLS_autoColorCode", [wrap.querySelector('input[name="acc-scope"]:checked').value]);
           } else if (action === "cleanup") {
             call = Bridge.call("TOOLS_projectCleanup", [{
               removeUnused: wrap.querySelector("#pc-clean-unused").checked,
@@ -3393,13 +3480,45 @@
       { id: "autorotate", name: "Auto Rotate",
         note: "Spins Rotation continuously (time * 90deg/sec) - no keyframes needed.",
         code: "value + time * 90;",
-        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>' }
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>' },
+      { id: "pingpong", name: "Loop Ping-Pong",
+        note: 'loopOut("pingpong") - plays the keyframes forward, then backward, forever.',
+        code: 'loopOut("pingpong");',
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>' },
+      { id: "loopcontinue", name: "Loop Continue",
+        note: 'loopOut("continue") - keeps moving at the speed of the last keyframe.',
+        code: 'loopOut("continue");',
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l8-8 8 0M16 6l4 4-4 4"/></svg>' },
+      { id: "choppy", name: "Choppy Wiggle",
+        note: "Wiggle at 12 steps per second, like hand-drawn jitter.",
+        code: "posterizeTime(12);\nwiggle(5, 20);",
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3v-5h3v8h3v-6h3v4h3v-3h3"/></svg>' },
+      { id: "fadeio", name: "Fade In / Out",
+        note: "Opacity only: fades in at the layer's in point and out at its out point (0.3 s each) - no keyframes. Edit fadeIn / fadeOut after applying.",
+        code: "fadeIn = 0.3;\nfadeOut = 0.3;\na = linear(time, inPoint, inPoint + fadeIn, 0, 100);\nb = linear(time, outPoint - fadeOut, outPoint, 100, 0);\nMath.min(a, b);",
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18L9 6h6l6 12"/></svg>' },
+      { id: "blink", name: "Blink",
+        note: "Opacity only: switches the layer on and off 4 times per second.",
+        code: "Math.floor(time * 4) % 2 == 0 ? value : 0;",
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>' }
     ],
     EFFECT_PRESETS: [
       { id: "boxblur", name: "Add Fast Box Blur", matchName: "ADBE Box Blur2" },
       { id: "fill", name: "Add Fill", matchName: "ADBE Fill" },
       { id: "curves", name: "Add Curves", matchName: "ADBE CurvesCustom" },
-      { id: "dropshadow", name: "Add Drop Shadow", matchName: "ADBE Drop Shadow" }
+      { id: "dropshadow", name: "Add Drop Shadow", matchName: "ADBE Drop Shadow" },
+      { id: "glow", name: "Add Glow", matchName: "ADBE Glo2" },
+      { id: "gblur", name: "Add Gaussian Blur", matchName: "ADBE Gaussian Blur 2" },
+      { id: "tint", name: "Add Tint", matchName: "ADBE Tint" },
+      { id: "levels", name: "Add Levels", matchName: "ADBE Pro Levels2" },
+      { id: "huesat", name: "Add Hue/Saturation", matchName: "ADBE HUE SATURATION" },
+      { id: "ramp", name: "Add Gradient Ramp", matchName: "ADBE Ramp" },
+      { id: "fxtransform", name: "Add Transform", matchName: "ADBE Geometry2" },
+      { id: "turbulent", name: "Add Turbulent Displace", matchName: "ADBE Turbulent Displace" },
+      { id: "slider", name: "Add Slider Control", matchName: "ADBE Slider Control" },
+      { id: "checkbox", name: "Add Checkbox Control", matchName: "ADBE Checkbox Control" },
+      { id: "colorctl", name: "Add Color Control", matchName: "ADBE Color Control" },
+      { id: "anglectl", name: "Add Angle Control", matchName: "ADBE Angle Control" }
     ],
     UTIL_PRESETS: [
       { id: "centeranchor", name: "Center Anchor Point", note: "Centers the anchor point of every selected layer.",
@@ -3407,7 +3526,89 @@
       { id: "autoparent", name: "Auto Parent", note: "Parents every other selected layer to the topmost selected one.",
         run: function () { return Bridge.call("SHTZ_autoParentToTop", []); } },
       { id: "audiobeats", name: "Convert Audio to Beats", note: "Adds keyframes or markers at audio peaks with default settings. The Tools tab has full control.",
-        run: function () { return Bridge.call("TOOLS_convertAudioToKeyframes", [25, "layer"]); } }
+        run: function () { return Bridge.call("TOOLS_convertAudioToKeyframes", [25, "layer"]); } },
+      { id: "easyease", name: "Easy Ease", note: "Easy Ease (in and out) on the selected keyframes.",
+        run: function () { return Bridge.call("SHTZ_easyEase", ["both"]); } },
+      { id: "easein", name: "Easy Ease In", note: "Easy Ease on the incoming side of the selected keyframes.",
+        run: function () { return Bridge.call("SHTZ_easyEase", ["in"]); } },
+      { id: "easeout", name: "Easy Ease Out", note: "Easy Ease on the outgoing side of the selected keyframes.",
+        run: function () { return Bridge.call("SHTZ_easyEase", ["out"]); } },
+      { id: "revkeys", name: "Reverse Keyframes", note: "Time-Reverse the selected keyframes (Animation > Keyframe Assistant). Uses the English menu name.",
+        run: function () { return Bridge.call("SHTZ_runMenuCommand", ["Time-Reverse Keyframes"]); } },
+      { id: "revlayer", name: "Reverse Layer", note: "Time-Reverse the selected layers (Layer > Time). Uses the English menu name.",
+        run: function () { return Bridge.call("SHTZ_runMenuCommand", ["Time-Reverse Layer"]); } },
+      { id: "timeremap", name: "Time Remap", note: "Enable Time Remapping on the selected layers. Uses the English menu name.",
+        run: function () { return Bridge.call("SHTZ_runMenuCommand", ["Enable Time Remapping"]); } },
+      { id: "freeze", name: "Freeze Frame", note: "Freezes the selected layer at the current time. Uses the English menu name.",
+        run: function () { return Bridge.call("SHTZ_runMenuCommand", ["Freeze Frame"]); } },
+      { id: "splitlayer", name: "Split Layer", note: "Splits the selected layers at the current time. Uses the English menu name.",
+        run: function () { return Bridge.call("SHTZ_runMenuCommand", ["Split Layer"]); } },
+      { id: "parentnull", name: "Parent to Null", note: "Creates a Null at the center and parents the selected layers to it. Layers stay in place.",
+        run: function () { return Bridge.call("SHTZ_parentToNull", []); } },
+      { id: "lock", name: "Lock / Unlock", note: "Flips the Lock switch on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["locked"]); } },
+      { id: "shy", name: "Shy / Unshy", note: "Flips the Shy switch on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["shy"]); } },
+      { id: "solo", name: "Solo / Unsolo", note: "Flips the Solo switch on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["solo"]); } },
+      { id: "guide", name: "Guide Layer", note: "Flips the Guide Layer switch on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["guideLayer"]); } },
+      { id: "markcomp", name: "Comp Marker", note: "Adds an empty composition marker at the current time.",
+        run: function () { return Bridge.call("SHTZ_addMarker", ["comp"]); } },
+      { id: "marklayer", name: "Layer Marker", note: "Adds an empty marker at the current time on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_addMarker", ["layer"]); } },
+      { id: "workarea", name: "Work Area to Layers", note: "Sets the work area to the span of the selected layers.",
+        run: function () { return Bridge.call("SHTZ_workAreaToLayers", []); } },
+      { id: "renderq", name: "Add to Render Queue", note: "Adds the active composition to the Render Queue.",
+        run: function () { return Bridge.call("SHTZ_addToRenderQueue", []); } },
+      { id: "keyplay", name: "Keys to Playhead", note: "Moves the selected keyframes so the earliest one sits on the current time. Spacing between them stays.",
+        run: function () { return Bridge.call("SHTZ_moveKeys", ["playhead", 0]); } },
+      { id: "keyp1", name: "Keys +1 Frame", note: "Shifts the selected keyframes 1 frame later.",
+        run: function () { return Bridge.call("SHTZ_moveKeys", ["offset", 1]); } },
+      { id: "keym1", name: "Keys -1 Frame", note: "Shifts the selected keyframes 1 frame earlier.",
+        run: function () { return Bridge.call("SHTZ_moveKeys", ["offset", -1]); } },
+      { id: "keyp5", name: "Keys +5 Frames", note: "Shifts the selected keyframes 5 frames later.",
+        run: function () { return Bridge.call("SHTZ_moveKeys", ["offset", 5]); } },
+      { id: "keym5", name: "Keys -5 Frames", note: "Shifts the selected keyframes 5 frames earlier.",
+        run: function () { return Bridge.call("SHTZ_moveKeys", ["offset", -5]); } },
+      { id: "keyseq", name: "Sequence Keys", note: "Select the same keyframes on several layers. Each layer's keys move 2 frames more than the layer above it.",
+        run: function () { return Bridge.call("SHTZ_moveKeys", ["sequence", 2]); } },
+      { id: "seltype", name: "Select Same Type", note: "Selects every layer of the same type as the first selected layer (text, shape, solid, null ...).",
+        run: function () { return Bridge.call("SHTZ_selectLayers", ["type"]); } },
+      { id: "sellabel", name: "Select Same Label", note: "Selects every layer with the same label color as the first selected layer.",
+        run: function () { return Bridge.call("SHTZ_selectLayers", ["label"]); } },
+      { id: "selinvert", name: "Invert Selection", note: "Selects the layers that are not selected and deselects the rest.",
+        run: function () { return Bridge.call("SHTZ_selectLayers", ["invert"]); } },
+      { id: "distx", name: "Distribute Horizontally", note: "Spaces 3 or more selected layers evenly between the outer two (static Position only).",
+        run: function () { return Bridge.call("SHTZ_distributeLayers", ["x"]); } },
+      { id: "disty", name: "Distribute Vertically", note: "Spaces 3 or more selected layers evenly between the outer two (static Position only).",
+        run: function () { return Bridge.call("SHTZ_distributeLayers", ["y"]); } },
+      { id: "addkey", name: "Add Keyframe", note: "Adds a keyframe at the current time on every selected property, keeping its current value.",
+        run: function () { return Bridge.call("SHTZ_addKeyAtTime", []); } },
+      { id: "rmkeys", name: "Remove Keyframes", note: "Removes all keyframes of the selected properties and keeps the value at the current time.",
+        run: function () { return Bridge.call("SHTZ_removeKeys", []); } },
+      { id: "startplay", name: "Layer Start to Playhead", note: "Slides each selected layer so its In point sits on the current time.",
+        run: function () { return Bridge.call("SHTZ_layerToPlayhead", ["start"]); } },
+      { id: "endplay", name: "Layer End to Playhead", note: "Slides each selected layer so its Out point sits on the current time.",
+        run: function () { return Bridge.call("SHTZ_layerToPlayhead", ["end"]); } },
+      { id: "revorder", name: "Reverse Layer Order", note: "Reverses the stacking order of the selected layers (they keep the same slots).",
+        run: function () { return Bridge.call("SHTZ_reverseLayerOrder", []); } },
+      { id: "mblur", name: "Motion Blur", note: "Turns Motion Blur on for the selected layers and the comp. All already on: turns it off.",
+        run: function () { return Bridge.call("SHTZ_motionBlur", []); } },
+      { id: "sw3d", name: "3D Layer", note: "Flips the 3D Layer switch on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["threeDLayer"]); } },
+      { id: "swvis", name: "Show / Hide Layer", note: "Flips the Video (eye) switch on the selected layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["enabled"]); } },
+      { id: "swcollapse", name: "Collapse Transform", note: "Flips Collapse Transformations on the selected pre-comp or shape layers.",
+        run: function () { return Bridge.call("SHTZ_toggleSwitch", ["collapseTransformation"]); } },
+      { id: "caseup", name: "UPPERCASE", note: "Changes the text of the selected text layers to capitals. Text with animated source text is skipped.",
+        run: function () { return Bridge.call("SHTZ_textCase", ["upper"]); } },
+      { id: "caselow", name: "lowercase", note: "Changes the text of the selected text layers to small letters.",
+        run: function () { return Bridge.call("SHTZ_textCase", ["lower"]); } },
+      { id: "casetitle", name: "Title Case", note: "Capitalizes the first letter of every word in the selected text layers.",
+        run: function () { return Bridge.call("SHTZ_textCase", ["title"]); } },
+      { id: "incsave", name: "Incremental Save", note: "Saves the project as name_v001, name_v002 ... and keeps working in the new file.",
+        run: function () { return Bridge.call("SHTZ_incrementalSave", []); } }
     ],
 
     typeIcon: function (type) {
@@ -6690,6 +6891,21 @@
     } catch (e) {}
   }
   window.mtSyncTheme = syncTheme;                       // js/mt-uitheme.js calls this when leaving Material You
+
+  // ---------------------------------------------------------
+  // Core API for js/mt-hotkeys.js (command palette + keyboard shortcuts).
+  // Read-only handles: the hotkey module builds its command list from these, it never changes panel state itself.
+  // ---------------------------------------------------------
+  window.MTCore = {
+    Bridge: Bridge,
+    toast: toast,
+    TABS: TABS,
+    showTab: showTab,
+    runTool: runTool,
+    SaveFrame: SaveFrame,
+    Shortcutz: Shortcutz,
+    currentTab: function () { return currentTab; }
+  };
 
   // ---------------------------------------------------------
   // Boot

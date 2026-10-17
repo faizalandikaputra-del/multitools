@@ -88,6 +88,7 @@
   <!-- Settings > Navigation (rail left / right). Needs js/mt-nav.js -->
   <link rel="stylesheet" href="../css/mt-nav.css?v=1">
   <link rel="stylesheet" href="../css/mt-pro.css?v=2">
+  <link rel="stylesheet" href="../css/mt-hotkeys.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -761,8 +762,9 @@
   <!-- Settings now open in their own window (html/settings.html). The controls stay in #settings-modal; this pair keeps them in sync. Must load after main.js and mt-updater.js. -->
   <script src="../js/mt-idle-focus.js?v=18"></script>
   <script src="../js/mt-idle-adjust.js?v=23"></script>
-  <script src="../js/mt-settings-bus.js?v=3"></script>
+  <script src="../js/mt-settings-bus.js?v=4"></script>
   <script src="../js/mt-settings-remote.js?v=6"></script>
+  <script src="../js/mt-hotkeys.js?v=1"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->

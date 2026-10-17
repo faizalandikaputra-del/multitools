@@ -1,0 +1,18 @@
+/* NeuCurve - nc-quick.css  (favorites on the preset grid, js: nc-quick.js)
+   Motion: the star "pop" is 220 ms, decelerating, one small scale step (no overshoot). Off only with Settings > Animations off (data-reduce-motion), never from the OS setting. */
+.preset-item.nc-fav .preset-thumbnail { position: relative; }
+.preset-item.nc-fav .preset-thumbnail::after {
+  content: ""; position: absolute; top: 4px; right: 4px; width: 11px; height: 11px; pointer-events: none;
+  background: var(--nc-fav, #ffd166);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+}
+.preset-item.nc-fav-pop { animation: nc-fav-pop 220ms cubic-bezier(0.2, 0, 0, 1); }
+@keyframes nc-fav-pop { 0% { transform: scale(0.94); } 100% { transform: scale(1); } }
+html[data-nc-favonly="1"] .preset-item:not(.nc-fav) { display: none; }
+.nc-favtoggle { color: inherit; opacity: 0.75; transition: opacity 120ms cubic-bezier(0.2, 0, 0, 1), color 120ms cubic-bezier(0.2, 0, 0, 1); }
+.nc-favtoggle:hover { opacity: 1; }
+.nc-favtoggle.is-on { color: var(--nc-fav, #ffd166); opacity: 1; }
+.nc-favtoggle.is-on svg path { fill: var(--nc-fav, #ffd166); stroke: var(--nc-fav, #ffd166); }
+html[data-reduce-motion="true"] .nc-favtoggle { transition: none; }
+html[data-reduce-motion="true"] .preset-item.nc-fav-pop { animation: none; }

@@ -2020,3 +2020,70 @@ fix2 (Settings window still lagged right after opening / clicking a menu item su
    js/mt-persist.js v3: "storage" events from another window schedule the dump 4 s later (coalesced) instead of 400 ms; own writes still 400 ms; mtbus.* still ignored.
    Cache-bust: mt-bg-preview.js ?v=2 (html/settings.html), mt-persist.js ?v=3 (4 pages).
   Quick check if lag remains: Settings > Background > Remove, reopen Settings. Lag gone = the big background media was the cause.
+
+new (Batch Rename + Color Coder UI, Keyboard shortcuts, Command Palette, more Shortcutz tiles):
+  1. Tools tab: two new cards, "Batch Rename Layers" and "Smart Layer Color Coder". The backend (TOOLS_batchRename, TOOLS_autoColorCode in jsx/host.jsx)
+     already existed but nothing called it. js/main.js: new markup before the Project Cleaner card, 2 new branches in the data-tool-action click handler
+     ("batch-rename", "auto-color"), and a small toggle that shows / hides the numbering fields (#br-seq, #br-seq-fields).
+  2. Settings > "Keyboard shortcuts" (new section in html/settings.html, js/mt-hotkeys-settings.js, css/mt-hotkeys-settings.css).
+     Any command can get a key (click Set, press keys; Delete clears, Esc cancels). Rules: Ctrl or Alt (or an F key) is required, a key already used is refused,
+     a key NeuCurve uses is allowed with a note (inside the Curve tab NeuCurve wins). The controls have no id on purpose, so js/mt-settings-window.js does not forward them.
+  3. js/mt-hotkeys.js (panel side, loaded after js/mt-settings-remote.js) builds ONE command list (tabs, Easy Layer, anchor / align / fit / flip, Tools actions,
+     every Shortcutz tile incl. custom ones), runs the keys, registers them with registerKeyEventsInterest, and owns the Command Palette (default Ctrl+K, also changeable).
+     Data: localStorage "mt.hotkeys" = {on, palette, map:{commandId:{c:"Ctrl+Alt+1", k:49}}}; recent palette picks: "mt.hotkeys.recent". Both travel with Settings > Export profile.
+     Window <-> panel messages over js/mt-settings-bus.js: hkreq, hkstate, hkset (v4: these two are "latest wins", added to KEEP_ONE).
+     js/main.js now exposes window.MTCore (Bridge, toast, TABS, showTab, runTool, SaveFrame, Shortcutz, currentTab) for that module.
+     Keys only reach the panel while it has keyboard focus (CEP limit). Not run inside After Effects.
+  4. Shortcutz: new built-in tiles. Expressions: Loop Ping-Pong, Loop Continue, Choppy Wiggle, Fade In / Out (opacity), Blink (opacity). Effects: Glow, Gaussian Blur, Tint,
+     Levels, Hue/Saturation, Gradient Ramp, Transform, Turbulent Displace, Slider / Checkbox / Color / Angle Control. Utilities: Easy Ease (both / in / out), Reverse Keyframes,
+     Reverse Layer, Time Remap, Freeze Frame, Split Layer, Parent to Null, Lock, Shy, Solo, Guide, Comp Marker, Layer Marker, Work Area to Layers, Add to Render Queue, Incremental Save.
+     New host functions at the end of jsx/host.jsx (ES3): SHTZ_easyEase, SHTZ_runMenuCommand, SHTZ_toggleSwitch, SHTZ_parentToNull, SHTZ_addMarker,
+     SHTZ_workAreaToLayers, SHTZ_addToRenderQueue, SHTZ_incrementalSave. Reverse Keyframes / Reverse Layer / Time Remap / Freeze Frame / Split Layer look the menu command up by its
+     ENGLISH name (app.findMenuCommandId); on a localized After Effects they report "not found" instead of failing silently.
+  Motion (Corporate): palette opens in 200 ms (opacity, 8 px rise, 1.5% scale, decelerating), closes in 130 ms, row hover 100 ms; the conflict shake in Settings is 360 ms without overshoot.
+   "Animations off" (html[data-reduce-motion="true"]) removes the transitions, the listening pulse and the shake.
+  Cache-bust: mt-settings-bus.js ?v=4 (html/index.html, html/settings.html); new files css/mt-hotkeys.css, js/mt-hotkeys.js (index), css/mt-hotkeys-settings.css, js/mt-hotkeys-settings.js (settings).
+  Checked: node --check on every changed script; in a headless Chromium preview (no After Effects) the palette opens with Ctrl+K, filters, runs; a key set in the Settings window reaches the
+  panel and runs; conflict and plain-key refusals show; the two new Tools cards call the right Bridge functions. NOT run inside After Effects: the SHTZ_* host functions and registerKeyEventsInterest are untested there.
+
+new (faster editing: keyframe moves, layer selection, distribute, repeat last command):
+  Shortcutz > Utility Shortcuts, and therefore also the Command Palette and Settings > Keyboard shortcuts, got 11 tiles:
+   Keys to Playhead, Keys +1 / -1 / +5 / -5 Frames, Sequence Keys (2 frames per layer), Select Same Type, Select Same Label, Invert Selection,
+   Distribute Horizontally / Vertically.
+  New host functions at the end of jsx/host.jsx (ES3): SHTZ_moveKeys(mode, frames), SHTZ_distributeLayers(axis), SHTZ_selectLayers(mode).
+   SHTZ_moveKeys reads each selected key (value, interpolation, temporal ease, spatial tangents), removes it, adds it at the new time and restores those settings,
+   then re-selects it. A key that lands on an UNselected key overwrites it (same as dragging in the timeline). Distribute only handles layers whose Position has no keyframes.
+  js/mt-hotkeys.js: new command "Repeat last command" (General). It repeats the last command run from the palette or a hotkey and never replaces it as "last".
+   No key is assigned by default: set one in Settings > Keyboard shortcuts.
+  Checked: node --check; SHTZ_moveKeys exercised against a mock of the AE key API in Node (offset and playhead modes, spacing kept, selection restored);
+   palette / repeat / new tiles in a headless Chromium preview. NOT run inside After Effects.
+
+new + fix (NeuCurve favorites and preset keys; hotkeys of the panel and NeuCurve no longer erase each other):
+  Fix: registerKeyEventsInterest REPLACES the previous key list. The Curve tab (iframe, neucurve/nc-pro.js) and the panel (js/mt-hotkeys.js) are the same CEP extension and each
+   re-sent ONLY its own keys every 5 s, so using hotkeys in both would have made one side stop working. Both now send the union: js/mt-hotkeys.js adds the keys stored in
+   "neucurve_hotkeys" (when "neucurve_hotkeysOn" is not "0"); neucurve/nc-pro.js adds "mt.hotkeys" (command palette key and the panel's shortcuts). Cache-bust: nc-pro.js ?v=5.
+  New: neucurve/nc-quick.js + nc-quick.css (loaded from neucurve/index.html after nc-pro.js).
+   - Long-press (0.45 s) a preset in the grid = add / remove it from Favorites (a star appears). The click that ends the long-press does not select the preset.
+   - A star button next to the library menu (.nc-favtoggle) shows only the favorites of the open library.
+   - New NeuCurve hotkey actions (Settings > Hotkeys, list in neucurve/nc-pro-settings.js ?v=3, handlers in TARGET of nc-pro.js): Next preset, Previous preset, Favorite on / off,
+     Apply favorite 1 to 5 (selects the favorite, switches the library if needed, then presses APPLY).
+   - Data: localStorage "neucurve_favs" = [{lib, name}], "neucurve_favOnly". Favorites are matched by library + preset name; renaming a preset drops it from Favorites.
+   - The preset grid is Svelte; nc-quick.js only reads and clicks its DOM (.preset-item, .preset-thumbnail, .lib-select, .apply-btn), so a change in that markup would stop it.
+   - Motion: star pop 220 ms. Only "data-reduce-motion" turns it off (not the OS setting, same policy as the rest of NeuCurve).
+  Checked: node --check; headless Chromium preview of neucurve/index.html: long-press adds a star and does not select, normal click still selects, next / prev move the selection,
+   fav 1 selects and clicks APPLY, the star filter hides the other presets. NOT run inside After Effects (key delivery and the real APPLY).
+
+new (timeline speed-ups: keyframes at playhead, layer order, motion blur, text case, randomize):
+  Shortcutz > Utility Shortcuts (so also the Command Palette and Settings > Keyboard shortcuts) got 12 tiles:
+   Add Keyframe, Remove Keyframes, Layer Start to Playhead, Layer End to Playhead, Reverse Layer Order, Motion Blur, 3D Layer, Show / Hide Layer,
+   Collapse Transform, UPPERCASE, lowercase, Title Case.
+  New host functions at the end of jsx/host.jsx (ES3): SHTZ_addKeyAtTime, SHTZ_removeKeys, SHTZ_layerToPlayhead(mode), SHTZ_reverseLayerOrder, SHTZ_motionBlur,
+   SHTZ_textCase(mode), SHTZ_randomize(what, a, b). 3D Layer / Show-Hide / Collapse Transform reuse SHTZ_toggleSwitch.
+   Add Keyframe uses valueAtTime(t, true), so an expression is not baked into the key. Remove Keyframes keeps the value at the current time.
+   Text Case and Randomize only touch static values: a text layer with animated Source Text, or a property with keyframes, is skipped and counted in the message.
+   Randomize on Position changes X and Y only (Z is left alone); on a layer with separated dimensions it reports "skipped".
+  Tools tab: new card "Randomize Transform" (Position +-px, Rotation +-deg, Scale min-max %, Opacity min-max %). Choosing a chip fills sensible defaults and shows / hides the Maximum row.
+  css/style.css: .chips-4 (4 equal chips) and .param[hidden] { display: none !important } - .param is display:flex, which made the hidden attribute do nothing.
+  Checked: node --check; Reverse Layer Order (contiguous and non-contiguous selections), text case and Layer Start to Playhead run against a Node mock of the AE layer API;
+   headless Chromium preview: the Randomize chips switch labels and the Maximum row, and the call reaches the Bridge; 122 palette commands, 69 Shortcutz tiles.
+   NOT run inside After Effects.

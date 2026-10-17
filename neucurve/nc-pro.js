@@ -104,11 +104,21 @@
     readAE: function () { return byTitle("Read from AE"); },
     savePreset: function () { return q(".fl-star"); },
     removeExpr: function () { return byTitle("Remove Expressions"); },
-    speedGraph: function () { return byTitle("Speed Graph"); }
+    speedGraph: function () { return byTitle("Speed Graph"); },
+    /* preset keys: nc-quick.js. A target may return {__run: fn} instead of a button. */
+    presetNext: function () { return window.NCQuick ? { __run: window.NCQuick.next } : null; },
+    presetPrev: function () { return window.NCQuick ? { __run: window.NCQuick.prev } : null; },
+    toggleFav: function () { return window.NCQuick ? { __run: window.NCQuick.toggleFav } : null; },
+    fav1: function () { return window.NCQuick ? { __run: function () { window.NCQuick.fav(1); } } : null; },
+    fav2: function () { return window.NCQuick ? { __run: function () { window.NCQuick.fav(2); } } : null; },
+    fav3: function () { return window.NCQuick ? { __run: function () { window.NCQuick.fav(3); } } : null; },
+    fav4: function () { return window.NCQuick ? { __run: function () { window.NCQuick.fav(4); } } : null; },
+    fav5: function () { return window.NCQuick ? { __run: function () { window.NCQuick.fav(5); } } : null; }
   };
   function press(action) {
     var f = TARGET[action], b = f ? f() : null;
     if (!b || b.disabled) { return false; }
+    if (typeof b.__run === "function") { b.__run(); return true; }
     b.classList.remove("nc-hk-flash"); void b.offsetWidth; b.classList.add("nc-hk-flash");
     setTimeout(function () { b.classList.remove("nc-hk-flash"); }, 260);
     b.click();
@@ -156,6 +166,19 @@
           list.push({ keyCode: map[a].k, ctrlKey: !IS_MAC && h.indexOf("Ctrl+") === 0, metaKey: IS_MAC && h.indexOf("Ctrl+") === 0, altKey: h.indexOf("Alt+") >= 0, shiftKey: h.indexOf("Shift+") >= 0 });
         }
       }
+      /* the panel (js/mt-hotkeys.js) has its own keys; the list we send REPLACES the panel's, so add them */
+      try {
+        var praw = window.localStorage.getItem("mt.hotkeys"), po = praw ? JSON.parse(praw) : null, pa, pk = [], ph;
+        if (po && po.on !== false) {
+          if (po.palette) { pk.push(po.palette); } else if (po.palette === undefined) { pk.push({ c: "Ctrl+K", k: 75 }); }
+          if (po.map) { for (pa in po.map) { if (po.map.hasOwnProperty(pa) && po.map[pa]) { pk.push(po.map[pa]); } } }
+        } else if (!po) { pk.push({ c: "Ctrl+K", k: 75 }); }
+        for (pa = 0; pa < pk.length; pa++) {
+          if (!pk[pa] || !pk[pa].k) { continue; }
+          ph = String(pk[pa].c || "");
+          list.push({ keyCode: pk[pa].k, ctrlKey: !IS_MAC && ph.indexOf("Ctrl+") === 0, metaKey: IS_MAC && ph.indexOf("Ctrl+") === 0, altKey: ph.indexOf("Alt+") >= 0, shiftKey: ph.indexOf("Shift+") >= 0 });
+        }
+      } catch (eP) { }
       var json = JSON.stringify(list);
       if (json === lastInterest && !force) { return; }
       lastInterest = json;

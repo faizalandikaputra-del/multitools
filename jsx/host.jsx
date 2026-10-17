@@ -8168,3 +8168,612 @@ function PROFILE_FILE_import() {
     return _err(e);
   }
 }
+
+// ─────────────────────────────────────────────
+// SHORTCUTZ EXTRA ACTIONS (Speed Dial tiles + Command Palette + Hotkeys)
+//   SHTZ_easyEase(kind)          - "both" | "in" | "out": Easy Ease on the selected keyframes
+//   SHTZ_runMenuCommand(name)    - runs an After Effects menu command by its English name (no undo group around it)
+//   SHTZ_toggleSwitch(which)     - "locked" | "shy" | "solo" | "guide": flips the switch on the selected layers
+//   SHTZ_parentToNull()          - new Null at the comp center, selected layers parented to it (they do not move)
+//   SHTZ_addMarker(scope)        - "comp" | "layer": empty marker at the current time
+//   SHTZ_workAreaToLayers()      - work area = span of the selected layers
+//   SHTZ_addToRenderQueue()      - adds the active comp to the Render Queue
+//   SHTZ_incrementalSave()       - saves a copy as <name>_v001, _v002 ... and keeps working in it
+// ES3 only (ExtendScript): no let/const/arrow/forEach/trailing commas.
+// ─────────────────────────────────────────────
+function SHTZ_easyEase(kind) {
+  try {
+    var comp = _activeComp();
+    var props = comp.selectedProperties;
+    var k = kind || "both";
+    var done = 0, i, j, d, prop, keys, idx, easeIn, easeOut, arrIn, arrOut, dims, cur;
+    app.beginUndoGroup("Easy Ease");
+    try {
+      for (i = 0; i < props.length; i++) {
+        prop = props[i];
+        try {
+          if (prop.propertyType !== PropertyType.PROPERTY || !prop.numKeys || !prop.selectedKeys || !prop.selectedKeys.length) { continue; }
+          keys = prop.selectedKeys;
+          for (j = 0; j < keys.length; j++) {
+            idx = keys[j];
+            dims = prop.keyInTemporalEase(idx).length;
+            arrIn = []; arrOut = [];
+            for (d = 0; d < dims; d++) {
+              cur = prop.keyInTemporalEase(idx)[d];
+              arrIn.push(k === "out" ? cur : new KeyframeEase(0, 33.3333));
+              cur = prop.keyOutTemporalEase(idx)[d];
+              arrOut.push(k === "in" ? cur : new KeyframeEase(0, 33.3333));
+            }
+            if (k !== "out") { prop.setInterpolationTypeAtKey(idx, KeyframeInterpolationType.BEZIER, prop.keyOutInterpolationType(idx)); }
+            if (k !== "in") { prop.setInterpolationTypeAtKey(idx, prop.keyInInterpolationType(idx), KeyframeInterpolationType.BEZIER); }
+            prop.setTemporalEaseAtKey(idx, arrIn, arrOut);
+            done++;
+          }
+        } catch (eProp) { /* property without usable keyframes: skip it */ }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!done) { return _notice("Select keyframes first."); }
+    return _ok("Easy Ease set on " + done + " keyframe" + (done === 1 ? "" : "s") + ".");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_runMenuCommand(name) {
+  try {
+    var id = 0;
+    try { id = app.findMenuCommandId(String(name)); } catch (eFind) { id = 0; }
+    if (!id || id <= 0) { throw new Error("Menu command \"" + name + "\" was not found. It is looked up by its English name."); }
+    app.executeCommand(id);
+    return _ok(name + " done.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_toggleSwitch(which) {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers;
+    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+    var i, allOn = true, target;
+    for (i = 0; i < sel.length; i++) { if (!sel[i][which]) { allOn = false; break; } }
+    target = !allOn;
+    app.beginUndoGroup("Toggle " + which);
+    try {
+      for (i = 0; i < sel.length; i++) { try { sel[i][which] = target; } catch (eSw) { } }
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok(which.charAt(0).toUpperCase() + which.slice(1) + (target ? " on" : " off") + " for " + sel.length + " layer" + (sel.length === 1 ? "" : "s") + ".");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_parentToNull() {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers;
+    if (!sel || !sel.length) { throw new Error("Select one or more layers first."); }
+    var chosen = [], i, nul, moved = 0;
+    for (i = 0; i < sel.length; i++) { chosen.push(sel[i]); }
+    app.beginUndoGroup("Parent to Null");
+    try {
+      nul = comp.layers.addNull();
+      nul.name = "Controller";
+      nul.label = 2;
+      nul.threeDLayer = false;
+      nul.property("Position").setValue([comp.width / 2, comp.height / 2]);
+      for (i = 0; i < chosen.length; i++) {
+        try {
+          if (chosen[i].locked) { continue; }
+          if (typeof chosen[i].setParentWithJump === "function") { chosen[i].setParentWithJump(nul); } else { chosen[i].parent = nul; }
+          moved++;
+        } catch (eParent) { }
+      }
+      nul.moveBefore(chosen[0]);
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok("Null created, " + moved + " layer" + (moved === 1 ? "" : "s") + " parented to it.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_addMarker(scope) {
+  try {
+    var comp = _activeComp();
+    var t = comp.time, i, sel, n = 0;
+    app.beginUndoGroup("Add Marker");
+    try {
+      if (scope === "layer") {
+        sel = comp.selectedLayers;
+        if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+        for (i = 0; i < sel.length; i++) {
+          try { sel[i].property("Marker").setValueAtTime(t, new MarkerValue("")); n++; } catch (eM) { }
+        }
+      } else {
+        comp.markerProperty.setValueAtTime(t, new MarkerValue(""));
+        n = 1;
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok(n + " marker" + (n === 1 ? "" : "s") + " added at the current time.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_workAreaToLayers() {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers;
+    if (!sel || !sel.length) { throw new Error("Select one or more layers first."); }
+    var a = sel[0].inPoint, b = sel[0].outPoint, i;
+    for (i = 1; i < sel.length; i++) {
+      if (sel[i].inPoint < a) { a = sel[i].inPoint; }
+      if (sel[i].outPoint > b) { b = sel[i].outPoint; }
+    }
+    if (a < 0) { a = 0; }
+    if (b > comp.duration) { b = comp.duration; }
+    if (b <= a) { throw new Error("The selected layers are outside the composition."); }
+    app.beginUndoGroup("Work Area to Layers");
+    try {
+      comp.workAreaStart = a;
+      comp.workAreaDuration = b - a;
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok("Work area set to the selected layers.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_addToRenderQueue() {
+  try {
+    var comp = _activeComp();
+    app.beginUndoGroup("Add to Render Queue");
+    try {
+      app.project.renderQueue.items.add(comp);
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok("\"" + comp.name + "\" added to the Render Queue.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_incrementalSave() {
+  try {
+    var f = app.project.file;
+    if (!f) { throw new Error("Save the project once first, then use Incremental Save."); }
+    var dir = f.parent;
+    var base = decodeURIComponent(f.name).replace(/\.aep(x)?$/i, "");
+    var m = /^(.*)_v(\d+)$/.exec(base);
+    var stem = m ? m[1] : base;
+    var n = m ? parseInt(m[2], 10) + 1 : 1;
+    var pad, target;
+    for (;;) {
+      pad = String(n);
+      while (pad.length < 3) { pad = "0" + pad; }
+      target = new File(dir.fsName + "/" + stem + "_v" + pad + ".aep");
+      if (!target.exists) { break; }
+      n++;
+    }
+    app.project.save(target);
+    return _ok("Saved as " + decodeURIComponent(target.name) + ".");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+// ─────────────────────────────────────────────
+// SHORTCUTZ EXTRA ACTIONS 2 (keyframes + layer selection)
+//   SHTZ_moveKeys(mode, frames)  - move the SELECTED keyframes:
+//                                  "offset"   shift every selected key by <frames> (negative = earlier)
+//                                  "playhead" earliest selected key jumps to the current time, spacing is kept
+//                                  "sequence" each layer's selected keys are shifted by <frames> x its rank (top layer 0)
+//   SHTZ_distributeLayers(axis)  - "x" | "y": spaces 3+ selected layers evenly between the outer two (static Position only)
+//   SHTZ_selectLayers(mode)      - "invert" | "type" | "label" | "none"
+// Moving a key = read it, remove it, add it at the new time and put its interpolation / ease / tangents back.
+// If the new time lands on a key that is not selected, that key is overwritten (same as dragging in the timeline).
+// ES3 only (ExtendScript): no let/const/arrow/forEach/trailing commas.
+// ─────────────────────────────────────────────
+function _shtzLayerOfProp(prop) {
+  try { return prop.propertyGroup(prop.propertyDepth); } catch (e) { return null; }
+}
+function _shtzReadKey(prop, k) {
+  var r = { t: prop.keyTime(k), v: prop.keyValue(k) };
+  r.ii = prop.keyInInterpolationType(k);
+  r.oi = prop.keyOutInterpolationType(k);
+  try {
+    if (r.ii === KeyframeInterpolationType.BEZIER || r.oi === KeyframeInterpolationType.BEZIER) {
+      r.ie = prop.keyInTemporalEase(k);
+      r.oe = prop.keyOutTemporalEase(k);
+      r.tc = prop.keyTemporalContinuous(k);
+      r.ta = prop.keyTemporalAutoBezier(k);
+    }
+  } catch (eT) { }
+  try {
+    if (prop.isSpatial) {
+      r.sp = true;
+      r.sin = prop.keyInSpatialTangent(k);
+      r.sout = prop.keyOutSpatialTangent(k);
+      r.sc = prop.keySpatialContinuous(k);
+      r.sa = prop.keySpatialAutoBezier(k);
+    }
+  } catch (eS) { }
+  return r;
+}
+function _shtzWriteKey(prop, r, t) {
+  var idx = prop.addKey(t);
+  prop.setValueAtKey(idx, r.v);
+  try { prop.setInterpolationTypeAtKey(idx, r.ii, r.oi); } catch (eI) { }
+  try { if (r.ie) { prop.setTemporalEaseAtKey(idx, r.ie, r.oe); } } catch (eE) { }
+  try { if (r.ie) { prop.setTemporalContinuousAtKey(idx, r.tc); prop.setTemporalAutoBezierAtKey(idx, r.ta); } } catch (eC) { }
+  try {
+    if (r.sp) {
+      prop.setSpatialTangentsAtKey(idx, r.sin, r.sout);
+      prop.setSpatialContinuousAtKey(idx, r.sc);
+      prop.setSpatialAutoBezierAtKey(idx, r.sa);
+    }
+  } catch (eP) { }
+  return idx;
+}
+function SHTZ_moveKeys(mode, frames) {
+  try {
+    var comp = _activeComp();
+    var props = comp.selectedProperties;
+    var fd = comp.frameDuration, fr = parseFloat(frames);
+    if (isNaN(fr)) { fr = 1; }
+    var list = [], i, j, p, layers = [], lay, rank, base = null, t0, delta, moved = 0, rec, recs, keys, newT;
+    for (i = 0; i < props.length; i++) {
+      p = props[i];
+      try {
+        if (p.propertyType !== PropertyType.PROPERTY || !p.numKeys || !p.selectedKeys || !p.selectedKeys.length) { continue; }
+      } catch (eP) { continue; }
+      list.push(p);
+      if (mode === "sequence") {
+        lay = _shtzLayerOfProp(p);
+        if (lay) {
+          var seen = false;
+          for (j = 0; j < layers.length; j++) { if (layers[j].index === lay.index) { seen = true; break; } }
+          if (!seen) { layers.push(lay); }
+        }
+      }
+      keys = p.selectedKeys;
+      for (j = 0; j < keys.length; j++) {
+        t0 = p.keyTime(keys[j]);
+        if (base === null || t0 < base) { base = t0; }
+      }
+    }
+    if (!list.length) { return _notice("Select keyframes first."); }
+    if (mode === "sequence") { layers.sort(function (a, b) { return a.index - b.index; }); }
+
+    app.beginUndoGroup(mode === "playhead" ? "Keys to Playhead" : (mode === "sequence" ? "Sequence Keyframes" : "Offset Keyframes"));
+    try {
+      for (i = 0; i < list.length; i++) {
+        p = list[i];
+        if (mode === "playhead") { delta = comp.time - base; }
+        else if (mode === "sequence") {
+          rank = 0; lay = _shtzLayerOfProp(p);
+          if (lay) { for (j = 0; j < layers.length; j++) { if (layers[j].index === lay.index) { rank = j; break; } } }
+          delta = rank * fr * fd;
+        } else { delta = fr * fd; }
+        if (delta === 0) { continue; }
+        keys = p.selectedKeys;
+        recs = [];
+        for (j = 0; j < keys.length; j++) { recs.push(_shtzReadKey(p, keys[j])); }
+        for (j = keys.length - 1; j >= 0; j--) { p.removeKey(keys[j]); }
+        for (j = 0; j < recs.length; j++) {
+          newT = recs[j].t + delta;
+          _shtzWriteKey(p, recs[j], newT);
+          moved++;
+        }
+        for (j = 0; j < recs.length; j++) {
+          try { p.setSelectedAtKey(p.nearestKeyIndex(recs[j].t + delta), true); } catch (eSel) { }
+        }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!moved) { return _notice("Nothing to move: the keys are already where you asked."); }
+    return _ok(moved + " keyframe" + (moved === 1 ? "" : "s") + " moved.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_distributeLayers(axis) {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers;
+    if (!sel || sel.length < 3) { throw new Error("Select at least three layers."); }
+    var ax = (axis === "y") ? 1 : 0;
+    var rows = [], skipped = 0, i, pos, prop;
+    for (i = 0; i < sel.length; i++) {
+      try {
+        prop = sel[i].property("ADBE Transform Group").property("ADBE Position");
+        if (!prop || prop.numKeys > 0) { skipped++; continue; }
+        pos = prop.value;
+        rows.push({ layer: sel[i], prop: prop, pos: pos });
+      } catch (eRow) { skipped++; }
+    }
+    if (rows.length < 3) { throw new Error("Need three layers with a static Position (no keyframes, not split into X / Y)."); }
+    rows.sort(function (a, b) { return a.pos[ax] - b.pos[ax]; });
+    var first = rows[0].pos[ax], last = rows[rows.length - 1].pos[ax], step = (last - first) / (rows.length - 1), v;
+    app.beginUndoGroup("Distribute Layers");
+    try {
+      for (i = 1; i < rows.length - 1; i++) {
+        v = rows[i].pos.slice(0);
+        v[ax] = first + step * i;
+        rows[i].prop.setValue(v);
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok((rows.length - 2) + " layer" + (rows.length - 2 === 1 ? "" : "s") + " spaced evenly." + (skipped ? " (" + skipped + " skipped)" : ""));
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function _shtzLayerKind(l) {
+  try {
+    if (l instanceof TextLayer) { return "text"; }
+    if (l instanceof ShapeLayer) { return "shape"; }
+    if (l instanceof CameraLayer) { return "camera"; }
+    if (l instanceof LightLayer) { return "light"; }
+    if (l.adjustmentLayer) { return "adjustment"; }
+    if (l.nullLayer) { return "null"; }
+    if (l.source && l.source instanceof CompItem) { return "precomp"; }
+    if (l.source && l.source.mainSource && l.source.mainSource instanceof SolidSource) { return "solid"; }
+  } catch (e) { }
+  return "footage";
+}
+function SHTZ_selectLayers(mode) {
+  try {
+    var comp = _activeComp();
+    var all = comp.layers, sel = comp.selectedLayers, i, n = 0, ref, want;
+    if (mode === "none") {
+      for (i = 1; i <= all.length; i++) { try { all[i].selected = false; } catch (eN) { } }
+      return _ok("Selection cleared.");
+    }
+    if (mode === "invert") {
+      for (i = 1; i <= all.length; i++) { try { all[i].selected = !all[i].selected; if (all[i].selected) { n++; } } catch (eI) { } }
+      return _ok(n + " layer" + (n === 1 ? "" : "s") + " selected.");
+    }
+    if (!sel || !sel.length) { throw new Error("Select a layer first. Its type or label decides what gets selected."); }
+    ref = sel[0];
+    want = (mode === "label") ? ref.label : _shtzLayerKind(ref);
+    for (i = 1; i <= all.length; i++) {
+      try {
+        if ((mode === "label") ? (all[i].label === want) : (_shtzLayerKind(all[i]) === want)) { all[i].selected = true; n++; }
+        else { all[i].selected = false; }
+      } catch (eS) { }
+    }
+    return _ok(n + " layer" + (n === 1 ? "" : "s") + " selected.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+// ─────────────────────────────────────────────
+// SHORTCUTZ EXTRA ACTIONS 3 (timeline speed-ups)
+//   SHTZ_addKeyAtTime()          - keyframe at the current time on every SELECTED property, keeping its current value
+//   SHTZ_removeKeys()            - removes all keyframes of the selected properties and keeps the value at the current time
+//   SHTZ_layerToPlayhead(mode)   - "start" | "end": slides each selected layer so its In / Out point sits on the current time
+//   SHTZ_reverseLayerOrder()     - reverses the stacking order of the selected layers (they keep the same slots)
+//   SHTZ_motionBlur()            - comp Motion Blur on, selected layers' Motion Blur switch on (all already on = off)
+//   SHTZ_textCase(mode)          - "upper" | "lower" | "title" | "sentence" on the text of selected text layers (static text only)
+//   SHTZ_randomize(what, a, b)   - "position" +-a px | "rotation" +-a deg | "scale" a..b % | "opacity" a..b %  (static values only)
+// ES3 only (ExtendScript): no let/const/arrow/forEach/trailing commas.
+// ─────────────────────────────────────────────
+function SHTZ_addKeyAtTime() {
+  try {
+    var comp = _activeComp();
+    var props = comp.selectedProperties, t = comp.time, i, p, n = 0;
+    if (!props || !props.length) { throw new Error("Select one or more properties in the timeline first (for example Position)."); }
+    app.beginUndoGroup("Add Keyframe");
+    try {
+      for (i = 0; i < props.length; i++) {
+        p = props[i];
+        try {
+          if (p.propertyType !== PropertyType.PROPERTY || !p.canVaryOverTime) { continue; }
+          p.setValueAtTime(t, p.valueAtTime(t, true));
+          n++;
+        } catch (eP) { }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!n) { return _notice("None of the selected properties can hold keyframes."); }
+    return _ok("Keyframe added on " + n + " propert" + (n === 1 ? "y" : "ies") + ".");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_removeKeys() {
+  try {
+    var comp = _activeComp();
+    var props = comp.selectedProperties, t = comp.time, i, k, p, v, n = 0, removed = 0;
+    if (!props || !props.length) { throw new Error("Select one or more animated properties first."); }
+    app.beginUndoGroup("Remove Keyframes");
+    try {
+      for (i = 0; i < props.length; i++) {
+        p = props[i];
+        try {
+          if (p.propertyType !== PropertyType.PROPERTY || !p.numKeys) { continue; }
+          v = p.valueAtTime(t, true);
+          for (k = p.numKeys; k >= 1; k--) { p.removeKey(k); removed++; }
+          try { p.setValue(v); } catch (eV) { }
+          n++;
+        } catch (eP) { }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!n) { return _notice("The selected properties have no keyframes."); }
+    return _ok(removed + " keyframe" + (removed === 1 ? "" : "s") + " removed from " + n + " propert" + (n === 1 ? "y" : "ies") + ".");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_layerToPlayhead(mode) {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers, i, d, n = 0;
+    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+    app.beginUndoGroup(mode === "end" ? "Layer End to Playhead" : "Layer Start to Playhead");
+    try {
+      for (i = 0; i < sel.length; i++) {
+        try {
+          if (sel[i].locked) { continue; }
+          d = comp.time - (mode === "end" ? sel[i].outPoint : sel[i].inPoint);
+          if (d !== 0) { sel[i].startTime = sel[i].startTime + d; n++; }
+        } catch (eL) { }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!n) { return _notice("The layers already sit there."); }
+    return _ok(n + " layer" + (n === 1 ? "" : "s") + " moved.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_reverseLayerOrder() {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers, i, a, b, above, L = [];
+    if (!sel || sel.length < 2) { throw new Error("Select at least two layers."); }
+    for (i = 0; i < sel.length; i++) { L.push(sel[i]); }
+    L.sort(function (x, y) { return x.index - y.index; });
+    app.beginUndoGroup("Reverse Layer Order");
+    try {
+      for (i = 0; i < Math.floor(L.length / 2); i++) {
+        a = L[i]; b = L[L.length - 1 - i];
+        above = (b.index - 1 >= 1) ? comp.layer(b.index - 1) : null;
+        b.moveBefore(a);
+        if (above && above.index !== a.index) { a.moveAfter(above); }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok("Order of " + L.length + " layers reversed.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_motionBlur() {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers, i, allOn = true, target, n = 0;
+    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+    for (i = 0; i < sel.length; i++) { try { if (!sel[i].motionBlur) { allOn = false; break; } } catch (eR) { } }
+    target = !allOn;
+    app.beginUndoGroup("Motion Blur");
+    try {
+      if (target) { comp.motionBlur = true; }
+      for (i = 0; i < sel.length; i++) { try { sel[i].motionBlur = target; n++; } catch (eS) { } }
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok("Motion Blur " + (target ? "on" : "off") + " for " + n + " layer" + (n === 1 ? "" : "s") + (target ? " (comp switch on too)." : "."));
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function _shtzCase(txt, mode) {
+  if (mode === "upper") { return txt.toUpperCase(); }
+  if (mode === "lower") { return txt.toLowerCase(); }
+  if (mode === "sentence") { return txt.toLowerCase().replace(/(^|[.!?]\s+|[\r\n]\s*)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }); }
+  return txt.toLowerCase().replace(/(^|[\s\-_(\/])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+}
+function SHTZ_textCase(mode) {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers, i, n = 0, skipped = 0, prop, doc, out;
+    if (!sel || !sel.length) { throw new Error("Select a text layer first."); }
+    app.beginUndoGroup("Text Case");
+    try {
+      for (i = 0; i < sel.length; i++) {
+        if (!(sel[i] instanceof TextLayer)) { continue; }
+        try {
+          prop = sel[i].property("ADBE Text Properties").property("ADBE Text Document");
+          if (prop.numKeys > 0) { skipped++; continue; }
+          doc = prop.value;
+          out = _shtzCase(String(doc.text), mode);
+          if (out !== doc.text) { doc.text = out; prop.setValue(doc); n++; }
+        } catch (eT) { skipped++; }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!n && !skipped) { return _notice("No text layers in the selection."); }
+    if (!n) { return _notice("Nothing changed" + (skipped ? " (" + skipped + " layer" + (skipped === 1 ? "" : "s") + " with animated source text were skipped)." : ".")); }
+    return _ok(n + " text layer" + (n === 1 ? "" : "s") + " changed." + (skipped ? " (" + skipped + " skipped)" : ""));
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function SHTZ_randomize(what, a, b) {
+  try {
+    var comp = _activeComp();
+    var sel = comp.selectedLayers, i, d, n = 0, skipped = 0, prop, v, A = parseFloat(a), B = parseFloat(b), amt, s, tg;
+    if (!sel || !sel.length) { throw new Error("Select one or more layers first."); }
+    if (isNaN(A)) { A = 0; }
+    if (isNaN(B)) { B = A; }
+    app.beginUndoGroup("Randomize " + what);
+    try {
+      for (i = 0; i < sel.length; i++) {
+        try {
+          tg = sel[i].property("ADBE Transform Group");
+          if (what === "position") { prop = tg.property("ADBE Position"); }
+          else if (what === "rotation") { prop = tg.property("ADBE Rotate Z"); }
+          else if (what === "scale") { prop = tg.property("ADBE Scale"); }
+          else if (what === "opacity") { prop = tg.property("ADBE Opacity"); }
+          else { throw new Error("Unknown property."); }
+          if (!prop || prop.numKeys > 0) { skipped++; continue; }
+          v = prop.value;
+          if (what === "position") {
+            amt = Math.abs(A);
+            v = v.slice(0);
+            v[0] = v[0] + (Math.random() * 2 - 1) * amt;
+            v[1] = v[1] + (Math.random() * 2 - 1) * amt;
+          } else if (what === "rotation") {
+            v = v + (Math.random() * 2 - 1) * Math.abs(A);
+          } else if (what === "scale") {
+            s = Math.min(A, B) + Math.random() * Math.abs(B - A);
+            v = v.slice(0);
+            for (d = 0; d < v.length; d++) { v[d] = s; }
+          } else {
+            v = Math.min(A, B) + Math.random() * Math.abs(B - A);
+            if (v < 0) { v = 0; } if (v > 100) { v = 100; }
+          }
+          prop.setValue(v);
+          n++;
+        } catch (eL) { skipped++; }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!n) { return _notice("Nothing randomized. " + (skipped ? skipped + " layer" + (skipped === 1 ? "" : "s") + " skipped (animated or separated values)." : "")); }
+    return _ok(n + " layer" + (n === 1 ? "" : "s") + " randomized." + (skipped ? " (" + skipped + " skipped)" : ""));
+  } catch (e) {
+    return _err(e);
+  }
+}

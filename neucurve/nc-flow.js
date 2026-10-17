@@ -200,6 +200,28 @@
     var land = !!(cw && cw.className.indexOf("is-landscape") >= 0);
     var divider = q(".section-divider");
     var strip = q(".preview-strip-container");
+    /* v27: leaving Expression Templates (or any mode that destroys the preset block) makes Svelte build a NEW .library-header inside a NEW
+       .preset-container. The old header was MOVED out by this file, so Svelte never removes it: it stays as a dead copy (dead "LIB",
+       dead Preset Options) and the tool row sits in it. Keep the fresh header (still inside .preset-container), carry our tool row over,
+       drop the dead copy. */
+    var heads = qa(".library-header");
+    if (heads.length > 1) {
+      var live = null, hi, dead, dtr, ob;
+      for (hi = 0; hi < heads.length; hi++) {
+        if (heads[hi].parentNode && heads[hi].parentNode.className.indexOf("preset-container") >= 0) { live = heads[hi]; }
+      }
+      if (live) {
+        for (hi = 0; hi < heads.length; hi++) {
+          dead = heads[hi]; if (dead === live) { continue; }
+          dtr = q(".fl-toolrow", dead);
+          if (dtr) {
+            ob = q(".options-menu-container", dtr); if (ob) { dtr.removeChild(ob); }          /* the dead Preset Options */
+            if (!q(".fl-toolrow", live)) { live.appendChild(dtr); }
+          }
+          if (dead.parentNode) { dead.parentNode.removeChild(dead); }
+        }
+      }
+    }
     var head = q(".library-header");
     if (document.documentElement.classList.contains("nc-view-graph")) { strip = null; }   /* v-view: graph-only view docks the strip inside the graph box (nc-view.js) */
     var host = bar, side = q(".fl-side");

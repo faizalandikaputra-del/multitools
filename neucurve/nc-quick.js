@@ -1,6 +1,6 @@
 /* NeuCurve - nc-quick.js (v1)   Favorites + preset keys for the preset grid.
    - Long-press (about 0.45 s) a preset to add / remove it from Favorites (same gesture as Multi Tool's Animation Presets). A small star marks it.
-   - A star button next to the library menu shows only the favorites of the open library.
+   - A star button in the library tool row (left of Preset Options) shows only the favorites of the open library.
    - Window.NCQuick is used by nc-pro.js hotkeys:  next() / prev() select the neighbouring preset,  fav(n) selects favorite n and presses APPLY,
      toggleFav() adds / removes the selected preset.
    Stored in localStorage "neucurve_favs" = [{lib:"default", name:"Ease"}, ...] and "neucurve_favOnly" = "1".
@@ -36,24 +36,49 @@
       n = nameOf(list[i]);
       list[i].classList.toggle("nc-fav", !!n && indexOfFav(l, n) >= 0);
     }
+    /* filter on but this library has no favorites: keep the grid visible (CSS ignores the filter while data-nc-favempty is set) */
+    if (favCount()) { if (root.hasAttribute("data-nc-favempty")) { root.removeAttribute("data-nc-favempty"); } }
+    else if (!root.hasAttribute("data-nc-favempty")) { root.setAttribute("data-nc-favempty", "1"); }
     paintToggle();
   }
   function queueMark() { if (!markQueued) { markQueued = true; (window.requestAnimationFrame || setTimeout)(mark); } }
+  function favCount() { var a = favs(), l = lib(), n = 0, i; for (i = 0; i < a.length; i++) { if (a[i].lib === l) { n++; } } return n; }
   function setOnly(on) { if (on) { root.setAttribute("data-nc-favonly", "1"); } else { root.removeAttribute("data-nc-favonly"); } lsSet(KEY_ONLY, on ? "1" : "0"); paintToggle(); }
+  var TIP_ON = "Show all presets", TIP_OFF = "Show favorites only", TIP_EMPTY = "No favorites yet - long-press a preset to add one";
   function paintToggle() {
     var b = document.querySelector(".nc-favtoggle"); if (!b) { return; }
-    var on = root.getAttribute("data-nc-favonly") === "1";
-    b.classList.toggle("is-on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    var on = root.getAttribute("data-nc-favonly") === "1", tip = on ? TIP_ON : TIP_OFF;
+    if (b.classList.contains("is-on") !== on) { b.classList.toggle("is-on", on); b.classList.toggle("active", on); }
+    if (b.getAttribute("aria-pressed") !== (on ? "true" : "false")) { b.setAttribute("aria-pressed", on ? "true" : "false"); }
+    /* the tooltip script (mt-tooltip.js) keeps the text in __mtTitle; writing the same value again would re-trigger the observer */
+    if ((b.getAttribute("title") || b.__mtTitle || "") !== tip && b.getAttribute("data-nc-tip") !== tip) { b.setAttribute("data-nc-tip", tip); b.title = tip; b.setAttribute("aria-label", tip); }
+  }
+  /* The star lives in the library tool row (next to Preset Options), as one more .fl-tool, so it has the size, hover and accent of
+     the other icons. Before nc-flow.js has built that row it waits in .lib-actions and is moved the moment the row exists. */
+  function toggleHome() {
+    var head = document.querySelector(".library-header"), row = head && head.querySelector(".fl-toolrow");
+    if (row) { return { host: row, before: row.querySelector(".options-menu-container") }; }
+    var acts = head && head.querySelector(".lib-actions");
+    return acts ? { host: acts, before: acts.querySelector(".options-menu-container") } : null;
   }
   function ensureToggle() {
-    if (document.querySelector(".nc-favtoggle")) { return; }
-    var host = document.querySelector(".lib-actions"), menu = host && host.querySelector(".options-menu-container");
-    if (!host) { return; }
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "lib-icon-btn nc-favtoggle"; b.title = "Show favorites only (long-press a preset to add one)"; b.setAttribute("aria-label", "Show favorites only");
-    b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
-    b.addEventListener("click", function (e) { e.stopPropagation(); setOnly(root.getAttribute("data-nc-favonly") !== "1"); });
-    host.insertBefore(b, menu || null);
+    var home = toggleHome(), b = document.querySelector(".nc-favtoggle");
+    if (!home) { return; }
+    if (!b) {
+      b = document.createElement("button");
+      b.type = "button"; b.className = "fl-tool nc-favtoggle"; b.title = TIP_OFF; b.setAttribute("aria-label", TIP_OFF);
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l2.6 5.3 5.8.85-4.2 4.1 1 5.8L12 16.5l-5.2 2.75 1-5.8-4.2-4.1 5.8-.85z"/></svg>';
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var on = root.getAttribute("data-nc-favonly") === "1";
+        if (!on && !favCount()) { flash(b); b.title = TIP_EMPTY; b.setAttribute("data-nc-tip", TIP_EMPTY); return; }   /* nothing to show: do not blank the grid */
+        setOnly(!on);
+      });
+    }
+    /* move only when the place is wrong - a same-place insert still fires the MutationObserver (endless loop) */
+    if (b.parentNode !== home.host || (home.before ? b.nextElementSibling !== home.before : b.nextElementSibling)) {
+      if (home.before && home.before.parentNode === home.host) { home.host.insertBefore(b, home.before); } else { home.host.appendChild(b); }
+    }
     paintToggle();
   }
 

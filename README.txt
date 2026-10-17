@@ -2087,3 +2087,33 @@ new (timeline speed-ups: keyframes at playhead, layer order, motion blur, text c
   Checked: node --check; Reverse Layer Order (contiguous and non-contiguous selections), text case and Layer Start to Playhead run against a Node mock of the AE layer API;
    headless Chromium preview: the Randomize chips switch labels and the Maximum row, and the call reaches the Bridge; 122 palette commands, 69 Shortcutz tiles.
    NOT run inside After Effects.
+
+fix (NeuCurve favorites toggle: new icon, new place):
+  What: the "show favorites only" star sat next to the Def / Sav dropdown, and in landscape it floated alone in the corner of the preset column. It looked like a second preset menu and
+   gave no feedback when there were no favorites (all presets vanished).
+  Cause: neucurve/nc-quick.js inserted it into .lib-actions; nc-flow.js moves the Preset Options container into .fl-toolrow in landscape, so the star was left outside the row.
+  Fix: neucurve/nc-quick.js puts the star into .fl-toolrow as one more .fl-tool, right before Preset Options (waits in .lib-actions until the row exists, moves only when the place is wrong).
+   Clicking it with no favorites in the open library does not turn the filter on (button flashes, tooltip explains). With the filter on and no favorites in a library, the grid stays
+   visible (html[data-nc-favempty], set in mark()). On state also sets .active.
+  Icon: neucurve/nc-icons-pro.js has the star in the NeuCurve family (1.7 stroke, soft tone fill) under three titles: "Show favorites only", "Show all presets",
+   "No favorites yet - long-press a preset to add one". neucurve/nc-quick.css: on state = favorite colour + filled tone + glow, light-theme variant.
+  Cache-bust: nc-quick.js ?v=2, nc-quick.css ?v=2, nc-icons-pro.js ?v=6.
+  Checked: node --check; headless Chromium (portrait and forced landscape): one star in .fl-toolrow before Preset Options, long-press adds a favorite, filter shows only it, empty click is ignored.
+   Only one Preset Options menu exists in the DOM; a second menu could not be reproduced. NOT run inside After Effects.
+
+fix (NeuCurve: duplicate library header after leaving Expression Templates):
+  What: entering Expression Templates and leaving it again showed TWO library bars: the moved one (Def dropdown, tool icons, Preset Options) and a second old-style "LIB / DEF / dots" bar under it,
+   with a second Preset Options that did nothing.
+  Cause: neucurve/nc-flow.js MOVES .library-header out of .preset-container into .fl-bar / .fl-side. Expression Templates destroys the preset block; Svelte removes only its own root, so the moved
+   header stayed as a dead copy. On leaving the mode Svelte built a fresh header inside a fresh .preset-container, and nc-flow.js kept using the first (dead) one.
+  Fix: build() in nc-flow.js now looks for more than one .library-header. The fresh one (parent .preset-container) is kept, our .fl-toolrow (with the favorites star) is carried over into it, the dead
+   Preset Options is dropped, the dead header is removed. Cache-bust: nc-flow.js ?v=27.
+  Checked: headless Chromium, portrait and landscape: enter and leave Expression Templates, header count stays 1 (before: 2), 21 presets back, Preset Options opens (3 cycles, landscape).
+   NOT run inside After Effects.
+
+fix (NeuCurve Expression mode: native scrollbar in the code box):
+  What: the expression code box showed the operating system's scrollbar (white track, arrow buttons) when the code is longer than the box.
+  Cause: .expr-box (compiled Svelte, neucurve/assets/index.js) had no scrollbar styling.
+  Fix: new neucurve/nc-expr.css (linked in neucurve/index.html after nc-quick.css, ?v=1): thin 8 px rounded thumb tinted with --nc-ui-rgb, transparent track, no arrow buttons, light-theme variant.
+   Only ::-webkit-scrollbar rules are used (the standard scrollbar-width / scrollbar-color are left out on purpose: in new Chromium they would switch the webkit rules off).
+  Checked: headless Chromium with real (non-overlay) scrollbars, before / after crop of the box: white native bar with arrows -> thin themed bar. NOT run inside After Effects.

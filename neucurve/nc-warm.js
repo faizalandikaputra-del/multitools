@@ -61,7 +61,7 @@
     origin = list[o];
     for (i = 0; i < list.length; i++) { if (i !== o) { order.push(list[i]); } }
     order.push(origin);                                     // end on the mode you were on
-    order = order.concat(order);                            // v3: two passes - the second one runs on code the engine has already started to optimise, and repaints what the first pass painted
+    order = order.concat(order, order);                            // v3: two passes - the second one runs on code the engine has already started to optimise, and repaints what the first pass painted
     (function next() {
       if (finished) { return; }
       if (k >= order.length) { setTimeout(function () { if (!finished) { done(true); } }, SETTLE); return; }
@@ -74,7 +74,7 @@
   function begin() {
     var list;
     if (finished) { return; }
-    if (document.hidden) { setTimeout(begin, 200); return; }
+    if (document.hidden || window.innerWidth < 120 || window.innerHeight < 120) { t0 = Date.now(); setTimeout(begin, 200); return; }   // no layout yet (panel hidden / 0 px): wait, and the give-up clock only runs while the frame is really shown
     list = tabs();
     if (list.length >= 2 && graphUp()) { setTimeout(function () { if (!finished) { run(tabs()); } }, 350); return; }   // let nc-flow / nc-gsize finish their first layout
     if (Date.now() - t0 > GIVE_UP) { done(false); return; }

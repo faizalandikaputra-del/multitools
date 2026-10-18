@@ -4294,13 +4294,7 @@
     },
 
     // Background preload at startup: NeuCurve's keyboard shortcuts live inside the frame, so the frame must exist even before the Curve tab is opened.
-    warm: function () {
-      var self = this;
-      function go() { try { self.start(); } catch (e) { } }
-      setTimeout(function () {
-        if (window.requestIdleCallback) { window.requestIdleCallback(go, { timeout: 2500 }); } else { go(); }
-      }, 1200);
-    },
+    warm: function () { var self = this; whenVisible(function () { try { self.start(); } catch (e) { } }); },
 
     show: function () {
       var self = this, main = $("main");
@@ -4333,10 +4327,22 @@
   // the first call into After Effects, every tab built once, and the NeuCurve frame with its graph + mode warm-up.
   // Reduce motion = no splash, so nothing is cycled on screen: only the quiet NeuCurve preload runs.
   // ---------------------------------------------------------
+  // A panel that opens hidden (docked behind another tab, or at 0 x 0 while After Effects restores the workspace) has no layout yet.
+  // Loading NeuCurve / building tabs in that state gives a graph measured at 0 px and a mode warm-up that silently gives up: everything
+  // then "works after Refresh Panel" only. So the heavy work waits until the panel is shown and has a real size.
+  function panelReady() { var m = $("main"); return !document.hidden && window.innerWidth > 120 && window.innerHeight > 120 && !!m && m.clientHeight > 60; }
+  function whenVisible(cb) {
+    var fired = false, iv = 0;
+    function go() { if (fired) { return; } if (panelReady()) { fired = true; clearInterval(iv); setTimeout(cb, 300); } }
+    go();
+    if (!fired) { iv = setInterval(go, 250); document.addEventListener("visibilitychange", go); window.addEventListener("resize", go); }
+  }
+  window.__MT_whenVisible = whenVisible;
+
   var Boot = {
     run: function (startTab) {
       var B = window.MTBoot, vis = !!(B && B.visible() && Motion.isOn());     // Animations OFF = no splash, nothing cycled on screen
-      if (!B || !vis) { if (B) { B.finish(); } Curve.warm(); return; }
+      if (!B || !vis) { if (B) { B.finish(); } whenVisible(function () { Curve.start(); }); return; }
       B.set("ui", 0.4, "Starting panel");
       var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
       function uiDone() { B.done("ui"); }
@@ -4347,8 +4353,10 @@
       function bridgeDone() { if (!bd) { bd = true; B.done("bridge"); } }
       Bridge.call("ping").then(bridgeDone, bridgeDone); setTimeout(bridgeDone, 4000);
 
-      Curve.start();                                                // loads in parallel with the tabs below
-      setTimeout(function () { Boot.primeTabs(startTab); }, 250);   // let the first paint happen first
+      whenVisible(function () {
+        Curve.start();                                              // loads in parallel with the tabs below
+        setTimeout(function () { Boot.primeTabs(startTab); }, 250); // let the first paint happen first
+      });
     },
 
     // Builds every normal tab once (the same thing a click does), then goes back to the tab you start on.

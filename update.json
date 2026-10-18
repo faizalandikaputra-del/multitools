@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.85",
-    "changelog":  "- Update 1.8.85",
+    "latest_version":  "1.8.86",
+    "changelog":  "- Update 1.8.86",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -44,7 +44,7 @@
                   },
                   {
                       "path":  "css/mt-boot.css",
-                      "sha256":  "0bbbd20eeeec54919be9099dd187c4d4490a44eaa2665e2e9fba9df40780392c"
+                      "sha256":  "2bb16bc66d58a60a792295b41fd0f5c1e5fe6656db76aca079a3331293ae8c81"
                   },
                   {
                       "path":  "css/mt-colorpicker.css",
@@ -220,7 +220,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "73f9d95f5a2207263a092515cce3ccaf9508ffa97e8344d3ad536913b9777fb4"
+                      "sha256":  "f3732ac386dcc73ce7d3bbbf33bd6fae9df1210b0b985929a1ce019093d8e3bd"
                   },
                   {
                       "path":  "html/settings.html",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "50dc33362d2b23c25ca4f32ae81def47e778c2a624974dd4bc2bcd91a82665fb"
+                      "sha256":  "e8fb6c2fb5701c80fe0896fc3815539e93401fe8705daddb7d8e621faa61c01e"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "js/splash.js",
-                      "sha256":  "228df644daec16a20d0bd0f08b336f00053d8ff598312638cf6500d96b950e9d"
+                      "sha256":  "2e98f6d13d5c65712585de61b24aa200e78e46187cca78ec4eb473b07795173f"
                   },
                   {
                       "path":  "js/tab-wheel.js",
@@ -392,7 +392,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "b87e738d6506d85aa443afc1d9502bf6b6f6f0220176579badf35e164df15475"
+                      "sha256":  "aa1670c4b3df4039bde623a2f23f8de1e2b7e451386f8816404477e6964a7438"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -684,7 +684,7 @@
                   },
                   {
                       "path":  "neucurve/nc-warm.js",
-                      "sha256":  "d9eab25e2c4b10536ad1fa47d6e55ebdf2f0f2b42beaddade5282e6bfd880e34"
+                      "sha256":  "020e1518ebccec95892442f4ae2013e0b4dd1d15a2def94f06aefed7bc9b7691"
                   },
                   {
                       "path":  "neucurve/settings.html",

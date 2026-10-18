@@ -12,7 +12,7 @@
   var W = { ui: 0.08, bridge: 0.12, tabs: 0.25, curve: 0.55 };
   var st = { ui: 0, bridge: 0, tabs: 0, curve: 0 };
   var fin = { ui: false, bridge: false, tabs: false, curve: false };
-  var t0 = Date.now(), shown = 0, target = 0, label = "Starting panel";
+  var t0 = 0, loadedAt = Date.now(), shown = 0, target = 0, label = "Starting panel";
   var gone = false, leaving = false, skipped = false, timer = 0, skipCbs = [];
   var loader = document.getElementById("mts-load");
   var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
@@ -20,21 +20,23 @@
   function clamp(p) { return p < 0 ? 0 : (p > 1 ? 1 : p); }
   function cache(el) {
     if (el._mtl) { return el._mtl; }
-    var fill = el.querySelector(".mtl-fill"), len = 220;
-    try { len = fill.getTotalLength() || 220; } catch (e) { }
+    var fill = el.querySelector(".mtl-fill"), len = 163.4;
+    try { len = 2 * Math.PI * parseFloat(fill.getAttribute("r")); } catch (e) { }
     fill.style.strokeDasharray = len; fill.style.strokeDashoffset = len;
-    el._mtl = { fill: fill, dot: el.querySelector(".mtl-dot"), len: len, lbl: el.querySelector(".mtl-lbl"), pct: el.querySelector(".mtl-pct") };
+    el._mtl = { fill: fill, orbit: el.querySelector(".mtl-orbit"), len: len, lbl: el.querySelector(".mtl-lbl"), pct: el.querySelector(".mtl-pct") };
     return el._mtl;
   }
-  // Paints one loader element: the accent stroke draws along the ease curve, the dot rides its tip.
+  // Paints one ring: the accent arc grows clockwise from 12 o'clock, the dot rides its tip, the centre shows the percent.
   function paint(el, p, text) {
     if (!el) { return; }
-    var c = cache(el), pt;
+    var c = cache(el);
     p = clamp(p);
     c.fill.style.strokeDashoffset = c.len * (1 - p);
-    try { pt = c.fill.getPointAtLength(c.len * p); c.dot.setAttribute("cx", pt.x); c.dot.setAttribute("cy", pt.y); } catch (e) { }
+    if (c.orbit) { c.orbit.setAttribute("transform", "rotate(" + (p * 360).toFixed(2) + " 32 32)"); }
     if (text !== undefined && text !== null && c.lbl && c.lbl.textContent !== text) { c.lbl.textContent = text; }
     if (c.pct) { c.pct.textContent = Math.round(p * 100) + "%"; }
+    if (p >= 0.999) { if (el.className.indexOf("is-full") < 0) { el.className += " is-full"; } }
+    else if (el.className.indexOf("is-full") >= 0) { el.className = el.className.replace(/\s*is-full/g, ""); }
     el.setAttribute("aria-valuenow", String(Math.round(p * 100)));
   }
   function overall() { var k, t = 0; for (k in W) { if (W.hasOwnProperty(k)) { t += W[k] * (fin[k] ? 1 : clamp(st[k])); } } return t; }
@@ -42,7 +44,7 @@
 
   function done() {
     if (gone) { return; }
-    gone = true; clearTimeout(timer);
+    gone = true; clearInterval(timer); clearTimeout(timer);
     if (s) { s.className += " is-done"; if (s.parentNode) { s.parentNode.removeChild(s); } }
   }
   function leave() {
@@ -59,10 +61,11 @@
     s.style.transition = "opacity 0.2s ease";
     s.style.animation = "none";
     s.style.opacity = "0";
-    clearTimeout(timer); timer = setTimeout(done, 220);
+    clearInterval(timer); timer = setTimeout(done, 220);
   }
   function tick() {
     if (gone || skipped) { return; }
+    if (!t0) { t0 = Date.now(); }                // clock starts at the first painted frame: a panel that opens hidden (docked behind another tab) only counts once it is seen
     target = overall();
     var d = target - shown;
     if (d > 0) { shown += Math.max(d * 0.14, 0.004); if (shown > target) { shown = target; } }
@@ -80,14 +83,17 @@
     onSkip: function (cb) { skipCbs.push(cb); },
     set: function (name, f, text) { if (!W.hasOwnProperty(name)) { return; } if (f > st[name]) { st[name] = f; } if (text) { label = text; } },
     done: function (name) { if (W.hasOwnProperty(name)) { st[name] = 1; fin[name] = true; } },
-    finish: function () { var k; for (k in fin) { if (fin.hasOwnProperty(k)) { fin[k] = true; } } shown = 1; MIN_SHOW = 0; }
+    finish: function () { var k; for (k in fin) { if (fin.hasOwnProperty(k)) { fin[k] = true; } } shown = 1; MIN_SHOW = 0; if (!t0) { t0 = Date.now(); } }
   };
 
   if (!s) { return; }
   s.addEventListener("animationend", function (e) { if (e.target === s && e.animationName === "mts-out") { done(); } });
   s.addEventListener("mousedown", skip);
   document.addEventListener("keydown", skip);
-  timer = setTimeout(function () { leave(); }, HARD_CAP + 1500);   // safety net if the loop above never runs
+  timer = setInterval(function () {                               // safety net if the loop above never runs
+    if (gone) { clearInterval(timer); return; }
+    if ((t0 && Date.now() - t0 > HARD_CAP + 1500) || (!t0 && Date.now() - loadedAt > 90000)) { clearInterval(timer); leave(); }
+  }, 500);
   paint(loader, 0, label);
   raf(tick);
 })();

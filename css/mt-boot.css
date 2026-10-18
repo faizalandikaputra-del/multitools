@@ -1,19 +1,26 @@
-/* mt-boot.css - progress loader shared by the opening splash (js/splash.js) and the Curve tab (js/main.js, Curve.progress).
-   One ease curve is the progress bar: the accent stroke draws along it and the dot rides its tip, handles and all (the same
-   vocabulary as the NeuCurve graph). Painted by MTBoot.paint(el, 0..1, label). Loaded right after splash.css so it paints with the splash. */
-.mtl { width: 208px; max-width: 80vw; display: flex; flex-direction: column; gap: 7px; color: var(--text, #f0f0f0); -webkit-user-select: none; user-select: none; }
-.mtl-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.mtl-hl { fill: none; stroke: var(--text-faint, #666); stroke-opacity: 0.55; stroke-width: 1; }
-.mtl-hp { fill: var(--bg, #1e1e1e); stroke: var(--text-dim, #a0a0a0); stroke-opacity: 0.8; stroke-width: 1.3; }
-.mtl-track { fill: none; stroke: var(--text-faint, #666); stroke-opacity: 0.5; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 2 5; }
-.mtl-fill { fill: none; stroke: var(--theme-accent, #fff); stroke-width: 2.8; stroke-linecap: round; }
-.mtl-dot { fill: var(--theme-accent, #fff); filter: drop-shadow(0 0 5px rgba(var(--accent-rgb, 255, 255, 255), 0.6)); }
-.mtl-row { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; line-height: 1.3; color: var(--text-dim, #a0a0a0); font-variant-numeric: tabular-nums; }
-.mtl-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mtl-pct { flex: none; color: var(--text, #f0f0f0); }
+/* mt-boot.css - circular progress loader shared by the opening splash (js/splash.js) and the Curve pane (js/main.js, Curve.progress).
+   Painted by MTBoot.paint(el, 0..1, label). Motion: the ring enters in 300 ms (decelerate), the accent arc follows REAL progress (eased in JS),
+   the dot rides the arc tip, a faint sweep keeps turning so a slow stage never looks frozen, and at 100 % the ring does one 350 ms settle pulse. */
+.mtl { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text, #f0f0f0); -webkit-user-select: none; user-select: none; }
+.mtl-ring { position: relative; width: 76px; height: 76px; }
+.mtl-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
+.mtl-track { fill: none; stroke: var(--text-faint, #666); stroke-opacity: 0.35; stroke-width: 3; }
+.mtl-sweep { fill: none; stroke: var(--theme-accent, #fff); stroke-opacity: 0.28; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 26 138; transform-origin: 32px 32px; animation: mtl-sweep 1.15s linear infinite; }
+.mtl-fill { fill: none; stroke: var(--theme-accent, #fff); stroke-width: 3.6; stroke-linecap: round; }
+.mtl-dot { fill: var(--theme-accent, #fff); filter: drop-shadow(0 0 4px rgba(var(--accent-rgb, 255, 255, 255), 0.65)); }
+.mtl-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; color: var(--text, #f0f0f0); }
+.mtl-lbl { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; line-height: 1.3; color: var(--text-dim, #a0a0a0); }
+.mtl.is-full .mtl-ring { animation: mtl-settle 0.35s cubic-bezier(0.2, 0, 0, 1); }
+.mtl.is-full .mtl-sweep { animation: none; opacity: 0; }
 
-/* inside the opening splash: appears after the title has landed, then stays until the real work is finished */
-.mts-load { margin-top: 24px; opacity: 0; animation: mts-fade 0.5s ease 1s forwards; }
+/* inside the opening splash: appears once the title has landed, stays until the real work is finished */
+.mts-load { margin-top: 22px; opacity: 0; transform: scale(0.92); animation: mtl-in 0.3s cubic-bezier(0.2, 0, 0, 1) 0.95s forwards; }
 
 /* inside the Curve pane while NeuCurve loads / warms its modes */
-.curve-loading .mtl { padding: 14px 16px 12px; border-radius: var(--radius-lg, 12px); background: var(--bg-elev, rgba(0, 0, 0, 0.35)); }
+.curve-loading .mtl { padding: 16px 22px 14px; border-radius: var(--radius-lg, 14px); background: var(--bg-elev, rgba(0, 0, 0, 0.38)); animation: mtl-in 0.3s cubic-bezier(0.2, 0, 0, 1) both; }
+
+@keyframes mtl-sweep  { to { transform: rotate(360deg); } }
+@keyframes mtl-in     { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes mtl-settle { 0% { transform: scale(1); } 45% { transform: scale(1.07); } 100% { transform: scale(1); } }
+:root[data-reduce-motion="true"] .mtl-sweep, :root[data-reduce-motion="true"] .mtl.is-full .mtl-ring { animation: none; }
+:root[data-reduce-motion="true"] .curve-loading .mtl { animation: none; }

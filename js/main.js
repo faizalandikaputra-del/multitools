@@ -4274,8 +4274,23 @@
       this.started = true;
       this.pane.classList.add("is-loading");
       /* v28: keep the spinner until the frame says its modes are warmed up ({mtCurveReady}, see neucurve/nc-warm.js); 4 s safety net */
-      this.frame.addEventListener("load", function () { self.sync(true); setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000); });
+      this.frame.addEventListener("load", function () {
+        self.sync(true);
+        self.progress(0.2, "Loading graph");
+        setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000);
+        setTimeout(function () { self.progress(1, "Ready"); }, 9000);          // boot never waits longer than this for the mode warm-up
+      });
+      this.progress(0.05, "Loading NeuCurve");
       this.frame.src = this.frame.getAttribute("data-src");
+    },
+
+    // Loader inside the Curve pane + the "curve" stage of the opening splash (js/splash.js). f = 0..1; 1 also ends the stage.
+    progress: function (f, label) {
+      var B = window.MTBoot;
+      if (f < (this._pf || 0)) { f = this._pf; }                                  // never goes backwards
+      this._pf = f;
+      try { B && B.paint(this.pane.querySelector(".mtl"), f, label); } catch (e) { }
+      if (B) { if (f >= 1) { B.done("curve"); } else { B.set("curve", f, label); } }
     },
 
     // Background preload at startup: NeuCurve's keyboard shortcuts live inside the frame, so the frame must exist even before the Curve tab is opened.
@@ -4313,9 +4328,57 @@
 
   Curve.watchScheme();
 
+  // ---------------------------------------------------------
+  // Boot: while the opening splash is up (js/splash.js) load everything once, so nothing is cold when you start working:
+  // the first call into After Effects, every tab built once, and the NeuCurve frame with its graph + mode warm-up.
+  // Reduce motion = no splash, so nothing is cycled on screen: only the quiet NeuCurve preload runs.
+  // ---------------------------------------------------------
+  var Boot = {
+    run: function (startTab) {
+      var B = window.MTBoot, vis = !!(B && B.visible() && Motion.isOn());     // Animations OFF = no splash, nothing cycled on screen
+      if (!B || !vis) { if (B) { B.finish(); } Curve.warm(); return; }
+      B.set("ui", 0.4, "Starting panel");
+      var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+      function uiDone() { B.done("ui"); }
+      fonts.then(uiDone, uiDone); setTimeout(uiDone, 3000);
+
+      B.set("bridge", 0.1, "Waking After Effects");
+      var bd = false;
+      function bridgeDone() { if (!bd) { bd = true; B.done("bridge"); } }
+      Bridge.call("ping").then(bridgeDone, bridgeDone); setTimeout(bridgeDone, 4000);
+
+      Curve.start();                                                // loads in parallel with the tabs below
+      setTimeout(function () { Boot.primeTabs(startTab); }, 250);   // let the first paint happen first
+    },
+
+    // Builds every normal tab once (the same thing a click does), then goes back to the tab you start on.
+    primeTabs: function (startTab) {
+      var B = window.MTBoot, ids = [], id, i = 0, stopped = false, ended = false;
+      for (id in TABS) { if (TABS.hasOwnProperty(id) && TABS[id].custom !== "curve") { ids.push(id); } }
+      B.onSkip(function () { stopped = true; });
+      function end() {
+        if (ended) { return; }
+        ended = true;
+        try { if (currentTab !== startTab || ids.length) { renderTab(startTab); } } catch (e) { }
+        B.done("tabs");
+      }
+      (function next() {
+        if (stopped || i >= ids.length) { end(); return; }
+        B.set("tabs", i / ids.length, "Loading " + (TABS[ids[i]].title || ids[i]));
+        try { renderTab(ids[i]); } catch (e) { }
+        i++;
+        setTimeout(next, 70);
+      })();
+    }
+  };
+
   window.addEventListener("message", function (e) {
     if (e.data && e.data.mtBgRequest && e.source === Curve.frame.contentWindow) { Curve.sync(true); }
-    if (e.data && e.data.mtCurveReady && e.source === Curve.frame.contentWindow) { Curve.pane.classList.remove("is-loading"); }
+    if (e.data && e.data.mtCurveProgress && e.source === Curve.frame.contentWindow) {
+      var cp = e.data.mtCurveProgress;
+      Curve.progress(0.2 + 0.8 * Math.max(0, Math.min(1, +cp.f || 0)), cp.label || "Warming graph");   // frame load = first 20 %, mode warm-up = the rest
+    }
+    if (e.data && e.data.mtCurveReady && e.source === Curve.frame.contentWindow) { Curve.progress(1, "Ready"); Curve.pane.classList.remove("is-loading"); }
   });
 
   // A separate NeuCurve window (Large Graph Editor / Settings) announces itself on load and asks for the current theme.
@@ -6928,7 +6991,7 @@
     syncTheme();
     if (cs) { try { cs.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, syncTheme); } catch (e) {} }
     initTabs();
-    Curve.warm();
+    Boot.run(currentTab);
     initResponsiveLayout();
     ContextMenu.init();
     Settings.init();

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.84",
-    "changelog":  "- Update 1.8.84",
+    "latest_version":  "1.8.85",
+    "changelog":  "- Update 1.8.85",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -41,6 +41,10 @@
                   {
                       "path":  "css/mt-bg-preview.css",
                       "sha256":  "a2e93bf5d4ada71696586678b1c25b3701642ac29ecb24d2b29f96576ba0825d"
+                  },
+                  {
+                      "path":  "css/mt-boot.css",
+                      "sha256":  "0bbbd20eeeec54919be9099dd187c4d4490a44eaa2665e2e9fba9df40780392c"
                   },
                   {
                       "path":  "css/mt-colorpicker.css",
@@ -192,7 +196,7 @@
                   },
                   {
                       "path":  "css/splash.css",
-                      "sha256":  "04ad06b3f41b4dbd0c8825feb15f6c34ed0a26708184efbda094817c61235f3b"
+                      "sha256":  "de16521dc18708df96271eec7c01559651f0eca3e49b79029ae3f23109df8d7b"
                   },
                   {
                       "path":  "css/style.css",
@@ -216,7 +220,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "302a4f5e73c8ac3696495989098a0e37224d286ebdd9dc5a775b438787fb931f"
+                      "sha256":  "73f9d95f5a2207263a092515cce3ccaf9508ffa97e8344d3ad536913b9777fb4"
                   },
                   {
                       "path":  "html/settings.html",
@@ -236,7 +240,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "62540d6511fdd779d194a08b9ce3340607af1646fa0fa08d9a6aef9c647d25b4"
+                      "sha256":  "50dc33362d2b23c25ca4f32ae81def47e778c2a624974dd4bc2bcd91a82665fb"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -368,7 +372,7 @@
                   },
                   {
                       "path":  "js/splash.js",
-                      "sha256":  "5c102b09b125110959c98c066092db6e1c68323ddb1cccc8f5de50079303c2f5"
+                      "sha256":  "228df644daec16a20d0bd0f08b336f00053d8ff598312638cf6500d96b950e9d"
                   },
                   {
                       "path":  "js/tab-wheel.js",
@@ -388,7 +392,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "c227f9ac81083104ca96c24c1ff6dd905101fdc7e1a92e0a78246716a087730b"
+                      "sha256":  "b87e738d6506d85aa443afc1d9502bf6b6f6f0220176579badf35e164df15475"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -680,7 +684,7 @@
                   },
                   {
                       "path":  "neucurve/nc-warm.js",
-                      "sha256":  "ddcc17404b331b31b24c392138cb25db744555ee2817b8cbf7b31ead2a4c0724"
+                      "sha256":  "d9eab25e2c4b10536ad1fa47d6e55ebdf2f0f2b42beaddade5282e6bfd880e34"
                   },
                   {
                       "path":  "neucurve/settings.html",

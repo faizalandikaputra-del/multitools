@@ -2142,3 +2142,9 @@ fix (blank panel after the previous change; NeuCurve load logic is now a copy of
   Loader UI only: the spinner in the Curve pane is a ring (css/mt-boot.css, markup in html/index.html) that turns by CSS alone, with the text "Loading NeuCurve". It shows and hides with the same
    .is-loading flag as before. The progress percent / "Warming Elastic" text of the earlier entry is gone.
   Cache-bust: main.js ?v=40, mt-boot.css ?v=4, nc-warm.js ?v=3.
+
+new (minimal loader in the Curve tab: outlined pill + light bar, "LOADING..."):
+  The ring spinner of the Curve pane is replaced by a minimal pill loader (reference screenshot from the owner): a thin outlined rounded track, a light bar that glides through it
+  (1.5 s, ease in-out, loops) and a small letter-spaced "LOADING" line whose dots count up. Pure CSS, colors follow --text / --text-dim / --text-faint so it fits the dark and the light style.
+  Animations off (html[data-reduce-motion="true"]): the bar rests and the dots stay still. Files: css/mt-boot.css (rewritten), html/index.html (markup inside .curve-loading). Cache-bust: mt-boot.css ?v=5.
+  Only the look changed: it is still shown by the same .is-loading flag, js/main.js and neucurve/nc-warm.js are untouched. Checked in headless Chromium; not run inside After Effects.

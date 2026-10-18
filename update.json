@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.88",
-    "changelog":  "- Update 1.8.88",
+    "latest_version":  "1.8.89",
+    "changelog":  "- Update 1.8.89",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -44,7 +44,7 @@
                   },
                   {
                       "path":  "css/mt-boot.css",
-                      "sha256":  "1c244fde366374fdaedfba5cc54af66fb48291d3485b7d4746018f11c1d185d0"
+                      "sha256":  "2cd5c33cd75a815e1369dee07d7aff2fee9680021a6fc5dbab5f93e18fbffb8c"
                   },
                   {
                       "path":  "css/mt-colorpicker.css",
@@ -220,7 +220,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "fad49019834732f84708a2c63ae3dee674315bcccc232da194cec1b21319cd61"
+                      "sha256":  "3b9cdcc3189a5888de8c246533bf85d9be7175801ba4808762b0ce843e77f76f"
                   },
                   {
                       "path":  "html/settings.html",
@@ -692,7 +692,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "127eef9fb4942719881289956fad28ecc7202d33af1fad4da88eb48d1bea59cc"
+                      "sha256":  "41aa8b2d948ff12bf9fde8e6d448e120b4f406a07ecf195dec21f8fa37a68693"
                   }
               ]
 }

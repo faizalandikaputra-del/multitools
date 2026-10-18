@@ -24,9 +24,6 @@
   function ready() {
     try { if (window.parent && window.parent !== window) { window.parent.postMessage({ mtCurveReady: true }, "*"); } } catch (e) { }
   }
-  function progress(f, label) {
-    try { if (window.parent && window.parent !== window) { window.parent.postMessage({ mtCurveProgress: { f: f, label: label } }, "*"); } } catch (e) { }
-  }
   function vis(el) { return !!el && el.getClientRects && el.getClientRects().length > 0; }
   function isActive(el) { return /(^|\s)active(\s|$)/.test(el.className || ""); }
   function tabs() {
@@ -65,7 +62,6 @@
     (function next() {
       if (finished) { return; }
       if (k >= order.length) { setTimeout(function () { if (!finished) { done(true); } }, SETTLE); return; }
-      progress(k / order.length, "Warming " + (String(order[k].textContent || "").replace(/^\s+|\s+$/g, "").slice(0, 22) || "graph"));
       try { order[k++].click(); } catch (e) { }
       raf(function () { raf(next); });
     })();
@@ -74,11 +70,10 @@
   function begin() {
     var list;
     if (finished) { return; }
-    if (document.hidden || window.innerWidth < 120 || window.innerHeight < 120) { t0 = Date.now(); setTimeout(begin, 200); return; }   // no layout yet (panel hidden / 0 px): wait, and the give-up clock only runs while the frame is really shown
+    if (document.hidden) { setTimeout(begin, 200); return; }
     list = tabs();
     if (list.length >= 2 && graphUp()) { setTimeout(function () { if (!finished) { run(tabs()); } }, 350); return; }   // let nc-flow / nc-gsize finish their first layout
     if (Date.now() - t0 > GIVE_UP) { done(false); return; }
-    progress(0, "Drawing graph");
     setTimeout(begin, 120);
   }
 

@@ -4267,45 +4267,15 @@
       } catch (e3) { /* not running inside CEP */ }
     },
 
-    // Loads the NeuCurve frame once (used by show() and by warm()). The pane keeps its full size while hidden, so loading it early is safe.
-    start: function () {
-      var self = this;
-      if (this.started) { return; }
-      this.started = true;
-      this.pane.classList.add("is-loading");
-      /* v28: keep the spinner until the frame says its modes are warmed up ({mtCurveReady}, see neucurve/nc-warm.js); 4 s safety net */
-      this.frame.addEventListener("load", function () {
-        self.sync(true);
-        self.progress(0.2, "Loading graph");
-        setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000);
-      });
-      this.progress(0.05, "Loading NeuCurve");
-      this.frame.src = this.frame.getAttribute("data-src");
-    },
-
-    // Ring loader inside the Curve pane (css/mt-boot.css). f = 0..1, never goes backwards. Fed by neucurve/nc-warm.js while it warms the modes.
-    progress: function (f, label) {
-      var el = this.pane.querySelector(".mtl"), c, p = Math.max(0, Math.min(1, f));
-      if (p < (this._pf || 0)) { p = this._pf; }
-      this._pf = p;
-      if (!el) { return; }
-      c = el._mtl;
-      if (!c) {
-        var fill = el.querySelector(".mtl-fill"), len = 163.4;
-        try { len = 2 * Math.PI * parseFloat(fill.getAttribute("r")); } catch (e) { }
-        fill.style.strokeDasharray = len;
-        c = el._mtl = { fill: fill, orbit: el.querySelector(".mtl-orbit"), len: len, lbl: el.querySelector(".mtl-lbl"), pct: el.querySelector(".mtl-pct") };
-      }
-      c.fill.style.strokeDashoffset = c.len * (1 - p);
-      if (c.orbit) { c.orbit.setAttribute("transform", "rotate(" + (p * 360).toFixed(2) + " 32 32)"); }
-      if (label && c.lbl && c.lbl.textContent !== label) { c.lbl.textContent = label; }
-      if (c.pct) { c.pct.textContent = Math.round(p * 100) + "%"; }
-      el.classList.toggle("is-full", p >= 0.999);
-    },
-
     show: function () {
       var self = this, main = $("main");
-      this.start();
+      if (!this.started) {
+        this.started = true;
+        this.pane.classList.add("is-loading");
+        /* v28: keep the spinner until the frame says its modes are warmed up ({mtCurveReady}, see neucurve/nc-warm.js); 4 s safety net */
+        this.frame.addEventListener("load", function () { self.sync(true); setTimeout(function () { self.pane.classList.remove("is-loading"); }, 4000); });
+        this.frame.src = this.frame.getAttribute("data-src");
+      }
       main.classList.add("is-curve");
       document.documentElement.classList.add("mt-curve-open");
       /* v27: a playing background video repaints under the NeuCurve iframe every frame - pause it while the Curve tab is open */
@@ -4331,11 +4301,7 @@
 
   window.addEventListener("message", function (e) {
     if (e.data && e.data.mtBgRequest && e.source === Curve.frame.contentWindow) { Curve.sync(true); }
-    if (e.data && e.data.mtCurveProgress && e.source === Curve.frame.contentWindow) {
-      var cp = e.data.mtCurveProgress;
-      Curve.progress(0.2 + 0.8 * Math.max(0, Math.min(1, +cp.f || 0)), cp.label || "Warming graph");   // frame load = first 20 %, mode warm-up = the rest
-    }
-    if (e.data && e.data.mtCurveReady && e.source === Curve.frame.contentWindow) { Curve.progress(1, "Ready"); Curve.pane.classList.remove("is-loading"); }
+    if (e.data && e.data.mtCurveReady && e.source === Curve.frame.contentWindow) { Curve.pane.classList.remove("is-loading"); }
   });
 
   // A separate NeuCurve window (Large Graph Editor / Settings) announces itself on load and asks for the current theme.

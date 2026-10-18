@@ -2132,3 +2132,13 @@ fix (NeuCurve mode switches lagged after the background preload; panel opens lik
   Side effect: NeuCurve's own keys (neucurve/nc-pro.js) work again only after the Curve tab has been opened once per session (the frame does not exist before that).
    The panel's keys (js/mt-hotkeys.js, Ctrl+K and every command key) work on every tab; a combo that NeuCurve also uses belongs to NeuCurve once its frame is loaded.
   Cache-bust: main.js ?v=39, mt-boot.css ?v=3, nc-warm.js ?v=100. Syntax-checked only (node --check); not run inside After Effects.
+
+fix (blank panel after the previous change; NeuCurve load logic is now a copy of the working zip):
+  Cause: while putting the opening splash back, an edit of html/index.html removed one closing </div> of the splash block. The splash then never closed, the whole panel sat
+   inside it and was removed together with the splash, so nothing showed.
+  Fix: the </div> is back (div count balanced). Checked in headless Chromium (html/index.html): 11 tabs, tool grid rendered, splash removed, Curve tab opens and the frame loads on first visit.
+  NeuCurve load logic: js/main.js Curve block (show / hide / frame load / loading spinner flag) and the "message" handler are now identical to the zip that worked;
+   neucurve/nc-warm.js is the same file as in that zip (no progress messages, no size wait). Nothing preloads and no extra Curve.start / Curve.progress exist any more.
+  Loader UI only: the spinner in the Curve pane is a ring (css/mt-boot.css, markup in html/index.html) that turns by CSS alone, with the text "Loading NeuCurve". It shows and hides with the same
+   .is-loading flag as before. The progress percent / "Warming Elastic" text of the earlier entry is gone.
+  Cache-bust: main.js ?v=40, mt-boot.css ?v=4, nc-warm.js ?v=3.

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.87",
-    "changelog":  "- Update 1.8.87",
+    "latest_version":  "1.8.88",
+    "changelog":  "- Update 1.8.88",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -44,7 +44,7 @@
                   },
                   {
                       "path":  "css/mt-boot.css",
-                      "sha256":  "cd61695664640a5ba98203d5c1418bc7a545037264439df4afe6094bfd33dc08"
+                      "sha256":  "1c244fde366374fdaedfba5cc54af66fb48291d3485b7d4746018f11c1d185d0"
                   },
                   {
                       "path":  "css/mt-colorpicker.css",
@@ -220,7 +220,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "e57a733fae4da14c5d3c39b1884c4a3767412af52c892efb8bb6ba495e296df6"
+                      "sha256":  "fad49019834732f84708a2c63ae3dee674315bcccc232da194cec1b21319cd61"
                   },
                   {
                       "path":  "html/settings.html",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "249bc2c63a0971e53466aa7de80739b7ee20afe8517e19f615675ba412dba8b0"
+                      "sha256":  "1561d8baf567bf0c62b4bf7b6c0cf824de4b3e93585b7f53ad2c302a11844316"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -392,7 +392,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "aa1670c4b3df4039bde623a2f23f8de1e2b7e451386f8816404477e6964a7438"
+                      "sha256":  "c227f9ac81083104ca96c24c1ff6dd905101fdc7e1a92e0a78246716a087730b"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -684,7 +684,7 @@
                   },
                   {
                       "path":  "neucurve/nc-warm.js",
-                      "sha256":  "a267ee5b0b6c7fd40d6e3e0fdf8ed7dd0091541d3bc66e09114fa1a8e458a52e"
+                      "sha256":  "ddcc17404b331b31b24c392138cb25db744555ee2817b8cbf7b31ead2a4c0724"
                   },
                   {
                       "path":  "neucurve/settings.html",
@@ -692,7 +692,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "2b30941c4903e585333f491c0e042c449034844cc1140802bdf199bef61fd147"
+                      "sha256":  "127eef9fb4942719881289956fad28ecc7202d33af1fad4da88eb48d1bea59cc"
                   }
               ]
 }

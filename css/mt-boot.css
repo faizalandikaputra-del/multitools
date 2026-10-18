@@ -5,7 +5,7 @@
 .mtl-ring { position: relative; width: 76px; height: 76px; }
 .mtl-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
 .mtl-track { fill: none; stroke: var(--text-faint, #666); stroke-opacity: 0.35; stroke-width: 3; }
-.mtl-sweep { fill: none; stroke: var(--theme-accent, #fff); stroke-opacity: 0.28; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 26 138; transform-origin: 32px 32px; animation: mtl-sweep 1.15s linear infinite; }
+.mtl-sweep { fill: none; stroke: var(--theme-accent, #fff); stroke-opacity: 1; stroke-width: 3.6; stroke-linecap: round; stroke-dasharray: 70 94; transform-origin: 32px 32px; animation: mtl-sweep 1.15s linear infinite; }
 .mtl-fill { fill: none; stroke: var(--theme-accent, #fff); stroke-width: 3.6; stroke-linecap: round; }
 .mtl-dot { fill: var(--theme-accent, #fff); filter: drop-shadow(0 0 4px rgba(var(--accent-rgb, 255, 255, 255), 0.65)); }
 .mtl-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; color: var(--text, #f0f0f0); }

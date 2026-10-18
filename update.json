@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.86",
-    "changelog":  "- Update 1.8.86",
+    "latest_version":  "1.8.87",
+    "changelog":  "- Update 1.8.87",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -44,7 +44,7 @@
                   },
                   {
                       "path":  "css/mt-boot.css",
-                      "sha256":  "2bb16bc66d58a60a792295b41fd0f5c1e5fe6656db76aca079a3331293ae8c81"
+                      "sha256":  "cd61695664640a5ba98203d5c1418bc7a545037264439df4afe6094bfd33dc08"
                   },
                   {
                       "path":  "css/mt-colorpicker.css",
@@ -196,7 +196,7 @@
                   },
                   {
                       "path":  "css/splash.css",
-                      "sha256":  "de16521dc18708df96271eec7c01559651f0eca3e49b79029ae3f23109df8d7b"
+                      "sha256":  "04ad06b3f41b4dbd0c8825feb15f6c34ed0a26708184efbda094817c61235f3b"
                   },
                   {
                       "path":  "css/style.css",
@@ -220,7 +220,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "f3732ac386dcc73ce7d3bbbf33bd6fae9df1210b0b985929a1ce019093d8e3bd"
+                      "sha256":  "e57a733fae4da14c5d3c39b1884c4a3767412af52c892efb8bb6ba495e296df6"
                   },
                   {
                       "path":  "html/settings.html",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "e8fb6c2fb5701c80fe0896fc3815539e93401fe8705daddb7d8e621faa61c01e"
+                      "sha256":  "249bc2c63a0971e53466aa7de80739b7ee20afe8517e19f615675ba412dba8b0"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -268,7 +268,7 @@
                   },
                   {
                       "path":  "js/mt-hotkeys.js",
-                      "sha256":  "2b3b929a094c6067837ec9eb0cc31ae36b7d8f869bf79ae195e4c01c816b7ad1"
+                      "sha256":  "8d4eff5990190f59ff0e2047c3552a2d76f87ce9c73b125041fba527d809900a"
                   },
                   {
                       "path":  "js/mt-hotkeys-settings.js",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "js/splash.js",
-                      "sha256":  "2e98f6d13d5c65712585de61b24aa200e78e46187cca78ec4eb473b07795173f"
+                      "sha256":  "5c102b09b125110959c98c066092db6e1c68323ddb1cccc8f5de50079303c2f5"
                   },
                   {
                       "path":  "js/tab-wheel.js",
@@ -684,7 +684,7 @@
                   },
                   {
                       "path":  "neucurve/nc-warm.js",
-                      "sha256":  "020e1518ebccec95892442f4ae2013e0b4dd1d15a2def94f06aefed7bc9b7691"
+                      "sha256":  "a267ee5b0b6c7fd40d6e3e0fdf8ed7dd0091541d3bc66e09114fa1a8e458a52e"
                   },
                   {
                       "path":  "neucurve/settings.html",
@@ -692,7 +692,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "82138e17d51344bb1bf760332053f0e0e8b43c72186c153987fbb04ea32bedf6"
+                      "sha256":  "2b30941c4903e585333f491c0e042c449034844cc1140802bdf199bef61fd147"
                   }
               ]
 }

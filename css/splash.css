@@ -9,9 +9,8 @@
   font-family: var(--font, "Adobe Clean", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif);
   overflow: hidden; cursor: default;
   -webkit-user-select: none; user-select: none;
-  animation: mts-out 0.4s cubic-bezier(0.4, 0, 0.2, 1) 16s forwards;   /* failsafe only: js/splash.js adds .is-leaving as soon as the panel has really finished loading */
+  animation: mts-out 0.4s cubic-bezier(0.4, 0, 0.2, 1) 1.35s forwards;
 }
-.mt-splash.is-leaving { animation: mts-out 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .mt-splash.is-done { display: none; }
 
 /* soft accent glow behind the mark */

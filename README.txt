@@ -2117,3 +2117,18 @@ fix (NeuCurve Expression mode: native scrollbar in the code box):
   Fix: new neucurve/nc-expr.css (linked in neucurve/index.html after nc-quick.css, ?v=1): thin 8 px rounded thumb tinted with --nc-ui-rgb, transparent track, no arrow buttons, light-theme variant.
    Only ::-webkit-scrollbar rules are used (the standard scrollbar-width / scrollbar-color are left out on purpose: in new Chromium they would switch the webkit rules off).
   Checked: headless Chromium with real (non-overlay) scrollbars, before / after crop of the box: white native bar with arrows -> thin themed bar. NOT run inside After Effects.
+
+fix (NeuCurve mode switches lagged after the background preload; panel opens like before again):
+  Cause: an earlier change loaded the NeuCurve frame in the background at panel start and built every tab behind a held splash. The frame was then loaded and
+   "warmed" while its pane was hidden (visibility:hidden, often 0 px while After Effects restores the workspace), so the graph was measured at the wrong size,
+   the mode warm-up gave up or ran unpainted, and the first real mode switches (Bezier / Custom / Elastic / Bounce / Wave / Steps) were cold again.
+  Fix: opening the panel is back to the old, plain behaviour: the opening splash runs on its fixed timer (js/splash.js, css/splash.css are the originals), nothing is
+   preloaded, no tab is cycled. The NeuCurve frame loads the first time the Curve tab is opened, when it is visible and has its real size, and neucurve/nc-warm.js
+   warms every mode behind the loader (two passes, as before). nc-warm.js now also waits while the frame has no size (innerWidth/innerHeight < 120) and its
+   8 s give-up clock only runs while the frame is really shown.
+  Loader: the spinner in the Curve pane is now a ring (css/mt-boot.css, markup in html/index.html, Curve.progress() in js/main.js): the arc fills with the real
+   warm-up progress ("Warming Elastic" ...), a faint sweep keeps turning, one settle pulse at 100 %. nc-warm.js posts {mtCurveProgress:{f,label}} to the panel.
+   Off when Settings > Animations is off (sweep and pulse stop).
+  Side effect: NeuCurve's own keys (neucurve/nc-pro.js) work again only after the Curve tab has been opened once per session (the frame does not exist before that).
+   The panel's keys (js/mt-hotkeys.js, Ctrl+K and every command key) work on every tab; a combo that NeuCurve also uses belongs to NeuCurve once its frame is loaded.
+  Cache-bust: main.js ?v=39, mt-boot.css ?v=3, nc-warm.js ?v=100. Syntax-checked only (node --check); not run inside After Effects.

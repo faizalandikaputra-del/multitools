@@ -61,7 +61,7 @@
     origin = list[o];
     for (i = 0; i < list.length; i++) { if (i !== o) { order.push(list[i]); } }
     order.push(origin);                                     // end on the mode you were on
-    order = order.concat(order, order);                            // v3: two passes - the second one runs on code the engine has already started to optimise, and repaints what the first pass painted
+    order = order.concat(order);                            // v3: two passes - the second one runs on code the engine has already started to optimise, and repaints what the first pass painted
     (function next() {
       if (finished) { return; }
       if (k >= order.length) { setTimeout(function () { if (!finished) { done(true); } }, SETTLE); return; }

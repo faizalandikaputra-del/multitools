@@ -63,6 +63,8 @@
     return out;
   }
 
+  function neucurveLive() { try { var f = document.getElementById("curve-frame"); return !!(f && f.getAttribute("src")); } catch (e) { return false; } }
+
   // ---------- commands ----------
   function call(fn, args) {
     return core.Bridge.call(fn, args || []).then(function (res) {
@@ -171,7 +173,7 @@
       return;                                                   // the palette's own input handles the other keys
     }
     if (typing) { return; }
-    if (neucurveCombos().indexOf(combo) >= 0) { return; }       // NeuCurve owns its own combos on EVERY tab (its frame is preloaded, see Curve.warm in main.js)
+    if (neucurveLive() && neucurveCombos().indexOf(combo) >= 0) { return; }       // NeuCurve owns its own combos once its frame is loaded (first visit to the Curve tab)
     if (state.palette && state.palette.c === combo) { e.preventDefault(); e.stopPropagation(); openPalette(); return; }
     var id = lookup[combo];
     if (!id) { return; }

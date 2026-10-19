@@ -12,7 +12,7 @@
   <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=2">
-  <link rel="stylesheet" href="../css/mt-boot.css?v=5">
+  <link rel="stylesheet" href="../css/mt-boot.css?v=6">
   <link rel="stylesheet" href="../css/style.css?v=14">
   <!-- Additive UI polish pass (shimmer sweep, refined easing, GPU hints) - loaded after
        style.css on purpose, see the file's own header comment for what it does and doesn't
@@ -198,7 +198,7 @@
       <section id="curve-pane" class="curve-pane" role="tabpanel" aria-label="Curve" aria-hidden="true">
         <div class="curve-stage">
           <iframe id="curve-frame" class="curve-frame" title="NeuCurve" data-src="../neucurve/index.html" allowtransparency="true" frameborder="0" style="background:transparent"></iframe>
-          <div class="curve-loading" aria-hidden="true"><div class="mtl"><div class="mtl-bar"><span class="mtl-bar-fill"></span></div><span class="mtl-lbl">Loading</span></div></div>
+          <div class="curve-loading" aria-hidden="true"><div class="mtl"><div class="mtl-ring"><svg class="mtl-svg" viewBox="0 0 64 64" aria-hidden="true"><circle class="mtl-arc" cx="32" cy="32" r="26" transform="rotate(-90 32 32)"/></svg><span class="mtl-pct">0%</span></div><span class="mtl-lbl">Loading</span></div></div>
         </div>
       </section>
     </main>
@@ -751,6 +751,7 @@
   <script src="../js/mt-island-boxes.js?v=2"></script>
   <script src="../js/mt-pro.js?v=3"></script>
   <script src="../js/main.js?v=40"></script>
+  <script src="../js/mt-loader.js?v=1"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=2"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any

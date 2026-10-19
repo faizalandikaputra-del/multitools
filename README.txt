@@ -2148,3 +2148,10 @@ new (minimal loader in the Curve tab: outlined pill + light bar, "LOADING..."):
   (1.5 s, ease in-out, loops) and a small letter-spaced "LOADING" line whose dots count up. Pure CSS, colors follow --text / --text-dim / --text-faint so it fits the dark and the light style.
   Animations off (html[data-reduce-motion="true"]): the bar rests and the dots stay still. Files: css/mt-boot.css (rewritten), html/index.html (markup inside .curve-loading). Cache-bust: mt-boot.css ?v=5.
   Only the look changed: it is still shown by the same .is-loading flag, js/main.js and neucurve/nc-warm.js are untouched. Checked in headless Chromium; not run inside After Effects.
+
+new (Curve tab loader redrawn as an open ring with percent, from the owner's reference image):
+  A thick ring without track fills clockwise from 12 o'clock, the percent sits in its centre, "LOADING" (wide letter-spacing) under it. Replaces the pill bar of the previous entry.
+  Files: css/mt-boot.css (rewritten), html/index.html (markup in .curve-loading + <script src="../js/mt-loader.js?v=1"> after main.js), js/mt-loader.js (new). Cache-bust: mt-boot.css ?v=6.
+  js/mt-loader.js is visual only: it watches the .is-loading flag of #curve-pane and the load event of #curve-frame; it does not start, stop or change NeuCurve's loading (js/main.js and neucurve/nc-warm.js are untouched).
+  The number eases toward 55 % while the frame loads, toward 92 % once the frame has loaded (modes warming), and the loader disappears with the flag. Colors follow --text (dark and light style).
+  Checked in headless Chromium (percent grows, loader hides when loading ends); not run inside After Effects.

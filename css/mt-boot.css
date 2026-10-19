@@ -1,15 +1,9 @@
 /* mt-boot.css - loader of the Curve tab (shown by the .is-loading flag in js/main.js, see css/style.css .curve-loading).
-   Pure CSS, no JS: an outlined pill with a light bar that glides through it, and a small spaced "LOADING" line whose dots count up.
-   Colors follow the panel theme (text colors), so it reads on the dark and the light style. */
-.mtl { display: flex; flex-direction: column; align-items: flex-start; gap: 11px; width: 220px; max-width: 72%; color: var(--text, #f0f0f0); -webkit-user-select: none; user-select: none; }
-.mtl-bar { position: relative; width: 100%; height: 16px; box-sizing: border-box; border: 1.5px solid var(--text-dim, #a0a0a0); border-radius: 999px; overflow: hidden; background: rgba(0, 0, 0, 0.18); }
-.mtl-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; width: 38%; border-radius: 999px; background: var(--text, #f0f0f0); opacity: 0.92; animation: mtl-glide 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite; will-change: transform; }
-.mtl-lbl { font-size: 10px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--text-faint, #777); }
-.mtl-lbl::after { content: ""; display: inline-block; width: 4ch; text-align: left; animation: mtl-dots 1.5s steps(1, end) infinite; }
-
-@keyframes mtl-glide { 0% { transform: translateX(-100%); } 100% { transform: translateX(263%); } }
-@keyframes mtl-dots  { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
-
-/* Animations off: no motion, the bar just rests part-filled */
-:root[data-reduce-motion="true"] .mtl-bar-fill { animation: none; transform: none; }
-:root[data-reduce-motion="true"] .mtl-lbl::after { animation: none; content: "..."; }
+   A thick open ring that fills clockwise from 12 o'clock, the percent in its centre, a wide-spaced LOADING line under it.
+   Painted by js/mt-loader.js (visual only, it never touches how NeuCurve loads). Colors follow the panel text color (dark and light style). */
+.mtl { display: flex; flex-direction: column; align-items: center; gap: 22px; color: var(--text, #fff); -webkit-user-select: none; user-select: none; }
+.mtl-ring { position: relative; width: 88px; height: 88px; }
+.mtl-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.mtl-arc { fill: none; stroke: var(--text, #fff); stroke-width: 6; stroke-linecap: butt; }
+.mtl-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 17px; font-weight: 700; letter-spacing: 0.12em; text-indent: 0.12em; font-variant-numeric: tabular-nums; color: var(--text, #fff); }
+.mtl-lbl { font-size: 12px; font-weight: 500; letter-spacing: 0.62em; text-indent: 0.62em; text-transform: uppercase; color: var(--text, #fff); }

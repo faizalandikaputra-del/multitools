@@ -1,9 +1,9 @@
 /* mt-boot.css - loader of the Curve tab (shown by the .is-loading flag in js/main.js, see css/style.css .curve-loading).
    A thick open ring that fills clockwise from 12 o'clock, the percent in its centre, a wide-spaced LOADING line under it.
    Painted by js/mt-loader.js (visual only, it never touches how NeuCurve loads). Colors follow the panel text color (dark and light style). */
-.mtl { display: flex; flex-direction: column; align-items: center; gap: 22px; color: var(--text, #fff); -webkit-user-select: none; user-select: none; }
-.mtl-ring { position: relative; width: 88px; height: 88px; }
+.mtl { display: flex; flex-direction: column; align-items: center; gap: 13px; color: var(--text, #fff); -webkit-user-select: none; user-select: none; }
+.mtl-ring { position: relative; width: 54px; height: 54px; }
 .mtl-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
-.mtl-arc { fill: none; stroke: var(--text, #fff); stroke-width: 6; stroke-linecap: butt; }
-.mtl-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 17px; font-weight: 700; letter-spacing: 0.12em; text-indent: 0.12em; font-variant-numeric: tabular-nums; color: var(--text, #fff); }
-.mtl-lbl { font-size: 12px; font-weight: 500; letter-spacing: 0.62em; text-indent: 0.62em; text-transform: uppercase; color: var(--text, #fff); }
+.mtl-arc { fill: none; stroke: var(--text, #fff); stroke-width: 6.5; stroke-linecap: butt; }
+.mtl-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-indent: 0.08em; font-variant-numeric: tabular-nums; color: var(--text, #fff); }
+.mtl-lbl { font-size: 8.5px; font-weight: 500; letter-spacing: 0.55em; text-indent: 0.55em; text-transform: uppercase; color: var(--text, #fff); }

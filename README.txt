@@ -2155,3 +2155,6 @@ new (Curve tab loader redrawn as an open ring with percent, from the owner's ref
   js/mt-loader.js is visual only: it watches the .is-loading flag of #curve-pane and the load event of #curve-frame; it does not start, stop or change NeuCurve's loading (js/main.js and neucurve/nc-warm.js are untouched).
   The number eases toward 55 % while the frame loads, toward 92 % once the frame has loaded (modes warming), and the loader disappears with the flag. Colors follow --text (dark and light style).
   Checked in headless Chromium (percent grows, loader hides when loading ends); not run inside After Effects.
+
+fix (Curve tab loader was too big, now smaller):
+  Ring 88 -> 54 px, percent 17 -> 11 px, LOADING text 12 -> 8.5 px, smaller gaps (css/mt-boot.css only). Look and behaviour are unchanged. Cache-bust: mt-boot.css ?v=7.

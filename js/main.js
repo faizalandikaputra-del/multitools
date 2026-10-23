@@ -6143,8 +6143,54 @@
         });
       });
 
+      // ----- Floating Refresh button -----
+      // The toolbar (and its Refresh button) sits at the top of the tab, so after scrolling down a long preset
+      // list you had to scroll all the way back up. This second Refresh button is docked at the bottom edge of
+      // the panel (position: sticky, see css/mt-preset-fab.css) and fades in only while the toolbar one is
+      // scrolled out of view. It is mounted into the panel right after renderTab() has attached this tab, and
+      // it disappears with the tab (the panel is emptied on every tab switch), so nothing is left behind.
+      var fabDock = document.createElement("div");
+      fabDock.className = "preset-fab-dock";
+      fabDock.innerHTML = '<button class="preset-fab" id="preset-fab-refresh" type="button" title="Refresh presets" aria-label="Refresh presets" tabindex="-1">' + ICON_REFRESH_SVG + "</button>";
+      var fabBtn = fabDock.firstChild;
+      var fabRaf = 0;
+
+      function updateFab() {
+        fabRaf = 0;
+        var m = $("main");
+        if (!m || !document.body.contains(wrap)) {
+          if (m) { m.removeEventListener("scroll", onFabScroll); }
+          return;
+        }
+        var r = refreshBtn.getBoundingClientRect(), mr = m.getBoundingClientRect();
+        // Toolbar card collapsed (zero-size button): fall back to a plain scroll distance.
+        var out = (r.width === 0 && r.height === 0) ? m.scrollTop > 120 : r.bottom < mr.top + 4;
+        fabBtn.classList.toggle("is-shown", out && !!self.folder());
+        fabBtn.tabIndex = fabBtn.classList.contains("is-shown") ? 0 : -1;
+      }
+      function onFabScroll() { if (!fabRaf) { fabRaf = requestAnimationFrame(updateFab); } }
+
+      setTimeout(function () {
+        var m = $("main"), host = wrap.parentNode;
+        if (!m || !host) { return; }
+        host.appendChild(fabDock);
+        m.addEventListener("scroll", onFabScroll, { passive: true });
+        updateFab();
+      }, 0);
+
       refreshBtn.addEventListener("click", function () {
-        busy(refreshBtn, refresh(), function () { toast("Preset list refreshed."); });
+        var m = $("main"), top = m ? m.scrollTop : 0;      // keep the scroll position while the list is rebuilt
+        fabBtn.classList.add("is-loading");
+        busy(refreshBtn, refresh(), function () {
+          fabBtn.classList.remove("is-loading");
+          if (m) { jumpScroll(m, top); }
+          updateFab();
+          toast("Preset list refreshed.");
+        });
+      });
+      fabBtn.addEventListener("click", function () {
+        if (fabBtn.classList.contains("is-loading")) { return; }
+        refreshBtn.click();                                // same handler, same toast
       });
 
       saveBtn.addEventListener("click", function () {

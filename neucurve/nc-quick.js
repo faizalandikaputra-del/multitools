@@ -1,5 +1,5 @@
 /* NeuCurve - nc-quick.js (v1)   Favorites + preset keys for the preset grid.
-   - Long-press (about 0.45 s) a preset to add / remove it from Favorites (same gesture as Multi Tool's Animation Presets). A small star marks it.
+   - Long-press (about 0.45 s) a preset to add / remove it from Favorites (same gesture as Multi Tool's Animation Presets). A yellow outline marks it.
    - A star button in the library tool row (left of Preset Options) shows only the favorites of the open library.
    - Window.NCQuick is used by nc-pro.js hotkeys:  next() / prev() select the neighbouring preset,  fav(n) selects favorite n and presses APPLY,
      toggleFav() adds / removes the selected preset.
@@ -149,6 +149,15 @@
     if (lsGet(KEY_ONLY) === "1") { root.setAttribute("data-nc-favonly", "1"); }
     ensureToggle(); mark();
     try { new MutationObserver(function () { ensureToggle(); queueMark(); }).observe(document.body, { childList: true, subtree: true }); } catch (e) { }
+    /* the favorite outline lived on a class that the grid can drop when a preset is applied / re-rendered: watch class changes on the items too,
+       and re-mark shortly after every click (APPLY, preset select) so a favorite can never disappear */
+    try {
+      new MutationObserver(function (recs) {
+        var i, t;
+        for (i = 0; i < recs.length; i++) { t = recs[i].target; if (t && t.classList && t.classList.contains("preset-item")) { queueMark(); return; } }
+      }).observe(document.body, { attributes: true, attributeFilter: ["class"], subtree: true });
+    } catch (e2) { }
+    document.addEventListener("click", function () { setTimeout(queueMark, 30); setTimeout(queueMark, 300); }, true);
     document.addEventListener("change", function (e) { if (e.target && e.target.classList && e.target.classList.contains("lib-select")) { setTimeout(queueMark, 60); } }, true);
   }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", boot); } else { boot(); }

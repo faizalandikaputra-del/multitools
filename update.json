@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.91",
-    "changelog":  "- Update 1.8.91",
+    "latest_version":  "1.8.92",
+    "changelog":  "- Update 1.8.92",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "1561d8baf567bf0c62b4bf7b6c0cf824de4b3e93585b7f53ad2c302a11844316"
+                      "sha256":  "ad08cda77a89e50ae98e4ea04573ce78fb55e1e79ea9745d62d7346f0c21e7e8"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -396,7 +396,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "c227f9ac81083104ca96c24c1ff6dd905101fdc7e1a92e0a78246716a087730b"
+                      "sha256":  "b32a656aa2ae33ce33502828358df0c71cd1537447b2f3472a97f9cd14111e52"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -612,11 +612,11 @@
                   },
                   {
                       "path":  "neucurve/nc-quick.css",
-                      "sha256":  "6bf4fdd8a59f74579b0e9c662d211fb1909cd55f50f3a0f75a9876b831c144ce"
+                      "sha256":  "811e8f39ef85d7d4b8936ddf20ee0021b96c63c4511eb7f24e93d7a4c2d59da7"
                   },
                   {
                       "path":  "neucurve/nc-quick.js",
-                      "sha256":  "aac8b84fb2a45f7159697149542097a1178c895375e5c02208b8f0b2881c7dd0"
+                      "sha256":  "068ec7e783f14086d29ffa06f5ca8def5a4fac48dcb6372cdd5f20080d54a46b"
                   },
                   {
                       "path":  "neucurve/nc-select.css",
@@ -696,7 +696,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "e64fb3df7da59d62876c1f25c1774722ca273602a8f099f0ba2c954ee7d49658"
+                      "sha256":  "3c8ee3e5d88b6a775af5e0a7bd1f4dc673afd40e96030bb70dd2d844b4b28ae4"
                   }
               ]
 }

@@ -2158,3 +2158,9 @@ new (Curve tab loader redrawn as an open ring with percent, from the owner's ref
 
 fix (Curve tab loader was too big, now smaller):
   Ring 88 -> 54 px, percent 17 -> 11 px, LOADING text 12 -> 8.5 px, smaller gaps (css/mt-boot.css only). Look and behaviour are unchanged. Cache-bust: mt-boot.css ?v=7.
+
+fixN (color wheel pointer): Color Palette > Custom Colors, lingkaran penanda tidak pas dengan kursor saat drag / what: js/main.js ColorWheel.pointerBox() / cause: posisi kursor -> koordinat canvas dihitung dari getBoundingClientRect() lalu ditebak skala zoom (.app { zoom: var(--ui-scale) }); tebakan bisa meleset di host CEF tertentu sehingga titik bergeser dari mouse / fix: pointerBox(el, e) sekarang mengukur tepi canvas asli di layar lewat elementFromPoint (gallop + bisect, piksel sama dengan clientX/Y, tanpa asumsi zoom) saat pointerdown, lalu memilih kandidat rect yang cocok; hasil ukur dipakai ulang selama drag (juga untuk slider Brightness). Bagian lain tidak diubah.
+
+fix (NeuCurve favorite): favorit hilang setelah Apply, dan tanda bintang di kotak preset diganti garis tepi kuning
+  Files: neucurve/nc-quick.css (bintang ::after dihapus; favorit = border + ring kuning di .preset-thumbnail, !important supaya tetap kuning saat hover / selected / setelah Apply, ada varian html.mt-light), neucurve/nc-quick.js (penanda .nc-fav kini dicek ulang lewat MutationObserver atribut class pada .preset-item + re-mark 30 ms dan 300 ms setelah setiap klik, jadi tidak bisa hilang setelah Apply / render ulang grid). Tombol bintang filter "Show favorites only" di tool row tidak diubah. Data favorit (localStorage neucurve_favs) tidak diubah. Cache-bust: nc-quick.css/js ?v=3.
+  Penyebab hilang: penanda hanya dipasang saat daftar preset (childList) berubah; perubahan class pada item setelah Apply tidak memicu pemasangan ulang. Belum dites di After Effects.

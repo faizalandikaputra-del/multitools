@@ -1522,13 +1522,53 @@
       }
       return z;
     }
-    function pointerBox(el) {
-      var r = el.getBoundingClientRect(), z = zoomOf(el), k = 1, ratio;
+    // Zoom-proof screen edge of el, found with hit-testing (elementFromPoint uses the same pixels as clientX/Y, so no
+    // zoom maths is involved). Gallop outward from the pointer, then bisect. Returns px from (x,y) to the last hit pixel.
+    function hitReach(el, x, y, dx, dy) {
+      var lo = 0, step = 4, hi, mid, MAXD = 900;
+      function hit(d) {
+        var h = document.elementFromPoint(x + dx * d, y + dy * d);
+        return !!h && (h === el || el.contains(h));
+      }
+      while (step <= MAXD && hit(step)) { lo = step; step *= 2; }
+      hi = Math.min(step, MAXD + 1);
+      while (hi - lo > 1) { mid = (lo + hi) >> 1; if (hit(mid)) { lo = mid; } else { hi = mid; } }
+      return lo;
+    }
+    // Rect of el in the same pixels as clientX/Y. With e (a pointerdown event) the rect is verified against the real
+    // on-screen edges, so a wrong zoom guess can no longer shift the picked point away from the mouse.
+    function pointerBox(el, e) {
+      var r = el.getBoundingClientRect(), z = zoomOf(el), k = 1, ratio, cands, best, bestErr = 1e9, i, c, err, m, hb;
       if (Math.abs(z - 1) > 0.001 && el.offsetWidth > 0) {
         ratio = r.width / el.offsetWidth;                       // old engines: ~1   new engines: ~z
         if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
       }
-      return { left: r.left * k, top: r.top * k, width: r.width * k, height: r.height * k };
+      best = { left: r.left * k, top: r.top * k, width: r.width * k, height: r.height * k };
+      if (!e || typeof document.elementFromPoint !== "function") { return best; }
+      try {
+        if (!hitEl0(el, e.clientX, e.clientY)) { return best; }
+        m = {
+          left: e.clientX - hitReach(el, e.clientX, e.clientY, -1, 0),
+          top: e.clientY - hitReach(el, e.clientX, e.clientY, 0, -1),
+          right: e.clientX + hitReach(el, e.clientX, e.clientY, 1, 0) + 1,
+          bottom: e.clientY + hitReach(el, e.clientX, e.clientY, 0, 1) + 1
+        };
+        hb = { left: m.left, top: m.top, width: m.right - m.left, height: m.bottom - m.top };
+        cands = [{ left: r.left, top: r.top, width: r.width, height: r.height }];
+        if (Math.abs(z - 1) > 0.001) { cands.push({ left: r.left * z, top: r.top * z, width: r.width * z, height: r.height * z }); }
+        cands.push(best);
+        for (i = 0; i < cands.length; i++) {
+          c = cands[i];
+          err = Math.abs(c.left - hb.left) + Math.abs(c.top - hb.top) + Math.abs(c.width - hb.width) + Math.abs(c.height - hb.height);
+          if (err < bestErr) { bestErr = err; best = c; }
+        }
+        if (bestErr > 8) { best = hb; }   // no candidate matches the screen (odd host / transform): trust the measured edges
+      } catch (err2) { /* keep the heuristic box */ }
+      return best;
+    }
+    function hitEl0(el, x, y) {
+      var h = document.elementFromPoint(x, y);
+      return !!h && (h === el || el.contains(h));
     }
 
     function create(opts) {
@@ -1562,7 +1602,7 @@
       var canvas = root.querySelector(".cw-wheel"), ctx = canvas.getContext("2d");
       var valEl = root.querySelector(".cw-val"), knob = root.querySelector(".cw-knob");
       var chip = root.querySelector(".cw-chip"), hexEl = root.querySelector(".cw-hex"), rgbEl = root.querySelector(".cw-rgb");
-      var raf = 0, dragEl = null;
+      var raf = 0, dragEl = null, dragBox = null;
 
       function current() { return rgbToHex(hsvToRgb(st.h, st.s, st.v)); }
 
@@ -1608,6 +1648,7 @@
           if (e.button !== undefined && e.button !== 0) { return; }
           e.preventDefault();
           dragEl = el;
+          dragBox = pointerBox(el, e);   // measured once at pointerdown, reused for the whole drag
           try { el.setPointerCapture(e.pointerId); } catch (err) { /* older hosts: window-level fallback below */ }
           root.classList.add("is-dragging");
           onMove(e);
@@ -1615,7 +1656,7 @@
         el.addEventListener("pointermove", function (e) { if (dragEl === el) { onMove(e); } });
         function end() {
           if (dragEl !== el) { return; }
-          dragEl = null;
+          dragEl = null; dragBox = null;
           root.classList.remove("is-dragging");
           commit();
         }
@@ -1624,7 +1665,7 @@
         el.addEventListener("lostpointercapture", end);
       }
       bindDrag(canvas, function (e) {
-        var r = pointerBox(canvas);
+        var r = dragBox || pointerBox(canvas);
         if (!r.width) { return; }
         var x = (e.clientX - r.left) / r.width * N - N / 2, y = (e.clientY - r.top) / r.height * N - N / 2;
         var dist = Math.sqrt(x * x + y * y);
@@ -1633,7 +1674,7 @@
         changed(false);
       });
       bindDrag(valEl, function (e) {
-        var r = pointerBox(valEl);
+        var r = dragBox || pointerBox(valEl);
         if (!r.height) { return; }
         st.v = 1 - clamp01((e.clientY - r.top) / r.height);
         changed(false);

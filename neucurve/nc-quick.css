@@ -1,11 +1,17 @@
 /* NeuCurve - nc-quick.css  (favorites on the preset grid, js: nc-quick.js)
    Motion: the star "pop" is 220 ms, decelerating, one small scale step (no overshoot). Off only with Settings > Animations off (data-reduce-motion), never from the OS setting. */
-.preset-item.nc-fav .preset-thumbnail { position: relative; }
-.preset-item.nc-fav .preset-thumbnail::after {
-  content: ""; position: absolute; top: 4px; right: 4px; width: 11px; height: 11px; pointer-events: none;
-  background: var(--nc-fav, #ffd166);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+/* Favorite = yellow outline on the preset box (no star badge). Doubled selectors + !important beat the Svelte hover / selected border,
+   so the outline stays yellow while the preset is hovered, selected or just applied. */
+html body .shell.shell .preset-item.nc-fav .preset-thumbnail,
+html body .shell.shell .preset-item.nc-fav:hover .preset-thumbnail,
+html body .shell.shell .preset-item.nc-fav.selected .preset-thumbnail {
+  border-color: var(--nc-fav, #ffd166) !important;
+  box-shadow: 0 0 0 1px var(--nc-fav, #ffd166), 0 0 8px rgba(255, 209, 102, 0.35) !important;
+}
+html.mt-light body .shell.shell .preset-item.nc-fav .preset-thumbnail,
+html.mt-light body .shell.shell .preset-item.nc-fav:hover .preset-thumbnail,
+html.mt-light body .shell.shell .preset-item.nc-fav.selected .preset-thumbnail {
+  border-color: #e0a800 !important; box-shadow: 0 0 0 1px #e0a800 !important;
 }
 .preset-item.nc-fav-pop { animation: nc-fav-pop 220ms cubic-bezier(0.2, 0, 0, 1); }
 @keyframes nc-fav-pop { 0% { transform: scale(0.94); } 100% { transform: scale(1); } }

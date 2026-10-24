@@ -1,0 +1,87 @@
+/* Animation Presets: drop-to-import tray (js/main.js -> Presets.render, "Drop to import").
+   A dashed outline marks "you can drop here"; the tile under the pointer gets a solid accent ring and a
+   +N chip counting the files in the drag. Only opacity + transform animate. No inset / gap / aspect-ratio /
+   min() / clamp(): it has to work on Chromium 74 (AE 2021) too. */
+.pdrop {
+  position: fixed; z-index: 60; left: 0; bottom: 0; width: 100%;
+  box-sizing: border-box; padding: 0.6rem 0.7rem 0.7rem;
+  background: var(--surface-solid, var(--surface));
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.35);
+  opacity: 0; visibility: hidden; transform: translateY(0.9rem); pointer-events: none;
+  will-change: transform, opacity;
+  transition: opacity var(--dur-fast) ease, transform 0.26s var(--bounce, ease), visibility 0s linear 0.26s;
+}
+.pdrop.is-open {
+  opacity: 1; visibility: visible; transform: none; pointer-events: auto;
+  transition: opacity var(--dur-fast) ease, transform 0.26s var(--bounce, ease), visibility 0s;
+}
+.pdrop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; min-height: 1.5rem; }
+.pdrop-title { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+.pdrop-cancel {
+  padding: 0.15rem 0.5rem; border: 0; border-radius: var(--radius-xs); cursor: pointer;
+  font: inherit; font-size: 0.75rem; color: var(--text-dim); background: transparent;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.pdrop-cancel:hover { background: var(--surface-hover); color: var(--text); }
+
+.pdrop-grid { display: flex; flex-wrap: wrap; margin: 0 -0.2rem; max-height: 8.6rem; overflow-y: auto; }
+.pdrop-tile {
+  position: relative; flex: 1 1 30%; min-width: 6.4rem; height: 2.5rem; box-sizing: border-box;
+  margin: 0 0.2rem 0.4rem; padding: 0 0.6rem; display: flex; align-items: center;
+  font: inherit; font-size: 0.78rem; color: var(--text); text-align: left; cursor: pointer;
+  background: var(--surface-sunken); border: 1px dashed var(--border); border-radius: var(--radius-m);
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.pdrop-tile svg {
+  flex: 0 0 auto; width: 1rem; height: 1rem; margin-right: 0.45rem; fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; color: var(--text-dim);
+  transition: transform 0.22s var(--bounce, ease), color var(--dur-fast) ease;
+}
+.pdrop-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdrop-count { flex: 0 0 auto; margin-left: 0.4rem; font-size: 0.7rem; color: var(--text-dim); }
+.pdrop-plus {
+  position: absolute; right: 0.45rem; top: 50%; margin-top: -0.6rem; min-width: 1.2rem; height: 1.2rem;
+  padding: 0 0.3rem; box-sizing: border-box; border-radius: 999px; text-align: center; line-height: 1.2rem;
+  font-size: 0.7rem; font-weight: 700; color: #111; background: var(--accent-strong);
+  opacity: 0; transform: scale(0.6);
+  transition: opacity var(--dur-fast) ease, transform 0.22s var(--bounce, ease);
+}
+.pdrop-tile--new { color: var(--text-dim); }
+.pdrop-tile:hover { background: var(--surface-hover); border-color: var(--text-dim); }
+.pdrop-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pdrop-tile.is-drop-target {
+  background: var(--surface-hover); border-style: solid; border-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.7), 0 0 14px rgba(var(--accent-rgb), 0.18);
+}
+.pdrop-tile.is-drop-target svg { color: var(--accent-strong); transform: translateY(-2px) scale(1.12); }
+.pdrop-tile.is-drop-target .pdrop-count { opacity: 0; }
+.pdrop-tile.is-drop-target .pdrop-plus { opacity: 1; transform: none; }
+
+.pdrop-name-row { display: flex; align-items: center; }
+.pdrop-name-input { flex: 1 1 auto; min-width: 0; margin-right: 0.45rem; }
+
+/* The same targets inside the list while a file is dragged over them. */
+.preset-folder.is-drop-target,
+.preset-list--loose.is-drop-target,
+.preset-group-heading.is-drop-target,
+.preset-group-empty.is-drop-target {
+  box-shadow: var(--shadow-card-active); background: var(--surface-hover); border-radius: var(--radius-m);
+}
+
+/* Rows that were just imported. */
+.preset-item.is-just-added { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.5); animation: pdrop-added 1.6s ease-out 1 forwards; }
+@keyframes pdrop-added {
+  from { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.9), 0 0 18px rgba(var(--accent-rgb), 0.35); }
+  to   { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0), 0 0 0 rgba(var(--accent-rgb), 0); }
+}
+
+:root[data-reduce-motion="true"] .pdrop,
+:root[data-reduce-motion="true"] .pdrop.is-open,
+:root[data-reduce-motion="true"] .pdrop-tile,
+:root[data-reduce-motion="true"] .pdrop-tile svg,
+:root[data-reduce-motion="true"] .pdrop-plus { transition: none; }
+:root[data-reduce-motion="true"] .pdrop { transform: none; }
+:root[data-reduce-motion="true"] .pdrop-tile.is-drop-target svg { transform: none; }
+:root[data-reduce-motion="true"] .preset-item.is-just-added { animation: none; }

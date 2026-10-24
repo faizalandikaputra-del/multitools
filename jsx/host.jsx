@@ -1237,7 +1237,7 @@ function TF_readFromLayer() {
 
 // The panel keeps the folder path in localStorage and passes it to every call, so nothing is stored here.
 // Called from JS as: PRE_selectFolder(), PRE_list(path), PRE_apply(path, fileName), PRE_delete(path, fileName),
-//                    PRE_saveSelection(path)
+//                    PRE_saveSelection(path), PRE_import(path, sourcesJson, subFolder), PRE_pickImport()
 // Every call that touches a preset takes the FILE NAME (never a full path) and looks it up inside the chosen
 // folder, so a bad argument can never reach a file outside that folder.
 var PRE_SAVE_COMMAND_FALLBACK_ID = 3075;    // Animation > Save Animation Preset...
@@ -1420,6 +1420,122 @@ function PRE_delete(path, fileName) {
     var file = _preFind(folder, fileName);
     if (!file.remove()) { throw new Error("Couldn't delete the file (it may be read-only or in use)."); }
     return _ok('Deleted "' + _preDisplayName(fileName) + '".', { presets: _preList(folder) });
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Drop to import: copy .ffx files (or whole folders of them) into the preset folder.
+//   PRE_import(path, sourcesJson, subFolder)   sourcesJson = JSON array of absolute paths (files or folders)
+//                                              subFolder   = "" for the preset folder itself, else one folder name
+//   PRE_pickImport()                           File.openDialog (multi-select) -> { cancelled, paths } - the button route
+// Same safety rule as the rest of PRE_*: the destination is always the chosen root, or ONE direct subfolder of
+// it whose name is cleaned first (no slashes, no "..", no leading dot), so nothing can land outside the root.
+// A dropped FOLDER becomes a category of the same name and brings its top-level .ffx files with it.
+// Nothing is ever overwritten: a name clash gets " (2)", " (3)" ... before the extension.
+// ---------------------------------------------------------------------------------------------------
+var PRE_IMPORT_MAX = 300;
+
+function _preCleanName(s) {
+  var n = String(s === undefined || s === null ? "" : s);
+  n = n.replace(/[\u0000-\u001f\\\/:*?"<>|]/g, " ");
+  n = n.replace(/\s+/g, " ").replace(/^[\s.]+/, "").replace(/[\s.]+$/, "");
+  if (n.length > 80) { n = n.substring(0, 80).replace(/[\s.]+$/, ""); }
+  return n;
+}
+
+// Reuses an existing direct subfolder when `raw` is exactly its name (so odd-but-real names are never
+// altered), otherwise cleans the name and creates the folder.
+function _preEnsureSub(root, raw) {
+  var subs = _preSubfolders(root), i, name, f;
+  for (i = 0; i < subs.length; i++) {
+    if (_preDecode(subs[i].name) === raw) { return { folder: subs[i], name: raw }; }
+  }
+  name = _preCleanName(raw);
+  if (!name) { throw new Error("Enter a valid folder name."); }
+  f = new Folder(root.absoluteURI + "/" + encodeURIComponent(name));
+  if (!f.exists && !f.create()) { throw new Error("Couldn't create the folder \"" + name + "\"."); }
+  return { folder: f, name: name };
+}
+
+// One file -> destFolder. acc = { added: [relative names], same, failed, skipped, folders: [names] }
+function _preImportFile(src, destFolder, subName, acc) {
+  var plain = _preDecode(src.name), base, n, dest;
+  if (!/\.ffx$/i.test(plain) || plain.charAt(0) === ".") { acc.skipped++; return; }
+  dest = new File(destFolder.absoluteURI + "/" + encodeURIComponent(plain));
+  if (String(dest.fsName).toLowerCase() === String(src.fsName).toLowerCase()) { acc.same++; return; }   // already there
+  base = plain.replace(/\.ffx$/i, "");
+  n = 1;
+  while (dest.exists && n < 500) {
+    n++;
+    dest = new File(destFolder.absoluteURI + "/" + encodeURIComponent(base + " (" + n + ").ffx"));
+  }
+  if (dest.exists || !src.copy(dest)) { acc.failed++; return; }
+  acc.added.push((subName ? subName + "/" : "") + _preDecode(dest.name));
+  if (subName) {
+    var seen = false, k;
+    for (k = 0; k < acc.folders.length; k++) { if (acc.folders[k] === subName) { seen = true; break; } }
+    if (!seen) { acc.folders.push(subName); }
+  }
+}
+
+function _prePlural(n, one, many) { return n + " " + (n === 1 ? one : many); }
+
+function PRE_import(path, sourcesJson, subFolder) {
+  try {
+    var root = _preFolder(path);
+    var srcs = JSON.parse(sourcesJson);
+    var acc = { added: [], same: 0, failed: 0, skipped: 0, folders: [] };
+    var target = null, i, j, obj, f, dir, cat, files, msg, where;
+
+    if (!srcs || !srcs.length) { throw new Error("Nothing to import."); }
+    if (srcs.length > PRE_IMPORT_MAX) { throw new Error("Too many items at once (max " + PRE_IMPORT_MAX + ")."); }
+    if (subFolder !== undefined && subFolder !== null && String(subFolder) !== "") {
+      target = _preEnsureSub(root, String(subFolder));
+    }
+
+    for (i = 0; i < srcs.length; i++) {
+      obj = new Folder(String(srcs[i]));
+      if ((obj instanceof Folder) && obj.exists) {
+        // A dropped folder: becomes a category of the same name.
+        dir = obj;
+        files = _preFiles(dir);
+        if (!files.length) { acc.skipped++; continue; }
+        cat = _preEnsureSub(root, _preDecode(dir.name));
+        for (j = 0; j < files.length; j++) { _preImportFile(files[j], cat.folder, cat.name, acc); }
+      } else {
+        f = new File(String(srcs[i]));
+        if (!(f instanceof File) || !f.exists) { acc.skipped++; continue; }
+        _preImportFile(f, target ? target.folder : root, target ? target.name : "", acc);
+      }
+    }
+
+    if (!acc.added.length) {
+      if (acc.same) { throw new Error("Those presets are already in that folder."); }
+      if (acc.failed) { throw new Error("Couldn't copy the files (check that the folder is writable)."); }
+      throw new Error("No .ffx files found in what you dropped.");
+    }
+
+    where = acc.folders.length === 1 ? "\"" + acc.folders[0] + "\"" : (acc.folders.length > 1 ? _prePlural(acc.folders.length, "folder", "folders") : "the preset folder");
+    msg = "Added " + _prePlural(acc.added.length, "preset", "presets") + " to " + where + ".";
+    if (acc.skipped) { msg += " Skipped " + _prePlural(acc.skipped, "item", "items") + " (not .ffx)."; }
+    if (acc.failed) { msg += " " + _prePlural(acc.failed, "file", "files") + " could not be copied."; }
+    return _ok(msg, { added: acc.added.length, files: acc.added, folders: acc.folders, presets: _preList(root) });
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function PRE_pickImport() {
+  try {
+    var isWin = ($.os.indexOf("Windows") !== -1);
+    var filter = isWin ? "Animation Preset:*.ffx" : function (f) { return (f instanceof Folder) || /\.ffx$/i.test(f.name); };
+    var picked = File.openDialog("Add Animation Presets", filter, true), paths = [], i;
+    if (!picked) { return _ok("Import cancelled.", { cancelled: true }); }
+    if (picked instanceof File) { paths.push(picked.fsName); }
+    else { for (i = 0; i < picked.length; i++) { paths.push(picked[i].fsName); } }
+    return _ok("Files selected.", { cancelled: false, paths: paths });
   } catch (e) {
     return _err(e);
   }

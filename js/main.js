@@ -5824,7 +5824,9 @@
             '<button class="btn btn-primary" id="preset-select" type="button">Select Preset Folder</button>' +
             '<button class="btn" id="preset-refresh" type="button">Refresh</button>' +
             '<button class="btn" id="preset-save" type="button">Save as Preset</button>' +
+            '<button class="btn" id="preset-import" type="button" title="Add .ffx files to a folder in your preset folder">Import</button>' +
           "</div>" +
+          '<p class="field-note">Drag .ffx files, or a folder of them, from Explorer or Finder onto this tab. Drop them on a folder to add them there.</p>' +
           '<p class="field-note">Save as Preset stores the selected layer&rsquo;s effects and animated properties (or whatever properties you have selected). After Effects opens its own Save dialog for this: save into the preset folder.</p>' +
           '<p class="field-note">Presets inside a subfolder of your preset folder show up under &ldquo;Categorized Presets&rdquo; below, grouped by that subfolder&rsquo;s name; everything else (loose .ffx files sitting directly in the preset folder) shows up under &ldquo;Ungrouped Presets.&rdquo;</p>' +
         "</div>" +
@@ -5843,6 +5845,7 @@
       var selectBtn = wrap.querySelector("#preset-select");
       var refreshBtn = wrap.querySelector("#preset-refresh");
       var saveBtn = wrap.querySelector("#preset-save");
+      var importBtn = wrap.querySelector("#preset-import");
       var searchEl = wrap.querySelector("#preset-search");
       var searchClearBtn = wrap.querySelector("#preset-search-clear");
       searchEl.value = Presets.query;
@@ -5938,6 +5941,7 @@
         pathEl.title = f;
         refreshBtn.disabled = !f;
         saveBtn.disabled = !f;
+        importBtn.disabled = !f;
       }
 
       var lastPresets = null;   // { uncategorized, categorized } cached so toggling a favorite can re-render instantly, without re-hitting the host
@@ -6004,7 +6008,7 @@
         var uncategorized = (presets && presets.uncategorized) || [];
         var total = uncategorized.length + categorized.reduce(function (n, g) { return n + g.files.length; }, 0);
         if (!total) {
-          showMessage("No .ffx files in this folder. Copy some in (or into subfolders to group them), then click Refresh. You can also use Save as Preset.");
+          showMessage("No .ffx files in this folder yet. Drag some in from Explorer or Finder, use Import, or use Save as Preset.");
           return;
         }
         lastPresets = { categorized: categorized, uncategorized: uncategorized };
@@ -6311,6 +6315,270 @@
           e.preventDefault();
         }
       }, true);
+
+      // ----- Drop to import -----
+      // Drag .ffx files (or a folder of them) from Explorer / Finder onto this tab: a tray of folder tiles
+      // slides up from the bottom edge, and the folder cards in the list light up as targets too. Drop on a
+      // tile or a card = copied straight into that folder; "New folder" asks for a name first. The toolbar's
+      // Import button feeds the same tray (File.openDialog, then click a tile), which is also the fallback
+      // if a host build never delivers file drops to the panel. The copy itself is PRE_import in host.jsx.
+      var PDROP_IDLE_MS = 900;
+      var ICON_DROP_ROOT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>';
+      var ICON_DROP_NEW_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+      var tray = document.createElement("div");
+      tray.className = "pdrop";
+      tray.setAttribute("role", "group");
+      tray.setAttribute("aria-label", "Choose a folder for the presets");
+      tray.setAttribute("aria-hidden", "true");
+      var trayMode = "";          // "", "drag", "pick" (Import button) or "name" (waiting for a new folder name)
+      var pendingPaths = null;    // files waiting for a tile click (pick) or a folder name (name)
+      var dropDepth = 0, dragCount = 0, idleTimer = 0, markedEl = null;
+
+      function live() { return document.body.contains(wrap); }
+
+      function trayTilesHtml() {
+        var cats = (lastPresets && lastPresets.categorized) || [];
+        var rootCount = (lastPresets && lastPresets.uncategorized) ? lastPresets.uncategorized.length : 0;
+        var html = '<button type="button" class="pdrop-tile" data-target="root">' + ICON_DROP_ROOT_SVG +
+          '<span class="pdrop-name">Ungrouped</span><span class="pdrop-count">' + rootCount + '</span><span class="pdrop-plus">+</span></button>';
+        cats.forEach(function (g) {
+          html += '<button type="button" class="pdrop-tile" data-target="folder" data-name="' + escapeHtml(g.folderName) + '" title="' + escapeHtml(g.folderName) + '">' + ICON_FOLDER_SVG +
+            '<span class="pdrop-name">' + escapeHtml(g.folderName) + '</span><span class="pdrop-count">' + g.files.length + '</span><span class="pdrop-plus">+</span></button>';
+        });
+        html += '<button type="button" class="pdrop-tile pdrop-tile--new" data-target="new">' + ICON_DROP_NEW_SVG +
+          '<span class="pdrop-name">New folder</span><span class="pdrop-plus">+</span></button>';
+        return html;
+      }
+
+      function placeTray() {
+        var m = $("main"), r = m ? m.getBoundingClientRect() : null;
+        tray.style.left = (r ? r.left : 0) + "px";
+        tray.style.width = (r ? r.width : window.innerWidth) + "px";
+        tray.style.bottom = (r ? Math.max(0, window.innerHeight - r.bottom) : 0) + "px";
+      }
+
+      function showTray(mode, paths) {
+        trayMode = mode;
+        pendingPaths = paths || null;
+        var n = paths ? paths.length : 0;
+        var head = mode === "pick"
+          ? '<span class="pdrop-title">Add ' + n + (n === 1 ? " item" : " items") + ' to</span><button type="button" class="pdrop-cancel" data-pdrop="cancel">Cancel</button>'
+          : '<span class="pdrop-title">Drop on a folder</span>';
+        tray.innerHTML = '<div class="pdrop-head">' + head + '</div><div class="pdrop-grid">' + trayTilesHtml() + "</div>";
+        if (!tray.parentNode) { document.body.appendChild(tray); }
+        placeTray();
+        void tray.offsetWidth;   // commit the closed state so the slide-up transition runs
+        tray.classList.add("is-open");
+        tray.setAttribute("aria-hidden", "false");
+        if (mode === "pick") {
+          var first = tray.querySelector(".pdrop-tile");
+          if (first) { first.focus(); }
+        }
+      }
+
+      function hideTray() {
+        clearTimeout(idleTimer);
+        trayMode = "";
+        pendingPaths = null;
+        dropDepth = 0;
+        markTarget(null);
+        tray.classList.remove("is-open");
+        tray.setAttribute("aria-hidden", "true");
+      }
+
+      function showName(paths) {
+        trayMode = "name";
+        pendingPaths = paths;
+        clearTimeout(idleTimer);
+        markTarget(null);
+        tray.innerHTML = '<div class="pdrop-head"><span class="pdrop-title">Name the new folder</span><button type="button" class="pdrop-cancel" data-pdrop="cancel">Cancel</button></div>' +
+          '<div class="pdrop-name-row"><input type="text" class="text-input pdrop-name-input" maxlength="60" placeholder="Folder name" aria-label="New folder name" autocomplete="off" spellcheck="false">' +
+          '<button type="button" class="btn btn-primary" data-pdrop="create">Add presets</button></div>';
+        placeTray();
+        tray.classList.add("is-open");
+        tray.setAttribute("aria-hidden", "false");
+        var inp = tray.querySelector(".pdrop-name-input");
+        if (inp) { inp.focus(); }
+      }
+
+      function markTarget(t) {
+        var el = t ? t.el : null;
+        if (el === markedEl) { return; }
+        if (markedEl) { markedEl.classList.remove("is-drop-target"); }
+        markedEl = el;
+        if (el) {
+          el.classList.add("is-drop-target");
+          var pl = el.querySelector ? el.querySelector(".pdrop-plus") : null;
+          if (pl) { pl.textContent = dragCount > 0 ? "+" + dragCount : "+"; }
+        }
+      }
+
+      function hasFiles(e) {
+        var t = e.dataTransfer && e.dataTransfer.types, i;
+        if (!t) { return false; }
+        for (i = 0; i < t.length; i++) { if (t[i] === "Files") { return true; } }
+        return false;
+      }
+
+      function collectPaths(e) {
+        var fl = e.dataTransfer && e.dataTransfer.files, out = [], i;
+        if (!fl) { return out; }
+        for (i = 0; i < fl.length; i++) { if (fl[i] && fl[i].path) { out.push(fl[i].path); } }
+        return out;
+      }
+
+      // What is under the pointer: a tray tile, a folder card in the list, or the Ungrouped part of the list.
+      function targetFromEl(el) {
+        if (!el || !el.closest) { return null; }
+        var tile = el.closest(".pdrop-tile");
+        if (tile && tray.contains(tile)) {
+          return { kind: tile.getAttribute("data-target"), name: tile.getAttribute("data-name") || "", el: tile };
+        }
+        if (!listEl.contains(el)) { return null; }
+        var card = el.closest(".preset-folder");
+        if (card) { return { kind: "folder", name: card.getAttribute("data-folder-name"), el: card }; }
+        var loose = el.closest(".preset-list--loose") || el.closest('.preset-group-heading[data-group="loose"]') || el.closest(".preset-group-empty");
+        if (loose) { return { kind: "root", name: "", el: loose }; }
+        return null;
+      }
+
+      // After the copy: open the folders that received files, scroll to the first new row and flash the new rows.
+      function revealAdded(files) {
+        var rows = listEl.querySelectorAll(".preset-item"), hits = [], i;
+        for (i = 0; i < rows.length; i++) {
+          if (files.indexOf(rows[i].getAttribute("data-file")) !== -1) { hits.push(rows[i]); }
+        }
+        if (!hits.length) { return; }
+        hits.forEach(function (r) { r.classList.add("is-just-added"); });
+        setTimeout(function () { hits.forEach(function (r) { r.classList.remove("is-just-added"); }); }, 2400);
+        requestAnimationFrame(function () {
+          var m = $("main");
+          if (!m) { return; }
+          var r = hits[0].getBoundingClientRect(), mr = m.getBoundingClientRect();
+          if (r.top < mr.top + 40 || r.bottom > mr.bottom - 40) { jumpScroll(m, m.scrollTop + r.top - mr.top - mr.height * 0.3); }
+        });
+      }
+
+      function runImport(paths, sub) {
+        var folder = self.folder();
+        if (!folder) { toast("Select a preset folder first.", true); return; }
+        hideTray();
+        Bridge.call("PRE_import", [folder, JSON.stringify(paths), sub || ""]).then(function (res) {
+          if (res.ok && res.data && res.data.presets) {
+            ((res.data.folders) || []).forEach(function (n) { openFolders[n] = true; });
+            if (Presets.query) {          // a filter would hide the new rows
+              Presets.query = ""; searchEl.value = ""; searchClearBtn.hidden = true;
+            }
+            var grp = listEl.closest ? listEl.closest(".ta-group-body") : null;
+            if (grp) { grp.style.maxHeight = "none"; }
+            showList(res.data.presets);
+            revealAdded(res.data.files || []);
+          }
+          toast(res.message || (res.ok ? "Done." : "Something went wrong."), !res.ok);
+        });
+      }
+
+      function dropOn(t, paths) {
+        if (t.kind === "new") { showName(paths); return; }
+        runImport(paths, t.kind === "folder" ? t.name : "");
+      }
+
+      function detachDrop() {
+        window.removeEventListener("dragenter", onDragEnter, true);
+        window.removeEventListener("dragover", onDragOver, true);
+        window.removeEventListener("dragleave", onDragLeave, true);
+        window.removeEventListener("drop", onDrop, true);
+        clearTimeout(idleTimer);
+        if (tray.parentNode) { tray.parentNode.removeChild(tray); }
+      }
+
+      function onDragEnter(e) {
+        if (!live()) { detachDrop(); return; }
+        if (!hasFiles(e)) { return; }
+        e.preventDefault();                       // never let the panel navigate to a dropped file
+        if (!self.folder() || trayMode === "pick" || trayMode === "name") { return; }
+        dropDepth++;
+        dragCount = (e.dataTransfer.items && e.dataTransfer.items.length) || 0;
+        if (dropDepth === 1) { showTray("drag"); }
+      }
+
+      function onDragOver(e) {
+        if (!live()) { detachDrop(); return; }
+        if (!hasFiles(e)) { return; }
+        e.preventDefault();
+        var t = (self.folder() && trayMode === "drag") ? targetFromEl(e.target) : null;
+        try { e.dataTransfer.dropEffect = t ? "copy" : "none"; } catch (x) { /* read-only in some builds */ }
+        markTarget(t);
+        if (trayMode === "drag") {
+          clearTimeout(idleTimer);
+          idleTimer = setTimeout(function () { if (trayMode === "drag") { hideTray(); } }, PDROP_IDLE_MS);   // drag ended without a drop
+        }
+      }
+
+      function onDragLeave(e) {
+        if (!live()) { detachDrop(); return; }
+        if (!hasFiles(e) || trayMode !== "drag") { return; }
+        dropDepth = Math.max(0, dropDepth - 1);
+        if (!dropDepth) { hideTray(); }
+      }
+
+      function onDrop(e) {
+        if (!live()) { detachDrop(); return; }
+        if (!hasFiles(e)) { return; }
+        e.preventDefault();
+        if (trayMode !== "drag") { return; }
+        var t = targetFromEl(e.target), paths = collectPaths(e);
+        dropDepth = 0;
+        clearTimeout(idleTimer);
+        if (!t) { hideTray(); return; }
+        if (!paths.length) {
+          hideTray();
+          toast("Couldn't read the dropped files. Use Import instead.", true);
+          return;
+        }
+        markTarget(null);
+        dropOn(t, paths);
+      }
+
+      window.addEventListener("dragenter", onDragEnter, true);
+      window.addEventListener("dragover", onDragOver, true);
+      window.addEventListener("dragleave", onDragLeave, true);
+      window.addEventListener("drop", onDrop, true);
+
+      tray.addEventListener("click", function (e) {
+        var btn = e.target.closest ? e.target.closest("button") : null;
+        if (!btn) { return; }
+        var act = btn.getAttribute("data-pdrop");
+        if (act === "cancel") { hideTray(); return; }
+        if (act === "create") {
+          var inp = tray.querySelector(".pdrop-name-input"), nm = inp ? inp.value.replace(/^\s+|\s+$/g, "") : "";
+          if (!nm) { if (inp) { inp.focus(); } toast("Enter a folder name.", true); return; }
+          runImport(pendingPaths || [], nm);
+          return;
+        }
+        if (trayMode === "pick" && btn.classList.contains("pdrop-tile") && pendingPaths) {
+          dropOn({ kind: btn.getAttribute("data-target"), name: btn.getAttribute("data-name") || "" }, pendingPaths);
+        }
+      });
+      tray.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") { e.stopPropagation(); hideTray(); }
+        else if (e.key === "Enter" && trayMode === "name" && e.target.classList && e.target.classList.contains("pdrop-name-input")) {
+          e.preventDefault();
+          var ok = tray.querySelector('[data-pdrop="create"]');
+          if (ok) { ok.click(); }
+        }
+      });
+
+      importBtn.addEventListener("click", function () {
+        if (!self.folder()) { return; }
+        busyResult(importBtn, Bridge.call("PRE_pickImport", []), function (res) {
+          if (!res.ok) { toast(res.message || "Could not open the file dialog.", true); return; }
+          if (!res.data || res.data.cancelled) { return; }
+          var picked = res.data.paths || [];
+          if (!picked.length) { toast("No files selected.", true); return; }
+          showTray("pick", picked);
+        });
+      });
 
       var cached = (Presets.cache && Presets.cache.folder === self.folder()) ? Presets.cache : null;
       if (cached) {

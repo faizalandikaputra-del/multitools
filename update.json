@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.93",
-    "changelog":  "- Update 1.8.93",
+    "latest_version":  "1.8.94",
+    "changelog":  "- Update 1.8.94",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -115,6 +115,10 @@
                       "sha256":  "6f102c2d8e48e12a72b5cfa54f99d38223b13470b0c646cde86e48a0ed38938c"
                   },
                   {
+                      "path":  "css/mt-preset-drop.css",
+                      "sha256":  "58c3f719396d21e5a00c896c6eb8ca896c475914b2c6e7ae17eccd962c2def40"
+                  },
+                  {
                       "path":  "css/mt-preset-fab.css",
                       "sha256":  "d53bee2eca33f7e27204dfb5baf551eb89ee9b634b9b319c2935a93334788218"
                   },
@@ -224,7 +228,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "5cbd6aa7dc4ceffb0879ea21cc88551d5ba60f1b4e8fea631c5845076dad18da"
+                      "sha256":  "c2f138a6508587ace282b3fc9dd62b51030a0ff2b94e679b5db3d7ad5c6529dc"
                   },
                   {
                       "path":  "html/settings.html",
@@ -244,7 +248,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "a8ab44a37cd525c7e9e87ddfb2a34695e2323e48cbe3993d39c78d07225fa652"
+                      "sha256":  "870f10264e83041390c34528b8fe5feef44e30acc26806561c71157a457de767"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -388,7 +392,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "18849b172cf93db721332c99a4ca5160ef65b502a8ee7dd8bf794acb4ae1d11f"
+                      "sha256":  "7125e47c326ea1e7b8789ef5885fe43b3760d8788f8237ababb8ce6340b30f4c"
                   },
                   {
                       "path":  "neucurve/assets/index.js",

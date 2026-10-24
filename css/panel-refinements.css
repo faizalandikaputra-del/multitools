@@ -162,48 +162,88 @@ input[type="range"].rf-slider::-webkit-slider-runnable-track {
   transition: background-color var(--dur-fast) linear;
 }
 
-/* ---------- 5. Color Wheel (Color Palette > Custom Colors) ----------------------------------
-   Grid + padding-top square (no flex-gap / aspect-ratio / inset: CEF 74 safe). Glass card with an accent
-   glow; the knob and preview chip carry the picked color. */
+/* ---------- 5. Color Palette tab: dial card + Swatches card ---------------------------------
+   Dial card (.cw): hue/saturation disc, brightness arc on the right of the bezel, a bar that IS the current color.
+   --cur / --cur-rgb / --cur-fg are set by ColorWheel.create (js/main.js) so the card's glow, border and bar follow the
+   pick. Swatches card (.cp-card): Curated / Saved / From image behind one segmented control.
+   CEF 74 safe: grid + padding-top squares (no flex-gap / aspect-ratio / inset). */
 .cw {
-  display: grid; grid-row-gap: var(--space-3); box-sizing: border-box;
-  padding: var(--space-3); border-radius: var(--radius-m);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
-  border: 1px solid rgba(var(--accent-rgb), 0.28);
-  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  transition: box-shadow var(--dur) ease, border-color var(--dur) ease;
+  --cur: #FFFFFF; --cur-rgb: 255, 255, 255; --cur-fg: #15151a;
+  position: relative; display: grid; grid-row-gap: var(--space-3); box-sizing: border-box;
+  margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-m);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(var(--cur-rgb), 0.20), rgba(var(--cur-rgb), 0) 62%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(var(--cur-rgb), 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color var(--dur) ease;
 }
-.cw.is-dragging { border-color: rgba(var(--accent-rgb), 0.6); box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
-.cw-main {
-  display: grid; grid-template-columns: minmax(0, 1fr) 1.5rem; grid-column-gap: var(--space-3);
-  width: 100%; max-width: 15rem; margin: 0 auto; box-sizing: border-box;
+.cw.is-dragging { border-color: rgba(var(--cur-rgb), 0.7); }
+.cw-dial { position: relative; width: 100%; max-width: 17rem; margin: 0 auto; box-sizing: border-box; }
+.cw-dial::before { content: ""; display: block; padding-top: 100%; }
+.cw-wheel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; user-select: none; outline: none; border-radius: 50%; }
+.cw-wheel:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.7); }
+.cw-bar {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-column-gap: var(--space-2); align-items: center;
+  box-sizing: border-box; height: 3.1rem; padding: 0 0.9rem; border-radius: 12px;
+  background: var(--cur); color: var(--cur-fg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 4px 14px rgba(var(--cur-rgb), 0.3);
 }
-.cw-wheel-box { position: relative; width: 100%; }
-.cw-wheel-box::before { content: ""; display: block; padding-top: 100%; }
-.cw-wheel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; user-select: none; }
-.cw-val {
-  position: relative; border-radius: 999px; cursor: ns-resize; touch-action: none; outline: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+.cw-hex {
+  width: 100%; min-width: 0; box-sizing: border-box; padding: 0; margin: 0; border: 0; outline: 0; border-radius: 4px;
+  background: transparent; color: inherit; font-family: inherit; font-size: 1.15rem; font-weight: 700; line-height: 1.2;
+  letter-spacing: 0.03em; text-transform: uppercase; font-variant-numeric: tabular-nums;
 }
-.cw-val:focus-visible { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 0 2px rgba(var(--accent-rgb), 0.7); }
-.cw-knob {
-  position: absolute; left: 50%; top: 0; width: 1.3rem; height: 1.3rem; border-radius: 50%;
-  margin-left: -0.65rem; margin-top: -0.65rem; box-sizing: border-box; pointer-events: none;
-  border: 2px solid #fff; box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.45), 0 0 10px rgba(var(--accent-rgb), 0.6);
-  transition: transform var(--dur-fast) var(--bounce);
-}
-.cw.is-dragging .cw-knob { transform: scale(1.12); }
-.cw-preview { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); grid-column-gap: var(--space-3); align-items: center; }
-.cw-chip {
-  width: 2.6rem; height: 2.6rem; border-radius: var(--radius-s);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 12px rgba(var(--accent-rgb), 0.25);
-}
-.cw-readout { display: grid; grid-row-gap: 0.25rem; min-width: 0; }
-.cw-hex { width: 100%; box-sizing: border-box; font-variant-numeric: tabular-nums; text-transform: uppercase; }
-.cw-rgb { font-size: var(--fs-value); color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-hex:focus { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25); }
+.cw-rgb { font-size: var(--fs-value); opacity: 0.8; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cw-save { width: 100%; box-sizing: border-box; }
 /* Save + Reset share one row: Save takes the free width, Reset stays as wide as its label */
 .cw-actions { display: flex; align-items: stretch; }
 .cw-actions .cw-save { flex: 1 1 auto; width: auto; min-width: 0; }
-.cw-actions .cw-reset { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; margin-left: var(--space-2, 8px); }
-.cw-reset-dot { width: 0.8rem; height: 0.8rem; margin-right: 0.45rem; border-radius: 50%; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.55); flex: 0 0 auto; }
+.cw-actions .cw-reset { flex: 0 0 auto; margin-left: var(--space-2, 8px); }
+
+/* Swatches card */
+.cp-card {
+  display: grid; grid-row-gap: var(--space-3); box-sizing: border-box; margin-bottom: var(--space-3); padding: var(--space-3);
+  border-radius: var(--radius-m); background: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+.cp-seg {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 3px; border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.cp-seg-btn {
+  border: 0; background: transparent; color: var(--text-dim); font: inherit; font-size: 0.74rem; font-weight: 500;
+  padding: 0.42rem 0.25rem; border-radius: 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.cp-seg-btn:hover { color: var(--text); }
+.cp-seg-btn.is-active { background: var(--text, #fff); color: var(--bg, #16161a); font-weight: 600; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35); }
+.cp-pane { display: grid; grid-row-gap: var(--space-3); }
+.cp-pane[hidden] { display: none; }
+.cp-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-gap: 8px; }
+.cp-grid[hidden] { display: none; }
+.cp-grid .swatch {
+  display: block; width: 100%; max-width: none; height: 0; padding: 0; padding-top: 100%; box-sizing: border-box; border: 0; border-radius: 9px;
+}
+.cp-grid .swatch-add { opacity: 1; }
+.cp-grid .cp-add-tile {
+  background: transparent; color: var(--text-dim); font-size: 0; overflow: hidden;
+  border: 1.5px dashed rgba(255, 255, 255, 0.28); box-shadow: none;
+}
+.cp-grid .cp-add-tile::after { content: "+"; position: absolute; left: 0; right: 0; top: 50%; margin-top: -0.6rem; font-size: 1.1rem; line-height: 1.2rem; text-align: center; }
+.cp-grid .cp-add-tile:hover { color: var(--text); border-color: var(--accent); border-style: solid; }
+.cp-drop {
+  display: grid; grid-template-columns: 3.4rem minmax(0, 1fr) auto; grid-column-gap: var(--space-3); align-items: center;
+  padding: 0.6rem; border-radius: 12px; border: 1.5px dashed rgba(255, 255, 255, 0.22);
+}
+.cp-thumb {
+  width: 3.4rem; height: 3.4rem; border-radius: 8px; background-color: rgba(255, 255, 255, 0.06);
+  background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.cp-drop-text { min-width: 0; display: grid; grid-row-gap: 2px; }
+.cp-drop-text b { font-size: 0.8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-drop-text small { font-size: 0.7rem; color: var(--text-dim); }
+
+/* The category "New category" row is toggled with the hidden attribute; .cat-add-row { display: flex } used to override it and kept the row always visible. */
+.cat-add-row[hidden] { display: none; }

@@ -1554,8 +1554,11 @@
   // via applyColorToSelectionOrFill(hex). The last value is always flushed on release.
   // ---------------------------------------------------------
   var ColorWheel = (function () {
-    var N = 320, R = N / 2 - 10, LIVE_MS = 60, LIVE_KEY = "cwLiveFill", uid = 0;
-    var wheelImg = null;
+    // Dial geometry (px of the N x N canvas; the canvas is scaled to the card width by CSS). Disc = hue (angle) +
+    // saturation (distance); brightness lives on the arc hugging the right side of the bezel (A0..A1 degrees, y down).
+    var N = 340, K = N / 272, C = N / 2, RD = 98 * K, RA = 122 * K, A0 = -56, A1 = 56;
+    var LIVE_MS = 60, LIVE_KEY = "cwLiveFill", uid = 0;
+    var baseImg = null, baseLight = null;
 
     function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
     function hsvToRgb(h, s, v) {
@@ -1577,24 +1580,45 @@
     function hexToRgb(hex) { var n = parseInt(hex.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
     function rgbToHex(c) { return "#" + ((1 << 24) + (c[0] << 16) + (c[1] << 8) + c[2]).toString(16).slice(1).toUpperCase(); }
 
-    // The full-brightness hue/saturation disc is rendered once and reused by every wheel (darkening for lower
-    // Value is a cheap alpha overlay at draw time, so dragging never recomputes pixels).
-    function buildWheel() {
-      if (wheelImg) { return wheelImg; }
+    function isLightTheme() { return document.documentElement.getAttribute("data-theme") === "light"; }
+    // Static layer, rendered once per theme and reused by every dial: bezel ticks, the disc's drop shadow and the
+    // full-brightness hue/saturation disc (darkening for lower Value is a cheap alpha overlay at draw time, so a drag
+    // never recomputes pixels).
+    function buildBase() {
+      var light = isLightTheme();
+      if (baseImg && baseLight === light) { return baseImg; }
       var cv = document.createElement("canvas"); cv.width = N; cv.height = N;
-      var ctx = cv.getContext("2d"), img = ctx.createImageData(N, N), d = img.data;
-      var c = N / 2, x, y, dx, dy, r, i, rgb, a;
+      var ctx = cv.getContext("2d"), a, rel, major, r0, r1, rad;
+      for (a = 0; a < 360; a += 4) {
+        rel = ((a + 180) % 360) - 180;
+        if (Math.abs(rel) < A1 + 8) { continue; }   // the brightness arc lives here
+        major = a % 30 === 0; rad = a * Math.PI / 180;
+        r0 = RD + (major ? 11 : 14) * K; r1 = RD + 19 * K;
+        ctx.beginPath(); ctx.moveTo(C + Math.cos(rad) * r0, C + Math.sin(rad) * r0); ctx.lineTo(C + Math.cos(rad) * r1, C + Math.sin(rad) * r1);
+        ctx.lineWidth = major ? 1.6 * K : K;
+        ctx.strokeStyle = light ? (major ? "rgba(0,0,0,0.42)" : "rgba(0,0,0,0.2)") : (major ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.2)");
+        ctx.stroke();
+      }
+      ctx.save();
+      ctx.shadowColor = light ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.55)"; ctx.shadowBlur = 18 * K; ctx.shadowOffsetY = 5 * K;
+      ctx.beginPath(); ctx.arc(C, C, RD, 0, Math.PI * 2); ctx.fillStyle = "#000"; ctx.fill();
+      ctx.restore();
+      var img = ctx.createImageData(N, N), d = img.data, x, y, dx, dy, r, i2, rgb, al;
+      // only the disc is written; the shadow underneath stays, so composite the disc on a scratch canvas
+      var sc = document.createElement("canvas"); sc.width = N; sc.height = N;
+      var sctx = sc.getContext("2d");
       for (y = 0; y < N; y++) {
         for (x = 0; x < N; x++) {
-          dx = x + 0.5 - c; dy = y + 0.5 - c; r = Math.sqrt(dx * dx + dy * dy);
-          if (r > R + 1) { continue; }
-          rgb = hsvToRgb(Math.atan2(-dy, dx) * 180 / Math.PI, Math.min(1, r / R), 1);
-          a = r <= R - 0.5 ? 255 : Math.max(0, Math.round((R + 0.5 - r) * 255));   // soft edge
-          i = (y * N + x) * 4; d[i] = rgb[0]; d[i + 1] = rgb[1]; d[i + 2] = rgb[2]; d[i + 3] = a;
+          dx = x + 0.5 - C; dy = y + 0.5 - C; r = Math.sqrt(dx * dx + dy * dy);
+          if (r > RD + 1) { continue; }
+          rgb = hsvToRgb(Math.atan2(-dy, dx) * 180 / Math.PI, Math.min(1, r / RD), 1);
+          al = r <= RD - 0.5 ? 255 : Math.max(0, Math.round((RD + 0.5 - r) * 255));   // soft edge
+          i2 = (y * N + x) * 4; d[i2] = rgb[0]; d[i2 + 1] = rgb[1]; d[i2 + 2] = rgb[2]; d[i2 + 3] = al;
         }
       }
-      ctx.putImageData(img, 0, 0);
-      wheelImg = cv;
+      sctx.putImageData(img, 0, 0);
+      ctx.drawImage(sc, 0, 0);
+      baseImg = cv; baseLight = light;
       return cv;
     }
 
@@ -1689,51 +1713,62 @@
       var root = document.createElement("div");
       root.className = "cw";
       root.innerHTML =
-        '<div class="cw-main">' +
-          '<div class="cw-wheel-box"><canvas class="cw-wheel" width="' + N + '" height="' + N + '" aria-label="Hue and saturation"></canvas></div>' +
-          '<div class="cw-val" role="slider" tabindex="0" aria-label="Brightness" aria-valuemin="0" aria-valuemax="100"><span class="cw-knob"></span></div>' +
+        '<div class="cw-dial"><canvas class="cw-wheel" width="' + N + '" height="' + N + '" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" ' +
+          'aria-label="Color wheel. Drag for hue and saturation, drag the arc or press Up and Down for brightness"></canvas></div>' +
+        '<div class="cw-bar">' +
+          '<input type="text" class="cw-hex" maxlength="7" spellcheck="false" aria-label="HEX color">' +
+          '<span class="cw-rgb"></span>' +
         '</div>' +
-        '<div class="cw-preview">' +
-          '<span class="cw-chip"></span>' +
-          '<div class="cw-readout">' +
-            '<input type="text" class="text-input cw-hex" maxlength="7" spellcheck="false" aria-label="HEX color">' +
-            '<span class="cw-rgb"></span>' +
-          '</div>' +
+        '<div class="cw-actions">' +
+          '<button type="button" class="btn btn-primary cw-save">Save color</button>' +
+          '<button type="button" class="btn cw-reset" title="Set the color back to neutral white (#FFFFFF)" aria-label="Reset color to white">Reset</button>' +
         '</div>' +
         '<label class="switch-row" for="' + id + '"><span>Live Fill update while dragging</span>' +
-          '<input type="checkbox" id="' + id + '"' + (liveOn ? " checked" : "") + '><span class="switch-track"></span></label>' +
-        '<div class="cw-actions">' +
-          '<button type="button" class="btn btn-primary cw-save">Save to Custom Swatches</button>' +
-          '<button type="button" class="btn cw-reset" title="Set the color back to neutral white (#FFFFFF)" aria-label="Reset color to white"><span class="cw-reset-dot" aria-hidden="true"></span>Reset</button>' +
-        '</div>';
+          '<input type="checkbox" id="' + id + '"' + (liveOn ? " checked" : "") + '><span class="switch-track"></span></label>';
 
       var canvas = root.querySelector(".cw-wheel"), ctx = canvas.getContext("2d");
-      var valEl = root.querySelector(".cw-val"), knob = root.querySelector(".cw-knob");
-      var chip = root.querySelector(".cw-chip"), hexEl = root.querySelector(".cw-hex"), rgbEl = root.querySelector(".cw-rgb");
-      var raf = 0, dragEl = null, dragBox = null;
+      var hexEl = root.querySelector(".cw-hex"), rgbEl = root.querySelector(".cw-rgb");
+      var raf = 0, dragging = false, dragBox = null, mode = "", lastHex = "";
+      var sinA1 = Math.sin(A1 * Math.PI / 180);
 
       function current() { return rgbToHex(hsvToRgb(st.h, st.s, st.v)); }
 
       function draw() {
         raf = 0;
-        var hex = current(), rgb = hexToRgb(hex), c = N / 2, rad = st.h * Math.PI / 180;
+        var hex = current(), rgb = hexToRgb(hex), full = rgbToHex(hsvToRgb(st.h, st.s, 1));
+        var light = isLightTheme(), hr = st.h * Math.PI / 180, ka = (A0 + (1 - st.v) * (A1 - A0)) * Math.PI / 180;
+        var kx = C + Math.cos(ka) * RA, ky = C + Math.sin(ka) * RA, mx = C + st.s * RD * Math.cos(hr), my = C - st.s * RD * Math.sin(hr);
         ctx.clearRect(0, 0, N, N);
-        ctx.drawImage(buildWheel(), 0, 0);
+        ctx.drawImage(buildBase(), 0, 0);
+
+        // brightness arc: track + gradient (full-brightness color -> black), knob carries the picked color
+        var g = ctx.createLinearGradient(0, C - RA * sinA1, 0, C + RA * sinA1);
+        g.addColorStop(0, full); g.addColorStop(1, "#000");
+        ctx.lineCap = "round";
+        ctx.beginPath(); ctx.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); ctx.lineWidth = 13 * K; ctx.strokeStyle = light ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.16)"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); ctx.lineWidth = 10 * K; ctx.strokeStyle = g; ctx.stroke();
+        ctx.beginPath(); ctx.arc(kx, ky, 10.5 * K, 0, Math.PI * 2); ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fill();
+        ctx.beginPath(); ctx.arc(kx, ky, 8.5 * K, 0, Math.PI * 2); ctx.fillStyle = hex; ctx.fill();
+        ctx.lineWidth = 3 * K; ctx.strokeStyle = "#fff"; ctx.stroke();
+
+        // disc: darkening overlay for Value < 1, edge, hue/saturation marker
         if (st.v < 1) {
           ctx.fillStyle = "rgba(0,0,0," + (1 - st.v).toFixed(3) + ")";
-          ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(C, C, RD, 0, Math.PI * 2); ctx.fill();
         }
-        var mx = c + st.s * R * Math.cos(rad), my = c - st.s * R * Math.sin(rad);
-        ctx.beginPath(); ctx.arc(mx, my, 10.5, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.stroke();
-        ctx.beginPath(); ctx.arc(mx, my, 9, 0, Math.PI * 2); ctx.fillStyle = hex; ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(C, C, RD - 0.5, 0, Math.PI * 2); ctx.lineWidth = 1; ctx.strokeStyle = "rgba(255,255,255,0.28)"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(mx, my, 12 * K, 0, Math.PI * 2); ctx.lineWidth = 2 * K; ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(mx, my, 10 * K, 0, Math.PI * 2); ctx.fillStyle = hex; ctx.fill();
+        ctx.lineWidth = 3 * K; ctx.strokeStyle = "#fff"; ctx.stroke();
 
-        chip.style.background = hex;
-        knob.style.background = hex;
-        knob.style.top = ((1 - st.v) * 100) + "%";
-        valEl.style.background = "linear-gradient(to bottom, " + rgbToHex(hsvToRgb(st.h, st.s, 1)) + ", #000)";
-        valEl.setAttribute("aria-valuenow", String(Math.round(st.v * 100)));
-        rgbEl.textContent = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+        if (hex !== lastHex) {   // card glow + bar follow the picked color
+          lastHex = hex;
+          root.style.setProperty("--cur", hex);
+          root.style.setProperty("--cur-rgb", rgb[0] + "," + rgb[1] + "," + rgb[2]);
+          root.style.setProperty("--cur-fg", (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255 > 0.6 ? "#15151a" : "#ffffff");
+          rgbEl.textContent = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+        }
+        canvas.setAttribute("aria-valuenow", String(Math.round(st.v * 100)));
         if (document.activeElement !== hexEl) { hexEl.value = hex; }
         ActivePalette.set(hex, { persist: false, source: "wheel" });   // window.activePaletteColor, every frame
       }
@@ -1750,45 +1785,48 @@
         queueFill(hex);   // flush the exact final color even when live updates are off / throttled
       }
 
-      // ---- dragging (Pointer Events + capture, so a drag can leave the element) ----
-      function bindDrag(el, onMove) {
-        el.addEventListener("pointerdown", function (e) {
-          if (e.button !== undefined && e.button !== 0) { return; }
-          e.preventDefault();
-          dragEl = el;
-          dragBox = pointerBox(el, e);   // measured once at pointerdown, reused for the whole drag
-          try { el.setPointerCapture(e.pointerId); } catch (err) { /* older hosts: window-level fallback below */ }
-          root.classList.add("is-dragging");
-          onMove(e);
-        });
-        el.addEventListener("pointermove", function (e) { if (dragEl === el) { onMove(e); } });
-        function end() {
-          if (dragEl !== el) { return; }
-          dragEl = null; dragBox = null;
-          root.classList.remove("is-dragging");
-          commit();
-        }
-        el.addEventListener("pointerup", end);
-        el.addEventListener("pointercancel", end);
-        el.addEventListener("lostpointercapture", end);
+      // ---- dragging (Pointer Events + capture, so a drag can leave the canvas). Where the press lands decides
+      // what the drag edits: on the brightness arc = Value, anywhere else = hue + saturation. ----
+      function local(e) {
+        return { x: (e.clientX - dragBox.left) / dragBox.width * N - C, y: (e.clientY - dragBox.top) / dragBox.height * N - C };
       }
-      bindDrag(canvas, function (e) {
-        var r = dragBox || pointerBox(canvas);
-        if (!r.width) { return; }
-        var x = (e.clientX - r.left) / r.width * N - N / 2, y = (e.clientY - r.top) / r.height * N - N / 2;
-        var dist = Math.sqrt(x * x + y * y);
-        st.s = Math.min(1, dist / R);
-        if (dist > 1) { st.h = (Math.atan2(-y, x) * 180 / Math.PI + 360) % 360; }
+      function applyPointer(e) {
+        if (!dragBox || !dragBox.width) { return; }
+        var p = local(e), dist = Math.sqrt(p.x * p.x + p.y * p.y), a;
+        if (mode === "val") {
+          a = Math.atan2(p.y, p.x) * 180 / Math.PI;                 // 0 = right, y down
+          a = a < A0 ? A0 : (a > A1 ? A1 : a);
+          st.v = clamp01(1 - (a - A0) / (A1 - A0));
+        } else {
+          st.s = Math.min(1, dist / RD);
+          if (dist > 1) { st.h = (Math.atan2(-p.y, p.x) * 180 / Math.PI + 360) % 360; }
+        }
         changed(false);
+      }
+      canvas.addEventListener("pointerdown", function (e) {
+        if (e.button !== undefined && e.button !== 0) { return; }
+        e.preventDefault();
+        dragBox = pointerBox(canvas, e);   // measured once at pointerdown, reused for the whole drag
+        if (!dragBox.width) { dragBox = null; return; }
+        var p = local(e), dist = Math.sqrt(p.x * p.x + p.y * p.y), ang = Math.atan2(p.y, p.x) * 180 / Math.PI;
+        mode = (dist > RD + 6 * K && Math.abs(ang) <= A1 + 14) ? "val" : "wheel";
+        dragging = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* older hosts */ }
+        root.classList.add("is-dragging");
+        applyPointer(e);
       });
-      bindDrag(valEl, function (e) {
-        var r = dragBox || pointerBox(valEl);
-        if (!r.height) { return; }
-        st.v = 1 - clamp01((e.clientY - r.top) / r.height);
-        changed(false);
-      });
+      canvas.addEventListener("pointermove", function (e) { if (dragging) { applyPointer(e); } });
+      function end() {
+        if (!dragging) { return; }
+        dragging = false; dragBox = null; mode = "";
+        root.classList.remove("is-dragging");
+        commit();
+      }
+      canvas.addEventListener("pointerup", end);
+      canvas.addEventListener("pointercancel", end);
+      canvas.addEventListener("lostpointercapture", end);
 
-      valEl.addEventListener("keydown", function (e) {
+      canvas.addEventListener("keydown", function (e) {
         var step = e.shiftKey ? 0.1 : 0.02, k = e.key, nv = st.v;
         if (k === "ArrowUp" || k === "ArrowRight") { nv += step; }
         else if (k === "ArrowDown" || k === "ArrowLeft") { nv -= step; }
@@ -1856,6 +1894,7 @@
       var self = this;
       var wrap = document.createElement("div");
       wrap.className = "ta";
+      wrap.setAttribute("data-open-first", "0");   // Layer Label Colors starts collapsed; the dial + Swatches card are the main area
 
       // Legacy migration: earlier versions kept one flat "customColors" list.
       // The first time the categorized store runs, that list becomes the seed
@@ -1870,54 +1909,70 @@
           '<span class="label-name">' + l.name + "</span></button>";
       }).join("");
 
+      // One "Swatches" card, three sources: Curated (fixed palette), Saved (categories) and From image (extracted colors).
+      var activeTab = Store.get("cpSwatchTab");
+      if (activeTab !== "cur" && activeTab !== "sav" && activeTab !== "img") { activeTab = "cur"; }
+      function segBtn(key, label) {
+        var on = key === activeTab;
+        return '<button type="button" class="cp-seg-btn' + (on ? " is-active" : "") + '" role="tab" aria-selected="' + on + '" data-cp-tab="' + key + '">' + label + "</button>";
+      }
+      function pane(key, inner) {
+        return '<div class="cp-pane" data-cp-pane="' + key + '"' + (key === activeTab ? "" : " hidden") + ">" + inner + "</div>";
+      }
+
       wrap.innerHTML =
+        '<div id="palette-wheel-mount"></div>' +
         '<div class="ta-section">' +
           '<h2 class="ta-title">Layer Label Colors</h2>' +
           '<div class="label-grid">' + labelHtml + "</div>" +
           '<p class="field-note">Click a color to set it as the Layer Label of the currently selected layer(s) in After Effects.</p>' +
         "</div>" +
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Curated Palette</h2>' +
-          '<div class="palette-grid">' + presetHtml + "</div>" +
-        "</div>" +
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Extract from Image</h2>' +
-          '<p class="field-note">Upload a JPG or PNG and its most common colors are pulled out automatically.</p>' +
-          '<div class="extract-row">' +
-            '<button class="btn" id="palette-image-choose">Choose Image</button>' +
-            '<span class="extract-filename" id="palette-image-name">No image selected.</span>' +
-          "</div>" +
-          '<div class="palette-grid" id="palette-extracted-grid" hidden></div>' +
-          '<p class="field-note" id="palette-extract-hint" hidden>Hover a color and click + to save it into the category below.</p>' +
-        "</div>" +
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Custom Colors</h2>' +
-          '<div id="palette-wheel-mount"></div>' +
-          '<div id="palette-cat-controls"></div>' +
-          '<div class="palette-grid" id="palette-custom-grid"></div>' +
-          '<div class="field-row">' +
-            '<input type="text" id="palette-hex-input" class="text-input" placeholder="#RRGGBB" maxlength="7">' +
-            '<button class="btn" id="palette-hex-add">Add</button>' +
-          "</div>" +
+        '<div class="cp-card">' +
+          '<div class="cp-seg" role="tablist" aria-label="Swatch source">' + segBtn("cur", "Curated") + segBtn("sav", "Saved") + segBtn("img", "From image") + "</div>" +
+          pane("cur", '<div class="cp-grid">' + presetHtml + "</div>") +
+          pane("sav", '<div id="palette-cat-controls"></div><div class="cp-grid" id="palette-custom-grid"></div>') +
+          pane("img",
+            '<div class="cp-drop">' +
+              '<div class="cp-thumb" id="palette-image-thumb"></div>' +
+              '<div class="cp-drop-text"><b id="palette-image-name">No image selected</b><small id="palette-image-count">JPG or PNG</small></div>' +
+              '<button class="btn" id="palette-image-choose">Choose image</button>' +
+            "</div>" +
+            '<div class="cp-grid" id="palette-extracted-grid" hidden></div>' +
+            '<p class="field-note" id="palette-extract-hint" hidden>Click + on a color to save it to Saved.</p>') +
         "</div>" +
         '<p class="field-note">Clicking any swatch copies its HEX to the clipboard. If a layer (Solid/Text) or a color property (like Fill Color) is selected in the Timeline, it\'s applied there too.</p>';
 
       var customGrid = wrap.querySelector("#palette-custom-grid");
       var catControls = wrap.querySelector("#palette-cat-controls");
 
-      // Color Wheel: picks drive window.activePaletteColor + live Fill updates; Save appends to the active category.
-      wrap.querySelector("#palette-wheel-mount").appendChild(ColorWheel.create({
-        onSave: function (hex) {
-          var cat = colorCatStore.activeCat(catData);
-          if (cat.items.indexOf(hex) !== -1) { toast(hex + " is already in " + cat.name + "."); return; }
-          addHexToActiveCat(hex);
-          toast("Saved " + hex + " to " + cat.name + ".");
-        }
-      }));
+      function saveColor(hex) {
+        var cat = colorCatStore.activeCat(catData);
+        if (cat.items.indexOf(hex) !== -1) { toast(hex + " is already in " + cat.name + "."); return; }
+        addHexToActiveCat(hex);
+        toast("Saved " + hex + " to " + cat.name + ".");
+      }
+
+      // Dial: picks drive window.activePaletteColor + live Fill updates; Save appends to the active category.
+      wrap.querySelector("#palette-wheel-mount").appendChild(ColorWheel.create({ onSave: saveColor }));
+
+      // ---- Swatches card: source tabs ----
+      wrap.querySelector(".cp-seg").addEventListener("click", function (e) {
+        var b = e.target.closest ? e.target.closest("[data-cp-tab]") : null;
+        if (!b) { return; }
+        var key = b.getAttribute("data-cp-tab");
+        Array.prototype.forEach.call(wrap.querySelectorAll("[data-cp-tab]"), function (x) {
+          var on = x === b;
+          x.classList.toggle("is-active", on);
+          x.setAttribute("aria-selected", String(on));
+        });
+        Array.prototype.forEach.call(wrap.querySelectorAll("[data-cp-pane]"), function (pn) { pn.hidden = pn.getAttribute("data-cp-pane") !== key; });
+        Store.set("cpSwatchTab", key);
+      });
 
       function renderCustomGrid() {
         var cat = colorCatStore.activeCat(catData);
-        customGrid.innerHTML = cat.items.map(function (hex) { return self.swatchHtml(hex, "remove"); }).join("");
+        customGrid.innerHTML = cat.items.map(function (hex) { return self.swatchHtml(hex, "remove"); }).join("") +
+          '<button type="button" class="swatch cp-add-tile" data-cp-addcur title="Save the current color here" aria-label="Save the current color">+</button>';
       }
 
       function renderCats() {
@@ -1975,6 +2030,9 @@
           return;
         }
 
+        var addCur = e.target.closest ? e.target.closest("[data-cp-addcur]") : null;
+        if (addCur) { e.stopPropagation(); saveColor(ActivePalette.get()); return; }
+
         var removeBtn = e.target.closest ? e.target.closest("[data-remove-hex]") : null;
         if (removeBtn) {
           e.stopPropagation();
@@ -1999,18 +2057,6 @@
         if (sw) { handleSwatchClick(sw.getAttribute("data-hex")); }
       });
 
-      wrap.querySelector("#palette-hex-add").addEventListener("click", function () {
-        var input = wrap.querySelector("#palette-hex-input");
-        var raw = input.value;
-        if (!self.isValidHex(raw)) { toast("Enter a valid HEX color, e.g. #8B6CF7.", true); return; }
-        addHexToActiveCat(self.normalizeHex(raw));
-        input.value = "";
-      });
-
-      wrap.querySelector("#palette-hex-input").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") { wrap.querySelector("#palette-hex-add").click(); }
-      });
-
       // ---- Image color extraction ----
       var imgFileInput = document.createElement("input");
       imgFileInput.type = "file";
@@ -2020,6 +2066,8 @@
 
       var chooseBtn = wrap.querySelector("#palette-image-choose");
       var nameEl = wrap.querySelector("#palette-image-name");
+      var countEl = wrap.querySelector("#palette-image-count");
+      var thumbEl = wrap.querySelector("#palette-image-thumb");
       var extractedGrid = wrap.querySelector("#palette-extracted-grid");
       var extractHint = wrap.querySelector("#palette-extract-hint");
 
@@ -2032,22 +2080,27 @@
 
         chooseBtn.classList.add("is-pending");
         nameEl.textContent = file.name;
+        countEl.textContent = "Reading...";
 
         var reader = new FileReader();
         reader.onerror = function () {
           flashButtonResult(chooseBtn, false);
+          countEl.textContent = "Could not read that image.";
           toast("Could not read that image.", true);
         };
         reader.onload = function () {
           var img = new Image();
           img.onerror = function () {
             flashButtonResult(chooseBtn, false);
+            countEl.textContent = "Could not decode that image.";
             toast("Could not decode that image.", true);
           };
           img.onload = function () {
             var colors = extractDominantColors(img, 8);
             flashButtonResult(chooseBtn, !!colors.length);
-            if (!colors.length) { toast("No usable colors found in that image.", true); return; }
+            thumbEl.style.backgroundImage = "url(" + reader.result + ")";
+            if (!colors.length) { countEl.textContent = "No usable colors found."; toast("No usable colors found in that image.", true); return; }
+            countEl.textContent = colors.length + " colors found";
             extractedGrid.hidden = false;
             extractHint.hidden = false;
             extractedGrid.innerHTML = colors.map(function (hex) { return self.swatchHtml(hex, "add"); }).join("");
@@ -4775,7 +4828,7 @@
     // place instead of each tab module having to call it itself. Harmless no-op on tabs with no
     // ".ta-section" markup (Info, the plain tool grids).
     if (window.PanelRefinements && window.PanelRefinements.groupifyTaSections) {
-      window.PanelRefinements.groupifyTaSections(built, { tabId: tabId });
+      window.PanelRefinements.groupifyTaSections(built, { tabId: tabId, openFirst: !(built.getAttribute && built.getAttribute("data-open-first") === "0") });
     }
     if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
     FormState.restore(tabId, panel);

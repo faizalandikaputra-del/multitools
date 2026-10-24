@@ -2593,10 +2593,12 @@ function TOOLS_precomposeTogether(moveAllAttributes) {
 
 // ---------- Duplicate Precomp (Deep): copy a pre-comp AND every pre-comp nested inside it ----------
 // Called from JS as: TOOLS_duplicatePrecompDeep(toFolder)
+// Each selected pre-comp layer is duplicated as a NEW layer in the timeline (above the original, selected afterwards),
+// so effects, masks, transform and keyframes of the layer are copied too. Only the duplicate points to the new copies.
 // comp.duplicate() only copies the top comp; the pre-comps inside it stay shared with the original. So the copy is
 // walked layer by layer: every layer whose source is a comp is re-pointed (replaceSource) to its own fresh copy,
 // down to the deepest level. Each selected layer gets its own tree of copies (never shared with another selected
-// layer), the original comps are not touched. Inside one tree a comp used twice gets ONE copy, so the structure
+// layer), the original comps and the original layers are not touched. Inside one tree a comp used twice gets ONE copy, so the structure
 // stays the same as the original. Footage / solids stay shared (they are not editable like comps).
 // replaceSource(..., false): expressions are not rewritten, so comp("Name") expressions still point at the old comp.
 // One undo group. Nothing valid selected -> friendly notice, no changes.
@@ -2645,21 +2647,27 @@ function TOOLS_duplicatePrecompDeep(toFolder) {
     }
     if (!layers.length) { return _notice("None of the selected layers is a pre-comp."); }
 
-    var made = [], done = 0, failed = 0, lastErr = "", L, wasLocked;
+    var made = [], dups = [], done = 0, failed = 0, lastErr = "", L, dup;
     app.beginUndoGroup("Duplicate Precomp (Deep)");
     undoOpen = true;
     for (i = 0; i < layers.length; i++) {
       L = layers[i];
-      wasLocked = L.locked;
+      dup = null;
       try {
-        if (wasLocked) { L.locked = false; }
-        L.replaceSource(_dpClone(L.source, {}, {}, made), false);
+        dup = L.duplicate();                                 // new layer above the original: effects, masks, transform, keyframes all copied
+        if (dup.locked) { dup.locked = false; }
+        dup.replaceSource(_dpClone(L.source, {}, {}, made), false);
+        if (L.locked) { dup.locked = true; }
+        dups.push(dup);
         done++;
       } catch (eLayer) {
         failed++; lastErr = (eLayer && eLayer.message) ? eLayer.message : String(eLayer);
-      } finally {
-        if (wasLocked) { try { L.locked = true; } catch (eLock) { } }
+        if (dup) { try { dup.remove(); } catch (eRm) { } }   // do not leave a half-made layer behind
       }
+    }
+    if (dups.length) {                                       // select the new layers so they are easy to find
+      try { for (i = 1; i <= comp.numLayers; i++) { comp.layer(i).selected = false; } } catch (eDesel) { }
+      for (i = 0; i < dups.length; i++) { try { dups[i].selected = true; } catch (eSel) { } }
     }
     if (toFolder && made.length) {
       var folder = _dpFolder();
@@ -2669,7 +2677,7 @@ function TOOLS_duplicatePrecompDeep(toFolder) {
     undoOpen = false;
 
     if (done === 0) { throw new Error("Duplicate failed" + (lastErr ? ": " + lastErr : ".")); }
-    var msg = done + " pre-comp layer" + (done === 1 ? "" : "s") + " now use their own copies (" + made.length + " comp" + (made.length === 1 ? "" : "s") + " duplicated, nested pre-comps included).";
+    var msg = done + " pre-comp layer" + (done === 1 ? "" : "s") + " duplicated as new layer" + (done === 1 ? "" : "s") + " with their own copies (" + made.length + " comp" + (made.length === 1 ? "" : "s") + " duplicated, nested pre-comps included).";
     if (toFolder && made.length) { msg += " Copies are in the \"Deep Copies\" folder."; }
     if (failed) { msg += " " + failed + " failed" + (lastErr ? " (" + lastErr + ")" : "") + "."; }
     return _ok(msg);

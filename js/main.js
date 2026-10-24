@@ -2652,9 +2652,9 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title">Duplicate Precomp (Deep)</h2>' +
-          '<p class="field-note">Gives each selected pre-comp layer its own copy of the pre-comp <strong>and every pre-comp inside it</strong>, so you can edit the inside without changing any other layer that used the same pre-comp. The original comps stay untouched. Footage is still shared. Expressions like comp("Name") still point to the old comp.</p>' +
+          '<p class="field-note">Duplicates each selected pre-comp layer as a new layer on the timeline (effects, masks and transform are copied too). The new layer uses its own copy of the pre-comp <strong>and every pre-comp inside it</strong>, so you can edit the inside without changing the original. The original layer and comps stay untouched. Footage is still shared. Expressions like comp("Name") still point to the old comp.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="dupdeep-folder" checked><span>Put copies in a "Deep Copies" folder</span></label>' +
-          '<button class="btn-apply" data-tool-action="duplicate-precomp-deep">Duplicate Selected Pre-comp</button>' +
+          '<button class="btn-apply" data-tool-action="duplicate-precomp-deep">Duplicate Pre-comp Layer</button>' +
         '</div>' +
 
         '<div class="ta-section">' +

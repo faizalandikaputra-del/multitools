@@ -13,9 +13,9 @@
 (function () {
   var root = document.documentElement;
   var IS_SETTINGS = /[?&]ext=settings/.test(location.search);
-  var KEYS = /^(hStyle|hSize|hLine|hImg|pEffect|pColor|pAlpha|gradOn|gradP|gradC1|gradC2|gradGlow|gradDir|gradInt|gradArea|wgDir|wgInt|wgSize|gWp|gHp|gWl|gHl)$/;
+  var KEYS = /^(hStyle|hSize|hLine|hImg|pEffect|pColor|pAlpha|gradOn|gradP|gradC1|gradC2|gradGlow|gradDir|gradInt|gradArea|wgDir|wgInt|wgSize|wgColor|gWp|gHp|gWl|gHl)$/;
   var DEF = { hStyle: "circle", hSize: "4.5", hLine: "1.2", hImg: "", pEffect: "particles", pColor: "#ffffff", pAlpha: "100",
-    gradOn: "0", gradP: "bw", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", wgDir: "90", wgInt: "45", wgSize: "55", gWp: "100", gHp: "100", gWl: "100", gHl: "100" };
+    gradOn: "0", gradP: "bw", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", wgDir: "90", wgInt: "45", wgSize: "55", wgColor: "#ffffff", gWp: "100", gHp: "100", gWl: "100", gHl: "100" };
   var NS = "http://www.w3.org/2000/svg";
 
   function read(k) { try { var v = localStorage.getItem("neucurve_" + k); return v === null ? DEF[k] : v; } catch (e) { return DEF[k]; } }
@@ -38,7 +38,7 @@
       pEffect: read("pEffect"), pColor: read("pColor"), pAlpha: num(read("pAlpha"), 0, 100, 100),
       gOn: read("gradOn") === "1", gP: read("gradP"), gC1: read("gradC1"), gC2: read("gradC2"), gGlow: read("gradGlow"),
       gDir: num(read("gradDir"), 0, 360, 160), gInt: num(read("gradInt"), 0, 100, 100), gArea: read("gradArea") === "graph" ? "graph" : "panel",
-      wDir: num(read("wgDir"), 0, 360, 90), wInt: num(read("wgInt"), 0, 100, 45), wSize: num(read("wgSize"), 20, 100, 55)
+      wDir: num(read("wgDir"), 0, 360, 90), wInt: num(read("wgInt"), 0, 100, 45), wSize: num(read("wgSize"), 20, 100, 55), wColor: read("wgColor")
     };
   }
 
@@ -165,7 +165,7 @@
     var rx = 46 + (st.wSize - 46) * Math.abs(dx), ry = 46 + (st.wSize - 46) * Math.abs(dy);
     function blob(off, k, sc) {
       return "radial-gradient(ellipse " + (rx * (1 - (1 - sc) * Math.abs(dy))).toFixed(1) + "% " + (ry * (1 - (1 - sc) * Math.abs(dx))).toFixed(1) + "% at " +
-             Math.max(0, Math.min(100, ex + tx * off)).toFixed(1) + "% " + Math.max(0, Math.min(100, ey + ty * off)).toFixed(1) + "%, rgba(255,255,255," + (a * k).toFixed(3) + "), rgba(255,255,255,0) 70%)";
+             Math.max(0, Math.min(100, ex + tx * off)).toFixed(1) + "% " + Math.max(0, Math.min(100, ey + ty * off)).toFixed(1) + "%, " + rgba(st.wColor, a * k).replace(/\s/g, "") + ", " + rgba(st.wColor, 0).replace(/\s/g, "") + " 70%)";
     }
     return blob(-20, 1, 1) + "," + blob(32, 0.7, 0.87);
   }

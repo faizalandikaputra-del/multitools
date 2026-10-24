@@ -13,7 +13,7 @@
     autoApply: "false", overshoot: "true", liveBall: "1", layoutMode: "auto",
     bgImagePath: "", bgOpacity: "1",
     gradOn: "0", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", gradP: "bw",
-    wgDir: "90", wgInt: "45", wgSize: "55",
+    wgDir: "90", wgInt: "45", wgSize: "55", wgColor: "#ffffff", lineGlowColor: "", hGlowColor: "",
     hStyle: "circle", hSize: "4.5", hLine: "1.2", hImg: "",
     pEffect: "particles", pColor: "#ffffff", pAlpha: "100",
     gWp: "", gHp: "", gWl: "", gHl: "", bgOrig: "false",
@@ -70,7 +70,13 @@
     if (hex.length === 3) { hex = hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2); }
     return hex.length === 6 ? "#" + hex.toLowerCase() : "";
   }
-  function colorOf(key) { return normalizeHex(read(key)) || normalizeHex(DEF[key]) || "#ffffff"; }
+  /* glow colors: lineGlowColor / hGlowColor are "" = follow the curve / handle color, so the Edit button shows that color until one is picked */
+  var GLOW_AUTO = { lineGlowColor: "graphLineColor", hGlowColor: "handleColor" };
+  function colorOf(key) {
+    var c = normalizeHex(read(key));
+    if (!c && GLOW_AUTO[key]) { return colorOf(GLOW_AUTO[key]); }
+    return c || normalizeHex(DEF[key]) || "#ffffff";
+  }
   function hexToRgba(hex, a) {
     var c = normalizeHex(hex) || "#ffffff";
     return "rgba(" + parseInt(c.slice(1, 3), 16) + "," + parseInt(c.slice(3, 5), 16) + "," + parseInt(c.slice(5, 7), 16) + "," + a + ")";
@@ -478,7 +484,7 @@
     syncers.push(bindRange("settingsOpacity", "bgOpacity", "settingsOpacityValue", pct, function (v) { return String(Math.round(parseFloat(v)) / 100); }));
 
     /* resets */
-    $("settingsResetGlow").addEventListener("click", function () { set("wgDir", "90"); set("wgInt", "45"); set("wgSize", "55"); refreshAll(); });
+    $("settingsResetGlow").addEventListener("click", function () { set("wgDir", "90"); set("wgInt", "45"); set("wgSize", "55"); set("wgColor", "#ffffff"); refreshAll(); });
     $("settingsResetGradient").addEventListener("click", function () {
       set("gradP", "bw"); set("gradC1", DEF.gradC1); set("gradC2", DEF.gradC2); set("gradGlow", DEF.gradGlow);
       set("gradDir", "160"); set("gradInt", "100"); set("gradArea", "panel"); set("gradOn", "0"); refreshAll();

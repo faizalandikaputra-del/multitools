@@ -13,8 +13,8 @@
   try { ls = window.localStorage; void ls.length; } catch (e0) { ls = null; }
   var DEF = {
     gridShow: "1", gridLabels: "1", gridX: "6", gridY: "5", gridStyle: "solid", gridOp: "100", gridW: "1", gridColor: "#ffffff",
-    lineW: "2.5", lineStyle: "solid", lineGlow: "0",
-    hGlow: "0", hHover: "0", hGuides: "1", hGuideStyle: "solid", hGuideOp: "100", hLabels: "1",
+    lineW: "2.5", lineStyle: "solid", lineGlow: "0", lineGlowColor: "",
+    hGlow: "0", hGlowColor: "", hHover: "0", hGuides: "1", hGuideStyle: "solid", hGuideOp: "100", hLabels: "1",
     hotkeysOn: "1", hotkeys: ""
   };
   function rd(k) { var v = null; try { v = ls ? ls.getItem(P + k) : null; } catch (e) { } return (v === null || v === undefined) ? DEF[k] : v; }
@@ -25,6 +25,7 @@
     if (h.length !== 6) { return "255,255,255"; }
     return parseInt(h.slice(0, 2), 16) + "," + parseInt(h.slice(2, 4), 16) + "," + parseInt(h.slice(4, 6), 16);
   }
+  function hexOrEmpty(v) { v = String(v || "").replace(/[^0-9a-f]/gi, ""); if (v.length === 3) { v = v.charAt(0) + v.charAt(0) + v.charAt(1) + v.charAt(1) + v.charAt(2) + v.charAt(2); } return v.length === 6 ? "#" + v.toLowerCase() : ""; }
   function flag(name, on, val) { if (on) { root.setAttribute(name, val === undefined ? "1" : val); } else { root.removeAttribute(name); } }
   function cssv(name, val) { root.style.setProperty(name, val); }
 
@@ -50,8 +51,9 @@
     var lg = Math.round(nm("lineGlow", 0, 20, 0));   /* glow is drawn by nc-glow.js (SVG strokes); CSS drop-shadow is not rendered in After Effects' CEF */
 
     var hg = Math.round(nm("hGlow", 0, 20, 0));
-    var ugKey = lg + "|" + hg, ugOld = window.__ncUG ? window.__ncUG.line + "|" + window.__ncUG.handle : "";
-    window.__ncUG = { line: lg, handle: hg };
+    var lc = hexOrEmpty(rd("lineGlowColor")), hc = hexOrEmpty(rd("hGlowColor"));   /* "" = follow the curve / handle color */
+    var ugKey = lg + "|" + hg + "|" + lc + "|" + hc, ugOld = window.__ncUG ? window.__ncUG.line + "|" + window.__ncUG.handle + "|" + window.__ncUG.lc + "|" + window.__ncUG.hc : "";
+    window.__ncUG = { line: lg, handle: hg, lc: lc, hc: hc };
     if (ugKey !== ugOld) { try { if (window.__ncGlowSync) { window.__ncGlowSync(); } } catch (eg) { } }
     flag("data-nc-hh", rd("hHover") === "1", "on");
     flag("data-nc-hg", rd("hGuides") === "0", "off");

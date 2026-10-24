@@ -43,7 +43,7 @@
   /* ---- v5: user glow (Settings sliders, 0..20 px) ---- */
   function userGlow() {
     var u = window.__ncUG || {}, l = parseFloat(u.line), h = parseFloat(u.handle);
-    return { line: isFinite(l) ? Math.max(0, Math.min(20, l)) : 0, handle: isFinite(h) ? Math.max(0, Math.min(20, h)) : 0 };
+    return { line: isFinite(l) ? Math.max(0, Math.min(20, l)) : 0, handle: isFinite(h) ? Math.max(0, Math.min(20, h)) : 0, lc: u.lc || "", hc: u.hc || "" };
   }
   function userLayers(lg) {
     var R = 3 + lg * 1.2, sigma = R / 2.4, peak = 0.4 + 0.45 * (lg / 20), n = 8, core = 1.5, step = (R - core) / (n - 1), out = [], i, r, a;
@@ -214,8 +214,8 @@
         if (gp.getAttribute("stroke") !== s) { gp.setAttribute("stroke", s); }
       }
       if (!light) { syncHalos(svgs[i], s); }
-      syncUserLine(svgs[i], g, d, s, ug.line, dragging);
-      if (!light) { syncUserHalos(svgs[i], haloColor(svgs[i], s), ug.handle); }
+      syncUserLine(svgs[i], g, d, ug.lc || s, ug.line, dragging);   /* Settings > Curve Line > Glow Color, else the curve color */
+      if (!light) { syncUserHalos(svgs[i], ug.hc || haloColor(svgs[i], s), ug.handle);   /* Settings > Handle Effects > Glow Color, else the handle color */ }
     }
   }
 

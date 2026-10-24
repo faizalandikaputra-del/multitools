@@ -2245,3 +2245,11 @@ change (opening splash: different for Glass and Material You):
   Also fixed: the base glow (.mt-splash::before) sat below the centre (a % margin-top is relative to the width); it is now centred.
   Note: the splash starts before js/mt-material.js applies the saved Theme color, so Material You may show its default colours for a few milliseconds first.
   Files: html/index.html (splash markup: .mts-orbs/.mts-cookie/.mts-prog/.mts-glint, hidden by CSS where unused; cache-bust splash.css ?v=3), css/splash.css. js/splash.js unchanged (same exit animation "mts-out"). Reduced motion still skips the splash. Rendered in a headless browser only; not run inside After Effects.
+
+new (NeuCurve settings: glow colors):
+  What: three new "Glow Color" options (Edit button, same picker as the other color rows):
+    - Graph > Curve Line > Glow Color: color of the curve glow (Glow slider). Not set = follows the curve color. Group Reset puts it back.
+    - Handles > Handle Effects > Glow Color: color of the handle glow (Handle Glow slider). Not set = follows the handle color. Group Reset puts it back.
+    - Appearance > Preset Glow > Glow Color: color of the soft light behind the preset tiles (default white #ffffff). Preset Glow Reset puts it back.
+  How: new keys neucurve_lineGlowColor, neucurve_hGlowColor ("" = auto) and neucurve_wgColor. nc-pro.js puts the two glow colors into window.__ncUG (lc, hc); nc-glow.js uses them for g.nc-uglow and the handle halo gradient instead of the curve/handle color. nc-extras.js whiteCss() builds the preset light from wgColor. The built-in always-on thin curve glow (g.nc-glow) still follows the curve color.
+  Files: neucurve/settings.html, nc-settings.js, nc-pro-settings.js, nc-pro.js, nc-glow.js, nc-extras.js (cache-bust: settings nc-settings.js ?v=18, nc-pro-settings.js ?v=4; index nc-extras.js ?v=4, nc-glow.js ?v=6, nc-pro.js ?v=7). Tested in a headless browser (values reach the glow); not run inside After Effects.

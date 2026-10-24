@@ -89,7 +89,7 @@
 
         <div class="settings-group">
           <header class="settings-group-header settings-group-header-with-action">
-            <div><h2>Preset Glow</h2><p>The soft white light behind the preset tiles.</p></div>
+            <div><h2>Preset Glow</h2><p>The soft light behind the preset tiles.</p></div>
             <button type="button" id="settingsResetGlow">Reset</button>
           </header>
           <div class="settings-language-row">
@@ -104,6 +104,7 @@
           <input id="settingsGlowInt" class="settings-range" type="range" min="0" max="100" step="1" />
           <div class="settings-opacity-head"><span>Reach</span><b id="settingsGlowSizeValue">55%</b></div>
           <input id="settingsGlowSize" class="settings-range" type="range" min="20" max="100" step="1" />
+          <div class="settings-row" data-setting-row="wgColor"><span>Glow Color</span><button type="button" data-color-edit="wgColor">Edit</button></div>
           <p class="settings-tip">Strength 0% turns the glow off.</p>
         </div>
       </section>
@@ -191,6 +192,8 @@
           </header>
           <div class="settings-opacity-head"><span>Handle Glow</span><b id="ncpHGlowValue"></b></div>
           <input id="ncpHGlow" class="settings-range" type="range" min="0" max="20" step="1" />
+          <div class="settings-row" data-setting-row="hGlowColor"><span>Glow Color</span><button type="button" data-color-edit="hGlowColor">Edit</button></div>
+          <p class="settings-tip">Until you pick a color, the glow follows the handle color. Reset puts it back.</p>
           <label class="settings-toggle-row"><span>Grow on Hover<small>The handle gets a little bigger when the pointer is on it.</small></span><input type="checkbox" id="ncpHHover" /><i></i></label>
           <label class="settings-toggle-row"><span>Show Guide Lines<small>The lines that connect each handle to its keyframe.</small></span><input type="checkbox" id="ncpHGuides" /><i></i></label>
           <div class="settings-language-row"><span class="settings-language-copy"><b>Guide Line Style</b><small></small></span><div class="nc-seg" id="ncpHGuideStyle"><button type="button" data-v="solid">Solid</button><button type="button" data-v="dashed">Dashed</button></div></div>
@@ -230,6 +233,8 @@
           <div class="settings-language-row"><span class="settings-language-copy"><b>Line Style</b><small>Solid, dashed or dotted curve.</small></span><div class="nc-seg" id="ncpLineStyle"><button type="button" data-v="solid">Solid</button><button type="button" data-v="dashed">Dashed</button><button type="button" data-v="dotted">Dotted</button></div></div>
           <div class="settings-opacity-head"><span>Glow</span><b id="ncpLineGlowValue"></b></div>
           <input id="ncpLineGlow" class="settings-range" type="range" min="0" max="20" step="1" />
+          <div class="settings-row" data-setting-row="lineGlowColor"><span>Glow Color</span><button type="button" data-color-edit="lineGlowColor">Edit</button></div>
+          <p class="settings-tip">Until you pick a color, the glow follows the curve color. Reset puts it back.</p>
         </div>
       </section>
 
@@ -316,8 +321,8 @@
 </div>
 <script src="../js/mt-colorpicker.js?v=1"></script>
 <script src="./nc-bg.js?v=18"></script>
-<script src="./nc-settings.js?v=17"></script>
-<script src="./nc-pro-settings.js?v=3"></script>
+<script src="./nc-settings.js?v=18"></script>
+<script src="./nc-pro-settings.js?v=4"></script>
 <script src="../js/mt-settings-polish.js?v=5"></script>
 </body>
 </html>

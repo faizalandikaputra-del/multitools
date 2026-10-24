@@ -6451,7 +6451,10 @@
               presetLastStore.set(folder, file);
               markLastUsedInDom(row);   // DOM-only update so the Apply button's success flash isn't wiped by a re-render
             }
-            toast(res.message || (res.ok ? "Applied." : "Something went wrong."), !res.ok);
+            var tooNew = !res.ok && /newer version of After Effects/i.test(String(res.message || ""));
+            if (tooNew) { markTooNew(folder, file); }   // the green check only knows about effects, not the file's version: learn it from AE's answer
+            toast(tooNew ? "This preset was saved in a newer After Effects than yours, so it can't be applied here. It is now marked as not supported."
+              : (res.message || (res.ok ? "Applied." : "Something went wrong.")), !res.ok);
             setTimeout(closeActions, 600);   // let the Apply button's pass/fail flash finish first
           });
         } else if (btn.getAttribute("data-action") === "delete") {
@@ -6524,6 +6527,7 @@
 
       function supportTitle(r) {
         if (r.state === "ok") { return r.effects.length ? "Supported: uses " + r.effects.length + (r.effects.length === 1 ? " effect" : " effects") + ", all installed" : "Supported: needs no effects"; }
+        if (r.state === "bad" && r.reason) { return "Not supported: " + r.reason; }
         if (r.state === "bad") { return "Not supported. Missing: " + r.missing.join(", "); }
         return "Couldn't read this file";
       }
@@ -6549,10 +6553,21 @@
         return out;
       }
 
+      // Presets that After Effects itself refused with "created with a newer version" (the effects check cannot see a file's version).
+      // Remembered per file + size/modified time, so the red mark survives a restart and goes away when the file is replaced.
+      var TOO_NEW_REASON = "saved in a newer After Effects than this one";
+      function tooNewMap() { try { return JSON.parse(Store.get("presetTooNew") || "{}") || {}; } catch (e) { return {}; } }
+      function markTooNew(folder, file) {
+        var key = folder + "|" + file, sig = Node ? Node.ffxSig(Node.joinPath(folder, file)) : "", m = tooNewMap();
+        m[key] = sig; try { Store.set("presetTooNew", JSON.stringify(m)); } catch (e) { }
+        if (Presets.support.on) { Presets.support.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; paintSupport(); }
+      }
+
       function checkOne(file) {
         var S = Presets.support, folder = self.folder(), key = folder + "|" + file;
         var abs = Node.joinPath(folder, file), sig = Node.ffxSig(abs), prev = S.results[key];
         if (prev && prev.sig === sig) { return; }
+        if (tooNewMap()[key] === sig) { S.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; return; }
         var r = Node.ffxEffects(abs), missing = [];
         if (!r.ok) { S.results[key] = { state: "na", missing: [], effects: [], sig: sig }; return; }
         r.effects.forEach(function (m) { if (!S.info.set[m] && m.indexOf("Pseudo/") !== 0) { missing.push(m); } });

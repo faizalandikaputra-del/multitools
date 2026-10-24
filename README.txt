@@ -2198,3 +2198,11 @@ fix (Animation Presets: "Show in Explorer" showed "Couldn't open that file locat
   (jsx/host.jsx: selects the file through system.callSystem, else opens the folder). The red toast shows only when both routes fail.
   Files: js/main.js (revealPreset + reveal click handler), jsx/host.jsx (PRE_reveal), html/index.html (cache-bust main.js ?v=43).
   Cause not reproduced inside After Effects (no Windows / AE here); syntax checked only. If the toast still appears, the message now comes from PRE_reveal and says why.
+
+fix (Animation Presets: green check, but Apply says "this file was created with a newer version of After Effects"):
+  Cause: the support check (green check / red cross) only compares the EFFECTS a preset uses with the effects installed in this After Effects.
+  It never looks at the version the .ffx was saved in, so a preset made in a newer AE has all its effects installed (green) and is still refused by AE on Apply.
+  Fix: js/main.js - when Apply fails with that AE message, the preset is marked red at once ("Not supported: saved in a newer After Effects than this one"),
+  the toast explains it in plain words, and the mark is remembered (Store key presetTooNew, per file + size/modified time: it survives a restart and is dropped when the file is replaced).
+  The Support filter / counters treat it like any red preset. Limit: AE only tells us on the first Apply; reading the version from the .ffx header up front was not done (the header layout is not
+  verified against AE 2021 / 2022+ files). Files: js/main.js, html/index.html (cache-bust main.js ?v=44). Syntax checked only; not run inside After Effects.

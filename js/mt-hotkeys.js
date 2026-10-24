@@ -115,6 +115,7 @@
     add(list, "tool:precomp:each", "Tools", "Pre-compose each layer", function () { call("TOOLS_precomposeEach", [true]); });
     add(list, "tool:precomp:all", "Tools", "Pre-compose layers together", function () { call("TOOLS_precomposeTogether", [true]); });
     add(list, "tool:unprecomp", "Tools", "Unprecompose (copy attributes)", function () { call("TOOLS_unprecompose", ["copy"]); });
+    add(list, "tool:precomp:deep", "Tools", "Duplicate precomp (deep, nested too)", function () { call("TOOLS_duplicatePrecompDeep", [true]); }, "copy nested");
     add(list, "tool:color:sel", "Tools", "Color-code selected layers", function () { call("TOOLS_autoColorCode", ["selected"]); }, "label");
     add(list, "tool:color:all", "Tools", "Color-code whole comp", function () { call("TOOLS_autoColorCode", ["all"]); }, "label");
     function saveFrame(fmt) {

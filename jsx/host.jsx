@@ -2591,6 +2591,95 @@ function TOOLS_precomposeTogether(moveAllAttributes) {
   }
 }
 
+// ---------- Duplicate Precomp (Deep): copy a pre-comp AND every pre-comp nested inside it ----------
+// Called from JS as: TOOLS_duplicatePrecompDeep(toFolder)
+// comp.duplicate() only copies the top comp; the pre-comps inside it stay shared with the original. So the copy is
+// walked layer by layer: every layer whose source is a comp is re-pointed (replaceSource) to its own fresh copy,
+// down to the deepest level. Each selected layer gets its own tree of copies (never shared with another selected
+// layer), the original comps are not touched. Inside one tree a comp used twice gets ONE copy, so the structure
+// stays the same as the original. Footage / solids stay shared (they are not editable like comps).
+// replaceSource(..., false): expressions are not rewritten, so comp("Name") expressions still point at the old comp.
+// One undo group. Nothing valid selected -> friendly notice, no changes.
+function _dpClone(comp, map, busy, made) {
+  if (map[comp.id]) { return map[comp.id]; }
+  if (busy[comp.id]) { return comp; }                        // cycle guard: never loops forever
+  busy[comp.id] = true;
+  var copy = comp.duplicate();
+  map[comp.id] = copy;
+  made.push(copy);
+  var i, L, wasLocked, src;
+  for (i = 1; i <= copy.numLayers; i++) {
+    L = copy.layer(i);
+    src = L.source;
+    if (src instanceof CompItem) {
+      wasLocked = L.locked;
+      if (wasLocked) { L.locked = false; }
+      try { L.replaceSource(_dpClone(src, map, busy, made), false); }
+      finally { if (wasLocked) { L.locked = true; } }
+    }
+  }
+  delete busy[comp.id];
+  return copy;
+}
+
+function _dpFolder() {
+  var i, it;
+  for (i = 1; i <= app.project.numItems; i++) {
+    it = app.project.item(i);
+    if (it instanceof FolderItem && it.name === "Deep Copies" && it.parentFolder === app.project.rootFolder) { return it; }
+  }
+  return app.project.items.addFolder("Deep Copies");
+}
+
+function TOOLS_duplicatePrecompDeep(toFolder) {
+  var undoOpen = false;
+  try {
+    var comp = app.project ? app.project.activeItem : null;
+    if (!(comp instanceof CompItem)) { return _notice("Open a composition first."); }
+    var sel = comp.selectedLayers;
+    if (!sel || sel.length < 1) { return _notice("Select one or more pre-comp layers first."); }
+
+    var layers = [], i, k;
+    for (i = 0; i < sel.length; i++) {
+      if (sel[i] instanceof AVLayer && sel[i].source instanceof CompItem) { layers.push(sel[i]); }
+    }
+    if (!layers.length) { return _notice("None of the selected layers is a pre-comp."); }
+
+    var made = [], done = 0, failed = 0, lastErr = "", L, wasLocked;
+    app.beginUndoGroup("Duplicate Precomp (Deep)");
+    undoOpen = true;
+    for (i = 0; i < layers.length; i++) {
+      L = layers[i];
+      wasLocked = L.locked;
+      try {
+        if (wasLocked) { L.locked = false; }
+        L.replaceSource(_dpClone(L.source, {}, {}, made), false);
+        done++;
+      } catch (eLayer) {
+        failed++; lastErr = (eLayer && eLayer.message) ? eLayer.message : String(eLayer);
+      } finally {
+        if (wasLocked) { try { L.locked = true; } catch (eLock) { } }
+      }
+    }
+    if (toFolder && made.length) {
+      var folder = _dpFolder();
+      for (k = 0; k < made.length; k++) { try { made[k].parentFolder = folder; } catch (eMove) { } }
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+
+    if (done === 0) { throw new Error("Duplicate failed" + (lastErr ? ": " + lastErr : ".")); }
+    var msg = done + " pre-comp layer" + (done === 1 ? "" : "s") + " now use their own copies (" + made.length + " comp" + (made.length === 1 ? "" : "s") + " duplicated, nested pre-comps included).";
+    if (toFolder && made.length) { msg += " Copies are in the \"Deep Copies\" folder."; }
+    if (failed) { msg += " " + failed + " failed" + (lastErr ? " (" + lastErr + ")" : "") + "."; }
+    return _ok(msg);
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eUndo) { /* nothing left to close */ } }
+  }
+}
+
 // Trims the In or Out point of every selected layer to the current time
 // indicator (comp.time).
 function TOOLS_trimToPlayhead(edge) {

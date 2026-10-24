@@ -2651,6 +2651,13 @@
         '</div>' +
 
         '<div class="ta-section">' +
+          '<h2 class="ta-title">Duplicate Precomp (Deep)</h2>' +
+          '<p class="field-note">Gives each selected pre-comp layer its own copy of the pre-comp <strong>and every pre-comp inside it</strong>, so you can edit the inside without changing any other layer that used the same pre-comp. The original comps stay untouched. Footage is still shared. Expressions like comp("Name") still point to the old comp.</p>' +
+          '<label class="chip chip-solo"><input type="checkbox" id="dupdeep-folder" checked><span>Put copies in a "Deep Copies" folder</span></label>' +
+          '<button class="btn-apply" data-tool-action="duplicate-precomp-deep">Duplicate Selected Pre-comp</button>' +
+        '</div>' +
+
+        '<div class="ta-section">' +
           '<h2 class="ta-title">Trim to Playhead</h2>' +
           '<p class="field-note">Trims the In or Out point of selected layers to the current time indicator.</p>' +
           '<div class="chips">' +
@@ -2802,6 +2809,8 @@
             call = Bridge.call("TOOLS_precomposeEach", [moveAttrs]);
           } else if (action === "precompose-together") {
             call = Bridge.call("TOOLS_precomposeTogether", [wrap.querySelector("#precomp-move-attrs").checked]);
+          } else if (action === "duplicate-precomp-deep") {
+            call = Bridge.call("TOOLS_duplicatePrecompDeep", [wrap.querySelector("#dupdeep-folder").checked]);
           } else if (action === "trim") {
             var edge = wrap.querySelector('input[name="trim-edge"]:checked').value;
             call = Bridge.call("TOOLS_trimToPlayhead", [edge]);

@@ -1716,6 +1716,7 @@
         '<div class="cw-dial"><canvas class="cw-wheel" width="' + N + '" height="' + N + '" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" ' +
           'aria-label="Color wheel. Drag for hue and saturation, drag the arc or press Up and Down for brightness"></canvas></div>' +
         '<div class="cw-bar">' +
+          '<span class="cw-chip" aria-hidden="true"></span>' +
           '<input type="text" class="cw-hex" maxlength="7" spellcheck="false" aria-label="HEX color">' +
           '<span class="cw-rgb"></span>' +
         '</div>' +
@@ -1765,7 +1766,6 @@
           lastHex = hex;
           root.style.setProperty("--cur", hex);
           root.style.setProperty("--cur-rgb", rgb[0] + "," + rgb[1] + "," + rgb[2]);
-          root.style.setProperty("--cur-fg", (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255 > 0.6 ? "#15151a" : "#ffffff");
           rgbEl.textContent = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
         }
         canvas.setAttribute("aria-valuenow", String(Math.round(st.v * 100)));

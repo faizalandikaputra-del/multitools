@@ -163,12 +163,12 @@ input[type="range"].rf-slider::-webkit-slider-runnable-track {
 }
 
 /* ---------- 5. Color Palette tab: dial card + Swatches card ---------------------------------
-   Dial card (.cw): hue/saturation disc, brightness arc on the right of the bezel, a bar that IS the current color.
-   --cur / --cur-rgb / --cur-fg are set by ColorWheel.create (js/main.js) so the card's glow, border and bar follow the
+   Dial card (.cw): hue/saturation disc, brightness arc on the right of the bezel, a quiet row showing the current color (chip + HEX + RGB).
+   --cur / --cur-rgb are set by ColorWheel.create (js/main.js) so the card's glow, border and chip follow the
    pick. Swatches card (.cp-card): Curated / Saved / From image behind one segmented control.
    CEF 74 safe: grid + padding-top squares (no flex-gap / aspect-ratio / inset). */
 .cw {
-  --cur: #FFFFFF; --cur-rgb: 255, 255, 255; --cur-fg: #15151a;
+  --cur: #FFFFFF; --cur-rgb: 255, 255, 255;
   position: relative; display: grid; grid-row-gap: var(--space-3); box-sizing: border-box;
   margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-m);
   background:
@@ -183,19 +183,28 @@ input[type="range"].rf-slider::-webkit-slider-runnable-track {
 .cw-dial::before { content: ""; display: block; padding-top: 100%; }
 .cw-wheel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; user-select: none; outline: none; border-radius: 50%; }
 .cw-wheel:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.7); }
+/* Current color row: a round chip carrying the pick, the HEX (editable) and its RGB. Quiet on purpose - no filled bar, so
+   it stays readable on any color. The input rules are !important because the Material You theme styles every
+   input[type="text"] as a filled field (css/material-theme.css, higher specificity). */
 .cw-bar {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-column-gap: var(--space-2); align-items: center;
-  box-sizing: border-box; height: 3.1rem; padding: 0 0.9rem; border-radius: 12px;
-  background: var(--cur); color: var(--cur-fg);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 4px 14px rgba(var(--cur-rgb), 0.3);
+  display: grid; grid-template-columns: 2.3rem minmax(0, 1fr) auto; grid-column-gap: var(--space-3); align-items: center;
+  box-sizing: border-box; padding: 0.5rem 0.8rem 0.5rem 0.55rem; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: box-shadow var(--dur-fast) ease;
 }
-.cw-hex {
-  width: 100%; min-width: 0; box-sizing: border-box; padding: 0; margin: 0; border: 0; outline: 0; border-radius: 4px;
-  background: transparent; color: inherit; font-family: inherit; font-size: 1.15rem; font-weight: 700; line-height: 1.2;
-  letter-spacing: 0.03em; text-transform: uppercase; font-variant-numeric: tabular-nums;
+.cw-bar:focus-within { box-shadow: inset 0 0 0 1px rgba(var(--cur-rgb), 0.75); }
+.cw-chip {
+  width: 2.3rem; height: 2.3rem; border-radius: 50%; background: var(--cur);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), 0 0 0 3px rgba(var(--cur-rgb), 0.2);
 }
-.cw-hex:focus { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25); }
-.cw-rgb { font-size: var(--fs-value); opacity: 0.8; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw .cw-bar .cw-hex {
+  width: 100%; min-width: 0; height: auto; box-sizing: border-box; margin: 0; padding: 0.15rem 0;
+  border: 0 !important; border-radius: 0 !important; outline: 0 !important; box-shadow: none !important;
+  background: transparent !important; background-color: transparent !important; color: var(--text) !important;
+  font-family: inherit; font-size: 1.05rem; font-weight: 600; line-height: 1.2; letter-spacing: 0.04em;
+  text-transform: uppercase; font-variant-numeric: tabular-nums;
+}
+.cw-rgb { font-size: var(--fs-value); color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cw-save { width: 100%; box-sizing: border-box; }
 /* Save + Reset share one row: Save takes the free width, Reset stays as wide as its label */
 .cw-actions { display: flex; align-items: stretch; }

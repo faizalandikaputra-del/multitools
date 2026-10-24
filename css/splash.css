@@ -15,8 +15,8 @@
 
 /* soft accent glow behind the mark */
 .mt-splash::before {
-  content: ""; position: absolute; left: 50%; top: 50%;
-  width: 150%; height: 150%; margin: -75% 0 0 -75%;
+  content: ""; position: absolute; left: -25%; top: -25%;
+  width: 150%; height: 150%;
   background: radial-gradient(closest-side, rgba(var(--accent-rgb, 255, 255, 255), 0.28), rgba(var(--accent-rgb, 255, 255, 255), 0) 70%);
   opacity: 0; transform: scale(0.5);
   animation: mts-glow 1s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
@@ -68,6 +68,60 @@
 @keyframes mts-author{ to { opacity: 1; transform: translate3d(0, 0, 0); letter-spacing: 0.26em; } }
 @keyframes mts-line  { to { opacity: 0.85; transform: scaleX(1); } }
 @keyframes mts-out   { to { opacity: 0; visibility: hidden; transform: scale(1.04); } }
+
+/* =====================================================================================================
+   Two openings, chosen by Settings > Style (<html data-ui-theme>). The base rules above are shared (title letters,
+   curve draw, dots, exit). Everything below only adds or hides.
+   ===================================================================================================== */
+.mts-orbs, .mts-glint, .mts-cookie, .mts-prog { display: none; }
+
+/* ---------- GLASS (minimal): no card, no orbs. A glass tile with the curve, the title, a hairline, the author line.
+   One soft accent glow behind (the base ::before) and one light glint across the tile. ---------- */
+:root:not([data-ui-theme="material"]) .mts-glint { display: none; }
+:root:not([data-ui-theme="material"]) .mts-mark { position: relative; overflow: hidden; border-radius: 22px; }
+:root:not([data-ui-theme="material"]) .mts-mark::after {
+  content: ""; position: absolute; top: -10%; bottom: -10%; left: 0; width: 45%;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  -webkit-transform: translateX(-160%) skewX(-18deg); transform: translateX(-160%) skewX(-18deg);
+  animation: mts-glint 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.7s forwards; pointer-events: none;
+}
+:root:not([data-ui-theme="material"]) .mts-box { fill: rgba(255, 255, 255, 0.1); stroke: rgba(255, 255, 255, 0.6); stroke-width: 1.2; }
+:root:not([data-ui-theme="material"]) .mts-title { font-weight: 600; }
+:root:not([data-ui-theme="material"]) .mts-line { width: 28px; height: 1px; background: rgba(255, 255, 255, 0.5); }
+
+/* ---------- MATERIAL YOU: tonal surface, a 12-lobe cookie that turns in, rounded type, a progress pill ---------- */
+:root[data-ui-theme="material"] .mt-splash { background: var(--md-bg, #f9f9ff); color: var(--md-on-surface, #1b1b23); }
+:root[data-ui-theme="material"] .mt-splash::before { display: none; }
+:root[data-ui-theme="material"] .mts-mark, :root[data-ui-theme="material"] .mts-line { display: none; }
+:root[data-ui-theme="material"] .mts-cookie {
+  display: block; width: 124px; height: 124px; margin-bottom: 22px;
+  opacity: 0; transform: scale(0.3) rotate(-90deg);
+  animation: mts-cookie 0.8s cubic-bezier(0.34, 1.4, 0.5, 1) 0.05s forwards;
+}
+.mts-cookie svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.mts-cookie-shape { fill: var(--md-primary-container, #e2dfff); stroke: none !important; }
+:root[data-ui-theme="material"] .mts-curve { stroke: var(--md-on-primary-container, #24005b); stroke-width: 7; }
+:root[data-ui-theme="material"] .mts-dot { fill: var(--md-on-primary-container, #24005b); }
+:root[data-ui-theme="material"] .mts-title { font-size: 34px; font-weight: 600; letter-spacing: -0.01em; color: var(--md-on-surface, #1b1b23); }
+:root[data-ui-theme="material"] .mts-author {
+  margin-top: 14px; padding: 6px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 500; letter-spacing: 0.02em;
+  background: var(--md-secondary-container, #e2dfff); color: var(--md-on-secondary-container, #1d1734);
+  animation-name: mts-author-md;
+}
+:root[data-ui-theme="material"] .mts-author b { color: inherit; font-weight: 700; }
+:root[data-ui-theme="material"] .mts-prog {
+  display: block; width: 132px; height: 6px; margin-top: 26px; border-radius: 999px; overflow: hidden; background: var(--md-outline-variant, #c6c4da);
+  opacity: 0; animation: mts-fade 0.3s ease 0.4s forwards;
+}
+.mts-prog i { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--md-primary, #6843cb); animation: mts-prog 1.05s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards; }
+
+@keyframes mts-author-md { to { opacity: 1; transform: translate3d(0, 0, 0); letter-spacing: 0.02em; } }
+@keyframes mts-orb   { to { opacity: 1; } }
+@keyframes mts-drift { to { transform: translate3d(7%, -6%, 0) scale(1.12); } }
+@keyframes mts-pane  { to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes mts-glint { to { -webkit-transform: translateX(380%) skewX(-18deg); transform: translateX(380%) skewX(-18deg); } }
+@keyframes mts-cookie{ to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes mts-prog  { to { width: 100%; } }
 
 /* Reduce motion: no splash at all */
 :root[data-reduce-motion="true"] .mt-splash { display: none; }

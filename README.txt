@@ -2237,3 +2237,11 @@ change (Color Palette: the colour wheel looks different under Settings > Style >
   Behaviour is unchanged: same geometry and hit-testing (drag disc = hue + saturation, drag the arc / Up/Down = brightness), live Fill update, typed HEX, Reset, Save. Cells show the current brightness.
   Repaints when the style, palette or Light/Dark changes.
   Files: js/main.js (ColorWheel: isMaterial / drawMaterial / finishDraw), css/material-theme.css (section 9), html/index.html (cache-bust main.js ?v=49, material-theme.css ?v=7). Rendered in a headless browser only; not run inside After Effects.
+
+change (opening splash: different for Glass and Material You):
+  What: the splash that plays when Multi Tool opens now follows Settings > Style.
+    - Glass (minimal): a glass tile with the curve mark (one light glint crosses it), the title, a hairline and the author line, over one soft accent glow. No card, no orbs.
+    - Material You: a tonal surface with a 12-lobe cookie shape (primary container) that turns in, rounded title, the author as a pill chip and a progress pill. All colours from --md-*, so it follows Theme color and Light/Dark.
+  Also fixed: the base glow (.mt-splash::before) sat below the centre (a % margin-top is relative to the width); it is now centred.
+  Note: the splash starts before js/mt-material.js applies the saved Theme color, so Material You may show its default colours for a few milliseconds first.
+  Files: html/index.html (splash markup: .mts-orbs/.mts-cookie/.mts-prog/.mts-glint, hidden by CSS where unused; cache-bust splash.css ?v=3), css/splash.css. js/splash.js unchanged (same exit animation "mts-out"). Reduced motion still skips the splash. Rendered in a headless browser only; not run inside After Effects.

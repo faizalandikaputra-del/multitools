@@ -11,7 +11,7 @@
   <script src="../js/mt-persist.js?v=3"></script>
   <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
-  <link rel="stylesheet" href="../css/splash.css?v=2">
+  <link rel="stylesheet" href="../css/splash.css?v=3">
   <link rel="stylesheet" href="../css/mt-boot.css?v=7">
   <link rel="stylesheet" href="../css/style.css?v=14">
   <!-- Additive UI polish pass (shimmer sweep, refined easing, GPU hints) - loaded after
@@ -103,16 +103,25 @@
 </head>
 <body>
   <div class="mt-splash" id="mt-splash" aria-hidden="true">
+    <!-- Glass: drifting colour orbs + a frosted card (.mts-stack). Material You: tonal cookie shape + progress pill. css/splash.css picks by <html data-ui-theme>. -->
+    <div class="mts-orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
     <div class="mts-stack">
       <div class="mts-mark">
         <svg viewBox="0 0 48 48"><rect class="mts-box" x="2" y="2" width="44" height="44" rx="12"/>
           <path class="mts-curve" d="M13 35C25 35 23 13 35 13" pathLength="40"/>
           <circle class="mts-dot a" cx="13" cy="35" r="2.8"/><circle class="mts-dot b" cx="35" cy="13" r="2.8"/></svg>
       </div>
+      <div class="mts-cookie">
+        <svg viewBox="0 0 100 100"><path class="mts-cookie-shape" d="M96.86 50.00 L96.43 52.03 L95.26 53.96 L93.62 55.74 L91.92 57.39 L90.54 58.99 L89.74 60.65 L89.60 62.49 L90.00 64.56 L90.65 66.84 L91.17 69.20 L91.23 71.46 L90.58 73.43 L89.20 74.97 L87.21 76.06 L84.91 76.79 L82.61 77.36 L80.61 78.05 L79.09 79.09 L78.05 80.61 L77.36 82.61 L76.79 84.91 L76.06 87.21 L74.97 89.20 L73.43 90.58 L71.46 91.23 L69.20 91.17 L66.84 90.65 L64.56 90.00 L62.49 89.60 L60.65 89.74 L58.99 90.54 L57.39 91.92 L55.74 93.62 L53.96 95.26 L52.03 96.43 L50.00 96.86 L47.97 96.43 L46.04 95.26 L44.26 93.62 L42.61 91.92 L41.01 90.54 L39.35 89.74 L37.51 89.60 L35.44 90.00 L33.16 90.65 L30.80 91.17 L28.54 91.23 L26.57 90.58 L25.03 89.20 L23.94 87.21 L23.21 84.91 L22.64 82.61 L21.95 80.61 L20.91 79.09 L19.39 78.05 L17.39 77.36 L15.09 76.79 L12.79 76.06 L10.80 74.97 L9.42 73.43 L8.77 71.46 L8.83 69.20 L9.35 66.84 L10.00 64.56 L10.40 62.49 L10.26 60.65 L9.46 58.99 L8.08 57.39 L6.38 55.74 L4.74 53.96 L3.57 52.03 L3.14 50.00 L3.57 47.97 L4.74 46.04 L6.38 44.26 L8.08 42.61 L9.46 41.01 L10.26 39.35 L10.40 37.51 L10.00 35.44 L9.35 33.16 L8.83 30.80 L8.77 28.54 L9.42 26.57 L10.80 25.03 L12.79 23.94 L15.09 23.21 L17.39 22.64 L19.39 21.95 L20.91 20.91 L21.95 19.39 L22.64 17.39 L23.21 15.09 L23.94 12.79 L25.03 10.80 L26.57 9.42 L28.54 8.77 L30.80 8.83 L33.16 9.35 L35.44 10.00 L37.51 10.40 L39.35 10.26 L41.01 9.46 L42.61 8.08 L44.26 6.38 L46.04 4.74 L47.97 3.57 L50.00 3.14 L52.03 3.57 L53.96 4.74 L55.74 6.38 L57.39 8.08 L58.99 9.46 L60.65 10.26 L62.49 10.40 L64.56 10.00 L66.84 9.35 L69.20 8.83 L71.46 8.77 L73.43 9.42 L74.97 10.80 L76.06 12.79 L76.79 15.09 L77.36 17.39 L78.05 19.39 L79.09 20.91 L80.61 21.95 L82.61 22.64 L84.91 23.21 L87.21 23.94 L89.20 25.03 L90.58 26.57 L91.23 28.54 L91.17 30.80 L90.65 33.16 L90.00 35.44 L89.60 37.51 L89.74 39.35 L90.54 41.01 L91.92 42.61 L93.62 44.26 L95.26 46.04 L96.43 47.97Z"/>
+          <path class="mts-curve" d="M30 68C52 68 48 32 70 32" pathLength="40"/>
+          <circle class="mts-dot a" cx="30" cy="68" r="5"/><circle class="mts-dot b" cx="70" cy="32" r="5"/></svg>
+      </div>
       <div class="mts-title"><span style="--i:0">M</span><span style="--i:1">u</span><span style="--i:2">l</span><span style="--i:3">t</span><span style="--i:4">i</span><span class="sp" style="--i:5"></span><span style="--i:6">T</span><span style="--i:7">o</span><span style="--i:8">o</span><span style="--i:9">l</span></div>
       <div class="mts-line"></div>
       <div class="mts-author">author <b>zalfndk</b></div>
+      <div class="mts-prog"><i></i></div>
     </div>
+    <div class="mts-glint"></div>
   </div>
   <script src="../js/splash.js?v=2"></script>
   <div id="bg-layer" class="bg-layer" aria-hidden="true"></div>

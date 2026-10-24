@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.107",
-    "changelog":  "- Update 1.8.107",
+    "latest_version":  "1.8.108",
+    "changelog":  "- Update 1.8.108",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -212,7 +212,7 @@
                   },
                   {
                       "path":  "css/splash.css",
-                      "sha256":  "04ad06b3f41b4dbd0c8825feb15f6c34ed0a26708184efbda094817c61235f3b"
+                      "sha256":  "728c42a6fee23e0901b659101e8bd794e5c9b33d515ac64f7d9852a11d2cfd0d"
                   },
                   {
                       "path":  "css/style.css",
@@ -236,7 +236,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "1f9971ac6b1cd2672a0412723ba2d8cfcabae3de4f898f7d2155877a55053501"
+                      "sha256":  "30e4c4eb78d032a9ee0e4679f30ff6a546758f4d5d56820df0dbdde018a45c48"
                   },
                   {
                       "path":  "html/settings.html",
@@ -712,7 +712,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "3311cfa39d9ad07dfe4f5f11f235faf5f96d0ffdb09dc04a4e2974f4eaeee439"
+                      "sha256":  "5df722042180eeb21fd5d6ca6a740ce18b0dba490ae5f30e1d6d00fadf69c9d9"
                   }
               ]
 }

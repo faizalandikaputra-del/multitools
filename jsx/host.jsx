@@ -1542,11 +1542,19 @@ function PRE_pickImport() {
   }
 }
 
-// Fallback for "Show in Explorer / Finder" when Node isn't available: opens the folder holding the preset.
+// Fallback for "Show in Explorer / Finder": used when the panel's Node route is missing or failed. Selects the preset in
+// Explorer / Finder through the OS command (system.callSystem); if that is not possible, opens the folder holding the preset.
 function PRE_reveal(path, fileName) {
   try {
     var file = _preFind(_preFolder(path), fileName);
-    file.parent.execute();
+    var nativePath = file.fsName;
+    if (nativePath && nativePath.indexOf("\"") === -1) {
+      try {
+        if ($.os.indexOf("Windows") !== -1) { system.callSystem("explorer /select,\"" + nativePath + "\""); return _ok("Opened the file location."); }
+        system.callSystem("open -R \"" + nativePath + "\""); return _ok("Opened the file location.");
+      } catch (eSys) { /* fall through to the plain folder open */ }
+    }
+    if (!file.parent.execute()) { throw new Error("The operating system refused to open the folder."); }
     return _ok("Opened the folder.");
   } catch (e) {
     return _err(e);

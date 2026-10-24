@@ -319,20 +319,42 @@
     // Opens the OS file manager with `file` (relative to the preset `folder`) selected: Explorer on Windows,
     // Finder on macOS. Arguments go straight to the program (no shell), and the resolved path must stay inside
     // the preset folder. Returns true when the file manager was launched.
-    function revealPreset(folder, file) {
+    function revealPreset(folder, file, onFail) {
       try {
-        var abs = path.resolve(folder, file), rel = path.relative(folder, abs);
-        if (!rel || rel.indexOf("..") === 0 || path.isAbsolute(rel) || !fs.existsSync(abs)) { return false; }
-        var cp = require("child_process"), child;
+        var cp = require("child_process"), child, inside, dirOnly = false, abs = "", c, k, names, base, dir;
+        // true when `p` is a real path INSIDE the preset folder (no ../ escape)
+        inside = function (p) { var r = path.relative(folder, p); return !!r && r.indexOf("..") !== 0 && !path.isAbsolute(r); };
+        // 1) the name as listed, then URL-decoded (File.name is URI-encoded in ExtendScript: "%20", "%2B")
+        var cands = [String(file)];
+        try { c = decodeURIComponent(String(file)); if (c !== cands[0]) { cands.push(c); } } catch (eDec) { }
+        for (k = 0; k < cands.length && !abs; k++) {
+          c = path.resolve(folder, cands[k]);
+          if (inside(c) && fs.existsSync(c)) { abs = c; }
+        }
+        // 2) same file with different letter case / encoding: look through its folder
+        if (!abs) {
+          c = path.resolve(folder, cands[cands.length - 1]);
+          if (!inside(c)) { return false; }
+          dir = path.dirname(c); base = path.basename(c).toLowerCase();
+          if (fs.existsSync(dir)) {
+            names = fs.readdirSync(dir);
+            for (k = 0; k < names.length; k++) { if (names[k].toLowerCase() === base) { abs = path.join(dir, names[k]); break; } }
+            // 3) file really gone (deleted / renamed outside): at least open its folder
+            if (!abs) { abs = dir; dirOnly = true; }
+          }
+        }
+        if (!abs) { return false; }
         if (process.platform === "win32") {
           // explorer.exe wants one raw "/select,\"<path>\"" argument: no extra quoting from Node.
-          child = cp.spawn("explorer.exe", ["/select,\"" + abs + "\""], { windowsVerbatimArguments: true, detached: true, stdio: "ignore" });
-          child.on("error", function () {});
+          child = dirOnly
+            ? cp.spawn("explorer.exe", [abs], { detached: true, stdio: "ignore" })
+            : cp.spawn("explorer.exe", ["/select,\"" + abs + "\""], { windowsVerbatimArguments: true, detached: true, stdio: "ignore" });
+          child.on("error", function () { if (onFail) { onFail(); } });   // explorer.exe could not start: let the caller try the ExtendScript route
           child.unref();
         } else if (process.platform === "darwin") {
-          cp.execFile("open", ["-R", abs], function () {});
+          cp.execFile("open", dirOnly ? [abs] : ["-R", abs], function (err) { if (err && onFail) { onFail(); } });
         } else {
-          cp.execFile("xdg-open", [path.dirname(abs)], function () {});
+          cp.execFile("xdg-open", [dirOnly ? abs : path.dirname(abs)], function (err) { if (err && onFail) { onFail(); } });
         }
         return true;
       } catch (e) {
@@ -6411,11 +6433,11 @@
           if (willOpen) { row.classList.add("is-actions-open"); btn.setAttribute("aria-expanded", "true"); }
         } else if (btn.getAttribute("data-action") === "reveal") {
           closeActions();
-          if (Node) {
-            if (!Node.revealPreset(folder, file)) { toast("Couldn't open that file location.", true); }
-          } else {
+          // Node route first; when it cannot start (or is missing) the ExtendScript route (PRE_reveal) takes over, so the toast only shows when BOTH fail.
+          var revealViaAE = function () {
             Bridge.call("PRE_reveal", [folder, file]).then(function (res) { if (!res.ok) { toast(res.message || "Couldn't open that file location.", true); } });
-          }
+          };
+          if (!Node || !Node.revealPreset(folder, file, revealViaAE)) { revealViaAE(); }
         } else if (btn.getAttribute("data-action") === "fav") {
           toggleFavorite(file);   // re-renders the list; favorites sort to the top of their folder / group
         } else if (btn.getAttribute("data-action") === "pin") {

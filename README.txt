@@ -2189,3 +2189,12 @@ fix (NeuCurve: Large Graph Editor kept the OLD graph background after changing S
   Files: neucurve/nc-bg.js, neucurve/index.html + neucurve/settings.html (cache-bust nc-bg.js ?v=18), README.txt.
   Limit: a background picked with the drag-and-drop / file-input fallback is stored as a data: URL (can be several MB); CEP events may drop
   very large payloads. Picking the image with the file dialog (stored as a file path) always works. Syntax checked only; not run inside After Effects.
+
+fix (Animation Presets: "Show in Explorer" showed "Couldn't open that file location."):
+  Cause: js/main.js revealPreset() returned false as soon as ONE check failed (the file name as listed was not found on disk, e.g. different
+  letter case / URI encoding like %20 %2B, or any exception), and nothing else was tried; an Explorer start error after that was ignored.
+  Fix: (1) the name is tried as listed and URL-decoded, then matched case-insensitively inside its folder; if the file is really gone the
+  folder is opened instead. (2) If Explorer / Finder cannot be started, or Node is missing, the ExtendScript route PRE_reveal now runs
+  (jsx/host.jsx: selects the file through system.callSystem, else opens the folder). The red toast shows only when both routes fail.
+  Files: js/main.js (revealPreset + reveal click handler), jsx/host.jsx (PRE_reveal), html/index.html (cache-bust main.js ?v=43).
+  Cause not reproduced inside After Effects (no Windows / AE here); syntax checked only. If the toast still appears, the message now comes from PRE_reveal and says why.

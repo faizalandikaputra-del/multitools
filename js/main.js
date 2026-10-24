@@ -316,6 +316,30 @@
       }
     }
 
+    // Opens the OS file manager with `file` (relative to the preset `folder`) selected: Explorer on Windows,
+    // Finder on macOS. Arguments go straight to the program (no shell), and the resolved path must stay inside
+    // the preset folder. Returns true when the file manager was launched.
+    function revealPreset(folder, file) {
+      try {
+        var abs = path.resolve(folder, file), rel = path.relative(folder, abs);
+        if (!rel || rel.indexOf("..") === 0 || path.isAbsolute(rel) || !fs.existsSync(abs)) { return false; }
+        var cp = require("child_process"), child;
+        if (process.platform === "win32") {
+          // explorer.exe wants one raw "/select,\"<path>\"" argument: no extra quoting from Node.
+          child = cp.spawn("explorer.exe", ["/select,\"" + abs + "\""], { windowsVerbatimArguments: true, detached: true, stdio: "ignore" });
+          child.on("error", function () {});
+          child.unref();
+        } else if (process.platform === "darwin") {
+          cp.execFile("open", ["-R", abs], function () {});
+        } else {
+          cp.execFile("xdg-open", [path.dirname(abs)], function () {});
+        }
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
     // True if the saved path is still there (handles manual deletion / a moved Documents folder).
     function exists(p) {
       try { return !!p && fs.existsSync(p); } catch (e) { return false; }
@@ -332,7 +356,7 @@
     return {
       persist: persist, clearSlot: clearSlot, exists: exists, toFileUrl: toFileUrl,
       backupCopy: backupCopy, backupCopyFromParts: backupCopyFromParts, backupWrite: backupWrite,
-      backupMedia: backupMedia, ffxEffects: ffxEffects, ffxSig: ffxSig, joinPath: function (a, b) { return path.join(a, b); }
+      backupMedia: backupMedia, revealPreset: revealPreset, ffxEffects: ffxEffects, ffxSig: ffxSig, joinPath: function (a, b) { return path.join(a, b); }
     };
   })();
 
@@ -1261,6 +1285,8 @@
   var ICON_CHEVRON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   var ICON_PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.16 6.6.62-5 4.53 1.5 6.6L12 16.9l-5.99 3.51 1.5-6.6-5-4.53 6.6-.62L12 2.5Z"/></svg>';
   // Push-pin glyph (distinct from the star, which on the Animation Presets rows now means "favorite").
+  var ICON_MORE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>';
+  var REVEAL_LABEL = /Mac/i.test(navigator.platform || "") ? "Show in Finder" : "Show in Explorer";
   var ICON_PUSHPIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1Z"/></svg>';
   var ICON_JSX_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg>';
   var ICON_UTIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2Z"/></svg>';
@@ -6056,10 +6082,14 @@
           '<span class="preset-name" title="' + escapeHtml(p.file) + '">' + escapeHtml(p.name) + "</span>" +
           (last ? '<span class="preset-last-badge">Last used</span>' : "") +
           '<div class="preset-actions">' +
-            '<button class="icon-btn preset-fav-btn' + (fav ? " is-on" : "") + '" type="button" data-action="fav" aria-pressed="' + fav + '" title="' + (fav ? "Remove from favorites" : "Favorite (moves to top)") + '" aria-label="' + (fav ? "Unfavorite " : "Favorite ") + escapeHtml(p.name) + '">' + ICON_STAR_SVG + "</button>" +
-            '<button class="icon-btn" type="button" data-action="pin" title="Pin to Shortcutz" aria-label="Pin ' + escapeHtml(p.name) + ' to Shortcutz">' + ICON_PUSHPIN_SVG + "</button>" +
-            '<button class="preset-apply" type="button" data-action="apply" aria-label="Apply ' + escapeHtml(p.name) + '">Apply</button>' +
-            '<button class="icon-btn preset-del" type="button" data-action="delete" title="Delete preset" aria-label="Delete ' + escapeHtml(p.name) + '">' + ICON_DELETE_SVG + "</button>" +
+            '<div class="preset-tray" role="group" aria-label="Actions for ' + escapeHtml(p.name) + '">' +
+              '<button class="icon-btn preset-fav-btn' + (fav ? " is-on" : "") + '" type="button" data-action="fav" aria-pressed="' + fav + '" title="' + (fav ? "Remove from favorites" : "Favorite (moves to top)") + '" aria-label="' + (fav ? "Unfavorite " : "Favorite ") + escapeHtml(p.name) + '">' + ICON_STAR_SVG + "</button>" +
+              '<button class="icon-btn" type="button" data-action="pin" title="Pin to Shortcutz" aria-label="Pin ' + escapeHtml(p.name) + ' to Shortcutz">' + ICON_PUSHPIN_SVG + "</button>" +
+              '<button class="icon-btn" type="button" data-action="reveal" title="' + REVEAL_LABEL + '" aria-label="' + REVEAL_LABEL + ': ' + escapeHtml(p.name) + '">' + ICON_FOLDER_SVG + "</button>" +
+              '<button class="icon-btn preset-del" type="button" data-action="delete" title="Delete preset" aria-label="Delete ' + escapeHtml(p.name) + '">' + ICON_DELETE_SVG + "</button>" +
+              '<button class="preset-apply" type="button" data-action="apply" aria-label="Apply ' + escapeHtml(p.name) + '">Apply</button>' +
+            "</div>" +
+            '<button class="icon-btn preset-more" type="button" data-action="more" aria-expanded="false" aria-haspopup="true" title="Actions" aria-label="Actions for ' + escapeHtml(p.name) + '">' + ICON_MORE_SVG + "</button>" +
           "</div>" +
         "</div>";
       }
@@ -6218,6 +6248,30 @@
         confirmTimer = setTimeout(disarmAll, self.CONFIRM_MS);
       }
 
+      // The row actions live behind one "more" button; only one row's tray is open at a time.
+      function closeActions() {
+        disarmAll();
+        Array.prototype.forEach.call(listEl.querySelectorAll(".preset-item.is-actions-open"), function (r) {
+          r.classList.remove("is-actions-open");
+          var t = r.querySelector(".preset-more");
+          if (t) { t.setAttribute("aria-expanded", "false"); }
+        });
+      }
+      function onDocDown(e) {
+        if (!live()) { document.removeEventListener("pointerdown", onDocDown, true); return; }
+        if (!listEl.querySelector(".preset-item.is-actions-open")) { return; }
+        if (e.target.closest && e.target.closest(".preset-actions")) { return; }
+        closeActions();
+      }
+      document.addEventListener("pointerdown", onDocDown, true);
+      listEl.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || !listEl.querySelector(".preset-item.is-actions-open")) { return; }
+        var openRow = listEl.querySelector(".preset-item.is-actions-open"), toggle = openRow.querySelector(".preset-more");
+        e.stopPropagation();
+        closeActions();
+        if (toggle) { toggle.focus(); }
+      });
+
       selectBtn.addEventListener("click", function () {
         busyResult(selectBtn, Bridge.call("PRE_selectFolder", []), function (res) {
           if (!res.ok) { toast(res.message || "Could not open the folder dialog.", true); return; }
@@ -6342,10 +6396,22 @@
         var folder = self.folder();
         if (!file || !folder) { return; }
 
-        if (btn.getAttribute("data-action") === "fav") {
+        if (btn.getAttribute("data-action") === "more") {
+          var willOpen = !row.classList.contains("is-actions-open");
+          closeActions();
+          if (willOpen) { row.classList.add("is-actions-open"); btn.setAttribute("aria-expanded", "true"); }
+        } else if (btn.getAttribute("data-action") === "reveal") {
+          closeActions();
+          if (Node) {
+            if (!Node.revealPreset(folder, file)) { toast("Couldn't open that file location.", true); }
+          } else {
+            Bridge.call("PRE_reveal", [folder, file]).then(function (res) { if (!res.ok) { toast(res.message || "Couldn't open that file location.", true); } });
+          }
+        } else if (btn.getAttribute("data-action") === "fav") {
           toggleFavorite(file);   // re-renders the list; favorites sort to the top of their folder / group
         } else if (btn.getAttribute("data-action") === "pin") {
           var pinName = row.querySelector(".preset-name") ? row.querySelector(".preset-name").textContent : file;
+          closeActions();
           Shortcutz.pinFfx({ folder: folder, file: file, name: pinName });
         } else if (btn.getAttribute("data-action") === "apply") {
           disarmAll();
@@ -6355,6 +6421,7 @@
               markLastUsedInDom(row);   // DOM-only update so the Apply button's success flash isn't wiped by a re-render
             }
             toast(res.message || (res.ok ? "Applied." : "Something went wrong."), !res.ok);
+            setTimeout(closeActions, 600);   // let the Apply button's pass/fail flash finish first
           });
         } else if (btn.getAttribute("data-action") === "delete") {
           if (!btn.classList.contains("is-confirm")) { arm(btn); return; }
@@ -6371,7 +6438,7 @@
       listEl.addEventListener("pointerdown", function (e) {
         if (e.button !== undefined && e.button !== 0) { return; }   // left click / touch / pen only
         var itemEl = e.target.closest ? e.target.closest(".preset-item") : null;
-        if (!itemEl || (e.target.closest && e.target.closest("[data-action]"))) { return; }
+        if (!itemEl || (e.target.closest && (e.target.closest("[data-action]") || e.target.closest(".preset-tray")))) { return; }
         lpClear();
         lpEl = itemEl; lpStartX = e.clientX; lpStartY = e.clientY; lpFired = false;
         itemEl.classList.add("is-pressing");

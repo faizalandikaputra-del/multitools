@@ -1542,6 +1542,17 @@ function PRE_pickImport() {
   }
 }
 
+// Fallback for "Show in Explorer / Finder" when Node isn't available: opens the folder holding the preset.
+function PRE_reveal(path, fileName) {
+  try {
+    var file = _preFind(_preFolder(path), fileName);
+    file.parent.execute();
+    return _ok("Opened the folder.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // Preset support check: PRE_supportInfo() -> { aeVersion, aeBuild, effects: [matchName, ...] }
 // The panel reads each .ffx itself (js/main.js, Node) and lists the effects it uses; a preset counts as supported

@@ -2229,3 +2229,11 @@ change (Animation Presets: "Test in After Effects" removed, support check revise
     - an Apply that fails with the "newer version" error marks it red again and drops the "works" memory.
     - the red tooltip now reads "Some effects are not installed: ... The preset may still apply, without them." and the note says red is a guess.
   Files: js/main.js (markWorks / worksMap, apply handler, support bar), jsx/host.jsx, html/index.html (cache-bust main.js ?v=46). Not run inside After Effects; syntax checked only.
+
+change (Color Palette: the colour wheel looks different under Settings > Style > Material You):
+  What: Glass keeps the HSV disc + thin brightness arc. Material You now draws the dial as 5 rings of rounded colour cells (6/12/18/24/30 per ring, neutral dot in the centre),
+  a thick pill brightness track and a slim radial handle haloed in the card colour; the picked point is a ring with a colour core. The card becomes a tonal surface (28px radius, no colour glow)
+  and the HEX row a pill, all from the --md-* palette, so it follows Theme color and Light/Dark.
+  Behaviour is unchanged: same geometry and hit-testing (drag disc = hue + saturation, drag the arc / Up/Down = brightness), live Fill update, typed HEX, Reset, Save. Cells show the current brightness.
+  Repaints when the style, palette or Light/Dark changes.
+  Files: js/main.js (ColorWheel: isMaterial / drawMaterial / finishDraw), css/material-theme.css (section 9), html/index.html (cache-bust main.js ?v=49, material-theme.css ?v=7). Rendered in a headless browser only; not run inside After Effects.

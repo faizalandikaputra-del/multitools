@@ -1740,6 +1740,7 @@
         var light = isLightTheme(), hr = st.h * Math.PI / 180, ka = (A0 + (1 - st.v) * (A1 - A0)) * Math.PI / 180;
         var kx = C + Math.cos(ka) * RA, ky = C + Math.sin(ka) * RA, mx = C + st.s * RD * Math.cos(hr), my = C - st.s * RD * Math.sin(hr);
         ctx.clearRect(0, 0, N, N);
+        if (isMaterial()) { drawMaterial(ctx, hex, full, kx, ky, ka, mx, my); finishDraw(hex, rgb); return; }
         ctx.drawImage(buildBase(), 0, 0);
 
         // brightness arc: track + gradient (full-brightness color -> black), knob carries the picked color
@@ -1762,6 +1763,9 @@
         ctx.beginPath(); ctx.arc(mx, my, 10 * K, 0, Math.PI * 2); ctx.fillStyle = hex; ctx.fill();
         ctx.lineWidth = 3 * K; ctx.strokeStyle = "#fff"; ctx.stroke();
 
+        finishDraw(hex, rgb);
+      }
+      function finishDraw(hex, rgb) {
         if (hex !== lastHex) {   // card glow + bar follow the picked color
           lastHex = hex;
           root.style.setProperty("--cur", hex);
@@ -1772,6 +1776,67 @@
         if (document.activeElement !== hexEl) { hexEl.value = hex; }
         ActivePalette.set(hex, { persist: false, source: "wheel" });   // window.activePaletteColor, every frame
       }
+
+      // ---- Material You face: same geometry + hit-testing as Glass (disc RD, arc A0..A1), different drawing ----
+      // Hue/saturation = 5 rings of rounded colour cells with a neutral centre dot (like the cells of a Material
+      // tonal palette); brightness = a thick pill track with a slim radial handle, haloed in the card colour.
+      var MAT_RINGS = 5, mc = null;
+      function isMaterial() { return document.documentElement.getAttribute("data-ui-theme") === "material"; }
+      function matColors() {
+        if (mc) { return mc; }
+        var cs = window.getComputedStyle(document.documentElement);
+        function v(n, d) { var x = cs.getPropertyValue(n); return x && x.trim() ? x.trim() : d; }
+        mc = { card: v("--md-surface-low", "#f3f2fe"), track: v("--md-surface-highest", "#e2e1ed"), handle: v("--md-primary", "#6843cb"),
+               ring: v("--md-surface-lowest", "#ffffff"), ink: v("--md-on-surface", "#1b1b23") };
+        return mc;
+      }
+      function pill(c, x, y, w, h, r) {   // rounded rect without ctx.roundRect (CEF 74)
+        c.beginPath();
+        c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
+        c.lineTo(x + w, y + h - r); c.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+        c.lineTo(x + r, y + h); c.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+        c.lineTo(x, y + r); c.arc(x + r, y + r, r, Math.PI, Math.PI * 1.5); c.closePath();
+      }
+      function drawMaterial(c, hex, full, kx, ky, ka, mx, my) {
+        var col = matColors(), t = RD / (MAT_RINGS + 1), gap = 3.2 * K, k, j, n, rm, w, span, capA, a0, a1, hc, rgbc, ang;
+        // brightness track: wide pill, gradient fill inset by 2px
+        c.lineCap = "round";
+        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 18 * K; c.strokeStyle = col.track; c.stroke();
+        var g = c.createLinearGradient(0, C - RA * sinA1, 0, C + RA * sinA1);
+        g.addColorStop(0, full); g.addColorStop(1, "#000");
+        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 12 * K; c.strokeStyle = g; c.stroke();
+        // neutral centre dot (saturation 0)
+        rgbc = hsvToRgb(st.h, 0, st.v);
+        c.beginPath(); c.arc(C, C, t - gap / 2, 0, Math.PI * 2); c.fillStyle = rgbToHex(rgbc); c.fill();
+        // colour cells
+        for (k = 1; k <= MAT_RINGS; k++) {
+          n = 6 * k; rm = (k + 0.5) * t; w = t - gap; span = 360 / n;
+          capA = (gap / 2 + w / 2) / rm * 180 / Math.PI;                 // degrees eaten by the gap and the round caps
+          c.lineWidth = w;
+          for (j = 0; j < n; j++) {
+            hc = j * span; rgbc = hsvToRgb(hc, k / MAT_RINGS, st.v);
+            a1 = -(hc - span / 2) - capA; a0 = -(hc + span / 2) + capA;   // canvas angles run opposite to hue
+            c.strokeStyle = rgbToHex(rgbc);
+            c.beginPath();
+            if (a1 <= a0) { ang = -hc * Math.PI / 180; c.arc(C + Math.cos(ang) * rm, C + Math.sin(ang) * rm, w / 2, 0, Math.PI * 2); c.fillStyle = c.strokeStyle; c.fill(); continue; }
+            c.arc(C, C, rm, a0 * Math.PI / 180, a1 * Math.PI / 180); c.stroke();
+          }
+        }
+        // handle on the track: card-coloured halo + slim primary pill lying along the radius
+        c.save(); c.translate(kx, ky); c.rotate(ka);
+        pill(c, -17 * K, -6 * K, 34 * K, 12 * K, 6 * K); c.fillStyle = col.card; c.fill();
+        pill(c, -14 * K, -3 * K, 28 * K, 6 * K, 3 * K); c.fillStyle = col.handle; c.fill();
+        c.restore();
+        // picked point: card ring + coloured core
+        c.beginPath(); c.arc(mx, my, 13 * K, 0, Math.PI * 2); c.fillStyle = "rgba(0,0,0,0.28)"; c.fill();
+        c.beginPath(); c.arc(mx, my, 12 * K, 0, Math.PI * 2); c.fillStyle = col.ring; c.fill();
+        c.beginPath(); c.arc(mx, my, 8.5 * K, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
+      }
+      try {   // repaint when the style / palette changes (colours are cached per theme)
+        var mo = new MutationObserver(function () { mc = null; if (root.isConnected) { schedule(); } else { mo.disconnect(); } });
+        mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-ui-theme", "data-md-scheme", "data-md-bg", "style"] });
+        document.addEventListener("mt-palette", function () { mc = null; schedule(); });
+      } catch (eMo) { }
       function schedule() { if (!raf) { raf = requestAnimationFrame(draw); } }
 
       // called after every user change: repaint next frame + (optionally) push to the selected Fill effects

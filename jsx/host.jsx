@@ -1487,7 +1487,7 @@ function PRE_import(path, sourcesJson, subFolder) {
     var root = _preFolder(path);
     var srcs = JSON.parse(sourcesJson);
     var acc = { added: [], same: 0, failed: 0, skipped: 0, folders: [] };
-    var target = null, i, j, obj, f, dir, cat, files, msg, where;
+    var target = null, i, j, obj, f, cat, files, msg, where, srcPath;
 
     if (!srcs || !srcs.length) { throw new Error("Nothing to import."); }
     if (srcs.length > PRE_IMPORT_MAX) { throw new Error("Too many items at once (max " + PRE_IMPORT_MAX + ")."); }
@@ -1496,17 +1496,18 @@ function PRE_import(path, sourcesJson, subFolder) {
     }
 
     for (i = 0; i < srcs.length; i++) {
-      obj = new Folder(String(srcs[i]));
-      if ((obj instanceof Folder) && obj.exists) {
-        // A dropped folder: becomes a category of the same name.
-        dir = obj;
-        files = _preFiles(dir);
+      srcPath = String(srcs[i]).replace(/\\/g, "/");
+      if (!/\.ffx$/i.test(srcPath)) {
+        // No .ffx extension: only a folder can still be useful (it becomes a category of the same name).
+        obj = new Folder(srcPath);
+        files = obj.exists ? _preFiles(obj) : [];
         if (!files.length) { acc.skipped++; continue; }
-        cat = _preEnsureSub(root, _preDecode(dir.name));
+        cat = _preEnsureSub(root, _preDecode(obj.name));
         for (j = 0; j < files.length; j++) { _preImportFile(files[j], cat.folder, cat.name, acc); }
       } else {
-        f = new File(String(srcs[i]));
-        if (!(f instanceof File) || !f.exists) { acc.skipped++; continue; }
+        // A path ending in .ffx is always treated as a file (never asks Folder() about it).
+        f = new File(srcPath);
+        if (!f.exists) { acc.skipped++; acc.firstMiss = acc.firstMiss || srcPath; continue; }
         _preImportFile(f, target ? target.folder : root, target ? target.name : "", acc);
       }
     }
@@ -1514,7 +1515,7 @@ function PRE_import(path, sourcesJson, subFolder) {
     if (!acc.added.length) {
       if (acc.same) { throw new Error("Those presets are already in that folder."); }
       if (acc.failed) { throw new Error("Couldn't copy the files (check that the folder is writable)."); }
-      throw new Error("No .ffx files found in what you dropped.");
+      throw new Error("No .ffx files found in what you dropped." + (acc.firstMiss ? " Not found: " + acc.firstMiss : (srcs.length ? " Got: " + String(srcs[0]) : "")));
     }
 
     where = acc.folders.length === 1 ? "\"" + acc.folders[0] + "\"" : (acc.folders.length > 1 ? _prePlural(acc.folders.length, "folder", "folders") : "the preset folder");

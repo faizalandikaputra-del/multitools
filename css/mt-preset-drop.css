@@ -43,7 +43,7 @@
 .pdrop-plus {
   position: absolute; right: 0.45rem; top: 50%; margin-top: -0.6rem; min-width: 1.2rem; height: 1.2rem;
   padding: 0 0.3rem; box-sizing: border-box; border-radius: 999px; text-align: center; line-height: 1.2rem;
-  font-size: 0.7rem; font-weight: 700; color: #111; background: var(--accent-strong);
+  font-size: 0.7rem; font-weight: 700; color: var(--on-accent, #111114); background: var(--accent-strong);
   opacity: 0; transform: scale(0.6);
   transition: opacity var(--dur-fast) ease, transform 0.22s var(--bounce, ease);
 }

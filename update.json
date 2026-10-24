@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.94",
-    "changelog":  "- Update 1.8.94",
+    "latest_version":  "1.8.95",
+    "changelog":  "- Update 1.8.95",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -116,7 +116,7 @@
                   },
                   {
                       "path":  "css/mt-preset-drop.css",
-                      "sha256":  "58c3f719396d21e5a00c896c6eb8ca896c475914b2c6e7ae17eccd962c2def40"
+                      "sha256":  "73b5f0b2e4cd32bd0ff30a25012eff88c9d31208f59f08874c181b1b7e9058da"
                   },
                   {
                       "path":  "css/mt-preset-fab.css",
@@ -208,7 +208,7 @@
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "b872b549f85bbc56261b3fa2e20170c83ec78b5611622876744cc4a3d5ce65ca"
+                      "sha256":  "8cc7a20554dde31efff33a1d8ddd72dd3e58d33018de7cbf529dba92c4573a96"
                   },
                   {
                       "path":  "css/tab-motion.css",
@@ -248,7 +248,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "870f10264e83041390c34528b8fe5feef44e30acc26806561c71157a457de767"
+                      "sha256":  "f1a6277759ce501b8defdb342596331f08fed1c121de5b6e9c505e6db848c9ca"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -392,7 +392,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "7125e47c326ea1e7b8789ef5885fe43b3760d8788f8237ababb8ce6340b30f4c"
+                      "sha256":  "0e191bcb5a25b6b6ceb0b1765febf057acfbbe95fadcbce6902285bd3a934de0"
                   },
                   {
                       "path":  "neucurve/assets/index.js",

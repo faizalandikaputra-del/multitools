@@ -6423,7 +6423,7 @@
       function collectPaths(e) {
         var fl = e.dataTransfer && e.dataTransfer.files, out = [], i;
         if (!fl) { return out; }
-        for (i = 0; i < fl.length; i++) { if (fl[i] && fl[i].path) { out.push(fl[i].path); } }
+        for (i = 0; i < fl.length; i++) { if (fl[i] && fl[i].path) { out.push(String(fl[i].path).replace(/\\/g, "/")); } }
         return out;
       }
 

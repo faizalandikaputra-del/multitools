@@ -2219,3 +2219,13 @@ new (Animation Presets: find, separate or delete presets this After Effects can'
   How: jsx/host.jsx PRE_probe / PRE_moveMany / PRE_deleteMany; js/main.js (support bar buttons, handlers); css/mt-preset-support.css (.psup-actions / .psup-act).
   Files: jsx/host.jsx, js/main.js, css/mt-preset-support.css, html/index.html (cache-bust main.js ?v=45, mt-preset-support.css ?v=2).
   Limit: applying a preset can in rare cases touch the project (e.g. presets that add expression-control comps); the test comp is removed, anything else such a preset adds stays. Not run inside After Effects; syntax checked only.
+
+change (Animation Presets: "Test in After Effects" removed, support check revised):
+  Removed: the "Test in After Effects" button and PRE_probe (jsx/host.jsx). It applied presets to a temporary layer and was risky (After Effects could force-close).
+  The earlier README entry about it is outdated; Move / Delete unsupported stay.
+  Revised: a red icon comes from the effect list only, so it is a guess (a preset with a missing effect can still apply). Now:
+    - an Apply that succeeds clears a red mark (also the "newer version" mark) and the preset shows green ("Works: it applied without an error in this After Effects"); remembered per
+      file + size/modified time in Store key presetWorks, so Re-check and restarts keep it green; replacing the file resets it.
+    - an Apply that fails with the "newer version" error marks it red again and drops the "works" memory.
+    - the red tooltip now reads "Some effects are not installed: ... The preset may still apply, without them." and the note says red is a guess.
+  Files: js/main.js (markWorks / worksMap, apply handler, support bar), jsx/host.jsx, html/index.html (cache-bust main.js ?v=46). Not run inside After Effects; syntax checked only.

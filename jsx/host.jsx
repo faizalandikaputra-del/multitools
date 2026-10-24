@@ -1561,48 +1561,6 @@ function PRE_reveal(path, fileName) {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------
-// Preset version test: PRE_probe(path, filesJson) -> { tooNew: [file, ...], tested: n }
-// The panel's green check only knows the EFFECTS a preset uses. A preset saved in a NEWER After Effects can still have every
-// effect installed and be refused by AE ("created with a newer version"). The only exact test is to apply it, so each
-// preset is applied to a throw-away solid in a throw-away comp; the comp, the solid and their "Solids" folder are removed again
-// in the same call. Only the "newer version" error counts: any other error (e.g. a text preset on a solid) says nothing about the
-// version and is ignored. Called in small batches by the panel.
-// ---------------------------------------------------------------------------------------------------
-function PRE_probe(path, filesJson) {
-  var comp = null, solidItem = null, solidFolder = null, undoOpen = false;
-  try {
-    var folder = _preFolder(path), names = JSON.parse(filesJson), tooNew = [], tested = 0, i, file, layer;
-    if (!names || !names.length) { return _ok("Nothing to test.", { tooNew: [], tested: 0 }); }
-    app.beginUndoGroup("Check Presets");
-    undoOpen = true;
-    comp = app.project.items.addComp("__multitool_preset_probe__", 200, 200, 1, 1, 24);
-    layer = comp.layers.addSolid([0.5, 0.5, 0.5], "probe", 200, 200, 1);
-    solidItem = layer.source;
-    try { solidFolder = solidItem.parentFolder; } catch (eF) { solidFolder = null; }
-    layer.remove();
-    for (i = 0; i < names.length; i++) {
-      try { file = _preFind(folder, names[i]); } catch (eFind) { continue; }
-      layer = comp.layers.add(solidItem);
-      try {
-        layer.applyPreset(file);
-      } catch (eApply) {
-        if (/newer version/i.test(String((eApply && eApply.message) ? eApply.message : eApply))) { tooNew.push(names[i]); }
-      }
-      tested++;
-      try { layer.remove(); } catch (eRm) { /* comp is deleted below anyway */ }
-    }
-    return _ok("Tested " + tested + " preset" + (tested === 1 ? "" : "s") + ".", { tooNew: tooNew, tested: tested });
-  } catch (e) {
-    return _err(e);
-  } finally {
-    try { if (comp) { comp.remove(); } } catch (eC) { }
-    try { if (solidItem) { solidItem.remove(); } } catch (eS) { }
-    try { if (solidFolder && solidFolder !== app.project.rootFolder && solidFolder.numItems === 0) { solidFolder.remove(); } } catch (eD) { }
-    if (undoOpen) { try { app.endUndoGroup(); } catch (eUndo) { /* nothing left to close */ } }
-  }
-}
-
 // Moves the listed presets (names as PRE_list returns them) into the subfolder `subName` of the preset folder (created if needed).
 // A name clash gets " (2)", " (3)"... Copy + delete, so a failed delete never loses the file. Returns the fresh list.
 function PRE_moveMany(path, filesJson, subName) {

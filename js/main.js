@@ -5956,7 +5956,6 @@
               '<button type="button" data-psf="na" aria-pressed="false" hidden><i class="psup-dot is-na"></i>Unreadable <span class="psup-n"></span></button>' +
             "</div>" +
             '<div class="psup-actions">' +
-              '<button type="button" class="psup-act" id="psup-test" title="Applies every green preset once to a temporary layer to find presets saved in a newer After Effects. Nothing is left in your project.">Test in After Effects</button>' +
               '<button type="button" class="psup-act" id="psup-move" hidden title="Moves the red presets into a subfolder called Unsupported">Move unsupported</button>' +
               '<button type="button" class="psup-act is-danger" id="psup-del" hidden title="Deletes the red presets from your preset folder">Delete unsupported</button>' +
             "</div>" +
@@ -6454,6 +6453,7 @@
           busyResult(btn, Bridge.call("PRE_apply", [folder, file]), function (res) {
             if (res.ok) {
               presetLastStore.set(folder, file);
+              markWorks(folder, file);   // applied without an error: a red support mark was wrong
               markLastUsedInDom(row);   // DOM-only update so the Apply button's success flash isn't wiped by a re-render
             }
             var tooNew = !res.ok && /newer version of After Effects/i.test(String(res.message || ""));
@@ -6516,11 +6516,9 @@
       var supNote = wrap.querySelector("#psup-note");
       var supRecheck = wrap.querySelector("#psup-recheck");
       var supFilterBtns = supBar.querySelectorAll("[data-psf]");
-      var supTest = wrap.querySelector("#psup-test");
       var supMove = wrap.querySelector("#psup-move");
       var supDel = wrap.querySelector("#psup-del");
       var UNSUP_DIR = "Unsupported";      // subfolder the red presets are moved to
-      var PROBE_CHUNK = 8;                // presets per After Effects call while testing
       var SUP_CHUNK = 30;
       var SUP_ICONS = {
         ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>',
@@ -6536,9 +6534,10 @@
       }
 
       function supportTitle(r) {
+        if (r.state === "ok" && r.verified) { return "Works: it applied without an error in this After Effects"; }
         if (r.state === "ok") { return r.effects.length ? "Supported: uses " + r.effects.length + (r.effects.length === 1 ? " effect" : " effects") + ", all installed" : "Supported: needs no effects"; }
         if (r.state === "bad" && r.reason) { return "Not supported: " + r.reason; }
-        if (r.state === "bad") { return "Not supported. Missing: " + r.missing.join(", "); }
+        if (r.state === "bad") { return "Some effects are not installed: " + r.missing.join(", ") + ". The preset may still apply, without them."; }
         return "Couldn't read this file";
       }
 
@@ -6570,6 +6569,7 @@
       function markTooNew(folder, file, noPaint) {
         var key = folder + "|" + file, sig = Node ? Node.ffxSig(Node.joinPath(folder, file)) : "", m = tooNewMap();
         m[key] = sig; try { Store.set("presetTooNew", JSON.stringify(m)); } catch (e) { }
+        var wm = worksMap(); if (wm.hasOwnProperty(key)) { delete wm[key]; try { Store.set("presetWorks", JSON.stringify(wm)); } catch (e3) { } }
         if (Presets.support.on) { Presets.support.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; if (!noPaint) { paintSupport(); } }
       }
 
@@ -6582,10 +6582,23 @@
         });
       }
 
+      // The effect list is only a guess; applying is the real test. A preset that applies without an error is remembered as working
+      // (per file + size/modified time) and shows green even if the effect check said red; the "newer version" mark is dropped then.
+      function worksMap() { try { return JSON.parse(Store.get("presetWorks") || "{}") || {}; } catch (e) { return {}; } }
+      function markWorks(folder, file) {
+        var key = folder + "|" + file, S = Presets.support, sig = Node ? Node.ffxSig(Node.joinPath(folder, file)) : "";
+        var tn = tooNewMap(), hadNew = tn.hasOwnProperty(key), r = S.on ? S.results[key] : null, wm;
+        if (hadNew) { delete tn[key]; try { Store.set("presetTooNew", JSON.stringify(tn)); } catch (e1) { } }
+        if (!hadNew && !(r && r.state === "bad")) { return; }
+        wm = worksMap(); wm[key] = sig; try { Store.set("presetWorks", JSON.stringify(wm)); } catch (e2) { }
+        if (S.on) { S.results[key] = { state: "ok", missing: [], effects: [], sig: sig, verified: true }; paintSupport(); }
+      }
+
       function checkOne(file) {
         var S = Presets.support, folder = self.folder(), key = folder + "|" + file;
         var abs = Node.joinPath(folder, file), sig = Node.ffxSig(abs), prev = S.results[key];
         if (prev && prev.sig === sig) { return; }
+        if (worksMap()[key] === sig) { S.results[key] = { state: "ok", missing: [], effects: [], sig: sig, verified: true }; return; }
         if (inUnsupDir(file)) { S.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: "kept in the Unsupported folder" }; return; }
         if (tooNewMap()[key] === sig) { S.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; return; }
         var r = Node.ffxEffects(abs), missing = [];
@@ -6623,10 +6636,9 @@
             if (f === "na") { b.hidden = !counts.na && S.filter !== "na"; }
           });
           supNote.textContent = S.running ? "Checking presets\u2026"
-            : (counts.bad ? "Hover a red icon to see why a preset is not supported."
-              : (total ? "Every effect these presets use is installed. A green check does not see presets saved in a newer After Effects: use Test in After Effects." : ""));
-          supRecheck.disabled = S.running || !!S.testing;
-          supTest.disabled = S.running || !!S.testing || !counts.ok;
+            : (counts.bad ? "Hover a red icon to see why. Red is a guess from the effect list: a preset that applies fine turns green by itself."
+              : (total ? "Every effect these presets use is installed." : ""));
+          supRecheck.disabled = S.running;
           var nMove = filesByState("bad", false).length, nDel = filesByState("bad", true).length;
           supMove.hidden = !nMove; supDel.hidden = !nDel;
           supMove.textContent = "Move unsupported (" + nMove + ")";
@@ -6690,28 +6702,6 @@
         runSupport(false);
       });
       supRecheck.addEventListener("click", function () { runSupport(true); });
-
-      // Test in After Effects: apply every green preset once to a throw-away layer (PRE_probe) to find the ones saved in a newer version.
-      supTest.addEventListener("click", function () {
-        var S = Presets.support, folder = self.folder(), files = filesByState("ok", true).filter(function (f) { return !inUnsupDir(f); }), i = 0, found = 0, N = files.length;
-        if (!S.on || !folder || S.testing) { return; }
-        if (!N) { toast("There are no green presets to test.", false); return; }
-        S.testing = true; paintSupport();
-        function finish(msg, isErr) { S.testing = false; paintSupport(); if (msg) { toast(msg, !!isErr); } }
-        function step() {
-          if (!live() || self.folder() !== folder) { S.testing = false; return; }
-          supNote.textContent = "Testing in After Effects\u2026 " + i + " of " + N;
-          Bridge.call("PRE_probe", [folder, JSON.stringify(files.slice(i, i + PROBE_CHUNK))]).then(function (res) {
-            if (!res || !res.ok || !res.data) { finish((res && res.message) || "The test could not run.", true); return; }
-            (res.data.tooNew || []).forEach(function (f) { markTooNew(folder, f, true); found++; });
-            i += PROBE_CHUNK;
-            if (i < N) { setTimeout(step, 0); return; }
-            finish(found ? found + (found === 1 ? " preset was" : " presets were") + " saved in a newer After Effects and " + (found === 1 ? "is" : "are") + " now marked red."
-              : "All " + N + " green presets applied fine in this After Effects.", false);
-          });
-        }
-        step();
-      });
 
       function afterBulk(res, okText) {
         if (res && res.ok && res.data && res.data.presets) { showList(res.data.presets); }

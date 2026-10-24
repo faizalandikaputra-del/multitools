@@ -1,0 +1,52 @@
+/* Animation Presets: support check (js/main.js -> Presets.render, "Support check").
+   Green check = every effect the preset uses is installed in this After Effects, red cross = at least one is
+   missing, grey dash = file couldn't be read. Shape differs as well as colour, so it never relies on colour alone.
+   No inset / gap / aspect-ratio / min() / clamp(): it has to work on Chromium 74 (AE 2021) too. */
+:root { --sup-ok: #3ecf8e; --sup-bad: var(--danger, #ff6b7a); --sup-na: var(--text-dim, #a0a0a0); }
+html[data-theme="light"] { --sup-ok: #1d9a5f; --sup-bad: #d6334a; }
+
+#preset-support-btn.is-active {
+  background: var(--surface-hover); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.55);
+}
+
+.psup { margin-top: 0.6rem; padding: 0.55rem 0.65rem 0.4rem; background: var(--surface-sunken); border: 1px solid var(--border-soft); border-radius: var(--radius-m); }
+.psup[hidden] { display: none; }
+.psup-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.45rem; }
+.psup-ver { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+.psup-recheck {
+  padding: 0.15rem 0.5rem; border: 0; border-radius: var(--radius-xs); cursor: pointer;
+  font: inherit; font-size: 0.75rem; color: var(--text-dim); background: transparent;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.psup-recheck:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
+.psup-recheck:disabled { opacity: 0.5; cursor: default; }
+
+.psup-filter { display: flex; flex-wrap: wrap; margin: 0 -0.15rem; }
+.psup-filter button {
+  display: inline-flex; align-items: center; margin: 0 0.15rem 0.3rem; padding: 0.22rem 0.55rem;
+  font: inherit; font-size: 0.75rem; color: var(--text-dim); cursor: pointer;
+  background: transparent; border: 1px solid var(--border); border-radius: 999px;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.psup-filter button[hidden] { display: none; }
+.psup-filter button:hover { background: var(--surface-hover); color: var(--text); }
+.psup-filter button.is-on { color: var(--text); background: var(--surface-hover); border-color: transparent; box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); }
+.psup-filter button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.psup-n { margin-left: 0.35rem; font-size: 0.7rem; opacity: 0.75; }
+.psup-dot { display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.4rem; border-radius: 50%; }
+.psup-dot.is-ok { background: var(--sup-ok); }
+.psup-dot.is-bad { background: var(--sup-bad); }
+.psup-dot.is-na { background: var(--sup-na); }
+.psup-note { margin: 0.1rem 0 0.1rem; min-height: 1em; }
+
+/* Status icon at the start of each preset row. */
+.preset-support {
+  flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.05rem; height: 1.05rem; margin-right: 0.4rem; cursor: help;
+}
+.preset-support svg {
+  width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.preset-support.is-ok { color: var(--sup-ok); }
+.preset-support.is-bad { color: var(--sup-bad); }
+.preset-support.is-na { color: var(--sup-na); }
+.preset-item[data-support="bad"] .preset-name { opacity: 0.72; }

@@ -1237,7 +1237,7 @@ function TF_readFromLayer() {
 
 // The panel keeps the folder path in localStorage and passes it to every call, so nothing is stored here.
 // Called from JS as: PRE_selectFolder(), PRE_list(path), PRE_apply(path, fileName), PRE_delete(path, fileName),
-//                    PRE_saveSelection(path), PRE_import(path, sourcesJson, subFolder), PRE_pickImport()
+//                    PRE_saveSelection(path), PRE_import(path, sourcesJson, subFolder), PRE_pickImport(), PRE_supportInfo()
 // Every call that touches a preset takes the FILE NAME (never a full path) and looks it up inside the chosen
 // folder, so a bad argument can never reach a file outside that folder.
 var PRE_SAVE_COMMAND_FALLBACK_ID = 3075;    // Animation > Save Animation Preset...
@@ -1537,6 +1537,25 @@ function PRE_pickImport() {
     if (picked instanceof File) { paths.push(picked.fsName); }
     else { for (i = 0; i < picked.length; i++) { paths.push(picked[i].fsName); } }
     return _ok("Files selected.", { cancelled: false, paths: paths });
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Preset support check: PRE_supportInfo() -> { aeVersion, aeBuild, effects: [matchName, ...] }
+// The panel reads each .ffx itself (js/main.js, Node) and lists the effects it uses; a preset counts as supported
+// when every one of those effects is in this list, i.e. installed in this copy of After Effects.
+// app.effects holds every effect AE can load right now, built-in and third-party plugins alike.
+// ---------------------------------------------------------------------------------------------------
+function PRE_supportInfo() {
+  try {
+    var list = app.effects, names = [], i;
+    if (!list || !list.length) { throw new Error("After Effects returned no effect list."); }
+    for (i = 0; i < list.length; i++) {
+      try { if (list[i].matchName) { names.push(String(list[i].matchName)); } } catch (e1) { /* skip an unreadable entry */ }
+    }
+    return _ok("Effect list read.", { aeVersion: String(app.version), aeBuild: String(app.buildNumber), effects: names });
   } catch (e) {
     return _err(e);
   }

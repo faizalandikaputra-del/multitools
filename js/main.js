@@ -256,6 +256,66 @@
       }
     }
 
+    // ---------- .ffx reader (Presets > support check) ----------
+    // An .ffx is a RIFX container ("RIFX" + size + "FaFX", then chunks: 4-char id, 4-byte big-endian size, data,
+    // padded to an even length; LIST chunks start with a 4-char type and hold more chunks). Every property group
+    // is a LIST "tdgp" whose first "tdmn" chunk is its match name. Each effect in the preset is a "tdgp" sitting
+    // directly under the "ADBE Effect Parade" group, so its match name is the effect's match name - exactly what
+    // app.effects lists in After Effects. Returns { ok, effects: [matchName], sig } or { ok: false }.
+    function ffxSig(p) {
+      try { var st = fs.statSync(p); return st.size + ":" + Math.round(st.mtimeMs); } catch (e) { return ""; }
+    }
+    function ffxEffects(p) {
+      try {
+        var st = fs.statSync(p);
+        if (!st.isFile() || st.size < 16 || st.size > 25 * 1024 * 1024) { return { ok: false }; }
+        var buf = fs.readFileSync(p);
+        if (buf.toString("latin1", 0, 4) !== "RIFX" || buf.toString("latin1", 8, 12) !== "FaFX") { return { ok: false }; }
+        var found = [], seen = {}, extra = [], extraSeen = {}, sawParade = false;
+        function cstr(a, b) { var e = a; while (e < b && buf[e] !== 0) { e++; } return buf.toString("latin1", a, e); }
+        function firstName(a, b) {          // match name = first direct "tdmn" child of this group
+          var pos = a, id, size;
+          while (pos + 8 <= b) {
+            id = buf.toString("latin1", pos, pos + 4); size = buf.readUInt32BE(pos + 4);
+            if (id === "tdmn") { return cstr(pos + 8, Math.min(pos + 8 + size, b)); }
+            if (pos + 8 + size > b) { break; }
+            pos += 8 + size + (size & 1);
+          }
+          return "";
+        }
+        function walk(a, b, parent, depth) {
+          var pos = a, id, size, start, end, type, own;
+          if (depth > 64) { return; }
+          while (pos + 8 <= b) {
+            id = buf.toString("latin1", pos, pos + 4); size = buf.readUInt32BE(pos + 4);
+            start = pos + 8; end = start + size;
+            if (end > b) { break; }
+            if (id === "LIST" && size >= 4) {
+              type = buf.toString("latin1", start, start + 4);
+              if (type === "tdgp") {
+                own = firstName(start + 4, end);
+                if (own === "ADBE Effect Parade") { sawParade = true; }
+                if (own && parent === "ADBE Effect Parade" && !seen[own]) { seen[own] = 1; found.push(own); }
+                walk(start + 4, end, own || parent, depth + 1);
+              } else {
+                walk(start + 4, end, parent, depth + 1);
+              }
+            } else if (id === "tdmn") {
+              own = cstr(start, end);
+              // Fallback for builds where the group layout differs: a match name that is not an Adobe built-in
+              // property and not a "...-0001" parameter id can only be a plugin effect.
+              if (own && !/^ADBE /.test(own) && !/-\d{4}$/.test(own) && !extraSeen[own]) { extraSeen[own] = 1; extra.push(own); }
+            }
+            pos = end + (size & 1);
+          }
+        }
+        walk(12, Math.min(buf.length, 8 + buf.readUInt32BE(4)), "", 0);
+        return { ok: true, effects: sawParade ? found : extra, sig: st.size + ":" + Math.round(st.mtimeMs) };
+      } catch (e) {
+        return { ok: false };
+      }
+    }
+
     // True if the saved path is still there (handles manual deletion / a moved Documents folder).
     function exists(p) {
       try { return !!p && fs.existsSync(p); } catch (e) { return false; }
@@ -272,7 +332,7 @@
     return {
       persist: persist, clearSlot: clearSlot, exists: exists, toFileUrl: toFileUrl,
       backupCopy: backupCopy, backupCopyFromParts: backupCopyFromParts, backupWrite: backupWrite,
-      backupMedia: backupMedia
+      backupMedia: backupMedia, ffxEffects: ffxEffects, ffxSig: ffxSig, joinPath: function (a, b) { return path.join(a, b); }
     };
   })();
 
@@ -5801,6 +5861,9 @@
     // Search text typed in the Presets search box. Kept for the session (like the open folders) so
     // coming back to the tab shows the same filtered list; empty again after an AE restart.
     query: "",
+    // Support check (green / red icon per preset): on/off is remembered (Store "presetSupportOn"), the rest
+    // lives for the session. results are keyed "<folder>|<file>" and carry the file's size:mtime signature.
+    support: { on: Store.get("presetSupportOn") === "1", filter: "all", info: null, results: {}, running: false, token: 0 },
     // Last scan result, kept for the session ({ folder, sig, presets }). Coming back to the tab paints
     // this at once - same frame as every other tab - so the saved scroll offset and the card entrance
     // have real rows to work with. The folder is then re-scanned quietly in the background
@@ -5825,6 +5888,17 @@
             '<button class="btn" id="preset-refresh" type="button">Refresh</button>' +
             '<button class="btn" id="preset-save" type="button">Save as Preset</button>' +
             '<button class="btn" id="preset-import" type="button" title="Add .ffx files to a folder in your preset folder">Import</button>' +
+            '<button class="btn" id="preset-support-btn" type="button" aria-pressed="false" title="Check which presets work in your After Effects">Check Support</button>' +
+          "</div>" +
+          '<div class="psup" id="preset-support" hidden>' +
+            '<div class="psup-head"><span class="psup-ver" id="psup-ver"></span><button type="button" class="psup-recheck" id="psup-recheck">Re-check</button></div>' +
+            '<div class="psup-filter" role="group" aria-label="Filter presets by support">' +
+              '<button type="button" data-psf="all" aria-pressed="true">All <span class="psup-n"></span></button>' +
+              '<button type="button" data-psf="ok" aria-pressed="false"><i class="psup-dot is-ok"></i>Supported <span class="psup-n"></span></button>' +
+              '<button type="button" data-psf="bad" aria-pressed="false"><i class="psup-dot is-bad"></i>Unsupported <span class="psup-n"></span></button>' +
+              '<button type="button" data-psf="na" aria-pressed="false" hidden><i class="psup-dot is-na"></i>Unreadable <span class="psup-n"></span></button>' +
+            "</div>" +
+            '<p class="field-note psup-note" id="psup-note" aria-live="polite"></p>' +
           "</div>" +
           '<p class="field-note">Drag .ffx files, or a folder of them, from Explorer or Finder onto this tab. Drop them on a folder to add them there.</p>' +
           '<p class="field-note">Save as Preset stores the selected layer&rsquo;s effects and animated properties (or whatever properties you have selected). After Effects opens its own Save dialog for this: save into the preset folder.</p>' +
@@ -5863,8 +5937,10 @@
       // .is-filtered (display: none); folders left with no visible rows and the group headings follow.
       function applyFilter() {
         var tokens = searchTokens();
+        var supFilter = Presets.support.on ? Presets.support.filter : "all";
         var searching = tokens.length > 0;
-        listEl.classList.toggle("is-searching", searching);
+        var filtering = searching || supFilter !== "all";
+        listEl.classList.toggle("is-searching", filtering);
 
         var items = listEl.querySelectorAll(".preset-item");
         var shown = 0, i;
@@ -5872,6 +5948,7 @@
           var hay = items[i].getAttribute("data-search") || "";
           var ok = true;
           for (var t = 0; t < tokens.length; t++) { if (hay.indexOf(tokens[t]) === -1) { ok = false; break; } }
+          if (ok && supFilter !== "all" && items[i].getAttribute("data-support") !== supFilter) { ok = false; }
           items[i].classList.toggle("is-filtered", !ok);
           if (ok) { shown++; }
         }
@@ -5881,11 +5958,11 @@
         for (i = 0; i < folders.length; i++) {
           var rows = folders[i].querySelectorAll(".preset-item");
           var vis = folders[i].querySelectorAll(".preset-item:not(.is-filtered)").length;
-          folders[i].classList.toggle("is-filtered", searching && vis === 0);
+          folders[i].classList.toggle("is-filtered", filtering && vis === 0);
           folders[i].classList.remove("is-search-collapsed");
-          if (!searching || vis) { visibleFolders++; }
+          if (!filtering || vis) { visibleFolders++; }
           var cnt = folders[i].querySelector(".preset-folder-count");
-          if (cnt) { cnt.textContent = "(" + (searching ? vis + "/" + rows.length : rows.length) + ")"; }
+          if (cnt) { cnt.textContent = "(" + (filtering ? vis + "/" + rows.length : rows.length) + ")"; }
         }
 
         var looseVisible = listEl.querySelectorAll(".preset-list--loose .preset-item:not(.is-filtered)").length;
@@ -5893,17 +5970,19 @@
         var looseHead = listEl.querySelector('.preset-group-heading[data-group="loose"]');
         var looseList = listEl.querySelector(".preset-list--loose");
         var looseNote = listEl.querySelector(".preset-group-empty");
-        if (catHead) { catHead.classList.toggle("is-filtered", searching && visibleFolders === 0); }
-        if (looseHead) { looseHead.classList.toggle("is-filtered", searching && looseVisible === 0); }
-        if (looseList) { looseList.classList.toggle("is-filtered", searching && looseVisible === 0); }
-        if (looseNote) { looseNote.classList.toggle("is-filtered", searching); }
+        if (catHead) { catHead.classList.toggle("is-filtered", filtering && visibleFolders === 0); }
+        if (looseHead) { looseHead.classList.toggle("is-filtered", filtering && looseVisible === 0); }
+        if (looseList) { looseList.classList.toggle("is-filtered", filtering && looseVisible === 0); }
+        if (looseNote) { looseNote.classList.toggle("is-filtered", filtering); }
 
         var noMatch = listEl.querySelector(".preset-no-match");
         if (noMatch) {
-          noMatch.hidden = !(searching && shown === 0);
-          if (searching && shown === 0) { noMatch.textContent = "No presets match \u201c" + Presets.query.trim() + "\u201d."; }
+          noMatch.hidden = !(filtering && shown === 0);
+          if (filtering && shown === 0) {
+            noMatch.textContent = searching ? "No presets match \u201c" + Presets.query.trim() + "\u201d." : "No presets in this group.";
+          }
         }
-        if (items.length) { countEl.textContent = searching ? "(" + shown + " of " + items.length + ")" : "(" + items.length + ")"; }
+        if (items.length) { countEl.textContent = filtering ? "(" + shown + " of " + items.length + ")" : "(" + items.length + ")"; }
       }
 
       // After the list shrinks the browser clamps the scroll offset, which can leave the search box and the
@@ -5942,6 +6021,7 @@
         refreshBtn.disabled = !f;
         saveBtn.disabled = !f;
         importBtn.disabled = !f;
+        supportBtn.disabled = !f;
       }
 
       var lastPresets = null;   // { uncategorized, categorized } cached so toggling a favorite can re-render instantly, without re-hitting the host
@@ -5969,8 +6049,10 @@
         var folder = self.folder();
         var fav = presetFavStore.isFav(folder, p.file);
         var last = presetLastStore.is(folder, p.file);
-        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" data-file="' + escapeHtml(p.file) + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
+        var sup = supportResult(p.file);
+        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
           (fav ? '<span class="preset-item-fav-badge" title="Favorite">' + ICON_STAR_SVG + "</span>" : "") +
+          supportIconHtml(sup) +
           '<span class="preset-name" title="' + escapeHtml(p.file) + '">' + escapeHtml(p.name) + "</span>" +
           (last ? '<span class="preset-last-badge">Last used</span>' : "") +
           '<div class="preset-actions">' +
@@ -6028,6 +6110,7 @@
         listEl.classList.remove("is-loading");
         listEl.innerHTML = html;
         applyFilter();   // re-applies the current search (if any) to the freshly built rows
+        if (Presets.support.on) { scheduleSupport(); } else { supBar.hidden = true; supportBtn.setAttribute("aria-pressed", "false"); }
         applyScrollRestore();   // only does anything while a tab-switch scroll restore is still pending
         // First scan of the session: the rows arrive after the tab entrance already ran, so give them
         // the same card entrance the other tabs get (after the saved scroll offset has been applied).
@@ -6315,6 +6398,165 @@
           e.preventDefault();
         }
       }, true);
+
+      // ----- Support check (which presets work in this After Effects) -----
+      // Reads every .ffx in the list (Node), collects the effects it uses and compares them with app.effects
+      // from After Effects (PRE_supportInfo). All effects installed = green check, any missing = red cross
+      // (the tooltip names them), unreadable file = grey dash. Results are cached per file (size + modified
+      // time), so re-opening the tab, favoriting or importing only re-reads what changed.
+      var supportBtn = wrap.querySelector("#preset-support-btn");
+      var supBar = wrap.querySelector("#preset-support");
+      var supVer = wrap.querySelector("#psup-ver");
+      var supNote = wrap.querySelector("#psup-note");
+      var supRecheck = wrap.querySelector("#psup-recheck");
+      var supFilterBtns = supBar.querySelectorAll("[data-psf]");
+      var SUP_CHUNK = 30;
+      var SUP_ICONS = {
+        ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>',
+        bad: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+        na: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12h7"/></svg>'
+      };
+
+      function supportOn() { return !!Presets.support.on; }
+
+      function supportResult(file) {
+        var S = Presets.support;
+        return (S.on && S.results[self.folder() + "|" + file]) || null;
+      }
+
+      function supportTitle(r) {
+        if (r.state === "ok") { return r.effects.length ? "Supported: uses " + r.effects.length + (r.effects.length === 1 ? " effect" : " effects") + ", all installed" : "Supported: needs no effects"; }
+        if (r.state === "bad") { return "Not supported. Missing: " + r.missing.join(", "); }
+        return "Couldn't read this file";
+      }
+
+      function supportIconHtml(r) {
+        if (!r) { return ""; }
+        var label = r.state === "ok" ? "Supported" : (r.state === "bad" ? "Not supported" : "Unreadable");
+        return '<span class="preset-support is-' + r.state + '" role="img" aria-label="' + label + '" title="' + escapeHtml(supportTitle(r)) + '">' + SUP_ICONS[r.state] + "</span>";
+      }
+
+      function aeVersionLabel(v) {
+        var years = { 16: "2019", 17: "2020", 18: "2021", 22: "2022", 23: "2023", 24: "2024", 25: "2025", 26: "2026" };
+        var num = String(v || "").split("x")[0].split(".").slice(0, 2).join(".");
+        var major = parseInt(num, 10);
+        return "After Effects " + (years[major] ? years[major] + " (" + num + ")" : num);
+      }
+
+      function allPresetFiles() {
+        var out = [];
+        if (!lastPresets) { return out; }
+        lastPresets.uncategorized.forEach(function (p) { out.push(p.file); });
+        lastPresets.categorized.forEach(function (g) { g.files.forEach(function (p) { out.push(p.file); }); });
+        return out;
+      }
+
+      function checkOne(file) {
+        var S = Presets.support, folder = self.folder(), key = folder + "|" + file;
+        var abs = Node.joinPath(folder, file), sig = Node.ffxSig(abs), prev = S.results[key];
+        if (prev && prev.sig === sig) { return; }
+        var r = Node.ffxEffects(abs), missing = [];
+        if (!r.ok) { S.results[key] = { state: "na", missing: [], effects: [], sig: sig }; return; }
+        r.effects.forEach(function (m) { if (!S.info.set[m] && m.indexOf("Pseudo/") !== 0) { missing.push(m); } });
+        S.results[key] = { state: missing.length ? "bad" : "ok", missing: missing, effects: r.effects, sig: sig };
+      }
+
+      // Updates icons, counts and the bar in place (no list rebuild, so scroll and open folders stay put).
+      function paintSupport() {
+        var S = Presets.support, on = supportOn();
+        supBar.hidden = !on;
+        supportBtn.setAttribute("aria-pressed", on ? "true" : "false");
+        supportBtn.classList.toggle("is-active", on);
+        listEl.classList.toggle("has-support", on);
+        var rows = listEl.querySelectorAll(".preset-item"), i, counts = { ok: 0, bad: 0, na: 0 };
+        for (i = 0; i < rows.length; i++) {
+          var r = supportResult(rows[i].getAttribute("data-file")), old = rows[i].querySelector(".preset-support");
+          if (old) { old.parentNode.removeChild(old); }
+          rows[i].setAttribute("data-support", r ? r.state : "");
+          if (r) {
+            counts[r.state]++;
+            var name = rows[i].querySelector(".preset-name");
+            if (name) { name.insertAdjacentHTML("beforebegin", supportIconHtml(r)); }
+          }
+        }
+        if (on) {
+          supVer.textContent = S.info ? aeVersionLabel(S.info.version) : "After Effects";
+          var total = counts.ok + counts.bad + counts.na;
+          Array.prototype.forEach.call(supFilterBtns, function (b) {
+            var f = b.getAttribute("data-psf"), n = f === "all" ? total : counts[f];
+            b.querySelector(".psup-n").textContent = String(n);
+            b.classList.toggle("is-on", S.filter === f);
+            b.setAttribute("aria-pressed", S.filter === f ? "true" : "false");
+            if (f === "na") { b.hidden = !counts.na && S.filter !== "na"; }
+          });
+          supNote.textContent = S.running ? "Checking presets\u2026"
+            : (counts.bad ? "Hover a red icon to see which effects are missing." : (total ? "Every preset here works in this After Effects." : ""));
+          supRecheck.disabled = S.running;
+        }
+        applyFilter();
+      }
+
+      // Reads the effect list from AE when needed (first run, or `reload`), then checks files in small batches.
+      function runSupport(reload) {
+        var S = Presets.support, folder = self.folder(), token = ++S.token;
+        if (!folder || !supportOn()) { return Promise.resolve(); }
+        if (!Node) {
+          S.on = false; Store.set("presetSupportOn", "0"); paintSupport();
+          toast("The support check needs Node.js, which isn't available in this build.", true);
+          return Promise.resolve();
+        }
+        function checkFiles() {
+          return new Promise(function (resolve) {
+            var files = allPresetFiles(), i = 0;
+            function step() {
+              if (token !== S.token || !live()) { resolve(); return; }
+              var end = Math.min(i + SUP_CHUNK, files.length);
+              for (; i < end; i++) { checkOne(files[i]); }
+              if (i < files.length) { setTimeout(step, 0); return; }
+              S.running = false; paintSupport(); resolve();
+            }
+            step();
+          });
+        }
+        S.running = true;
+        paintSupport();
+        if (S.info && !reload) { return checkFiles(); }
+        return Bridge.call("PRE_supportInfo", []).then(function (res) {
+          if (token !== S.token) { return; }
+          if (!res.ok || !res.data || !res.data.effects) {
+            S.running = false; S.on = false; Store.set("presetSupportOn", "0"); paintSupport();
+            toast(res.message || "Couldn't read the effect list from After Effects.", true);
+            return;
+          }
+          var set = {}, sig = res.data.aeVersion + "|" + res.data.effects.length;
+          res.data.effects.forEach(function (m) { set[m] = 1; });
+          if (!S.info || S.info.sig !== sig) { S.results = {}; }   // new AE or plugin set: results no longer apply
+          S.info = { version: res.data.aeVersion, sig: sig, set: set };
+          return checkFiles();
+        });
+      }
+
+      var supTimer = 0;
+      function scheduleSupport() {            // called after every list rebuild
+        clearTimeout(supTimer);
+        supTimer = setTimeout(function () { if (live()) { runSupport(false); } }, 0);
+      }
+
+      supportBtn.addEventListener("click", function () {
+        var S = Presets.support;
+        if (!self.folder()) { return; }
+        S.on = !S.on;
+        Store.set("presetSupportOn", S.on ? "1" : "0");
+        if (!S.on) { S.filter = "all"; S.token++; S.running = false; paintSupport(); return; }
+        runSupport(false);
+      });
+      supRecheck.addEventListener("click", function () { runSupport(true); });
+      supBar.addEventListener("click", function (e) {
+        var b = e.target.closest ? e.target.closest("[data-psf]") : null;
+        if (!b) { return; }
+        Presets.support.filter = b.getAttribute("data-psf");
+        paintSupport();
+      });
 
       // ----- Drop to import -----
       // Drag .ffx files (or a folder of them) from Explorer / Finder onto this tab: a tray of folder tiles

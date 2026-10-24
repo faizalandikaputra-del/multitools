@@ -21,6 +21,12 @@
   /* Settings window = "?ext=settings" in the URL, OR the settings.html page itself (CEP can drop the query string, and then
      the preview was never laid out: blank area + only the slider card). */
   var IS_SETTINGS = /[?&]ext=settings/.test(location.search) || /settings\.html$/i.test(location.pathname) || !!document.getElementById("nc-bg-edit-open");
+  /* Large Graph Editor = its own CEP window ("?ext=graph") with its OWN localStorage. It only ever hears about a new background
+     through the live "com.neucurve.sync" event, so a background changed while that window was closed (or an event that never
+     arrived) left it on the old picture. It now ASKS for the current background when it opens / gets focus, and the Curve tab
+     frame + the Settings window answer (see askForBackground / onAsk below). */
+  var IS_GRAPH = /[?&]ext=graph/.test(location.search);
+  var BG_KEYS = ["bgImagePath", "bgOpacity", "bgZoom", "bgPosX", "bgPosY", "bgOrig"];
   var editor = null, prevBox = null, prevImg = null, prevFrame = null, frameW = 0, frameH = 0, editing = false, drag = null, ready = false;
   var sizes = {};                       // path -> { w, h } natural size (loaded once)
   var mo = null, moEl = null, fitting = false, lastAspect = "";
@@ -282,6 +288,28 @@
     if (prevBox) { prevBox.style.display = "none"; }
   }
 
+  function cepSend(type, payload) {
+    try {
+      var CE = window.CSEvent || (typeof CSEvent !== "undefined" ? CSEvent : null);
+      if (!CE || !window.CSInterface) { return; }
+      var ev = new CE(type, "APPLICATION");
+      ev.data = payload;
+      new window.CSInterface().dispatchEvent(ev);
+    } catch (e) { }
+  }
+  // Large Graph Editor: "send me the current background" (on open, a little later again, and whenever the window gets focus)
+  function askForBackground() { cepSend("com.neucurve.bgrequest", JSON.stringify({ from: "graph" })); }
+  // Curve tab frame / Settings window: answer with every background key, through the same event the Settings window always uses
+  function onAsk() {
+    if (IS_GRAPH) { return; }
+    var i, k, v;
+    for (i = 0; i < BG_KEYS.length; i++) {
+      k = BG_KEYS[i]; v = read(k, null);
+      if (v === null) { continue; }                        // never stored here: say nothing (a missing key must not wipe the other window's background)
+      cepSend("com.neucurve.sync", JSON.stringify({ key: k, val: String(v), appId: "nc-bg-answer" }));
+    }
+  }
+
   function onSync(ev) {
     try {
       var d = ev && ev.data; if (typeof d === "string") { d = JSON.parse(d); }
@@ -296,6 +324,12 @@
     }, true);
     window.addEventListener("storage", function (e) { if (!e.key || e.key.indexOf("neucurve_bg") === 0) { refresh(); } });
     try { if (window.CSInterface) { new window.CSInterface().addEventListener("com.neucurve.sync", onSync); } } catch (e) { }
+    try { if (window.CSInterface && !IS_GRAPH) { new window.CSInterface().addEventListener("com.neucurve.bgrequest", onAsk); } } catch (e) { }
+    if (IS_GRAPH) {
+      askForBackground(); setTimeout(askForBackground, 1200); setTimeout(askForBackground, 4000);   // the answering windows may still be loading
+      window.addEventListener("focus", askForBackground);
+      document.addEventListener("visibilitychange", function () { if (!document.hidden) { askForBackground(); } });
+    }
     var last = "";
     setInterval(function () {      // catches missed events + the graph being (re)created / resized
       if (window.__ncAway && window.__ncAway()) { return; }

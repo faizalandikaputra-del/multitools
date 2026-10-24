@@ -2177,3 +2177,15 @@ new (Tools: Duplicate Precomp (Deep)):
   How: jsx/host.jsx TOOLS_duplicatePrecompDeep() + _dpClone() (recursive duplicate, replaceSource(copy, false) on each nested comp layer, a comp used twice inside one tree gets one copy, cycle guard, locked layers unlocked and re-locked) + _dpFolder(). Each selected layer gets its own tree, so two layers using the same pre-comp do not end up sharing copies. Footage/solids stay shared.
   Limit: expressions that call comp("Name") still point to the old comp (replaceSource is called with fixExpressions = false).
   Files: jsx/host.jsx, js/main.js (section + handler), js/mt-hotkeys.js, html/index.html (cache-bust main.js ?v=42, mt-hotkeys.js ?v=3). Syntax checked only; not run inside After Effects.
+
+fix (NeuCurve: Large Graph Editor kept the OLD graph background after changing Settings > Background > Graph Background Media):
+  Cause: the Large Graph Editor ("?ext=graph") is a separate CEP window with its own localStorage. It learned about a new background
+  only from the live "com.neucurve.sync" event, so if the window was closed at that moment (or the event was not delivered) it kept
+  the old image / zoom / position until the same change was made again while it was open. Nothing ever asked for the current value.
+  Fix: neucurve/nc-bg.js - in the Large Graph Editor the window now sends "com.neucurve.bgrequest" when it opens (again after 1.2 s and 4 s,
+  because the other windows may still be loading), and whenever it gets focus / becomes visible. The Curve tab frame and the Settings window
+  answer with bgImagePath, bgOpacity, bgZoom, bgPosX, bgPosY and bgOrig through the existing "com.neucurve.sync" event, which the window
+  already applies. A cleared background is sent as well (empty path). Settings window and Curve tab behave as before.
+  Files: neucurve/nc-bg.js, neucurve/index.html + neucurve/settings.html (cache-bust nc-bg.js ?v=18), README.txt.
+  Limit: a background picked with the drag-and-drop / file-input fallback is stored as a data: URL (can be several MB); CEP events may drop
+  very large payloads. Picking the image with the file dialog (stored as a file path) always works. Syntax checked only; not run inside After Effects.

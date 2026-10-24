@@ -5955,6 +5955,11 @@
               '<button type="button" data-psf="bad" aria-pressed="false"><i class="psup-dot is-bad"></i>Unsupported <span class="psup-n"></span></button>' +
               '<button type="button" data-psf="na" aria-pressed="false" hidden><i class="psup-dot is-na"></i>Unreadable <span class="psup-n"></span></button>' +
             "</div>" +
+            '<div class="psup-actions">' +
+              '<button type="button" class="psup-act" id="psup-test" title="Applies every green preset once to a temporary layer to find presets saved in a newer After Effects. Nothing is left in your project.">Test in After Effects</button>' +
+              '<button type="button" class="psup-act" id="psup-move" hidden title="Moves the red presets into a subfolder called Unsupported">Move unsupported</button>' +
+              '<button type="button" class="psup-act is-danger" id="psup-del" hidden title="Deletes the red presets from your preset folder">Delete unsupported</button>' +
+            "</div>" +
             '<p class="field-note psup-note" id="psup-note" aria-live="polite"></p>' +
           "</div>" +
           '<p class="field-note">Drag .ffx files, or a folder of them, from Explorer or Finder onto this tab. Drop them on a folder to add them there.</p>' +
@@ -6511,6 +6516,11 @@
       var supNote = wrap.querySelector("#psup-note");
       var supRecheck = wrap.querySelector("#psup-recheck");
       var supFilterBtns = supBar.querySelectorAll("[data-psf]");
+      var supTest = wrap.querySelector("#psup-test");
+      var supMove = wrap.querySelector("#psup-move");
+      var supDel = wrap.querySelector("#psup-del");
+      var UNSUP_DIR = "Unsupported";      // subfolder the red presets are moved to
+      var PROBE_CHUNK = 8;                // presets per After Effects call while testing
       var SUP_CHUNK = 30;
       var SUP_ICONS = {
         ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>',
@@ -6557,16 +6567,26 @@
       // Remembered per file + size/modified time, so the red mark survives a restart and goes away when the file is replaced.
       var TOO_NEW_REASON = "saved in a newer After Effects than this one";
       function tooNewMap() { try { return JSON.parse(Store.get("presetTooNew") || "{}") || {}; } catch (e) { return {}; } }
-      function markTooNew(folder, file) {
+      function markTooNew(folder, file, noPaint) {
         var key = folder + "|" + file, sig = Node ? Node.ffxSig(Node.joinPath(folder, file)) : "", m = tooNewMap();
         m[key] = sig; try { Store.set("presetTooNew", JSON.stringify(m)); } catch (e) { }
-        if (Presets.support.on) { Presets.support.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; paintSupport(); }
+        if (Presets.support.on) { Presets.support.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; if (!noPaint) { paintSupport(); } }
+      }
+
+      // Presets in the "Unsupported" folder are red on purpose (their file signature changed when they were moved).
+      function inUnsupDir(file) { return String(file).indexOf(UNSUP_DIR + "/") === 0; }
+      function filesByState(state, withUnsupDir) {
+        return allPresetFiles().filter(function (f) {
+          var r = supportResult(f);
+          return r && r.state === state && (withUnsupDir || !inUnsupDir(f));
+        });
       }
 
       function checkOne(file) {
         var S = Presets.support, folder = self.folder(), key = folder + "|" + file;
         var abs = Node.joinPath(folder, file), sig = Node.ffxSig(abs), prev = S.results[key];
         if (prev && prev.sig === sig) { return; }
+        if (inUnsupDir(file)) { S.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: "kept in the Unsupported folder" }; return; }
         if (tooNewMap()[key] === sig) { S.results[key] = { state: "bad", missing: [], effects: [], sig: sig, reason: TOO_NEW_REASON }; return; }
         var r = Node.ffxEffects(abs), missing = [];
         if (!r.ok) { S.results[key] = { state: "na", missing: [], effects: [], sig: sig }; return; }
@@ -6603,8 +6623,14 @@
             if (f === "na") { b.hidden = !counts.na && S.filter !== "na"; }
           });
           supNote.textContent = S.running ? "Checking presets\u2026"
-            : (counts.bad ? "Hover a red icon to see which effects are missing." : (total ? "Every preset here works in this After Effects." : ""));
-          supRecheck.disabled = S.running;
+            : (counts.bad ? "Hover a red icon to see why a preset is not supported."
+              : (total ? "Every effect these presets use is installed. A green check does not see presets saved in a newer After Effects: use Test in After Effects." : ""));
+          supRecheck.disabled = S.running || !!S.testing;
+          supTest.disabled = S.running || !!S.testing || !counts.ok;
+          var nMove = filesByState("bad", false).length, nDel = filesByState("bad", true).length;
+          supMove.hidden = !nMove; supDel.hidden = !nDel;
+          supMove.textContent = "Move unsupported (" + nMove + ")";
+          if (!supDel.classList.contains("is-confirm")) { supDel.textContent = "Delete unsupported (" + nDel + ")"; }
         }
         applyFilter();
       }
@@ -6664,6 +6690,52 @@
         runSupport(false);
       });
       supRecheck.addEventListener("click", function () { runSupport(true); });
+
+      // Test in After Effects: apply every green preset once to a throw-away layer (PRE_probe) to find the ones saved in a newer version.
+      supTest.addEventListener("click", function () {
+        var S = Presets.support, folder = self.folder(), files = filesByState("ok", true).filter(function (f) { return !inUnsupDir(f); }), i = 0, found = 0, N = files.length;
+        if (!S.on || !folder || S.testing) { return; }
+        if (!N) { toast("There are no green presets to test.", false); return; }
+        S.testing = true; paintSupport();
+        function finish(msg, isErr) { S.testing = false; paintSupport(); if (msg) { toast(msg, !!isErr); } }
+        function step() {
+          if (!live() || self.folder() !== folder) { S.testing = false; return; }
+          supNote.textContent = "Testing in After Effects\u2026 " + i + " of " + N;
+          Bridge.call("PRE_probe", [folder, JSON.stringify(files.slice(i, i + PROBE_CHUNK))]).then(function (res) {
+            if (!res || !res.ok || !res.data) { finish((res && res.message) || "The test could not run.", true); return; }
+            (res.data.tooNew || []).forEach(function (f) { markTooNew(folder, f, true); found++; });
+            i += PROBE_CHUNK;
+            if (i < N) { setTimeout(step, 0); return; }
+            finish(found ? found + (found === 1 ? " preset was" : " presets were") + " saved in a newer After Effects and " + (found === 1 ? "is" : "are") + " now marked red."
+              : "All " + N + " green presets applied fine in this After Effects.", false);
+          });
+        }
+        step();
+      });
+
+      function afterBulk(res, okText) {
+        if (res && res.ok && res.data && res.data.presets) { showList(res.data.presets); }
+        toast((res && res.message) || (res && res.ok ? okText : "Something went wrong."), !(res && res.ok));
+      }
+      supMove.addEventListener("click", function () {
+        var folder = self.folder(), files = filesByState("bad", false);
+        if (!folder || !files.length) { return; }
+        busy(supMove, Bridge.call("PRE_moveMany", [folder, JSON.stringify(files), UNSUP_DIR]), function (res) { afterBulk(res, "Moved."); });
+      });
+      var delTimer = 0;
+      function disarmDel() { clearTimeout(delTimer); delTimer = 0; supDel.classList.remove("is-confirm"); paintSupport(); }
+      supDel.addEventListener("click", function () {
+        var folder = self.folder(), files = filesByState("bad", true);
+        if (!folder || !files.length) { return; }
+        if (!supDel.classList.contains("is-confirm")) {          // first click arms, second click deletes
+          supDel.classList.add("is-confirm");
+          supDel.textContent = "Click again to delete " + files.length;
+          delTimer = setTimeout(disarmDel, 4000);
+          return;
+        }
+        clearTimeout(delTimer); delTimer = 0; supDel.classList.remove("is-confirm");
+        busy(supDel, Bridge.call("PRE_deleteMany", [folder, JSON.stringify(files)]), function (res) { afterBulk(res, "Deleted."); });
+      });
       supBar.addEventListener("click", function (e) {
         var b = e.target.closest ? e.target.closest("[data-psf]") : null;
         if (!b) { return; }

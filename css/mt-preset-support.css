@@ -50,3 +50,17 @@ html[data-theme="light"] { --sup-ok: #1d9a5f; --sup-bad: #d6334a; }
 .preset-support.is-bad { color: var(--sup-bad); }
 .preset-support.is-na { color: var(--sup-na); }
 .preset-item[data-support="bad"] .preset-name { opacity: 0.72; }
+
+/* Test / move / delete row under the filter. Same flat look as the Re-check button; delete turns red when armed. */
+.psup-actions { display: flex; flex-wrap: wrap; margin: 0.35rem -0.15rem 0; }
+.psup-act {
+  margin: 0.15rem; padding: 0.25rem 0.6rem; border: 1px solid var(--border-soft); border-radius: var(--radius-xs); cursor: pointer;
+  font: inherit; font-size: 0.75rem; color: var(--text-dim); background: transparent;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+.psup-act[hidden] { display: none; }
+.psup-act:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
+.psup-act:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.psup-act:disabled { opacity: 0.5; cursor: default; }
+.psup-act.is-danger:hover:not(:disabled), .psup-act.is-danger.is-confirm { color: var(--sup-bad); border-color: var(--sup-bad); }
+.psup-act.is-loading { opacity: 0.6; }

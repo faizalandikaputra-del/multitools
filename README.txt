@@ -2206,3 +2206,16 @@ fix (Animation Presets: green check, but Apply says "this file was created with 
   the toast explains it in plain words, and the mark is remembered (Store key presetTooNew, per file + size/modified time: it survives a restart and is dropped when the file is replaced).
   The Support filter / counters treat it like any red preset. Limit: AE only tells us on the first Apply; reading the version from the .ffx header up front was not done (the header layout is not
   verified against AE 2021 / 2022+ files). Files: js/main.js, html/index.html (cache-bust main.js ?v=44). Syntax checked only; not run inside After Effects.
+
+new (Animation Presets: find, separate or delete presets this After Effects can't use):
+  Problem: after the last fix some presets were still green (all effects installed) but After Effects refused them on Apply ("created with a newer version").
+  What (Check Support bar): 
+    - "Test in After Effects": applies every green preset once to a throw-away solid in a throw-away comp, 8 at a time, and marks the ones AE refuses with the
+      "newer version" error red (reason: "saved in a newer After Effects than this one"; remembered per file, same store as the Apply-time mark). The comp, the solid and an empty
+      "Solids" folder are removed again in the same call; nothing is left in the project (one undo step "Check Presets"). Other errors (e.g. a text preset on a solid) are ignored.
+    - "Move unsupported (n)": moves all red presets into a subfolder "Unsupported" of the preset folder (shows up as its own category). Copy + delete, name clashes get " (2)".
+    - "Delete unsupported (n)": two clicks (first arms for 4 s, second deletes), also removes red presets already in "Unsupported".
+    Presets sitting in the "Unsupported" folder always show red, so they are not offered again for moving.
+  How: jsx/host.jsx PRE_probe / PRE_moveMany / PRE_deleteMany; js/main.js (support bar buttons, handlers); css/mt-preset-support.css (.psup-actions / .psup-act).
+  Files: jsx/host.jsx, js/main.js, css/mt-preset-support.css, html/index.html (cache-bust main.js ?v=45, mt-preset-support.css ?v=2).
+  Limit: applying a preset can in rare cases touch the project (e.g. presets that add expression-control comps); the test comp is removed, anything else such a preset adds stays. Not run inside After Effects; syntax checked only.

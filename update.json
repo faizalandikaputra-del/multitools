@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.111",
-    "changelog":  "- Update 1.8.111",
+    "latest_version":  "1.8.112",
+    "changelog":  "- Update 1.8.112",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -45,10 +45,6 @@
                   {
                       "path":  "css/mt-boot.css",
                       "sha256":  "86fb4e075d5a3980cc188d1fa3baf5f8ab27d00f82f275caba90ba21b73736ad"
-                  },
-                  {
-                      "path":  "css/mt-bounce-viz.css",
-                      "sha256":  "3e8dbc3c6df41110dde25d6738de1e66265a021c49838f4829baecbea33f068a"
                   },
                   {
                       "path":  "css/mt-colorpicker.css",
@@ -244,7 +240,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "648b5990cf18bbf371472ead9e20b9fed7ef758972aec6f6cef5e8a471ce468e"
+                      "sha256":  "38f336b6318ffe85485948306d1c913500092dd242b099bd8ef111547980eaf0"
                   },
                   {
                       "path":  "html/settings.html",
@@ -281,10 +277,6 @@
                   {
                       "path":  "js/mt-bg-preview.js",
                       "sha256":  "b987847839e6eaef4ecf3a9af529beedcb656361ffdc0b5ad6bac2e2bbc71862"
-                  },
-                  {
-                      "path":  "js/mt-bounce-viz.js",
-                      "sha256":  "b902ae9dc74ea2331512c5784f94232acee04d03ca99db8b4eecc88de6d84b63"
                   },
                   {
                       "path":  "js/mt-colorpicker.js",

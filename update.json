@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.112",
-    "changelog":  "- Update 1.8.112",
+    "latest_version":  "1.8.113",
+    "changelog":  "- Update 1.8.113",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -116,7 +116,7 @@
                   },
                   {
                       "path":  "css/mt-newtools.css",
-                      "sha256":  "0ec4d35f0bc9773aa9063bd37af74c38dff1336cf108848e30d1df9e2c84bbbe"
+                      "sha256":  "b81cebb48af6f268ac932df900ac45c3dcd937b6533733f1c760c8326f7e4ae4"
                   },
                   {
                       "path":  "css/mt-preset-actions.css",
@@ -240,7 +240,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "38f336b6318ffe85485948306d1c913500092dd242b099bd8ef111547980eaf0"
+                      "sha256":  "e19c8465a4f3065fddb711b539bc10d2504fcd1883fcfd416392e745cca53a70"
                   },
                   {
                       "path":  "html/settings.html",
@@ -332,7 +332,7 @@
                   },
                   {
                       "path":  "js/mt-newtools.js",
-                      "sha256":  "f5f5e3c1a00751fdd3106d8fca22b7d893db62108bd94e7246f8507a88b0e7b7"
+                      "sha256":  "4f393dde962f1ecc568d1f954a748adb7e3272756adcfaff77840279fdc6c027"
                   },
                   {
                       "path":  "js/mt-persist.js",
@@ -412,7 +412,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "4ceb0529ee1563e05264bbe93041b4155ebd713553d2242c500832736e400730"
+                      "sha256":  "4efe1372c92c8249e0819e4b8b81e65498a46c65c86afa2a5d439575d218ce8b"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -724,7 +724,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "bdc6300d25b7197c33a891f316b8ae9e5ef3c040123f25ac21102cee30313e32"
+                      "sha256":  "0adcc7f964274a6752f3abfece9cadcfa7e6fd9e310686e62597d77b2382e92e"
                   }
               ]
 }

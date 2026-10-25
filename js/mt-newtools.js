@@ -1,10 +1,9 @@
 /* Multi Tool - mt-newtools.js (panel side)
-   Upgrades the Tools tab in place and adds a Controls Manager card to the Expression Code tab:
+   Upgrades the Tools tab in place:
      - Stagger / Sequence Layers      -> Stagger Pro      (host.jsx TOOLS_staggerPro)
      - Batch Rename Layers            -> Rename & Label   (host.jsx TOOLS_renamePreview / TOOLS_renamePro)
      - Project Cleaner & Sanitizer    -> + scan report    (host.jsx TOOLS_cleanerScan / TOOLS_cleanerRun)
      - Pre-compose                    -> + Pre-comp Smart (host.jsx TOOLS_precompSmart)
-     - Expression Code tab            -> Controls Manager (host.jsx CTL_*)
    The tabs are rebuilt on every tab switch, so a MutationObserver on #panel re-applies the upgrade each time.
    Loaded after main.js and panel-refinements.js. Needs window.MTCore (Bridge) and window.__MT (toast). ES5. */
 (function () {
@@ -315,115 +314,6 @@
     });
   }
 
-  /* ---------------- 8. Controls Manager ---------------- */
-  var CTL_TYPES = [["ADBE Slider Control", "Slider"], ["ADBE Checkbox Control", "Checkbox"], ["ADBE Color Control", "Color"], ["ADBE Point Control", "Point"], ["ADBE Angle Control", "Angle"], ["ADBE Dropdown Control", "Dropdown"]];
-  var TYPE_NAME = { SL: "Slider", CK: "Checkbox", CL: "Color", PT: "Point", AN: "Angle", DD: "Dropdown", P3: "3D point" };
-  var ICON_EYE = '<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var ICON_LOCK = '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-  var ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
-  function lockKey(layer, name) { return "mtx.ctlLock." + layer + "|" + name; }
-  function addControlsManager(built) {
-    if (!built || built.querySelector("[data-mtn-ctl]") || !window.PanelRefinements || !window.PanelRefinements.groupifyTaSections) { return; }
-    var holder = document.createElement("div");
-    var sec = document.createElement("div");
-    sec.className = "ta-section";
-    sec.innerHTML = '<h2 class="ta-title">Controls Manager</h2><div class="mtn-body" id="mtn-ctl-body"></div>';
-    holder.appendChild(sec);
-    window.PanelRefinements.groupifyTaSections(holder, { tabId: "expr-code", openFirst: false });
-    var group = holder.firstElementChild;
-    if (!group) { return; }
-    group.setAttribute("data-mtn-ctl", "1");
-    built.insertBefore(group, built.firstChild);
-    var box = q(group, "#mtn-ctl-body"), state = { layerIndex: 0, layerName: "", controls: [] }, filter = "";
-    box.innerHTML =
-      '<div class="mtn-ctl-top"><div class="mtn-ctl-layer" id="mtn-ctl-layer">No layer</div><button type="button" class="mtn-mini" id="mtn-ctl-refresh">Refresh</button></div>' +
-      '<div class="param"><label for="mtn-ctl-filter">Filter</label><input class="text-input" type="text" id="mtn-ctl-filter" placeholder="Search controls" autocomplete="off" spellcheck="false"></div>' +
-      '<div class="mtn-ctl-list" id="mtn-ctl-list"><div class="mtn-pv-empty">Select a layer, then press Refresh.</div></div>' +
-      '<p class="field-note">The number on each control is how many expressions in this comp read it. Locked controls cannot be edited here.</p>' +
-      '<div class="mtn-ctl-add"><select class="text-input mtn-sel" id="mtn-ctl-type">' + CTL_TYPES.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + "</option>"; }).join("") + "</select>" +
-        '<input class="text-input" type="text" id="mtn-ctl-newname" placeholder="Name (optional)" autocomplete="off" spellcheck="false"><button type="button" class="mtn-mini" id="mtn-ctl-add">Add</button></div>' +
-      '<button class="btn-apply" id="mtn-ctl-copy" type="button">Copy controls to other selected layers</button>';
-    var list = q(box, "#mtn-ctl-list");
-
-    function valueInput(c, locked) {
-      var dis = locked ? " disabled" : "", id = "mtn-v-" + c.i;
-      if (c.type === "CK") { return '<input type="checkbox" class="mtn-v" data-i="' + c.i + '" data-t="CK"' + (c.value ? " checked" : "") + dis + ">"; }
-      if (c.type === "CL") { return '<input type="color" class="mtn-v mtn-v-color" data-i="' + c.i + '" data-t="CL" value="' + esc(c.value || "#000000") + '"' + dis + ">"; }
-      if (c.type === "PT" || c.type === "P3") {
-        var arr = c.value || [0, 0], k, out = "";
-        for (k = 0; k < arr.length; k++) { out += '<input type="number" class="mtn-v mtn-v-pt" data-i="' + c.i + '" data-t="' + c.type + '" data-k="' + k + '" step="1" value="' + Math.round(arr[k] * 100) / 100 + '"' + dis + ">"; }
-        return out;
-      }
-      return '<input type="number" class="mtn-v" id="' + id + '" data-i="' + c.i + '" data-t="' + c.type + '" step="' + (c.type === "DD" ? "1" : "0.1") + '" value="' + (c.value === null ? "" : Math.round(c.value * 1000) / 1000) + '"' + dis + ">";
-    }
-    function draw() {
-      var f = filter.toLowerCase(), rows = state.controls.filter(function (c) { return !f || c.name.toLowerCase().indexOf(f) !== -1; });
-      q(box, "#mtn-ctl-layer").textContent = state.layerName ? state.layerName + "  (" + state.controls.length + " controls)" : "No layer";
-      if (!rows.length) { list.innerHTML = '<div class="mtn-pv-empty">' + (state.controls.length ? "No control matches that filter." : "This layer has no Expression Controls.") + "</div>"; refit(box); return; }
-      list.innerHTML = rows.map(function (c) {
-        var locked = lsGet(lockKey(state.layerName, c.name)) === "1";
-        return '<div class="mtn-ctl' + (c.enabled ? "" : " is-hidden") + '" data-i="' + c.i + '"><span class="mtn-ty" title="' + TYPE_NAME[c.type] + '">' + c.type + '</span>' +
-          '<span class="mtn-ctl-name" title="' + esc(c.name) + '">' + esc(c.name) + '</span><span class="mtn-ctl-val">' + valueInput(c, locked) + "</span>" +
-          '<span class="mtn-used" title="Expressions that read this control">' + c.used + "</span>" +
-          '<button type="button" class="mtn-ic' + (c.enabled ? " is-on" : "") + '" data-act="eye" title="Show or hide in Effect Controls">' + ICON_EYE + "</button>" +
-          '<button type="button" class="mtn-ic' + (locked ? " is-on" : "") + '" data-act="lock" title="Lock in this panel">' + ICON_LOCK + "</button>" +
-          '<button type="button" class="mtn-ic" data-act="del" title="Delete control">' + ICON_TRASH + "</button></div>";
-      }).join("");
-      refit(box);
-    }
-    function load(quiet) {
-      call("CTL_list", []).then(function (res) {
-        if (!res || !res.ok || !res.data) { state = { layerIndex: 0, layerName: "", controls: [] }; draw(); if (!quiet) { toast((res && res.message) || "Select a layer first.", true); } return; }
-        state = res.data; draw();
-      });
-    }
-    function byIndex(i) { var k; for (k = 0; k < state.controls.length; k++) { if (state.controls[k].i === i) { return state.controls[k]; } } return null; }
-
-    list.addEventListener("change", function (e) {
-      var t = e.target; if (!t.classList || !t.classList.contains("mtn-v")) { return; }
-      var i = parseInt(t.getAttribute("data-i"), 10), ty = t.getAttribute("data-t"), c = byIndex(i), v;
-      if (ty === "CK") { v = t.checked ? 1 : 0; }
-      else if (ty === "CL") { v = t.value; }
-      else if (ty === "PT" || ty === "P3") {
-        v = qa(t.parentNode, ".mtn-v-pt").map(function (x) { return parseFloat(x.value) || 0; });
-      } else { v = parseFloat(t.value); if (!isFinite(v)) { return; } }
-      call("CTL_set", [state.layerIndex, i, ty, v]).then(function (res) { if (!res.ok) { toast(res.message, true); load(true); } else if (c) { c.value = (ty === "CK") ? v : (ty === "CL" ? v : v); } });
-    });
-    list.addEventListener("click", function (e) {
-      var b = e.target; while (b && b !== list && !(b.getAttribute && b.getAttribute("data-act"))) { b = b.parentNode; }
-      if (!b || b === list) { return; }
-      var row = b.closest(".mtn-ctl"), i = parseInt(row.getAttribute("data-i"), 10), c = byIndex(i), act = b.getAttribute("data-act");
-      if (!c) { return; }
-      if (act === "lock") {
-        var key = lockKey(state.layerName, c.name), on = lsGet(key) !== "1";
-        lsSet(key, on ? "1" : "0"); draw();
-      } else if (act === "eye") {
-        call("CTL_toggle", [state.layerIndex, i]).then(function (res) { if (res.ok && res.data) { c.enabled = res.data.enabled; draw(); } else { toast(res.message, true); } });
-      } else if (act === "del") {
-        if (c.used > 0 && !b.classList.contains("is-armed")) {
-          b.classList.add("is-armed"); b.title = "Used by " + c.used + " expression" + (c.used === 1 ? "" : "s") + ". Click again to delete.";
-          toast("\"" + c.name + "\" is read by " + c.used + " expression" + (c.used === 1 ? "" : "s") + ". Click delete again to confirm.");
-          setTimeout(function () { b.classList.remove("is-armed"); }, 3500); return;
-        }
-        call("CTL_remove", [state.layerIndex, i]).then(function (res) { toast(res.message, !res.ok); load(true); });
-      }
-    });
-    q(box, "#mtn-ctl-filter").addEventListener("input", function (e) { filter = e.target.value; draw(); });
-    q(box, "#mtn-ctl-refresh").addEventListener("click", function () { load(false); });
-    q(box, "#mtn-ctl-add").addEventListener("click", function (e) {
-      var btn = e.currentTarget; pressed(btn, true);
-      call("CTL_add", [q(box, "#mtn-ctl-type").value, q(box, "#mtn-ctl-newname").value.trim()]).then(function (res) { finish(btn, res); q(box, "#mtn-ctl-newname").value = ""; load(true); });
-    });
-    q(box, "#mtn-ctl-copy").addEventListener("click", function (e) {
-      var btn = e.currentTarget; if (btn.classList.contains("is-pending")) { return; }
-      var f = filter.toLowerCase(), idx = state.controls.filter(function (c) { return !f || c.name.toLowerCase().indexOf(f) !== -1; }).map(function (c) { return c.i; });
-      if (!idx.length) { toast("Refresh the list first.", true); return; }
-      pressed(btn, true);
-      call("CTL_copy", [state.layerIndex, idx]).then(function (res) { finish(btn, res); });
-    });
-    load(true);
-  }
-
   /* ---------------- apply to each freshly built tab ---------------- */
   function enhance() {
     var title = document.getElementById("panel-title");
@@ -434,8 +324,6 @@
       if ((g = groupByLabel("Batch Rename Layers")) && !g.getAttribute("data-mtn")) { upgradeRename(g); }
       if ((g = groupByLabel("Project Cleaner & Sanitizer")) && !g.getAttribute("data-mtn")) { upgradeCleaner(g); }
       if ((g = groupByLabel("Pre-compose")) && !g.getAttribute("data-mtn")) { upgradePrecomp(g); }
-    } else if (name === "Expression Code") {
-      addControlsManager(panel.firstElementChild);
     }
   }
   var scheduled = false;

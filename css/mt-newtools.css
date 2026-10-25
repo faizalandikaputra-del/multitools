@@ -1,4 +1,4 @@
-/* Multi Tool - mt-newtools.css : Stagger Pro, Rename & Label, Cleaner report, Pre-comp Smart, Controls Manager.
+/* Multi Tool - mt-newtools.css : Stagger Pro, Rename & Label, Cleaner report, Pre-comp Smart.
    Uses the panel's own variables, so it follows Glass / Material You and the theme accent. */
 .mtn-body { display: flex; flex-direction: column; gap: var(--space-3, 0.75rem); }
 .mtn-body[hidden], .mtn-body [hidden] { display: none !important; }
@@ -46,24 +46,22 @@
 .mtn-sz { font-family: var(--font-mono, monospace); font-size: 0.6rem; color: var(--text-faint, #666); white-space: nowrap; }
 .mtn-danger { color: var(--danger, #ff6b7a); }
 .mtn-danger:disabled { opacity: 0.45; pointer-events: none; }
-/* controls manager */
-.mtn-ctl-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.mtn-ctl-layer { font-size: 0.7rem; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mtn-ctl-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 22rem; overflow-y: auto; }
-.mtn-ctl { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto auto auto auto auto; align-items: center; gap: 0.4rem; padding: 0.4rem 0.5rem; background: var(--surface-sunken, #181818); border-radius: var(--radius-s, 0.5rem); box-shadow: inset 0 0 0 1px var(--border-soft, #2a2a2a); }
-.mtn-ctl.is-hidden { opacity: 0.5; }
-.mtn-ty { width: 1.4rem; height: 1.4rem; border-radius: 5px; display: grid; place-items: center; font-family: var(--font-mono, monospace); font-size: 0.55rem; font-weight: 700; color: var(--text-dim, #a0a0a0); background: var(--surface-hover, #2d2d2d); }
-.mtn-ctl-name { font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mtn-ctl-val { display: flex; gap: 0.25rem; align-items: center; }
-.mtn-v { width: 4rem; min-width: 0; font: inherit; font-size: 0.68rem; font-family: var(--font-mono, monospace); color: var(--text, #f0f0f0); background: var(--surface, #252525); border: 0; border-radius: 5px; padding: 0.22rem 0.35rem; box-shadow: inset 0 0 0 1px var(--border-soft, #2a2a2a); }
-.mtn-v-pt { width: 3rem; }
-.mtn-v-color { width: 2.2rem; height: 1.3rem; padding: 0; background: none; }
-.mtn-v[type="checkbox"] { width: auto; }
-.mtn-v:disabled { opacity: 0.45; }
-.mtn-used { font-family: var(--font-mono, monospace); font-size: 0.58rem; color: var(--text-dim, #a0a0a0); background: var(--surface-hover, #2d2d2d); padding: 0.05rem 0.3rem; border-radius: 4px; }
-.mtn-ic { appearance: none; border: 0; background: none; cursor: pointer; width: 1.2rem; height: 1.2rem; padding: 0; color: var(--text-faint, #666); display: grid; place-items: center; }
-.mtn-ic svg { width: 0.8rem; height: 0.8rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.mtn-ic.is-on { color: var(--text, #f0f0f0); }
-.mtn-ic:hover { color: var(--text, #f0f0f0); }
-.mtn-ic.is-armed { color: var(--danger, #ff6b7a); }
-.mtn-ctl-add { display: grid; grid-template-columns: 6.5rem 1fr auto; gap: 0.4rem; align-items: center; }
+/* cleaner report checkboxes: custom box (native one is hidden), accent fill + drawn tick, follows Glass / Material You */
+.mtn-grp input[type="checkbox"] {
+  -webkit-appearance: none; appearance: none; position: relative; box-sizing: border-box; flex: none;
+  width: 1rem; height: 1rem; margin: 0; border-radius: 5px; cursor: pointer;
+  background: var(--surface, #252525); box-shadow: inset 0 0 0 1.5px var(--text-faint, #666);
+  transition: background-color .15s linear, box-shadow .15s ease, transform .18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.mtn-grp input[type="checkbox"]::after {
+  content: ""; position: absolute; left: 50%; top: 46%; width: 0.26rem; height: 0.5rem; box-sizing: border-box;
+  margin: -0.29rem 0 0 -0.13rem; border: solid var(--on-accent, #111); border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0); opacity: 0; transition: transform .18s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .12s linear;
+}
+.mtn-grp input[type="checkbox"]:hover { box-shadow: inset 0 0 0 1.5px var(--accent, #fff); }
+.mtn-grp input[type="checkbox"]:active { transform: scale(0.88); }
+.mtn-grp input[type="checkbox"]:checked { background: var(--accent, #fff); box-shadow: inset 0 0 0 1.5px var(--accent, #fff); }
+.mtn-grp input[type="checkbox"]:checked::after { transform: rotate(45deg) scale(1); opacity: 1; }
+.mtn-grp input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
+.mtn-grp input[type="checkbox"]:disabled { opacity: .4; cursor: default; }
+:root[data-reduce-motion="true"] .mtn-grp input[type="checkbox"], :root[data-reduce-motion="true"] .mtn-grp input[type="checkbox"]::after { transition: none; }

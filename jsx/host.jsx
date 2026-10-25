@@ -9071,7 +9071,7 @@ function SHTZ_randomize(what, a, b) {
 }
 
 // =====================================================================================
-// Multi Tool - new tools (Stagger Pro, Rename & Label, Cleaner report, Pre-comp Smart, Controls Manager)
+// Multi Tool - new tools (Stagger Pro, Rename & Label, Cleaner report, Pre-comp Smart)
 // UI side: js/mt-newtools.js. Every function returns the usual _ok / _err JSON string and wraps edits in one undo group.
 //   TOOLS_staggerPro(opts)          opts: { target:"layers"|"keys", order, offset (frames), curve, seed }
 //   TOOLS_renamePreview(opts)       opts: see _ntRenameName   -> list of { from, to, type }
@@ -9080,7 +9080,6 @@ function SHTZ_randomize(what, a, b) {
 //   TOOLS_cleanerScan()             read-only report of missing / unused / empty / duplicate project items
 //   TOOLS_cleanerRun(opts)          opts: { ids:[...], consolidate:bool }  removes the given project items
 //   TOOLS_precompSmart(opts)        opts: { name, folder, openAfter }
-//   CTL_list() / CTL_set / CTL_toggle / CTL_add / CTL_remove / CTL_copy   Expression Controls Manager
 // =====================================================================================
 
 function _ntRng(seed) {
@@ -9409,180 +9408,6 @@ function TOOLS_precompSmart(opts) {
     undoOpen = false;
     if (opts.openAfter) { try { r.newComp.openInViewer(); } catch (eO) { } }
     return _ok(layers.length + " layer" + (layers.length === 1 ? "" : "s") + " pre-composed into \"" + name + "\"" + (opts.folder ? " (folder \"" + opts.folder + "\")" : "") + ".");
-  } catch (e) {
-    return _err(e);
-  } finally {
-    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
-  }
-}
-
-// ---------- Expression Controls Manager ----------
-var _NT_CTL = {
-  "ADBE Slider Control": "SL", "ADBE Checkbox Control": "CK", "ADBE Color Control": "CL",
-  "ADBE Point Control": "PT", "ADBE Angle Control": "AN", "ADBE Dropdown Control": "DD", "ADBE Point3D Control": "P3"
-};
-function _ntHex(c) {
-  function h(v) { var s = Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16); return s.length < 2 ? "0" + s : s; }
-  return "#" + h(c[0]) + h(c[1]) + h(c[2]);
-}
-function _ntCtlLayer(layerIndex) {
-  var comp = _activeComp(), L;
-  if (layerIndex) { L = comp.layer(layerIndex); }
-  else {
-    var sel = comp.selectedLayers;
-    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
-    L = sel[0];
-  }
-  return L;
-}
-// counts how many expressions in this comp read a control called `name`
-function _ntCountUses(comp, name, budget) {
-  var needle1 = 'effect("' + name + '")', needle2 = "effect('" + name + "')", count = 0, li;
-  function walk(group) {
-    var k, p;
-    for (k = 1; k <= group.numProperties; k++) {
-      if (budget.left-- <= 0) { return; }
-      p = group.property(k);
-      if (p.propertyType === PropertyType.PROPERTY) {
-        try { if (p.expressionEnabled && p.expression && (p.expression.indexOf(needle1) !== -1 || p.expression.indexOf(needle2) !== -1)) { count++; } } catch (e) { }
-      } else { walk(p); }
-    }
-  }
-  for (li = 1; li <= comp.numLayers; li++) { walk(comp.layer(li)); }
-  return count;
-}
-function CTL_list() {
-  try {
-    var comp = _activeComp(), L = _ntCtlLayer(0);
-    var parade = L.property("ADBE Effect Parade"), out = [], i, fx, ty, vp, v, budget = { left: 6000 };
-    for (i = 1; i <= parade.numProperties; i++) {
-      fx = parade.property(i);
-      ty = _NT_CTL[fx.matchName];
-      if (!ty) { continue; }
-      vp = fx.property(1);
-      v = null;
-      try { v = vp.value; } catch (eV) { }
-      if (ty === "CL" && v) { v = _ntHex(v); }
-      out.push({ i: i, name: fx.name, type: ty, value: v, enabled: fx.enabled, used: _ntCountUses(comp, fx.name, budget) });
-    }
-    return _ok(out.length + " controls", { layerIndex: L.index, layerName: L.name, controls: out });
-  } catch (e) {
-    return _err(e);
-  }
-}
-function _ntParseValue(ty, v) {
-  if (ty === "CL") {
-    var s = String(v).replace("#", "");
-    if (s.length === 3) { s = s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2); }
-    return [parseInt(s.substr(0, 2), 16) / 255, parseInt(s.substr(2, 2), 16) / 255, parseInt(s.substr(4, 2), 16) / 255, 1];
-  }
-  if (ty === "CK") { return v ? 1 : 0; }
-  if (ty === "PT" || ty === "P3") { return v; }
-  return Number(v);
-}
-function CTL_set(layerIndex, fxIndex, type, value) {
-  var undoOpen = false;
-  try {
-    var L = _ntCtlLayer(layerIndex), fx = L.property("ADBE Effect Parade").property(fxIndex);
-    if (!fx || !_NT_CTL[fx.matchName]) { throw new Error("That control no longer exists. Refresh the list."); }
-    app.beginUndoGroup("Set Control: " + fx.name);
-    undoOpen = true;
-    fx.property(1).setValue(_ntParseValue(type, value));
-    app.endUndoGroup();
-    undoOpen = false;
-    return _ok("Set.");
-  } catch (e) {
-    return _err(e);
-  } finally {
-    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
-  }
-}
-function CTL_toggle(layerIndex, fxIndex) {
-  var undoOpen = false;
-  try {
-    var L = _ntCtlLayer(layerIndex), fx = L.property("ADBE Effect Parade").property(fxIndex);
-    if (!fx) { throw new Error("That control no longer exists. Refresh the list."); }
-    app.beginUndoGroup("Toggle Control");
-    undoOpen = true;
-    fx.enabled = !fx.enabled;
-    app.endUndoGroup();
-    undoOpen = false;
-    return _ok(fx.enabled ? "Control shown." : "Control hidden.", { enabled: fx.enabled });
-  } catch (e) {
-    return _err(e);
-  } finally {
-    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
-  }
-}
-function CTL_add(matchName, name) {
-  var undoOpen = false;
-  try {
-    var comp = _activeComp(), sel = comp.selectedLayers, i, fx, added = 0;
-    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
-    if (!_NT_CTL[matchName]) { throw new Error("Unknown control type."); }
-    app.beginUndoGroup("Add Control");
-    undoOpen = true;
-    for (i = 0; i < sel.length; i++) {
-      fx = sel[i].property("ADBE Effect Parade").addProperty(matchName);
-      if (name) { try { fx.name = String(name); } catch (eN) { } }
-      added++;
-    }
-    app.endUndoGroup();
-    undoOpen = false;
-    return _ok("Added to " + added + " layer" + (added === 1 ? "" : "s") + ".");
-  } catch (e) {
-    return _err(e);
-  } finally {
-    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
-  }
-}
-function CTL_remove(layerIndex, fxIndex) {
-  var undoOpen = false;
-  try {
-    var L = _ntCtlLayer(layerIndex), fx = L.property("ADBE Effect Parade").property(fxIndex);
-    if (!fx || !_NT_CTL[fx.matchName]) { throw new Error("That control no longer exists. Refresh the list."); }
-    var nm = fx.name;
-    app.beginUndoGroup("Delete Control");
-    undoOpen = true;
-    fx.remove();
-    app.endUndoGroup();
-    undoOpen = false;
-    return _ok("\"" + nm + "\" deleted.");
-  } catch (e) {
-    return _err(e);
-  } finally {
-    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
-  }
-}
-// Copies the listed controls (by index on the source layer) onto every OTHER selected layer.
-function CTL_copy(srcLayerIndex, fxIndexes) {
-  var undoOpen = false;
-  try {
-    var comp = _activeComp(), src = comp.layer(srcLayerIndex), sel = comp.selectedLayers, i, j, k, fx, tgt, par, dup, copied = 0, targets = 0;
-    if (!sel || !sel.length) { throw new Error("Select the layers that should receive the controls."); }
-    app.beginUndoGroup("Copy Controls");
-    undoOpen = true;
-    for (i = 0; i < sel.length; i++) {
-      tgt = sel[i];
-      if (tgt.index === src.index) { continue; }
-      par = tgt.property("ADBE Effect Parade");
-      targets++;
-      for (j = 0; j < fxIndexes.length; j++) {
-        fx = src.property("ADBE Effect Parade").property(fxIndexes[j]);
-        if (!fx || !_NT_CTL[fx.matchName]) { continue; }
-        var exists = false;
-        for (k = 1; k <= par.numProperties; k++) { if (par.property(k).name === fx.name) { exists = true; break; } }
-        if (exists) { continue; }
-        dup = par.addProperty(fx.matchName);
-        try { dup.name = fx.name; } catch (eN) { }
-        try { dup.property(1).setValue(fx.property(1).value); } catch (eV) { }
-        copied++;
-      }
-    }
-    app.endUndoGroup();
-    undoOpen = false;
-    if (!targets) { return _notice("Select another layer too. The source layer is skipped."); }
-    return _ok(copied + " control" + (copied === 1 ? "" : "s") + " copied to " + targets + " layer" + (targets === 1 ? "" : "s") + ".");
   } catch (e) {
     return _err(e);
   } finally {

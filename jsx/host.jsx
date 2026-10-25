@@ -9069,3 +9069,533 @@ function SHTZ_randomize(what, a, b) {
     return _err(e);
   }
 }
+
+// =====================================================================================
+// Multi Tool - new tools (Stagger Pro, Rename & Label, Cleaner report, Pre-comp Smart, Controls Manager)
+// UI side: js/mt-newtools.js. Every function returns the usual _ok / _err JSON string and wraps edits in one undo group.
+//   TOOLS_staggerPro(opts)          opts: { target:"layers"|"keys", order, offset (frames), curve, seed }
+//   TOOLS_renamePreview(opts)       opts: see _ntRenameName   -> list of { from, to, type }
+//   TOOLS_renamePro(opts)           renames the selected layers (same opts) + optional label colors
+//   TOOLS_labelByType(map)          map: { text:2, shape:8, ... }  (-1 or missing = leave as is)
+//   TOOLS_cleanerScan()             read-only report of missing / unused / empty / duplicate project items
+//   TOOLS_cleanerRun(opts)          opts: { ids:[...], consolidate:bool }  removes the given project items
+//   TOOLS_precompSmart(opts)        opts: { name, folder, openAfter }
+//   CTL_list() / CTL_set / CTL_toggle / CTL_add / CTL_remove / CTL_copy   Expression Controls Manager
+// =====================================================================================
+
+function _ntRng(seed) {
+  var s = (Number(seed) >>> 0) || 1;
+  return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+function _ntCurve(kind, t) {
+  if (t < 0) { t = 0; }
+  if (t > 1) { t = 1; }
+  if (kind === "ease-in") { return t * t; }
+  if (kind === "ease-out") { return 1 - (1 - t) * (1 - t); }
+  if (kind === "ease-in-out") { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  return t;
+}
+// Rank of each item (0 = no shift) for the chosen order. items are already sorted top to bottom.
+function _ntRanks(n, order, seed) {
+  var ranks = [], i, j, tmp, rnd;
+  for (i = 0; i < n; i++) { ranks.push(i); }
+  if (order === "bottom-up") {
+    for (i = 0; i < n; i++) { ranks[i] = n - 1 - i; }
+  } else if (order === "center") {
+    var c = (n - 1) / 2, idx = [];
+    for (i = 0; i < n; i++) { idx.push(i); }
+    idx.sort(function (a, b) { var d = Math.abs(a - c) - Math.abs(b - c); return d !== 0 ? d : a - b; });
+    for (i = 0; i < n; i++) { ranks[idx[i]] = i; }
+  } else if (order === "random") {
+    rnd = _ntRng(seed);
+    for (i = n - 1; i > 0; i--) { j = Math.floor(rnd() * (i + 1)); tmp = ranks[i]; ranks[i] = ranks[j]; ranks[j] = tmp; }
+  }
+  return ranks;
+}
+// Moves the SELECTED keyframes of one property by dt seconds (remove + re-add, keeping value and temporal ease).
+function _ntShiftKeys(prop, dt) {
+  var sel = prop.selectedKeys, data = [], i, k, d, moved = 0;
+  if (!sel || !sel.length) { return 0; }
+  for (i = 0; i < sel.length; i++) {
+    k = sel[i];
+    d = { t: prop.keyTime(k), v: prop.keyValue(k), ii: prop.keyInInterpolationType(k), oi: prop.keyOutInterpolationType(k), ein: null, eout: null };
+    try {
+      if (d.ii === KeyframeInterpolationType.BEZIER && d.oi === KeyframeInterpolationType.BEZIER) {
+        d.ein = prop.keyInTemporalEase(k); d.eout = prop.keyOutTemporalEase(k);
+      }
+    } catch (e0) { d.ein = null; d.eout = null; }
+    data.push(d);
+  }
+  for (i = sel.length - 1; i >= 0; i--) { prop.removeKey(sel[i]); }
+  for (i = 0; i < data.length; i++) {
+    d = data[i];
+    k = prop.addKey(d.t + dt);
+    try { prop.setValueAtKey(k, d.v); } catch (e1) { }
+    try { prop.setInterpolationTypeAtKey(k, d.ii, d.oi); } catch (e2) { }
+    if (d.ein && d.eout) { try { prop.setTemporalEaseAtKey(k, d.ein, d.eout); } catch (e3) { } }
+    try { prop.setSelectedAtKey(k, true); } catch (e4) { }
+    moved++;
+  }
+  return moved;
+}
+function TOOLS_staggerPro(opts) {
+  var undoOpen = false;
+  try {
+    opts = opts || {};
+    var comp = _activeComp();
+    var offset = Number(opts.offset);
+    if (!isFinite(offset) || offset < 0) { offset = 0; }
+    var order = opts.order || "top-down", curve = opts.curve || "linear", target = opts.target === "keys" ? "keys" : "layers";
+    var fd = comp.frameDuration, sel = comp.selectedLayers, items = [], i, j, p, props, n;
+    if (!sel || sel.length < 2) { throw new Error("Select at least 2 layers."); }
+    sel = sel.slice(0);
+    sel.sort(function (a, b) { return a.index - b.index; });
+
+    if (target === "layers") {
+      items = sel;
+    } else {
+      for (i = 0; i < sel.length; i++) {
+        props = sel[i].selectedProperties || [];
+        var list = [];
+        for (j = 0; j < props.length; j++) {
+          p = props[j];
+          try { if (p.propertyType === PropertyType.PROPERTY && p.numKeys > 0 && p.selectedKeys && p.selectedKeys.length) { list.push(p); } } catch (eP) { }
+        }
+        if (list.length) { items.push({ layer: sel[i], props: list }); }
+      }
+      if (items.length < 2) { throw new Error("Select keyframes on at least 2 layers."); }
+    }
+    n = items.length;
+    var ranks = _ntRanks(n, order, opts.seed);
+    var span = offset * (n - 1);
+
+    app.beginUndoGroup("Stagger Pro");
+    undoOpen = true;
+    var done = 0;
+    for (i = 0; i < n; i++) {
+      var shiftFrames = span * _ntCurve(curve, n > 1 ? ranks[i] / (n - 1) : 0);
+      var dt = shiftFrames * fd;
+      if (dt === 0) { continue; }
+      if (target === "layers") {
+        items[i].startTime = items[i].startTime + dt;
+        done++;
+      } else {
+        for (j = 0; j < items[i].props.length; j++) { done += _ntShiftKeys(items[i].props[j], dt) > 0 ? 1 : 0; }
+      }
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+    return _ok((target === "layers" ? n + " layers" : done + " properties") + " staggered, up to " + Math.round(span * 100) / 100 + " frames apart.");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+
+// ---------- Rename & Label ----------
+function _ntLayerType(L) {
+  try {
+    if (L instanceof TextLayer) { return "text"; }
+    if (L instanceof ShapeLayer) { return "shape"; }
+    if (L instanceof CameraLayer) { return "camera"; }
+    if (L instanceof LightLayer) { return "light"; }
+    if (L.nullLayer) { return "null"; }
+    if (L.adjustmentLayer) { return "adjust"; }
+    if (L.source) {
+      if (L.source instanceof CompItem) { return "comp"; }
+      if (L.source.mainSource && L.source.mainSource instanceof SolidSource) { return "solid"; }
+      if (L.hasVideo === false && L.hasAudio) { return "audio"; }
+      return "footage";
+    }
+  } catch (e) { }
+  return "layer";
+}
+function _ntEscRe(s) { return String(s).replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); }
+function _ntPad(num, digits) { var s = String(num); while (s.length < digits) { s = "0" + s; } return s; }
+// opts: { pattern, find, replace, regex, matchCase, start }
+function _ntRenameName(L, i, opts, compName, dateStr) {
+  var base = L.name, re, flags;
+  if (opts.find) {
+    flags = opts.matchCase ? "g" : "gi";
+    re = new RegExp(opts.regex ? opts.find : _ntEscRe(opts.find), flags);
+    base = base.replace(re, opts.replace === undefined || opts.replace === null ? "" : String(opts.replace));
+  }
+  var pattern = opts.pattern ? String(opts.pattern) : "";
+  if (!pattern) { return base; }
+  var start = parseInt(opts.start, 10); if (isNaN(start)) { start = 1; }
+  var type = _ntLayerType(L);
+  return pattern
+    .replace(/\{n:(\d+)\}/g, function (m, d) { return _ntPad(start + i, parseInt(d, 10)); })
+    .replace(/\{n\}/g, String(start + i))
+    .replace(/\{name\}/g, base)
+    .replace(/\{type\}/g, type)
+    .replace(/\{comp\}/g, compName)
+    .replace(/\{date\}/g, dateStr);
+}
+function _ntToday() {
+  var d = new Date();
+  return d.getFullYear() + "-" + _ntPad(d.getMonth() + 1, 2) + "-" + _ntPad(d.getDate(), 2);
+}
+function _ntSortedSel(comp) {
+  var sel = comp.selectedLayers;
+  if (!sel || !sel.length) { throw new Error("Select one or more layers first."); }
+  sel = sel.slice(0);
+  sel.sort(function (a, b) { return a.index - b.index; });
+  return sel;
+}
+function TOOLS_renamePreview(opts) {
+  try {
+    opts = opts || {};
+    var comp = _activeComp(), sel = _ntSortedSel(comp), out = [], i, date = _ntToday();
+    for (i = 0; i < sel.length && i < 60; i++) {
+      out.push({ from: sel[i].name, to: _ntRenameName(sel[i], i, opts, comp.name, date), type: _ntLayerType(sel[i]) });
+    }
+    return _ok(sel.length + " layers", { items: out, total: sel.length });
+  } catch (e) {
+    return _err(e);
+  }
+}
+function _ntApplyLabels(layers, map) {
+  var n = 0, i, t, v;
+  if (!map) { return 0; }
+  for (i = 0; i < layers.length; i++) {
+    t = _ntLayerType(layers[i]);
+    v = map[t];
+    if (v === undefined || v === null || v < 0) { continue; }
+    try { layers[i].label = v; n++; } catch (e) { }
+  }
+  return n;
+}
+function TOOLS_renamePro(opts) {
+  var undoOpen = false;
+  try {
+    opts = opts || {};
+    var comp = _activeComp(), sel = _ntSortedSel(comp), i, renamed = 0, name, date = _ntToday(), labeled = 0;
+    app.beginUndoGroup("Rename & Label");
+    undoOpen = true;
+    if (!opts.labelsOnly) {
+      for (i = 0; i < sel.length; i++) {
+        name = _ntRenameName(sel[i], i, opts, comp.name, date);
+        if (name !== "" && name !== sel[i].name) { sel[i].name = name; renamed++; }
+      }
+    }
+    if (opts.labels) { labeled = _ntApplyLabels(sel, opts.labels); }
+    app.endUndoGroup();
+    undoOpen = false;
+    if (!renamed && !labeled) { return _notice("Nothing changed."); }
+    var parts = [];
+    if (renamed) { parts.push(renamed + " layer" + (renamed === 1 ? "" : "s") + " renamed"); }
+    if (labeled) { parts.push(labeled + " label" + (labeled === 1 ? "" : "s") + " set"); }
+    return _ok(parts.join(", ") + ".");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+
+// ---------- Project Cleaner report ----------
+function _ntItemUsed(item) {
+  try { return item.usedIn && item.usedIn.length > 0; } catch (e) { return true; }
+}
+function _ntFileSize(item) {
+  try { if (item.mainSource && item.mainSource.file) { return item.mainSource.file.length || 0; } } catch (e) { }
+  return 0;
+}
+function TOOLS_cleanerScan() {
+  try {
+    var proj = app.project;
+    if (!proj) { throw new Error("No project open."); }
+    var res = { missing: [], unused: [], empty: [], dupes: [], unusedBytes: 0 }, seen = {}, i, it, path, rec;
+    for (i = 1; i <= proj.numItems; i++) {
+      it = proj.item(i);
+      if (it instanceof FolderItem) { continue; }
+      if (it instanceof CompItem) {
+        if (it.numLayers === 0) { res.empty.push({ id: it.id, name: it.name, used: _ntItemUsed(it) }); }
+        continue;
+      }
+      if (!(it instanceof FootageItem)) { continue; }
+      var used = _ntItemUsed(it), isSolid = false, missing = false;
+      try { isSolid = it.mainSource instanceof SolidSource; } catch (eS) { }
+      try { missing = !!it.footageMissing; } catch (eM) { }
+      if (missing) { res.missing.push({ id: it.id, name: it.name, used: used }); continue; }
+      if (!used) {
+        var sz = _ntFileSize(it);
+        res.unused.push({ id: it.id, name: it.name, size: sz, solid: isSolid });
+        res.unusedBytes += sz;
+      }
+      if (!isSolid) {
+        path = "";
+        try { if (it.mainSource && it.mainSource.file) { path = it.mainSource.file.fsName; } } catch (eP) { }
+        if (path) {
+          if (seen[path]) { res.dupes.push({ id: it.id, name: it.name, used: used }); } else { seen[path] = true; }
+        }
+      }
+    }
+    return _ok("Scan done.", res);
+  } catch (e) {
+    return _err(e);
+  }
+}
+function TOOLS_cleanerRun(opts) {
+  var undoOpen = false;
+  try {
+    opts = opts || {};
+    var proj = app.project;
+    if (!proj) { throw new Error("No project open."); }
+    var ids = opts.ids || [], want = {}, i, removed = 0, failed = 0, victims = [], it, consolidated = 0;
+    for (i = 0; i < ids.length; i++) { want[ids[i]] = true; }
+    for (i = 1; i <= proj.numItems; i++) { it = proj.item(i); if (want[it.id] && !(it instanceof FolderItem)) { victims.push(it); } }
+    if (!victims.length && !opts.consolidate) { return _notice("Nothing selected to remove."); }
+    app.beginUndoGroup("Project Cleaner");
+    undoOpen = true;
+    if (opts.consolidate) { try { consolidated = proj.consolidateFootage(); } catch (eC) { } }
+    for (i = 0; i < victims.length; i++) {
+      try { victims[i].remove(); removed++; } catch (eR) { failed++; }
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+    var msg = removed + " item" + (removed === 1 ? "" : "s") + " removed.";
+    if (consolidated) { msg += " " + consolidated + " duplicate" + (consolidated === 1 ? "" : "s") + " consolidated."; }
+    if (failed) { msg += " " + failed + " could not be removed."; }
+    return _ok(msg + " One Undo restores them.");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+
+// ---------- Pre-comp Smart ----------
+function _ntFindFolder(name) {
+  var proj = app.project, i, it;
+  for (i = 1; i <= proj.numItems; i++) {
+    it = proj.item(i);
+    if (it instanceof FolderItem && it.name === name && it.parentFolder === proj.rootFolder) { return it; }
+  }
+  return proj.items.addFolder(name);
+}
+function TOOLS_precompSmart(opts) {
+  var undoOpen = false;
+  try {
+    opts = opts || {};
+    var comp = app.project ? app.project.activeItem : null;
+    if (!(comp instanceof CompItem)) { return _notice("Open a composition first."); }
+    var sel = comp.selectedLayers;
+    if (!sel || sel.length < 1) { return _notice("Select one or more layers first."); }
+    var layers = [], i, j, top = null;
+    for (i = 0; i < sel.length; i++) { layers.push(sel[i]); if (!top || sel[i].index < top.index) { top = sel[i]; } }
+    var pattern = opts.name ? String(opts.name) : "{top}_pre";
+    var base = pattern.replace(/\{top\}/g, top.name).replace(/\{n\}/g, String(layers.length)).replace(/\{comp\}/g, comp.name);
+    if (base === "") { base = "Pre-comp"; }
+    var name = base, n = 1, taken;
+    do {
+      taken = false;
+      for (j = 1; j <= app.project.numItems; j++) {
+        if (app.project.item(j) instanceof CompItem && app.project.item(j).name === name) { taken = true; break; }
+      }
+      if (taken) { n++; name = base + " " + n; }
+    } while (taken && n < 500);
+
+    app.beginUndoGroup("Pre-comp Smart");
+    undoOpen = true;
+    var r = _pcPrecompose(comp, layers, name, true);
+    if (opts.folder) {
+      try { r.newComp.parentFolder = _ntFindFolder(String(opts.folder)); } catch (eF) { }
+    }
+    try { for (i = 1; i <= comp.numLayers; i++) { comp.layer(i).selected = false; } r.precompLayer.selected = true; } catch (eSel) { }
+    app.endUndoGroup();
+    undoOpen = false;
+    if (opts.openAfter) { try { r.newComp.openInViewer(); } catch (eO) { } }
+    return _ok(layers.length + " layer" + (layers.length === 1 ? "" : "s") + " pre-composed into \"" + name + "\"" + (opts.folder ? " (folder \"" + opts.folder + "\")" : "") + ".");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+
+// ---------- Expression Controls Manager ----------
+var _NT_CTL = {
+  "ADBE Slider Control": "SL", "ADBE Checkbox Control": "CK", "ADBE Color Control": "CL",
+  "ADBE Point Control": "PT", "ADBE Angle Control": "AN", "ADBE Dropdown Control": "DD", "ADBE Point3D Control": "P3"
+};
+function _ntHex(c) {
+  function h(v) { var s = Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16); return s.length < 2 ? "0" + s : s; }
+  return "#" + h(c[0]) + h(c[1]) + h(c[2]);
+}
+function _ntCtlLayer(layerIndex) {
+  var comp = _activeComp(), L;
+  if (layerIndex) { L = comp.layer(layerIndex); }
+  else {
+    var sel = comp.selectedLayers;
+    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+    L = sel[0];
+  }
+  return L;
+}
+// counts how many expressions in this comp read a control called `name`
+function _ntCountUses(comp, name, budget) {
+  var needle1 = 'effect("' + name + '")', needle2 = "effect('" + name + "')", count = 0, li;
+  function walk(group) {
+    var k, p;
+    for (k = 1; k <= group.numProperties; k++) {
+      if (budget.left-- <= 0) { return; }
+      p = group.property(k);
+      if (p.propertyType === PropertyType.PROPERTY) {
+        try { if (p.expressionEnabled && p.expression && (p.expression.indexOf(needle1) !== -1 || p.expression.indexOf(needle2) !== -1)) { count++; } } catch (e) { }
+      } else { walk(p); }
+    }
+  }
+  for (li = 1; li <= comp.numLayers; li++) { walk(comp.layer(li)); }
+  return count;
+}
+function CTL_list() {
+  try {
+    var comp = _activeComp(), L = _ntCtlLayer(0);
+    var parade = L.property("ADBE Effect Parade"), out = [], i, fx, ty, vp, v, budget = { left: 6000 };
+    for (i = 1; i <= parade.numProperties; i++) {
+      fx = parade.property(i);
+      ty = _NT_CTL[fx.matchName];
+      if (!ty) { continue; }
+      vp = fx.property(1);
+      v = null;
+      try { v = vp.value; } catch (eV) { }
+      if (ty === "CL" && v) { v = _ntHex(v); }
+      out.push({ i: i, name: fx.name, type: ty, value: v, enabled: fx.enabled, used: _ntCountUses(comp, fx.name, budget) });
+    }
+    return _ok(out.length + " controls", { layerIndex: L.index, layerName: L.name, controls: out });
+  } catch (e) {
+    return _err(e);
+  }
+}
+function _ntParseValue(ty, v) {
+  if (ty === "CL") {
+    var s = String(v).replace("#", "");
+    if (s.length === 3) { s = s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2); }
+    return [parseInt(s.substr(0, 2), 16) / 255, parseInt(s.substr(2, 2), 16) / 255, parseInt(s.substr(4, 2), 16) / 255, 1];
+  }
+  if (ty === "CK") { return v ? 1 : 0; }
+  if (ty === "PT" || ty === "P3") { return v; }
+  return Number(v);
+}
+function CTL_set(layerIndex, fxIndex, type, value) {
+  var undoOpen = false;
+  try {
+    var L = _ntCtlLayer(layerIndex), fx = L.property("ADBE Effect Parade").property(fxIndex);
+    if (!fx || !_NT_CTL[fx.matchName]) { throw new Error("That control no longer exists. Refresh the list."); }
+    app.beginUndoGroup("Set Control: " + fx.name);
+    undoOpen = true;
+    fx.property(1).setValue(_ntParseValue(type, value));
+    app.endUndoGroup();
+    undoOpen = false;
+    return _ok("Set.");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+function CTL_toggle(layerIndex, fxIndex) {
+  var undoOpen = false;
+  try {
+    var L = _ntCtlLayer(layerIndex), fx = L.property("ADBE Effect Parade").property(fxIndex);
+    if (!fx) { throw new Error("That control no longer exists. Refresh the list."); }
+    app.beginUndoGroup("Toggle Control");
+    undoOpen = true;
+    fx.enabled = !fx.enabled;
+    app.endUndoGroup();
+    undoOpen = false;
+    return _ok(fx.enabled ? "Control shown." : "Control hidden.", { enabled: fx.enabled });
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+function CTL_add(matchName, name) {
+  var undoOpen = false;
+  try {
+    var comp = _activeComp(), sel = comp.selectedLayers, i, fx, added = 0;
+    if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+    if (!_NT_CTL[matchName]) { throw new Error("Unknown control type."); }
+    app.beginUndoGroup("Add Control");
+    undoOpen = true;
+    for (i = 0; i < sel.length; i++) {
+      fx = sel[i].property("ADBE Effect Parade").addProperty(matchName);
+      if (name) { try { fx.name = String(name); } catch (eN) { } }
+      added++;
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+    return _ok("Added to " + added + " layer" + (added === 1 ? "" : "s") + ".");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+function CTL_remove(layerIndex, fxIndex) {
+  var undoOpen = false;
+  try {
+    var L = _ntCtlLayer(layerIndex), fx = L.property("ADBE Effect Parade").property(fxIndex);
+    if (!fx || !_NT_CTL[fx.matchName]) { throw new Error("That control no longer exists. Refresh the list."); }
+    var nm = fx.name;
+    app.beginUndoGroup("Delete Control");
+    undoOpen = true;
+    fx.remove();
+    app.endUndoGroup();
+    undoOpen = false;
+    return _ok("\"" + nm + "\" deleted.");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+// Copies the listed controls (by index on the source layer) onto every OTHER selected layer.
+function CTL_copy(srcLayerIndex, fxIndexes) {
+  var undoOpen = false;
+  try {
+    var comp = _activeComp(), src = comp.layer(srcLayerIndex), sel = comp.selectedLayers, i, j, k, fx, tgt, par, dup, copied = 0, targets = 0;
+    if (!sel || !sel.length) { throw new Error("Select the layers that should receive the controls."); }
+    app.beginUndoGroup("Copy Controls");
+    undoOpen = true;
+    for (i = 0; i < sel.length; i++) {
+      tgt = sel[i];
+      if (tgt.index === src.index) { continue; }
+      par = tgt.property("ADBE Effect Parade");
+      targets++;
+      for (j = 0; j < fxIndexes.length; j++) {
+        fx = src.property("ADBE Effect Parade").property(fxIndexes[j]);
+        if (!fx || !_NT_CTL[fx.matchName]) { continue; }
+        var exists = false;
+        for (k = 1; k <= par.numProperties; k++) { if (par.property(k).name === fx.name) { exists = true; break; } }
+        if (exists) { continue; }
+        dup = par.addProperty(fx.matchName);
+        try { dup.name = fx.name; } catch (eN) { }
+        try { dup.property(1).setValue(fx.property(1).value); } catch (eV) { }
+        copied++;
+      }
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+    if (!targets) { return _notice("Select another layer too. The source layer is skipped."); }
+    return _ok(copied + " control" + (copied === 1 ? "" : "s") + " copied to " + targets + " layer" + (targets === 1 ? "" : "s") + ".");
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}
+
+// Frame rate of the active comp (used by Stagger Pro when the offset is given in seconds).
+function NT_compInfo() {
+  try {
+    var comp = _activeComp();
+    return _ok("ok", { fps: comp.frameRate, name: comp.name });
+  } catch (e) {
+    return _err(e);
+  }
+}

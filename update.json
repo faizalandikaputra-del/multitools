@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.109",
-    "changelog":  "- Update 1.8.109",
+    "latest_version":  "1.8.110",
+    "changelog":  "- Update 1.8.110",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -113,6 +113,10 @@
                   {
                       "path":  "css/mt-nav.css",
                       "sha256":  "6f102c2d8e48e12a72b5cfa54f99d38223b13470b0c646cde86e48a0ed38938c"
+                  },
+                  {
+                      "path":  "css/mt-newtools.css",
+                      "sha256":  "0ec4d35f0bc9773aa9063bd37af74c38dff1336cf108848e30d1df9e2c84bbbe"
                   },
                   {
                       "path":  "css/mt-preset-actions.css",
@@ -236,11 +240,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "30e4c4eb78d032a9ee0e4679f30ff6a546758f4d5d56820df0dbdde018a45c48"
+                      "sha256":  "38f336b6318ffe85485948306d1c913500092dd242b099bd8ef111547980eaf0"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "81ec3e6f73c152876993d5d35841ab9050af9d200b294ee9f59a1da39a9cc2ad"
+                      "sha256":  "8d58b343ce3fe6b6144e701faed2e65145f89016d7ab797966a2d039c26cf9e5"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -265,6 +269,10 @@
                   {
                       "path":  "js/mt-away.js",
                       "sha256":  "7533d001a5e23d525fe2e9df5c5d903296b66a04e31f32be815557beb5228d05"
+                  },
+                  {
+                      "path":  "js/mt-backup.js",
+                      "sha256":  "784fa3f64420f6bed39d3330c7797e87c083cc850c541c3d6b7f49cd22c942be"
                   },
                   {
                       "path":  "js/mt-bg-preview.js",
@@ -321,6 +329,10 @@
                   {
                       "path":  "js/mt-nav.js",
                       "sha256":  "eaa0e9d7595d91c2b2efa1e9988cbeee3d472267534c5a1282d8937251849804"
+                  },
+                  {
+                      "path":  "js/mt-newtools.js",
+                      "sha256":  "f5f5e3c1a00751fdd3106d8fca22b7d893db62108bd94e7246f8507a88b0e7b7"
                   },
                   {
                       "path":  "js/mt-persist.js",
@@ -400,7 +412,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "f4accd43524169dffc9f6e82afc1c498e0863c2ead78c1827c0825bd64af4892"
+                      "sha256":  "4ceb0529ee1563e05264bbe93041b4155ebd713553d2242c500832736e400730"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -712,7 +724,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "ff040ffe04766021313f999a8b405174d4a42e4d3f5d3a759dacf929a712fae9"
+                      "sha256":  "bdc6300d25b7197c33a891f316b8ae9e5ef3c040123f25ac21102cee30313e32"
                   }
               ]
 }

@@ -4886,6 +4886,7 @@
     }
     panel.appendChild(built);
     if (tabId === "easy-layer") { panel.appendChild(EasyLayerFlip.render()); }   // Flip Horizontal/Vertical beneath the grid
+    if (tabId === "easy-layer" && window.MTFx) { panel.appendChild(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult })); }   // Copy Effects section (js/mt-fxcopy.js) beneath Flip
 
     // Feature B: grouped capsule cards, applied panel-wide. groupifyTaSections() only wraps
     // DIRECT ".ta-section" children of the node it's given, so calling it once here on `built`

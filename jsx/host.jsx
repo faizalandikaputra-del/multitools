@@ -9424,3 +9424,175 @@ function NT_compInfo() {
     return _err(e);
   }
 }
+
+// ---------- Copy Effects (Easy Layer section + the chip under the island, js/mt-fxcopy.js) ----------
+// After Effects offers no way to read its own clipboard, so the panel never holds the effect data itself.
+// Copy / Paste go through AE's native Edit > Copy / Paste commands (the same ones as Ctrl+C / Ctrl+V), which
+// carry EVERYTHING: Curves points, Levels, keyframes, expressions, masks inside effects. The panel only keeps a
+// small record (comp id, layer, effect names + indices) so an older saved entry can be re-copied later.
+//   FX_peek()                    cheap, called by the chip every ~0.7 s: which effects are selected right now?
+//   FX_copy("sel" | "layer")     "sel": copy the selected effects exactly as Ctrl+C would. "layer": same, but when no
+//                                effect is selected copy EVERY effect of the first selected layer.
+//   FX_paste(entry, mode, newest) paste onto the selected layers. mode "add" | "replace" (removes the old effects first).
+//                                entry is re-copied from its source layer when that comp is open; otherwise only the
+//                                newest entry may paste what is already on the clipboard.
+function _fxSelected(comp) {
+  var sl = comp.selectedLayers, i, j, props, p, q, effs, seen, key;
+  for (i = 0; i < sl.length; i++) {
+    props = sl[i].selectedProperties;
+    effs = []; seen = {};
+    for (j = 0; j < props.length; j++) {
+      q = props[j];
+      while (q && q.parentProperty && q.parentProperty.matchName !== "ADBE Effect Parade") { q = q.parentProperty; }
+      if (!q || !q.parentProperty || q.parentProperty.matchName !== "ADBE Effect Parade") { continue; }
+      key = String(q.propertyIndex);
+      if (seen[key]) { continue; }
+      seen[key] = true;
+      effs.push(q);
+    }
+    if (effs.length) {
+      effs.sort(function (a, b) { return a.propertyIndex - b.propertyIndex; });
+      return { layer: sl[i], effects: effs };
+    }
+  }
+  return { layer: null, effects: [] };
+}
+
+function FX_peek() {
+  try {
+    var comp = app.project.activeItem;
+    if (!(comp && comp instanceof CompItem)) { return _ok("", { count: 0 }); }
+    var found = _fxSelected(comp), names = [], i;
+    for (i = 0; i < found.effects.length; i++) { names.push(found.effects[i].name); }
+    return _ok("", { count: names.length, names: names, layer: found.layer ? found.layer.name : "" });
+  } catch (e) {
+    return _ok("", { count: 0 });
+  }
+}
+
+function _fxEntry(comp, layer, effs) {
+  var fx = [], i, id = null;
+  for (i = 0; i < effs.length; i++) { fx.push({ i: effs[i].propertyIndex, n: effs[i].name, m: effs[i].matchName }); }
+  try { if (typeof layer.id !== "undefined") { id = layer.id; } } catch (e0) { id = null; }
+  return { compId: comp.id, compName: comp.name, layerIndex: layer.index, layerName: layer.name, layerId: id, fx: fx, t: (new Date()).getTime() };
+}
+
+function _fxCmd(name) {
+  var id = 0;
+  try { id = app.findMenuCommandId(name); } catch (e) { id = 0; }
+  if (!id) { throw new Error("Could not find the \"" + name + "\" menu command in this After Effects."); }
+  return id;
+}
+
+function FX_copy(mode) {
+  try {
+    var comp = _activeComp(), found = _fxSelected(comp), layer, effs, i, fx;
+    var copyCmd = _fxCmd("Copy");
+    if (found.layer) {
+      // Effects are already selected: copy exactly what the user selected, like Ctrl+C.
+      layer = found.layer; effs = found.effects;
+      app.executeCommand(copyCmd);
+    } else if (mode === "layer") {
+      var sl = comp.selectedLayers, keep = [];
+      if (!sl || sl.length === 0) { throw new Error("Select a layer or an effect first."); }
+      layer = sl[0];
+      fx = layer.property("ADBE Effect Parade");
+      if (!fx || fx.numProperties === 0) { throw new Error("\"" + layer.name + "\" has no effects."); }
+      for (i = 0; i < sl.length; i++) { keep.push(sl[i]); }
+      effs = [];
+      for (i = 1; i <= fx.numProperties; i++) { effs.push(fx.property(i)); }
+      _unpreClearSelection(comp);
+      layer.selected = true;
+      for (i = 0; i < effs.length; i++) { effs[i].selected = true; }
+      app.executeCommand(copyCmd);
+      _unpreClearSelection(comp);
+      for (i = 0; i < keep.length; i++) { keep[i].selected = true; }
+    } else {
+      throw new Error("Select an effect first.");
+    }
+    return _ok(effs.length + " effect" + (effs.length === 1 ? "" : "s") + " copied.", _fxEntry(comp, layer, effs));
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+function _fxFindLayer(comp, entry) {
+  var i, l;
+  if (entry.layerId !== null && typeof entry.layerId !== "undefined") {
+    for (i = 1; i <= comp.numLayers; i++) {
+      l = comp.layer(i);
+      try { if (typeof l.id !== "undefined" && l.id === entry.layerId) { return l; } } catch (e0) {}
+    }
+  }
+  if (entry.layerIndex >= 1 && entry.layerIndex <= comp.numLayers) {
+    l = comp.layer(entry.layerIndex);
+    if (l.name === entry.layerName) { return l; }
+  }
+  return null;
+}
+
+function _fxResolveEffects(layer, entry) {
+  var fx = layer.property("ADBE Effect Parade"), out = [], i, k, e, p, found;
+  if (!fx) { return null; }
+  for (i = 0; i < entry.fx.length; i++) {
+    e = entry.fx[i]; p = null;
+    if (e.i >= 1 && e.i <= fx.numProperties) {
+      p = fx.property(e.i);
+      if (p.matchName !== e.m || p.name !== e.n) { p = null; }
+    }
+    if (!p) {
+      found = null;
+      for (k = 1; k <= fx.numProperties; k++) {
+        if (fx.property(k).matchName === e.m && fx.property(k).name === e.n) { found = fx.property(k); break; }
+      }
+      p = found;
+    }
+    if (!p) { return null; }
+    out.push(p);
+  }
+  return out;
+}
+
+function FX_paste(entry, mode, newest) {
+  var undoOpen = false;
+  try {
+    var comp = _activeComp(), sl = comp.selectedLayers, targets = [], i, k, t, fx;
+    for (i = 0; i < sl.length; i++) {
+      if (sl[i] instanceof AVLayer && !sl[i].locked) { targets.push(sl[i]); }
+    }
+    if (targets.length === 0) { throw new Error("Select the layer(s) to paste onto."); }
+    var copyCmd = _fxCmd("Copy"), pasteCmd = _fxCmd("Paste");
+    var effCount = (entry && entry.fx) ? entry.fx.length : 0;
+
+    // Re-copy from the source layer when its comp is the open one: the clipboard may hold something else by now.
+    var src = (entry && entry.compId === comp.id) ? _fxFindLayer(comp, entry) : null;
+    var srcEffs = src ? _fxResolveEffects(src, entry) : null;
+    if (src && srcEffs) {
+      _unpreClearSelection(comp);
+      src.selected = true;
+      for (i = 0; i < srcEffs.length; i++) { srcEffs[i].selected = true; }
+      app.executeCommand(copyCmd);
+    } else if (!newest) {
+      throw new Error("Open the comp \"" + (entry ? entry.compName : "") + "\" to paste this one, or copy it again.");
+    }
+
+    app.beginUndoGroup("Copy Effects");
+    undoOpen = true;
+    if (mode === "replace") {
+      for (i = 0; i < targets.length; i++) {
+        fx = targets[i].property("ADBE Effect Parade");
+        if (!fx) { continue; }
+        for (k = fx.numProperties; k >= 1; k--) { try { fx.property(k).remove(); } catch (e1) {} }
+      }
+    }
+    _unpreClearSelection(comp);
+    for (i = 0; i < targets.length; i++) { targets[i].selected = true; }
+    app.executeCommand(pasteCmd);
+    app.endUndoGroup();
+    undoOpen = false;
+    return _ok("Pasted" + (effCount ? " " + effCount + " effect" + (effCount === 1 ? "" : "s") : "") + " onto " + targets.length + " layer" + (targets.length === 1 ? "" : "s") + ".");
+  } catch (e) {
+    if (undoOpen) { app.endUndoGroup(); }
+    return _err(e);
+  }
+}

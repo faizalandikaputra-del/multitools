@@ -9433,9 +9433,11 @@ function NT_compInfo() {
 //   FX_peek()                    cheap, called by the chip every ~0.7 s: which effects are selected right now?
 //   FX_copy("sel" | "layer")     "sel": copy the selected effects exactly as Ctrl+C would. "layer": same, but when no
 //                                effect is selected copy EVERY effect of the first selected layer.
-//   FX_paste(entry, mode, newest) paste onto the selected layers. mode "add" | "replace" (removes the old effects first).
-//                                entry is re-copied from its source layer when that comp is open; otherwise only the
-//                                newest entry may paste what is already on the clipboard.
+//   FX_paste(entry, mode, newest, pick)  paste the ticked effects (pick = indices into entry.fx) onto the selected layers.
+//                                mode "add" | "replace" (removes the old effects first). Effects are REBUILT BY SCRIPT from the
+//                                source layer (addProperty + values, keyframes, ease, expressions), so no clipboard and no panel
+//                                focus is needed. Effects a script cannot rebuild (Curves) go through AE Copy / Paste, which
+//                                needs the source comp open; the result says honestly when that did nothing.
 function _fxSelected(comp) {
   var sl = comp.selectedLayers, i, j, props, p, q, effs, seen, key;
   for (i = 0; i < sl.length; i++) {
@@ -9553,44 +9555,119 @@ function _fxResolveEffects(layer, entry) {
   return out;
 }
 
-function FX_paste(entry, mode, newest) {
+var FX_NATIVE_ONLY = { "ADBE CurvesCustom": true };
+
+function _fxCopyProps(src, dst) {
+  var i, k, s, d, n = src.numProperties;
+  for (i = 1; i <= n; i++) {
+    s = src.property(i);
+    d = null;
+    try { d = dst.property(i); } catch (e0) { d = null; }
+    if (!d) { continue; }
+    try {
+      if (s.propertyType === PropertyType.INDEXED_GROUP || s.propertyType === PropertyType.NAMED_GROUP) { _fxCopyProps(s, d); continue; }
+      if (s.propertyValueType === PropertyValueType.NO_VALUE || s.propertyValueType === PropertyValueType.CUSTOM_VALUE) { continue; }
+      if (s.numKeys > 0) {
+        for (k = 1; k <= s.numKeys; k++) { d.setValueAtTime(s.keyTime(k), s.keyValue(k)); }
+        for (k = 1; k <= s.numKeys; k++) {
+          try { d.setInterpolationTypeAtKey(k, s.keyInInterpolationType(k), s.keyOutInterpolationType(k)); } catch (e1) {}
+          try { d.setTemporalEaseAtKey(k, s.keyInTemporalEase(k), s.keyOutTemporalEase(k)); } catch (e2) {}
+        }
+      } else {
+        d.setValue(s.value);
+      }
+      if (s.expressionEnabled) { d.expression = s.expression; }
+    } catch (e3) {}
+  }
+}
+
+function FX_paste(entry, mode, newest, pick) {
   var undoOpen = false;
   try {
-    var comp = _activeComp(), sl = comp.selectedLayers, targets = [], i, k, t, fx;
+    var comp = _activeComp(), sl = comp.selectedLayers, targets = [], i, j, k, fx, tgt, se, ne;
     for (i = 0; i < sl.length; i++) {
       if (sl[i] instanceof AVLayer && !sl[i].locked) { targets.push(sl[i]); }
     }
     if (targets.length === 0) { throw new Error("Select the layer(s) to paste onto."); }
-    var copyCmd = _fxCmd("Copy"), pasteCmd = _fxCmd("Paste");
-    var effCount = (entry && entry.fx) ? entry.fx.length : 0;
+    if (!entry || !entry.fx || entry.fx.length === 0) { throw new Error("Nothing saved yet."); }
 
-    // Re-copy from the source layer when its comp is the open one: the clipboard may hold something else by now.
-    var src = (entry && entry.compId === comp.id) ? _fxFindLayer(comp, entry) : null;
-    var srcEffs = src ? _fxResolveEffects(src, entry) : null;
-    if (src && srcEffs) {
-      _unpreClearSelection(comp);
-      src.selected = true;
-      for (i = 0; i < srcEffs.length; i++) { srcEffs[i].selected = true; }
-      app.executeCommand(copyCmd);
-    } else if (!newest) {
-      throw new Error("Open the comp \"" + (entry ? entry.compName : "") + "\" to paste this one, or copy it again.");
+    var picked = [];
+    if (pick && pick.length) {
+      for (i = 0; i < pick.length; i++) { if (pick[i] >= 0 && pick[i] < entry.fx.length) { picked.push(pick[i]); } }
+    } else {
+      for (i = 0; i < entry.fx.length; i++) { picked.push(i); }
+    }
+    if (picked.length === 0) { throw new Error("Tick at least one effect to paste."); }
+
+    var srcComp = null, srcLayer = null, srcEffs = null;
+    try { srcComp = app.project.itemByID(entry.compId); } catch (e0) { srcComp = null; }
+    if (srcComp && srcComp instanceof CompItem) { srcLayer = _fxFindLayer(srcComp, entry); }
+    if (!srcLayer) { throw new Error("The source layer \"" + entry.layerName + "\" is gone. Copy the effects again."); }
+    srcEffs = _fxResolveEffects(srcLayer, entry);
+    if (!srcEffs) { throw new Error("The source effects changed. Copy them again."); }
+
+    var sameComp = (srcComp.id === comp.id), cloneIdx = [], nativeIdx = [], keepSet = {}, notes = [], added = 0, nativeTargets = [];
+    for (j = 0; j < picked.length; j++) {
+      keepSet[srcEffs[picked[j]].propertyIndex] = true;
+      if (FX_NATIVE_ONLY[entry.fx[picked[j]].m]) { nativeIdx.push(picked[j]); } else { cloneIdx.push(picked[j]); }
     }
 
     app.beginUndoGroup("Copy Effects");
     undoOpen = true;
-    if (mode === "replace") {
-      for (i = 0; i < targets.length; i++) {
-        fx = targets[i].property("ADBE Effect Parade");
-        if (!fx) { continue; }
-        for (k = fx.numProperties; k >= 1; k--) { try { fx.property(k).remove(); } catch (e1) {} }
+    for (i = 0; i < targets.length; i++) {
+      tgt = targets[i];
+      fx = tgt.property("ADBE Effect Parade");
+      if (!fx) { continue; }
+      var isSrc = sameComp && tgt.index === srcLayer.index;
+      if (mode === "replace") {
+        for (k = fx.numProperties; k >= 1; k--) {
+          if (isSrc && keepSet[k]) { continue; }
+          try { fx.property(k).remove(); } catch (e1) {}
+        }
+        if (isSrc) { continue; }
+      }
+      nativeTargets.push(tgt);
+      for (j = 0; j < cloneIdx.length; j++) {
+        se = srcEffs[cloneIdx[j]];
+        try {
+          ne = fx.addProperty(se.matchName);
+          try { ne.name = se.name; } catch (e2) {}
+          try { ne.enabled = se.enabled; } catch (e3) {}
+          _fxCopyProps(se, ne);
+          added++;
+        } catch (e4) {
+          notes.push("\"" + se.name + "\" could not be rebuilt.");
+        }
       }
     }
-    _unpreClearSelection(comp);
-    for (i = 0; i < targets.length; i++) { targets[i].selected = true; }
-    app.executeCommand(pasteCmd);
+
+    if (nativeIdx.length && nativeTargets.length) {
+      if (!sameComp) {
+        notes.push("Curves needs its source comp (\"" + entry.compName + "\") open.");
+      } else {
+        var copyCmd = _fxCmd("Copy"), pasteCmd = _fxCmd("Paste"), before = 0, after = 0;
+        _unpreClearSelection(comp);
+        srcLayer.selected = true;
+        for (j = 0; j < nativeIdx.length; j++) { srcEffs[nativeIdx[j]].selected = true; }
+        app.executeCommand(copyCmd);
+        _unpreClearSelection(comp);
+        for (i = 0; i < nativeTargets.length; i++) {
+          nativeTargets[i].selected = true;
+          before += nativeTargets[i].property("ADBE Effect Parade").numProperties;
+        }
+        app.executeCommand(pasteCmd);
+        for (i = 0; i < nativeTargets.length; i++) { after += nativeTargets[i].property("ADBE Effect Parade").numProperties; }
+        if (after > before) { added += (after - before); }
+        else { notes.push("After Effects ignored the Paste for Curves (click the timeline once, then try again)."); }
+      }
+    }
     app.endUndoGroup();
     undoOpen = false;
-    return _ok("Pasted" + (effCount ? " " + effCount + " effect" + (effCount === 1 ? "" : "s") : "") + " onto " + targets.length + " layer" + (targets.length === 1 ? "" : "s") + ".");
+
+    _unpreClearSelection(comp);
+    for (i = 0; i < targets.length; i++) { targets[i].selected = true; }
+    if (added === 0) { throw new Error("Nothing was pasted. " + notes.join(" ")); }
+    return _ok("Pasted " + added + " effect" + (added === 1 ? "" : "s") + (targets.length > 1 ? " (" + targets.length + " layers)" : "") + "." + (notes.length ? " " + notes.join(" ") : ""));
   } catch (e) {
     if (undoOpen) { app.endUndoGroup(); }
     return _err(e);

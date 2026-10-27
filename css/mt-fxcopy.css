@@ -54,4 +54,13 @@ html[data-reduce-motion="true"] .mt-fxchip, html[data-reduce-motion="true"] .mt-
 .el-fx-seg { display: flex; padding: 2px; border-radius: 9px; background: var(--surface-sunken); }
 .el-fx-seg button { height: 24px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text-dim); font-size: 0.68rem; font-weight: 500; cursor: pointer; transition: background 0.15s linear, color 0.15s linear; }
 .el-fx-seg button.is-on { background: var(--surface-hover); color: var(--text); font-weight: 700; box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.5); }
-.el-fx-last { margin: var(--space-2) 0 0; font-size: 0.65rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.el-fx-from { margin: var(--space-2) 0 var(--space-1); font-size: 0.65rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.el-fx-list { display: flex; flex-direction: column; }
+.el-fx-row { position: relative; display: flex; align-items: center; min-height: 26px; padding: 2px 4px; border-radius: 7px; cursor: pointer; }
+.el-fx-row:hover { background: var(--surface-hover); }
+.el-fx-row input { position: absolute; opacity: 0; width: 0; height: 0; }
+.el-fx-box { flex: 0 0 auto; position: relative; width: 15px; height: 15px; margin-right: 9px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--text-dim); transition: background 0.12s linear, box-shadow 0.12s linear; }
+.el-fx-row input:checked + .el-fx-box { background: var(--accent); box-shadow: none; }
+.el-fx-row input:checked + .el-fx-box::after { content: ""; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid var(--on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.el-fx-row input:focus-visible + .el-fx-box { outline: 2px solid var(--accent); outline-offset: 2px; }
+.el-fx-name { font-size: 0.72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

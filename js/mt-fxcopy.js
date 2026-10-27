@@ -42,8 +42,15 @@
   if (!(stash instanceof Array)) { stash = []; }
   function saveStash() { lsSet(STASH_KEY, JSON.stringify(stash)); }
   function sigOf(e) { return e.compId + "|" + e.layerIndex + "|" + e.fx.map(function (f) { return f.n; }).join("\u0001"); }
+  var skip = {};                                              // unticked effects (in memory): sigOf(entry) + "|" + index
+  function pickOf(e) {
+    var s = sigOf(e), out = [], i;
+    for (i = 0; i < e.fx.length; i++) { if (!skip[s + "|" + i]) { out.push(i); } }
+    return out;
+  }
   function addEntry(e) {
-    var s = sigOf(e);
+    var s = sigOf(e), i;
+    for (i = 0; i < e.fx.length; i++) { delete skip[s + "|" + i]; }          // a fresh copy starts fully ticked
     stash = stash.filter(function (x) { return sigOf(x) !== s; });
     stash.unshift(e);
     if (stash.length > MAX) { stash.length = MAX; }
@@ -69,7 +76,9 @@
   function paste(idx) {
     var e = stash[idx];
     if (!e) { return Promise.resolve({ ok: false, message: "Nothing saved yet." }); }
-    return call("FX_paste", [e, getMode(), idx === 0]);
+    var pick = pickOf(e);
+    if (!pick.length) { return Promise.resolve({ ok: false, message: "Tick at least one effect to paste." }); }
+    return call("FX_paste", [e, getMode(), idx === 0, pick]);
   }
 
   /* ---------- chip ---------- */
@@ -223,14 +232,25 @@
       '<div class="el-fx-seg" role="radiogroup" aria-label="Paste mode">' +
       '<button type="button" role="radio" data-mode="add">Add</button>' +
       '<button type="button" role="radio" data-mode="replace">Replace all</button></div></div>' +
-      '<p class="el-fx-last"></p>';
-    var last = wrap.querySelector(".el-fx-last"), segBtns = wrap.querySelectorAll(".el-fx-seg button");
+      '<p class="el-fx-from"></p><div class="el-fx-list"></div>';
+    var from = wrap.querySelector(".el-fx-from"), list = wrap.querySelector(".el-fx-list"), segBtns = wrap.querySelectorAll(".el-fx-seg button");
     function paint() {
       Array.prototype.forEach.call(segBtns, function (b) {
         var on = b.getAttribute("data-mode") === getMode();
         b.classList.toggle("is-on", on); b.setAttribute("aria-checked", on ? "true" : "false");
       });
-      last.textContent = stash[0] ? "Last: " + labelOf(stash[0]) + ", from \u201c" + stash[0].layerName + "\u201d" : "Nothing copied yet.";
+      var e = stash[0];
+      list.innerHTML = "";
+      if (!e) { from.textContent = "Nothing copied yet."; return; }
+      from.textContent = "Paste these effects, from \u201c" + e.layerName + "\u201d:";
+      var sg = sigOf(e);
+      e.fx.forEach(function (f, i) {
+        var row = el("label", "el-fx-row"), cb = el("input"), box = el("span", "el-fx-box"), nm = el("span", "el-fx-name");
+        cb.type = "checkbox"; cb.checked = !skip[sg + "|" + i];
+        cb.addEventListener("change", function () { if (cb.checked) { delete skip[sg + "|" + i]; } else { skip[sg + "|" + i] = true; } });
+        nm.textContent = f.n;
+        row.appendChild(cb); row.appendChild(box); row.appendChild(nm); list.appendChild(row);
+      });
     }
     Array.prototype.forEach.call(segBtns, function (b) {
       b.addEventListener("click", function () { lsSet(MODE_KEY, b.getAttribute("data-mode")); paint(); });

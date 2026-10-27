@@ -4637,7 +4637,7 @@
   // content (~110ms), then renderTab() swaps the content and plays the staggered card entrance.
   var MT_LEAVE_MS = 110;
   var MT_STAGGER_SEL = ".tool, .ta-group, .beat-card, .snippet-card, .info, .empty, .expr-item, " +
-    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn, .el-fx";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group; .el-fx: Copy Effects box (js/mt-fxcopy.js), Easy Layer + Animation Presets
+    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group
   var MT_STAGGER_MAX = 14;
   var leaveTimer = null;
   var staggerTimer = null;
@@ -4885,10 +4885,7 @@
       built = grid;
     }
     panel.appendChild(built);
-    // Animation Presets: Copy Effects box on top (collapsed until opened; same saved effects as the Easy Layer box)
-    if (tabId === "presets" && window.MTFx) { panel.insertBefore(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "presets", collapsed: true }), panel.firstChild); }
     if (tabId === "easy-layer") { panel.appendChild(EasyLayerFlip.render()); }   // Flip Horizontal/Vertical beneath the grid
-    if (tabId === "easy-layer" && window.MTFx) { panel.appendChild(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "easy-layer", collapsed: false })); }   // Copy Effects section (js/mt-fxcopy.js) beneath Flip
 
     // Feature B: grouped capsule cards, applied panel-wide. groupifyTaSections() only wraps
     // DIRECT ".ta-section" children of the node it's given, so calling it once here on `built`

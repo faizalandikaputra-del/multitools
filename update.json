@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.118",
-    "changelog":  "- Update 1.8.118",
+    "latest_version":  "1.8.119",
+    "changelog":  "- Update 1.8.119",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -61,10 +61,6 @@
                   {
                       "path":  "css/mt-final-controls.css",
                       "sha256":  "85be8e26bc8f29fc7c17b006f79e45bcbba6840dff1fcb3931334480ac329d51"
-                  },
-                  {
-                      "path":  "css/mt-fxcopy.css",
-                      "sha256":  "463169f4b55a78790f75a8e8bed0dea6988d9a47979c15cfe1c0a9f88c6bf253"
                   },
                   {
                       "path":  "css/mt-gif-export.css",
@@ -244,7 +240,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "0187ffe2245e54fd63f24a2ce85bc4b5c98c811f19577aa6b046e60a519d6bfc"
+                      "sha256":  "e19c8465a4f3065fddb711b539bc10d2504fcd1883fcfd416392e745cca53a70"
                   },
                   {
                       "path":  "html/settings.html",
@@ -264,7 +260,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "1ac48a7071fbfc1185213bc757119525c46394ebd84f2af6af225ab6c1eeae33"
+                      "sha256":  "488ce5d791507f14a6a2a85a4db4b7317f24a302b50c85cefb45d8320b7d232c"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -289,10 +285,6 @@
                   {
                       "path":  "js/mt-curve-top.js",
                       "sha256":  "39f35a5b850287a01114dc9be244e09482ce38e1dc2eb0ef1323d686102bd49c"
-                  },
-                  {
-                      "path":  "js/mt-fxcopy.js",
-                      "sha256":  "114bb6c6ff075ac99a3dd19d2fe94952a10827701ba13735e38e8f4587638585"
                   },
                   {
                       "path":  "js/mt-gif.js",
@@ -420,7 +412,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "ec54827625ef21124bc6f8d4c6649c8acf3d9b41457b3c4eeb7f1094166d1198"
+                      "sha256":  "4efe1372c92c8249e0819e4b8b81e65498a46c65c86afa2a5d439575d218ce8b"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -732,7 +724,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "45847bb1184190aa1f5b278d3d7792ff1cc8ff0213dc141acdd8cce09e658f3f"
+                      "sha256":  "0adcc7f964274a6752f3abfece9cadcfa7e6fd9e310686e62597d77b2382e92e"
                   }
               ]
 }

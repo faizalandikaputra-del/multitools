@@ -226,13 +226,22 @@
   function renderSection(h) {
     h = h || {};
     var wrap = el("div", "el-fx");
-    wrap.innerHTML = '<div class="el-fx-title">Copy Effects</div>' +
-      '<div class="flip-grid">' + tile("copy", "Copy from layer", COPY_ICO) + tile("paste", "Paste to layer", PASTE_ICO) + '</div>' +
+    wrap.innerHTML = '<button type="button" class="el-fx-head" aria-expanded="true"><span class="el-fx-title">Copy Effects</span>' +
+      '<svg class="el-fx-chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+      '<div class="el-fx-body"><div class="flip-grid">' + tile("copy", "Copy from layer", COPY_ICO) + tile("paste", "Paste to layer", PASTE_ICO) + '</div>' +
       '<div class="el-fx-mode"><span class="el-fx-mlabel">Paste mode</span>' +
       '<div class="el-fx-seg" role="radiogroup" aria-label="Paste mode">' +
       '<button type="button" role="radio" data-mode="add">Add</button>' +
       '<button type="button" role="radio" data-mode="replace">Replace all</button></div></div>' +
-      '<p class="el-fx-from"></p><div class="el-fx-list"></div>';
+      '<p class="el-fx-from"></p><div class="el-fx-list"></div></div>';
+    // Collapsible box. The state is remembered per tab (mtx.fxBox.<key>); h.collapsed = the default for a tab that has no saved state.
+    var head = wrap.querySelector(".el-fx-head"), boxKey = "mtx.fxBox." + (h.key || "default"), saved = lsGet(boxKey);
+    function setOpen(o, remember) {
+      wrap.classList.toggle("is-collapsed", !o); head.setAttribute("aria-expanded", o ? "true" : "false");
+      if (remember) { lsSet(boxKey, o ? "0" : "1"); }
+    }
+    setOpen(saved === null ? !h.collapsed : saved === "0", false);
+    head.addEventListener("click", function () { setOpen(wrap.classList.contains("is-collapsed"), true); });
     var from = wrap.querySelector(".el-fx-from"), list = wrap.querySelector(".el-fx-list"), segBtns = wrap.querySelectorAll(".el-fx-seg button");
     function paint() {
       Array.prototype.forEach.call(segBtns, function (b) {

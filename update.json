@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.115",
-    "changelog":  "- Update 1.8.115",
+    "latest_version":  "1.8.116",
+    "changelog":  "- Update 1.8.116",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -64,7 +64,7 @@
                   },
                   {
                       "path":  "css/mt-fxcopy.css",
-                      "sha256":  "c3f7c4866ee17b93457d708db9b9902ea60f904ed88011e64f8f6740771723c2"
+                      "sha256":  "160cddb09229b0a66b6ef3f9620a261f9041e7873150b304a3fcd9c239eb172d"
                   },
                   {
                       "path":  "css/mt-gif-export.css",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "6750f6c5d9cfcbcf3cbcd2bce87e6c4892087b62bd004ad60b32789538c7c479"
+                      "sha256":  "01200b6bc59f77d4cb33d501630331a65b158ba4d905c211b505828d5cad3ea3"
                   },
                   {
                       "path":  "html/settings.html",
@@ -264,7 +264,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "b18aec2eace560895b1ede8a122f2d67f8b37bb2348ac3a9a2d739332b9b91c5"
+                      "sha256":  "6017668e9b48332e2ca67b2b11ca7a3d081d5f38996e0fe1fc8aad2f1d60603d"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/mt-fxcopy.js",
-                      "sha256":  "b2a8603918512137373090b35245a8eb310a96a01756adaafa66bc38a7a474fc"
+                      "sha256":  "d79fd9497164d5c811b46b08bca3729aeba92caa86002b6000903e45d67d3a26"
                   },
                   {
                       "path":  "js/mt-gif.js",
@@ -732,7 +732,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "28a5e84c5efe2a698b40103189d7608568fc65483b1c70226141ac3057112351"
+                      "sha256":  "e51031e7c031b655e9f5b2180fc2958aeebd3b0cb026ca2a2288387acc6b75cb"
                   }
               ]
 }

@@ -2283,3 +2283,7 @@ fix (Copy Effects: Paste did nothing, effect checklist):
   Curves cannot be rebuilt by script, so it still uses After Effects' Copy / Paste (needs its source comp open); if After Effects ignores that Paste the message says so. Levels and every other effect go through the script path.
   New: under "Paste mode" the Easy Layer section lists the copied effects with checkboxes (all ticked after a copy). Only ticked effects are pasted, also from the chip's Paste button and the tray. Replace all removes the old effects first and pastes only the ticked ones.
   Files: jsx/host.jsx (FX_paste, _fxCopyProps), js/mt-fxcopy.js, css/mt-fxcopy.css, html/index.html (?v=2). Checklist and the call arguments were tested in a headless browser with the host stubbed; the ExtendScript was only syntax-checked: not run inside After Effects.
+
+fix (Copy Effects box in the Animation Presets tab):
+  What: the "Copy Effects" box now also sits at the top of the Animation Presets tab (collapsed until opened). It is the same box as in Easy Layer and shares the same saved effects, paste mode and checklist, so copy in one tab and paste in the other. Every box has a header with a chevron to fold it; the open / closed state is remembered per tab (localStorage mtx.fxBox.<tab>). Easy Layer starts open, Animation Presets starts closed.
+  Files: js/mt-fxcopy.js (header, fold), css/mt-fxcopy.css, js/main.js (showTab inserts the box on "presets"; ?v=51), html/index.html (?v=3). Fold / unfold tested in a headless browser; not run inside After Effects.

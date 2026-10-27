@@ -46,7 +46,14 @@ html[data-reduce-motion="true"] .mt-fxchip, html[data-reduce-motion="true"] .mt-
 
 /* ---------- Easy Layer: Copy Effects section ---------- */
 .el-fx { display: flex; flex-direction: column; margin-top: var(--space-3); padding: var(--space-3); border-radius: var(--radius-s, 10px); background: var(--surface); box-shadow: var(--shadow-card); }
-.el-fx-title { margin-bottom: var(--space-2); font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.el-fx-head { display: flex; align-items: center; width: 100%; padding: 0; border: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
+.el-fx-title { flex: 1 1 auto; font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.el-fx-chev { flex: 0 0 auto; color: var(--text-dim); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+.el-fx.is-collapsed .el-fx-chev { transform: rotate(-90deg); }
+.el-fx-body { display: flex; flex-direction: column; margin-top: var(--space-2); }
+.el-fx.is-collapsed .el-fx-body { display: none; }
+.el-fx-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+html[data-reduce-motion="true"] .el-fx-chev { transition: none; }
 .el-fx .flip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-items: stretch; }
 .el-fx .flip-btn { max-width: none; width: 100%; background: var(--surface-hover); }
 .el-fx-mode { display: flex; align-items: center; margin-top: var(--space-2); }

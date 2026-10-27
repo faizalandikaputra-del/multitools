@@ -2287,3 +2287,7 @@ fix (Copy Effects: Paste did nothing, effect checklist):
 fix (Copy Effects box in the Animation Presets tab):
   What: the "Copy Effects" box now also sits at the top of the Animation Presets tab (collapsed until opened). It is the same box as in Easy Layer and shares the same saved effects, paste mode and checklist, so copy in one tab and paste in the other. Every box has a header with a chevron to fold it; the open / closed state is remembered per tab (localStorage mtx.fxBox.<tab>). Easy Layer starts open, Animation Presets starts closed.
   Files: js/mt-fxcopy.js (header, fold), css/mt-fxcopy.css, js/main.js (showTab inserts the box on "presets"; ?v=51), html/index.html (?v=3). Fold / unfold tested in a headless browser; not run inside After Effects.
+
+fix (Copy Effects box did not animate when entering a tab):
+  What: the box was missing from the list of cards that get the tab entrance animation, so everything else animated in and the Copy Effects box just appeared. It is now in that list (MT_STAGGER_SEL in js/main.js, class .el-fx), so it follows the same Tab animation setting (Smooth / Glide / Pop / Fade / Cascade, speed, easing) in both Easy Layer and Animation Presets. The leave animation already covered the whole panel.
+  Files: js/main.js (?v=52), html/index.html. The animation hook was checked in a headless browser; not run inside After Effects.

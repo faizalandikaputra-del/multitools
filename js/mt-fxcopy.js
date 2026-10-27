@@ -8,6 +8,8 @@
    "detection" is a light poll (host.jsx FX_peek, ~0.7 s, only while the panel is visible). Copy / Paste themselves use
    After Effects' own Copy / Paste commands (host.jsx FX_copy / FX_paste), so Curves, Levels, keyframes and
    expressions travel intact. The stash keeps only a small record per entry (localStorage mtx.fxStash, max 8).
+   READY state: with nothing but layers selected and something saved, the chip stays as "Paste <effects>" (x hides it until the next copy
+   or until the layer selection is cleared), so one chip does the whole job: select effects > Save, select layers > Paste.
    Off switch: localStorage mtx.fxChip = "0" (chip + polling stop; the Easy Layer section keeps working). */
 (function () {
   "use strict";
@@ -54,6 +56,7 @@
     stash = stash.filter(function (x) { return sigOf(x) !== s; });
     stash.unshift(e);
     if (stash.length > MAX) { stash.length = MAX; }
+    readyOff = false;
     saveStash(); notify();
   }
   function notify() {
@@ -83,7 +86,7 @@
 
   /* ---------- chip ---------- */
   var chip, txtEl, btnEl, icoEl, tray, trayList, trayOpen = false;
-  var state = "off", peek = null, curSig = "", dismissedSig = "", savedSig = "";
+  var state = "off", peek = null, curSig = "", dismissedSig = "", savedSig = "", readyOff = false, closeEl;
   var inflight = false, fails = 0, pollT = 0, timer = 0;
   var CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -93,7 +96,9 @@
     icoEl = el("button", "fxc-ico", "fx"); icoEl.type = "button"; icoEl.setAttribute("aria-label", "Saved effects"); icoEl.setAttribute("aria-expanded", "false");
     txtEl = el("span", "fxc-txt"); txtEl.setAttribute("aria-live", "polite");
     btnEl = el("button", "fxc-btn", "Save"); btnEl.type = "button";
-    chip.appendChild(icoEl); chip.appendChild(txtEl); chip.appendChild(btnEl);
+    closeEl = el("button", "fxc-x", '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>');
+    closeEl.type = "button"; closeEl.setAttribute("aria-label", "Hide"); closeEl.hidden = true;
+    chip.appendChild(icoEl); chip.appendChild(txtEl); chip.appendChild(btnEl); chip.appendChild(closeEl);
     tray = el("div", "mt-fxtray"); tray.setAttribute("aria-label", "Saved effects");
     trayList = el("div", "fxt-list"); tray.appendChild(el("div", "fxt-head", "Saved effects")); tray.appendChild(trayList);
     var clr = el("button", "fxt-clear", "Clear all"); clr.type = "button";
@@ -101,13 +106,19 @@
     tray.appendChild(clr);
     document.body.appendChild(chip); document.body.appendChild(tray);
 
-    btnEl.addEventListener("click", function () { if (state === "sel") { doSave(); } else if (state === "saved") { doPaste(0); } });
+    btnEl.addEventListener("click", function () { if (state === "sel") { doSave(); } else if (state === "saved" || state === "ready") { doPaste(0); } });
+    closeEl.addEventListener("click", function () { readyOff = true; setState("off"); });
     icoEl.addEventListener("click", function () { setTray(!trayOpen); });
     document.addEventListener("pointerdown", function (e) {
       if (trayOpen && !tray.contains(e.target) && !icoEl.contains(e.target)) { setTray(false); }
     }, true);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && trayOpen) { setTray(false); return; }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "v" || e.key === "V") && (state === "ready" || state === "saved")) {
+        var tv = e.target, tagv = tv && tv.tagName;
+        if (tagv === "INPUT" || tagv === "TEXTAREA" || (tv && tv.isContentEditable)) { return; }
+        doPaste(0); return;
+      }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "c" || e.key === "C") && state === "sel") {
         var t = e.target, tag = t && t.tagName;
         var sel = window.getSelection ? String(window.getSelection()) : "";
@@ -135,8 +146,12 @@
     if (s !== "off") { place(); }
     chip.classList.toggle("is-on", s !== "off");
     chip.setAttribute("data-state", s);
+    closeEl.hidden = (s !== "ready");
     if (s === "off") { setTray(false); return; }
-    if (s === "sel") {
+    if (s === "ready") {
+      txtEl.textContent = stash[0] ? labelOf(stash[0]) : "";
+      btnEl.textContent = "Paste"; btnEl.hidden = false; btnEl.disabled = false;
+    } else if (s === "sel") {
       txtEl.textContent = peek && peek.names ? peek.names.join(", ") : "";
       btnEl.textContent = "Save"; btnEl.hidden = false; btnEl.disabled = false;
     } else if (s === "saved") {
@@ -197,9 +212,19 @@
   function onPeek(d) {
     peek = d;
     var sig = d && d.count > 0 ? (d.layer + "|" + d.names.join("\u0001")) : "";
+    var layers = d ? (d.layers || 0) : 0;
     if (sig !== curSig) { curSig = sig; if (sig !== dismissedSig) { dismissedSig = ""; } }
-    if (!sig) { dismissedSig = ""; if (state === "sel") { setState("off"); } return; }
-    if (state === "off") { if (sig !== dismissedSig) { setState("sel"); } }
+    if (!layers && !sig) { readyOff = false; }                                   // nothing selected: the x is forgotten
+    if (!sig) {
+      dismissedSig = "";
+      if (state === "sel") { setState("off"); }
+      var ready = layers > 0 && stash.length > 0 && !readyOff;
+      if (ready && state === "off") { setState("ready"); }
+      else if (ready && state === "ready") { txtEl.textContent = labelOf(stash[0]); }
+      else if (!ready && state === "ready") { setState("off"); }
+      return;
+    }
+    if (state === "off" || state === "ready") { if (sig !== dismissedSig) { setState("sel"); } else if (state === "ready") { setState("off"); } }
     else if (state === "saved") { if (sig !== savedSig) { setState("sel"); } }
     else if (state === "sel") { txtEl.textContent = d.names.join(", "); }
   }

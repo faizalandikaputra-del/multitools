@@ -30,7 +30,6 @@
 .fxc-btn:hover { transform: scale(1.05); }
 .fxc-btn:active { transform: scale(0.94); }
 .fxc-btn:disabled { opacity: 0.5; pointer-events: none; }
-.fxc-ico:focus-visible, .fxc-btn:focus-visible, .fxt-clear:focus-visible { outline: 2px solid var(--fx-accent); outline-offset: 2px; }
 
 .mt-fxtray { width: 268px; max-width: calc(100vw - 1rem); border-radius: 22px; padding: 12px; }
 .fxt-head { margin: 0 4px 8px; font-size: 12px; font-weight: 600; color: #9a9aa8; }
@@ -52,7 +51,6 @@ html[data-reduce-motion="true"] .mt-fxchip, html[data-reduce-motion="true"] .mt-
 .el-fx.is-collapsed .el-fx-chev { transform: rotate(-90deg); }
 .el-fx-body { display: flex; flex-direction: column; margin-top: var(--space-2); }
 .el-fx.is-collapsed .el-fx-body { display: none; }
-.el-fx-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 html[data-reduce-motion="true"] .el-fx-chev { transition: none; }
 .el-fx .flip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-items: stretch; }
 .el-fx .flip-btn { max-width: none; width: 100%; background: var(--surface-hover); }
@@ -60,7 +58,7 @@ html[data-reduce-motion="true"] .el-fx-chev { transition: none; }
 .el-fx-mlabel { flex: 1 1 auto; font-size: 0.7rem; color: var(--text-dim); }
 .el-fx-seg { display: flex; padding: 2px; border-radius: 9px; background: var(--surface-sunken); }
 .el-fx-seg button { height: 24px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text-dim); font-size: 0.68rem; font-weight: 500; cursor: pointer; transition: background 0.15s linear, color 0.15s linear; }
-.el-fx-seg button.is-on { background: var(--surface-hover); color: var(--text); font-weight: 700; box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.5); }
+.el-fx-seg button.is-on { background: rgba(var(--accent-rgb), 0.22); color: var(--text); font-weight: 700; }
 .el-fx-from { margin: var(--space-2) 0 var(--space-1); font-size: 0.65rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .el-fx-list { display: flex; flex-direction: column; }
 .el-fx-row { position: relative; display: flex; align-items: center; min-height: 26px; padding: 2px 4px; border-radius: 7px; cursor: pointer; }
@@ -69,5 +67,14 @@ html[data-reduce-motion="true"] .el-fx-chev { transition: none; }
 .el-fx-box { flex: 0 0 auto; position: relative; width: 15px; height: 15px; margin-right: 9px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--text-dim); transition: background 0.12s linear, box-shadow 0.12s linear; }
 .el-fx-row input:checked + .el-fx-box { background: var(--accent); box-shadow: none; }
 .el-fx-row input:checked + .el-fx-box::after { content: ""; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid var(--on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.el-fx-row input:focus-visible + .el-fx-box { outline: 2px solid var(--accent); outline-offset: 2px; }
 .el-fx-name { font-size: 0.72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Close button of the chip (READY state) */
+.fxc-x { flex: 0 0 auto; width: 24px; height: 24px; margin-left: 4px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: #9a9aa8; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s linear, color 0.15s linear; }
+.fxc-x:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+
+/* No outline / ring of any kind around the Copy Effects buttons (focus ring, hover ring, selected ring): the pressed look is the lift + fill only. */
+.el-fx button, .el-fx input, .el-fx label, .mt-fxchip button, .mt-fxtray button { outline: none !important; -webkit-tap-highlight-color: transparent; }
+.el-fx button:focus, .el-fx button:focus-visible, .el-fx input:focus + .el-fx-box, .el-fx input:focus-visible + .el-fx-box { outline: none !important; }
+.el-fx .flip-btn, .el-fx .flip-btn:hover, .el-fx .flip-btn:focus, .el-fx .flip-btn:active { box-shadow: none !important; }
+.el-fx .flip-btn:hover { background: var(--surface-hover); filter: brightness(1.12); }

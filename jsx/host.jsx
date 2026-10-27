@@ -9463,12 +9463,13 @@ function _fxSelected(comp) {
 function FX_peek() {
   try {
     var comp = app.project.activeItem;
-    if (!(comp && comp instanceof CompItem)) { return _ok("", { count: 0 }); }
-    var found = _fxSelected(comp), names = [], i;
+    if (!(comp && comp instanceof CompItem)) { return _ok("", { count: 0, layers: 0 }); }
+    var found = _fxSelected(comp), names = [], i, sl = comp.selectedLayers, layers = 0;
     for (i = 0; i < found.effects.length; i++) { names.push(found.effects[i].name); }
-    return _ok("", { count: names.length, names: names, layer: found.layer ? found.layer.name : "" });
+    for (i = 0; i < sl.length; i++) { if (sl[i] instanceof AVLayer && !sl[i].locked) { layers++; } }
+    return _ok("", { count: names.length, names: names, layer: found.layer ? found.layer.name : "", layers: layers });
   } catch (e) {
-    return _ok("", { count: 0 });
+    return _ok("", { count: 0, layers: 0 });
   }
 }
 
@@ -9557,7 +9558,8 @@ function _fxResolveEffects(layer, entry) {
 
 var FX_NATIVE_ONLY = { "ADBE CurvesCustom": true };
 
-function _fxCopyProps(src, dst) {
+// off = seconds added to every keyframe time, so pasted keyframes start at the playhead (like AE's own paste).
+function _fxCopyProps(src, dst, off) {
   var i, k, s, d, n = src.numProperties;
   for (i = 1; i <= n; i++) {
     s = src.property(i);
@@ -9565,10 +9567,10 @@ function _fxCopyProps(src, dst) {
     try { d = dst.property(i); } catch (e0) { d = null; }
     if (!d) { continue; }
     try {
-      if (s.propertyType === PropertyType.INDEXED_GROUP || s.propertyType === PropertyType.NAMED_GROUP) { _fxCopyProps(s, d); continue; }
+      if (s.propertyType === PropertyType.INDEXED_GROUP || s.propertyType === PropertyType.NAMED_GROUP) { _fxCopyProps(s, d, off); continue; }
       if (s.propertyValueType === PropertyValueType.NO_VALUE || s.propertyValueType === PropertyValueType.CUSTOM_VALUE) { continue; }
       if (s.numKeys > 0) {
-        for (k = 1; k <= s.numKeys; k++) { d.setValueAtTime(s.keyTime(k), s.keyValue(k)); }
+        for (k = 1; k <= s.numKeys; k++) { d.setValueAtTime(s.keyTime(k) + off, s.keyValue(k)); }
         for (k = 1; k <= s.numKeys; k++) {
           try { d.setInterpolationTypeAtKey(k, s.keyInInterpolationType(k), s.keyOutInterpolationType(k)); } catch (e1) {}
           try { d.setTemporalEaseAtKey(k, s.keyInTemporalEase(k), s.keyOutTemporalEase(k)); } catch (e2) {}
@@ -9579,6 +9581,20 @@ function _fxCopyProps(src, dst) {
       if (s.expressionEnabled) { d.expression = s.expression; }
     } catch (e3) {}
   }
+}
+
+function _fxMinKey(g) {
+  var i, p, t, m = null, n = g.numProperties;
+  for (i = 1; i <= n; i++) {
+    p = g.property(i);
+    try {
+      if (p.propertyType === PropertyType.INDEXED_GROUP || p.propertyType === PropertyType.NAMED_GROUP) { t = _fxMinKey(p); }
+      else if (p.numKeys > 0) { t = p.keyTime(1); }
+      else { t = null; }
+    } catch (e0) { t = null; }
+    if (t !== null && (m === null || t < m)) { m = t; }
+  }
+  return m;
 }
 
 function FX_paste(entry, mode, newest, pick) {
@@ -9606,16 +9622,24 @@ function FX_paste(entry, mode, newest, pick) {
     srcEffs = _fxResolveEffects(srcLayer, entry);
     if (!srcEffs) { throw new Error("The source effects changed. Copy them again."); }
 
-    var sameComp = (srcComp.id === comp.id), cloneIdx = [], nativeIdx = [], keepSet = {}, notes = [], added = 0, nativeTargets = [];
+    var sameComp = (srcComp.id === comp.id), cloneIdx = [], nativeIdx = [], keepSet = {}, notes = [], added = 0, nativeTargets = [], minKey = null, mk;
     for (j = 0; j < picked.length; j++) {
       keepSet[srcEffs[picked[j]].propertyIndex] = true;
       if (FX_NATIVE_ONLY[entry.fx[picked[j]].m]) { nativeIdx.push(picked[j]); } else { cloneIdx.push(picked[j]); }
+    }
+
+    for (j = 0; j < cloneIdx.length; j++) {
+      mk = _fxMinKey(srcEffs[cloneIdx[j]]);
+      if (mk !== null && (minKey === null || mk < minKey)) { minKey = mk; }
     }
 
     app.beginUndoGroup("Copy Effects");
     undoOpen = true;
     for (i = 0; i < targets.length; i++) {
       tgt = targets[i];
+      var lt = comp.time - tgt.startTime;                         // playhead in this layer's own time
+      if (tgt.stretch && tgt.stretch > 0) { lt = lt * 100 / tgt.stretch; }
+      var off = (minKey === null) ? 0 : lt - minKey;              // first keyframe lands on the playhead
       fx = tgt.property("ADBE Effect Parade");
       if (!fx) { continue; }
       var isSrc = sameComp && tgt.index === srcLayer.index;
@@ -9633,7 +9657,7 @@ function FX_paste(entry, mode, newest, pick) {
           ne = fx.addProperty(se.matchName);
           try { ne.name = se.name; } catch (e2) {}
           try { ne.enabled = se.enabled; } catch (e3) {}
-          _fxCopyProps(se, ne);
+          _fxCopyProps(se, ne, off);
           added++;
         } catch (e4) {
           notes.push("\"" + se.name + "\" could not be rebuilt.");
@@ -9667,7 +9691,7 @@ function FX_paste(entry, mode, newest, pick) {
     _unpreClearSelection(comp);
     for (i = 0; i < targets.length; i++) { targets[i].selected = true; }
     if (added === 0) { throw new Error("Nothing was pasted. " + notes.join(" ")); }
-    return _ok("Pasted " + added + " effect" + (added === 1 ? "" : "s") + (targets.length > 1 ? " (" + targets.length + " layers)" : "") + "." + (notes.length ? " " + notes.join(" ") : ""));
+    return _ok("Pasted " + added + " effect" + (added === 1 ? "" : "s") + (targets.length > 1 ? " (" + targets.length + " layers)" : "") + "." + (minKey !== null ? " Keyframes start at the playhead." : "") + (notes.length ? " " + notes.join(" ") : ""));
   } catch (e) {
     if (undoOpen) { app.endUndoGroup(); }
     return _err(e);

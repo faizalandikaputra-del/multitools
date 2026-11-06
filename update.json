@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.120",
-    "changelog":  "- Update 1.8.120",
+    "latest_version":  "1.8.121",
+    "changelog":  "- Update 1.8.121",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -24,7 +24,7 @@
                   },
                   {
                       "path":  "css/material-theme.css",
-                      "sha256":  "7753f6b6485beb200131d13e59e3ef56da592c088ab1354c41e870c3d175ecb3"
+                      "sha256":  "8b7c322e89907e065c3faf604763f924fca889596934d9a1de3159d299e34fbe"
                   },
                   {
                       "path":  "css/mt-ae-icons.css",
@@ -64,7 +64,7 @@
                   },
                   {
                       "path":  "css/mt-fxcopy.css",
-                      "sha256":  "463169f4b55a78790f75a8e8bed0dea6988d9a47979c15cfe1c0a9f88c6bf253"
+                      "sha256":  "59f72e721704d3f44a3950e272466e480cbfb8466a6691871844b4b56d3a30bb"
                   },
                   {
                       "path":  "css/mt-gif-export.css",
@@ -104,7 +104,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "389c0cc390ee78ac10fc719280cb0318f63dec9d4ae10c39ba126fe526ac830c"
+                      "sha256":  "73a066ac5a5b3e90e2077521f86be9bfc6c5707ca0db79770b4f2f023bd05177"
                   },
                   {
                       "path":  "css/mt-island-boxes.css",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "512a768e38ff35fd4dfe66603d80817a92b94ab8a7670f3954287801d9e9c412"
+                      "sha256":  "e588ccaceeb33fa43cd30f0d82b858b29b7baacfd40d2cdd26d75587592155fb"
                   },
                   {
                       "path":  "html/settings.html",
@@ -264,7 +264,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "a505d617410f92574b9fb5bc6f6f1c8c970fef0c8b39860762bc09768cc69362"
+                      "sha256":  "a75b0c285b393f1752c2d485e6b7846a6fdef5daa08f087426ff2fe7a35ee9fa"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/mt-fxcopy.js",
-                      "sha256":  "114bb6c6ff075ac99a3dd19d2fe94952a10827701ba13735e38e8f4587638585"
+                      "sha256":  "2fb83e2e64ffbbcbde3fcae460e3507ee5070187d0c36c2cf9d1184fb6e5fa99"
                   },
                   {
                       "path":  "js/mt-gif.js",
@@ -320,7 +320,7 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "59e850a71e2fac8e2d8a0af86c81143207f97d8be0c718827976f5efcbd52b79"
+                      "sha256":  "fd68800a6d71aea7a74f752307117b91ecd8ad43150157a3755dafb1a853a5d7"
                   },
                   {
                       "path":  "js/mt-island-boxes.js",
@@ -732,7 +732,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "8c33048f45410b07326c0daef43304c1b5ffc4c018aeea809511b59f99c0f95f"
+                      "sha256":  "f08bedf4680b997b0143a720811aece52b6d65fb50b7befbfdebca6351212b0b"
                   }
               ]
 }

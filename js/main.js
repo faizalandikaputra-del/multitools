@@ -1750,22 +1750,36 @@
       var canvas = root.querySelector(".cw-wheel"), ctx = canvas.getContext("2d");
       var hexEl = root.querySelector(".cw-hex"), rgbEl = root.querySelector(".cw-rgb");
       var raf = 0, dragging = false, dragBox = null, mode = "", lastHex = "";
-      // Material You face morph: 0 = Dot orbit (still), 1 = Cookie bloom (while the colour is being changed). Eases both ways;
-      // a change (drag, HEX, arrows, swatch click) keeps the bloom alive for HOLD_MS, a release for RELEASE_MS.
-      var morph = 0, morphT = 0, activeUntil = 0, holdT = 0, HOLD_MS = 650, RELEASE_MS = 450;
+      // Material You face morph: 0 = Dot orbit (still), 1 = Cookie bloom (while the colour is being changed). Both directions are
+      // time-based tweens (no jumps): the bloom opens fast and relaxes slowly; the picked-point ring "lifts" while you drag and
+      // settles back with a small spring when you let go. A change (drag, HEX, arrows, swatch click) keeps the bloom alive for
+      // HOLD_MS, a release for RELEASE_MS.
+      var morphO = { v: 0, from: 0, to: 0, t0: 0, dur: 1 }, liftO = { v: 0, from: 0, to: 0, t0: 0, dur: 1 };
+      var activeUntil = 0, holdT = 0, HOLD_MS = 650, RELEASE_MS = 300;
       function bump(ms) { var u = Date.now() + (ms || HOLD_MS); if (u > activeUntil) { activeUntil = u; } }
       function reduceMotion() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
+      function easeOutCubic(k) { return 1 - Math.pow(1 - k, 3); }
+      function easeInOutCubic(k) { return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }
+      function easeOutBack(k) { var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); }
+      function aim(o, to, dur, now) { if (o.to !== to) { o.from = o.v; o.to = to; o.t0 = now; o.dur = dur; } }
+      function run(o, now, fn) {
+        if (o.v === o.to) { return; }
+        var k = (now - o.t0) / o.dur;
+        if (k >= 1) { o.v = o.to; return; }
+        o.v = o.from + (o.to - o.from) * fn(k < 0 ? 0 : k);
+      }
       function stepMorph() {
-        var now = Date.now(), target = (dragging || now < activeUntil) ? 1 : 0, dt = morphT ? Math.min(64, now - morphT) : 16;
-        morphT = now;
-        if (reduceMotion()) { morph = target; }
+        var now = Date.now(), active = (dragging || now < activeUntil);
+        aim(morphO, active ? 1 : 0, active ? 240 : 460, now);
+        aim(liftO, dragging ? 1 : 0, dragging ? 160 : 420, now);
+        if (reduceMotion()) { morphO.v = morphO.to; liftO.v = liftO.to; }
         else {
-          morph += (target - morph) * (1 - Math.exp(-dt / 70));
-          if (Math.abs(target - morph) < 0.004) { morph = target; }
+          run(morphO, now, morphO.to === 1 ? easeOutCubic : easeInOutCubic);
+          run(liftO, now, liftO.to === 1 ? easeOutCubic : easeOutBack);
         }
         if (holdT) { clearTimeout(holdT); holdT = 0; }
-        if (morph !== target) { schedule(); }
-        else if (target === 1 && !dragging) { holdT = setTimeout(function () { holdT = 0; schedule(); }, Math.max(20, activeUntil - now + 20)); }
+        if (morphO.v !== morphO.to || liftO.v !== liftO.to) { schedule(); }
+        else if (active && !dragging) { holdT = setTimeout(function () { holdT = 0; schedule(); }, Math.max(20, activeUntil - now + 20)); }
       }
       var sinA1 = Math.sin(A1 * Math.PI / 180);
 
@@ -1845,7 +1859,8 @@
         c.closePath();
       }
       function drawMaterial(c, hex, full, kx, ky, ka, mx, my) {
-        var col = matColors(), t = RD / (MAT_RINGS + 1), k, j, n, rm, rr, hc, ang, m = morph, ease = m * m * (3 - 2 * m);
+        var col = matColors(), t = RD / (MAT_RINGS + 1), k, j, n, rm, rr, hc, ang, ease = morphO.v < 0 ? 0 : (morphO.v > 1 ? 1 : morphO.v);
+        var lift = liftO.v < -0.4 ? -0.4 : (liftO.v > 1.3 ? 1.3 : liftO.v), ms = 1 + 0.18 * lift;   // picked-point ring: lifted while dragging
         // brightness track: thick tonal pill, gradient fill, tall primary handle haloed in the card colour
         c.lineCap = "round";
         c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 24 * K; c.strokeStyle = col.track; c.stroke();
@@ -1859,7 +1874,7 @@
         c.restore();
         // Dot orbit (still): neutral centre + 6 rings of round dots, dots swell and fade as the bloom takes over
         if (ease < 0.999) {
-          c.save(); c.globalAlpha = 1 - ease;
+          c.save();   // stays fully opaque under the fading cookie, so the cross-fade never dips
           c.beginPath(); c.arc(C, C, t * 0.46 * (1 + 0.4 * ease), 0, Math.PI * 2); c.fillStyle = rgbToHex(hsvToRgb(st.h, 0, st.v)); c.fill();
           for (k = 1; k <= MAT_RINGS; k++) {
             n = 6 * k; rm = (k + 0.5) * t; rr = t * (0.30 + 0.16 * k / MAT_RINGS) * (1 + 0.4 * ease);
@@ -1884,10 +1899,10 @@
           c.restore();
         }
         // picked point: card halo, primary ring, light ring, coloured core
-        c.beginPath(); c.arc(mx, my, 17 * K, 0, Math.PI * 2); c.fillStyle = col.card; c.fill();
-        c.beginPath(); c.arc(mx, my, 14.5 * K, 0, Math.PI * 2); c.fillStyle = col.handle; c.fill();
-        c.beginPath(); c.arc(mx, my, 12 * K, 0, Math.PI * 2); c.fillStyle = col.ring; c.fill();
-        c.beginPath(); c.arc(mx, my, 8.5 * K, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
+        c.beginPath(); c.arc(mx, my, 17 * K * ms, 0, Math.PI * 2); c.fillStyle = col.card; c.fill();
+        c.beginPath(); c.arc(mx, my, 14.5 * K * ms, 0, Math.PI * 2); c.fillStyle = col.handle; c.fill();
+        c.beginPath(); c.arc(mx, my, 12 * K * ms, 0, Math.PI * 2); c.fillStyle = col.ring; c.fill();
+        c.beginPath(); c.arc(mx, my, 8.5 * K * ms, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
       }
       try {   // repaint when the style / palette changes (colours are cached per theme)
         var mo = new MutationObserver(function () { mc = null; if (root.isConnected) { schedule(); } else { mo.disconnect(); } });

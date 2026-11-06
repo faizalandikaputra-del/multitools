@@ -1,5 +1,8 @@
-/* Multi Tool - mt-island.js (v18: PIN TILES BACK)
-   v18: tool tiles can be dragged onto the island again (they were lost in v16). The "Pin" view = pinned tool tiles (click = run the tool, x = unpin, Unpin all)
+/* Multi Tool - mt-island.js (v19: EFFECTS TAB)
+   v19: Copy Effects lives here now (js/mt-fxcopy.js drives it; the wide chip under the island is gone). A 7 px violet dot sits in the collapsed capsule while effects are
+   selected / saved effects wait for a Paste (the capsule never changes size). A click on the island opens it straight on the new "Effects" tab (the tab is part of the switch cycle only
+   while the dot shows). That tab auto-closes 420 ms after the pointer leaves. API for mt-fxcopy.js: MTIsland.fxHost() (the tab's container), fxDot(on), fxChanged() (re-measure), fxClose().
+   v18: PIN TILES BACK   v18: tool tiles can be dragged onto the island again (they were lost in v16). The "Pin" view = pinned tool tiles (click = run the tool, x = unpin, Unpin all)
    + boxes. No star on tiles, no favorites bar, no Settings group (those stay removed). Motion: tiles stagger in, a new pin pops, an unpinned tile shrinks out.
    v17: bug - the collapsed   v17: bug - the collapsed capsule showed the clock time ALL the time (class .is-k forced the time wrapper open, css/mt-island.css + collapsedSize()). Now the time of day opens
    only while the pointer is on the island, like the timer / stopwatch: pointer away = the small dial icon only.
@@ -36,7 +39,7 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
+  var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
   // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
@@ -80,9 +83,10 @@
       '<span class="mi-swrow"><span class="mi-tico mi-tico-s"></span><span class="mi-tname">Stopwatch</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-k"></span><span class="mi-tname">Clock</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-f"></span><span class="mi-tname">Pin</span><i class="mi-live"></i></span>' +
+      '<span class="mi-swrow mi-swrow-x"><span class="mi-tico mi-tico-x"></span><span class="mi-tname">Effects</span><i class="mi-live"></i></span>' +
       '<span class="mi-swrow"><span class="mi-tico mi-tico-u"></span><span class="mi-tname">Update</span><i class="mi-live"></i></span>' +
-      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock, pin and update");
-    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabK = rows[2]; tabF = rows[3]; tabU = rows[4];
+      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock, pin, effects and update");
+    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabK = rows[2]; tabF = rows[3]; tabX = rows[4]; tabU = rows[5];
     var views = el("div", "mi-views");
 
     // timer view: setter + running state
@@ -164,6 +168,8 @@
     vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
     try { if (window.ResizeObserver) { var rq = 0; boxRO = new ResizeObserver(function () { if (!rq) { rq = requestAnimationFrame(function () { rq = 0; if (open && view === "fav") { applySize(true); } }); } }); boxRO.observe(fBoxes); } } catch (eR) { }
 
+    vX = el("div", "mi-view mi-view-x");                       // Copy Effects (filled by js/mt-fxcopy.js through MTIsland.fxHost())
+
     vU = el("div", "mi-view mi-view-u");
     banner = $("mt-update");
     if (banner) {                                              // js/mt-updater.js keeps working: same element, same ids, same classes - it just lives in the island now
@@ -179,10 +185,11 @@
           .observe(banner, { attributes: true, attributeFilter: ["class"], subtree: true, childList: true, characterData: true });
       } catch (e) { }
     }
-    views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vU);
+    views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vX); views.appendChild(vU);
     xEl.appendChild(sw); xEl.appendChild(views);
 
-    root.appendChild(cEl); root.appendChild(xEl); body().appendChild(root);
+    fxDotEl = el("i", "mi-fxdot"); fxDotEl.setAttribute("aria-hidden", "true");
+    root.appendChild(cEl); root.appendChild(xEl); root.appendChild(fxDotEl); body().appendChild(root);
 
     sw.addEventListener("click", function () { var c = cycle(), i = c.indexOf(view); pick(c[(i + 1) % c.length]); });
     root.addEventListener("click", function (e) { if (!open) { setOpen(true); } e.stopPropagation(); });
@@ -241,7 +248,7 @@
     }
     return "clock";
   }
-  function cycle() { return upd ? ["timer", "sw", "clock", "fav", "u"] : ["timer", "sw", "clock", "fav"]; }
+  function cycle() { var c = ["timer", "sw", "clock", "fav"]; if (fxOn || view === "fx") { c.push("fx"); } if (upd) { c.push("u"); } return c; }
   // The Start / Update Now buttons are painted with the theme accent, their label with --theme-on-accent. Some themes (Material You, custom colours)
   // give an accent and an on-accent that are both light (or both dark), so the label melted into the button. Read the colour the button is REALLY painted with
   // and pick a dark or white label from its luminance.
@@ -273,7 +280,7 @@
   function pick(k) {
     if (view === k) { return; }
     var c = cycle();
-    if (k !== "u") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
+    if (k !== "u" && k !== "fx") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
     root.setAttribute("data-dir", (c.indexOf(k) > c.indexOf(view) || view === "u" || c.indexOf(view) < 0) ? "next" : "prev");
     rollReset(k === "timer" ? tBig : (k === "clock" ? kBig : sBig));   // (fav has no digits)
     if (k === "clock") { rollReset(kSec); }
@@ -296,7 +303,7 @@
   var sizeKey = "";
   function applySize(force) {
     if (!root) { return; }
-    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN : "") + "|" + (tSet.hidden ? 1 : 0) + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : ""))
+    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN : "") + "|" + (tSet.hidden ? 1 : 0) + (view === "fx" ? "|" + fxRev : "") + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : ""))
                    : ("c|" + (cEl.className) + "|" + cTime.textContent.length + "|" + cUtx.textContent.length);
     if (!force && key === sizeKey) { return; }                  // no layout read when nothing changed (the 1 s tick)
     sizeKey = key;
@@ -309,13 +316,17 @@
     hover = h; if (!cEl) { return; }
     cEl.classList.toggle("is-hov", h);
     if (!open) { applySize(); }
+    if (fxT) { clearTimeout(fxT); fxT = 0; }
+    if (!h && open && view === "fx") {                         // the Effects tab closes itself when the pointer leaves (to pick a layer in the timeline)
+      fxT = setTimeout(function () { fxT = 0; if (open && view === "fx" && !hover) { setOpen(false); } }, 420);
+    }
   }
   function setOpen(o) {
     if (o === open) { return; }
     build(); open = o;
     root.classList.toggle("is-open", o); root.setAttribute("aria-expanded", o ? "true" : "false");
     rollReset(tBig); rollReset(sBig); rollReset(cTime); rollReset(kBig); rollReset(kSec);          // the node that comes into view draws plain once (no roll through old digits)
-    if (o) { view = upd ? "u" : ((activeOf("timer") || activeOf("sw")) ? effective() : sel); if (view !== "u") { sel = view; } root.setAttribute("data-dir", "next"); }
+    if (o) { view = upd ? "u" : (fxOn ? "fx" : ((activeOf("timer") || activeOf("sw")) ? effective() : sel)); if (view !== "u" && view !== "fx") { sel = view; } root.setAttribute("data-dir", "next"); }
     fixOn(); paint(false);
     if (!o) {
       try { if (root.contains(document.activeElement)) { document.activeElement.blur(); } } catch (e) { }
@@ -443,10 +454,10 @@
     } else {
       // expanded: switch (one button, the rows slide)
       tabT.classList.toggle("is-live", !!(t && t.active)); tabS.classList.toggle("is-live", !!(s && s.active));
-      tabU.classList.toggle("is-live", upd); tabU.style.display = upd ? "" : "none";
+      tabX.classList.toggle("is-live", fxOn); tabU.classList.toggle("is-live", upd); tabU.style.display = upd ? "" : "none";
       sw.setAttribute("data-on", view);
-      vT.hidden = view !== "timer"; vS.hidden = view !== "sw"; vK.hidden = view !== "clock"; vF.hidden = view !== "fav"; vU.hidden = view !== "u";
-      if (viewChanged) { var v = view === "timer" ? vT : (view === "sw" ? vS : (view === "clock" ? vK : (view === "fav" ? vF : vU))); v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
+      vT.hidden = view !== "timer"; vS.hidden = view !== "sw"; vK.hidden = view !== "clock"; vF.hidden = view !== "fav"; vX.hidden = view !== "fx"; vU.hidden = view !== "u";
+      if (viewChanged) { var v = view === "timer" ? vT : (view === "sw" ? vS : (view === "clock" ? vK : (view === "fav" ? vF : (view === "fx" ? vX : vU)))); v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
 
       if (view === "timer" && t) {
         var run = !!t.active;
@@ -557,7 +568,15 @@
     fBoxWrap.hidden = !boxN; fKey = "\u0001";
     if (open && view === "fav") { paint(false); } else if (open) { applySize(true); }
   }
+  function fxDot(on) {
+    on = !!on; if (on === fxOn) { return; }
+    fxOn = on; if (!root) { return; }
+    root.classList.toggle("is-fx", on);
+    if (open) { paint(false); }
+  }
+  function fxChanged() { fxRev++; if (open && view === "fx") { applySize(true); } }
+  function fxClose() { if (open && view === "fx") { setOpen(false); } }
   function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }
-  window.MTIsland = { boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
+  window.MTIsland = { fxHost: function () { build(); return vX; }, fxDot: fxDot, fxChanged: fxChanged, fxClose: fxClose, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

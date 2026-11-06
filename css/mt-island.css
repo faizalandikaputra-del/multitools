@@ -1,4 +1,4 @@
-/* Multi Tool - mt-island.css (v3)  -  the "dynamic island" of js/mt-island.js
+/* Multi Tool - mt-island.css (v4)  -  the "dynamic island" of js/mt-island.js
    Black capsule, top centre (left:0 / right:0 / margin:auto = always exactly centred, the width grows from the middle).
    COLLAPSED  one icon + digits, symmetric padding (JS sets width / height / radius in px).
    EXPANDED   width, height and corner radius morph together on one curve (0.58 s, iOS-like ease-out, no wobble);
@@ -55,6 +55,10 @@
 .mi-c.is-t.is-done .mi-ico { animation: mi-done 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 @keyframes mi-breathe { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.35); opacity: 0; } }
 @keyframes mi-done { 50% { transform: scale(1.25); opacity: 0.6; } }
+
+/* ---------- Copy Effects dot: 7 px, inside the collapsed capsule (top right, like a badge). Only opacity moves (150 ms); the capsule keeps its size. Hidden while the island is open (the Effects tab says it all). ---------- */
+.mi-fxdot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: #8b7cff; box-shadow: 0 0 6px rgba(139, 124, 255, 0.75); opacity: 0; pointer-events: none; transition: opacity 0.15s linear; }
+.mt-island.is-fx:not(.is-open) .mi-fxdot { opacity: 1; }
 
 /* ---------- pin ---------- */
 .mi-fempty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 96px; margin: 0; padding: 0 12px; box-sizing: border-box; border: 1.5px dashed rgba(255, 255, 255, 0.22); border-radius: 16px; text-align: center; }
@@ -144,16 +148,19 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 .mi-swap[data-on="sw"] .mi-swtrack { transform: translate3d(0, -36px, 0); }
 .mi-swap[data-on="clock"] .mi-swtrack { transform: translate3d(0, -72px, 0); }
 .mi-swap[data-on="fav"] .mi-swtrack { transform: translate3d(0, -108px, 0); }
-.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -144px, 0); }
+.mi-swap[data-on="fx"] .mi-swtrack { transform: translate3d(0, -144px, 0); }
+.mi-swap[data-on="u"] .mi-swtrack { transform: translate3d(0, -180px, 0); }
 .mi-swrow { display: flex; align-items: center; height: 36px; opacity: 0.35; transition: opacity 0.3s linear; }
 .mi-swrow.is-live { opacity: 0.35; }
-.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="clock"] .mi-swrow:nth-child(3), .mi-swap[data-on="fav"] .mi-swrow:nth-child(4), .mi-swap[data-on="u"] .mi-swrow:nth-child(5) { opacity: 1; }
+.mi-swap[data-on="timer"] .mi-swrow:nth-child(1), .mi-swap[data-on="sw"] .mi-swrow:nth-child(2), .mi-swap[data-on="clock"] .mi-swrow:nth-child(3), .mi-swap[data-on="fav"] .mi-swrow:nth-child(4), .mi-swap[data-on="fx"] .mi-swrow:nth-child(5), .mi-swap[data-on="u"] .mi-swrow:nth-child(6) { opacity: 1; }
 .mi-swarrows { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; margin-left: 8px; border-radius: 50%; color: rgba(255, 255, 255, 0.7); transform: rotate(var(--mi-spin, 0deg)); transition: transform 0.5s var(--mi-ease); }
 .mi-tname { margin-left: 6px; }
 .mi-tico { flex: 0 0 auto; width: 13px; height: 13px; border-radius: 50%; }
 .mi-tico-t { border: 2px solid var(--accent, #5b8cff); box-sizing: border-box; }
 .mi-tico-u { background: radial-gradient(circle, var(--accent, #fff) 0 3.4px, transparent 4px); }
 .mi-tico-f { border-radius: 0; background: #ffcf33; -webkit-clip-path: polygon(34% 4%, 66% 4%, 62% 16%, 62% 44%, 82% 60%, 82% 68%, 54% 68%, 54% 96%, 46% 96%, 46% 68%, 18% 68%, 18% 60%, 38% 44%, 38% 16%); clip-path: polygon(34% 4%, 66% 4%, 62% 16%, 62% 44%, 82% 60%, 82% 68%, 54% 68%, 54% 96%, 46% 96%, 46% 68%, 18% 68%, 18% 60%, 38% 44%, 38% 16%); transform: scale(1.2); }
+.mi-tico-x { background: radial-gradient(circle, #8b7cff 0 3.4px, transparent 4px); }
+.mi-swrow-x .mi-live { background: #8b7cff; box-shadow: 0 0 6px rgba(139, 124, 255, 0.8); }
 .mi-tico-s { background: radial-gradient(circle, #ffb340 0 3.4px, transparent 4px); }
 .mi-tico-k { position: relative; border: 2px solid rgba(255, 255, 255, 0.9); box-sizing: border-box; }
 .mi-tico-k::before, .mi-tico-k::after { content: ""; position: absolute; left: 50%; bottom: 50%; width: 1.5px; margin-left: -0.75px; border-radius: 1px; background: #fff; transform-origin: 50% 100%; }
@@ -272,6 +279,7 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 :root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-swtrack, :root[data-reduce-motion="true"] .mi-swarrows, :root[data-reduce-motion="true"] .mi-view { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
 :root[data-reduce-motion="true"] .mi-hh, :root[data-reduce-motion="true"] .mi-hm, :root[data-reduce-motion="true"] .mi-hs { transition: none; }
+:root[data-reduce-motion="true"] .mi-fxdot { transition: none; }
 :root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mt-island .mi-view-u #mt-update .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }
 

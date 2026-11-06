@@ -1,20 +1,17 @@
-/* Multi Tool - mt-fxcopy.js (v1)  -  Copy Effects
-   1. CHIP under the dynamic island: while one or more effects are selected in the After Effects timeline the chip
-      shows their names and a "Save" button (Ctrl+C does the same while the panel has focus). After saving it turns
-      into "N effects saved" + "Paste". The "fx" badge opens a tray with the last saved stacks.
-   2. EASY LAYER section (MTFx.renderSection, called from showTab in main.js): Copy from layer / Paste to layer,
-      paste mode (Add / Replace all) and the last saved stack.
-   After Effects cannot be asked for its clipboard and never sends Ctrl+C to a panel that is not focused, so the
-   "detection" is a light poll (host.jsx FX_peek, ~0.7 s, only while the panel is visible). Copy / Paste themselves use
-   After Effects' own Copy / Paste commands (host.jsx FX_copy / FX_paste), so Curves, Levels, keyframes and
-   expressions travel intact. The stash keeps only a small record per entry (localStorage mtx.fxStash, max 8).
-   READY state: with nothing but layers selected and something saved, the chip stays as "Paste <effects>" (x hides it until the next copy
-   or until the layer selection is cleared), so one chip does the whole job: select effects > Save, select layers > Paste.
-   Off switch: localStorage mtx.fxChip = "0" (chip + polling stop; the Easy Layer section keeps working). */
+/* Multi Tool - mt-fxcopy.js (v2)  -  Copy Effects
+   1. DOT + "EFFECTS" TAB in the dynamic island (js/mt-island.js). While one or more effects are selected in the After Effects timeline a 7 px violet dot shows inside the island
+      (the capsule never changes size). A click on the island opens it on the Effects tab: the effect names + "Save" (Ctrl+C does the same while the panel has focus). After Save the row
+      crossfades (140 ms) to "N effects saved" + "Paste"; the dot stays until the Paste is done. Select a layer, press Paste (or Ctrl+V): the island closes and the dot goes.
+      The tab closes by itself when the pointer leaves the island. No wide chip, no bounce, nothing that covers the panel.
+   2. EASY LAYER section (MTFx.renderSection, called from showTab in main.js): Copy from layer / Paste to layer, paste mode (Add / Replace all) and the last saved stack.
+   After Effects cannot be asked for its clipboard and never sends Ctrl+C to a panel that is not focused, so the "detection" is a light poll (host.jsx FX_peek, ~0.7 s, only while the panel
+   is visible and the island is switched on). Copy / Paste themselves use After Effects' own Copy / Paste commands (host.jsx FX_copy / FX_paste), so Curves, Levels, keyframes and
+   expressions travel intact. The stash keeps only a small record per entry (localStorage mtx.fxStash, max 8). Paste from the island / Ctrl+V always uses the newest save.
+   Off switch: localStorage mtx.fxChip = "0" (dot + polling stop; the Easy Layer section keeps working). Island off in Settings = no dot either (the Easy Layer section still works). */
 (function () {
   "use strict";
   var STASH_KEY = "mtx.fxStash", MODE_KEY = "mtx.fxPasteMode", ON_KEY = "mtx.fxChip";
-  var MAX = 8, POLL_MS = 700, SAVED_MS = 7000, MSG_MS = 2600;
+  var MAX = 8, POLL_MS = 700;
 
   var cs = null;
   try { if (typeof CSInterface === "function" && window.__adobe_cep__) { cs = new CSInterface(); } } catch (e) { cs = null; }
@@ -56,13 +53,11 @@
     stash = stash.filter(function (x) { return sigOf(x) !== s; });
     stash.unshift(e);
     if (stash.length > MAX) { stash.length = MAX; }
-    readyOff = false;
     saveStash(); notify();
   }
   function notify() {
     listeners = listeners.filter(function (l) { return !l.node || document.body.contains(l.node); });
     listeners.forEach(function (l) { try { l.fn(); } catch (e) { } });
-    paintTray();
   }
   function onChange(node, fn) { listeners.push({ node: node, fn: fn }); }
   function labelOf(e) { return e.fx.map(function (f) { return f.n; }).join(" + "); }
@@ -84,154 +79,114 @@
     return call("FX_paste", [e, getMode(), idx === 0, pick]);
   }
 
-  /* ---------- chip ---------- */
-  var chip, txtEl, btnEl, icoEl, tray, trayList, trayOpen = false;
-  var state = "off", peek = null, curSig = "", dismissedSig = "", savedSig = "", readyOff = false, closeEl;
-  var inflight = false, fails = 0, pollT = 0, timer = 0;
-  var CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /* ---------- island: violet dot + "Effects" tab (js/mt-island.js owns the capsule, this file owns the state and the tab's content) ---------- */
+  var vw, aEl, bEl, btnEl, hintEl, state = "off", peek = null, curSig = "", dismissedSig = "", savedSig = "", pending = false;
+  var busy = false, msgText = "", msgT = 0, offT = 0, lastPaint = "", inflight = false, fails = 0, pollT = 0;
+  var CHECK = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var HINT = {
+    none: "Select an effect in the timeline to save it.",
+    sel: "Save, then select the destination layer.",
+    saved: "Select a layer, then Paste. Closes when you move away."
+  };
+
+  function isl() { return window.MTIsland || null; }
+  function islandOn() { var I = isl(); return !!(I && I.isEnabled && I.isEnabled()); }
 
   function build() {
-    if (chip || !document.body) { return; }
-    chip = el("div", "mt-fxchip"); chip.setAttribute("role", "group"); chip.setAttribute("aria-label", "Copy effects");
-    icoEl = el("button", "fxc-ico", "fx"); icoEl.type = "button"; icoEl.setAttribute("aria-label", "Saved effects"); icoEl.setAttribute("aria-expanded", "false");
-    txtEl = el("span", "fxc-txt"); txtEl.setAttribute("aria-live", "polite");
-    btnEl = el("button", "fxc-btn", "Save"); btnEl.type = "button";
-    closeEl = el("button", "fxc-x", '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>');
-    closeEl.type = "button"; closeEl.setAttribute("aria-label", "Hide"); closeEl.hidden = true;
-    chip.appendChild(icoEl); chip.appendChild(txtEl); chip.appendChild(btnEl); chip.appendChild(closeEl);
-    tray = el("div", "mt-fxtray"); tray.setAttribute("aria-label", "Saved effects");
-    trayList = el("div", "fxt-list"); tray.appendChild(el("div", "fxt-head", "Saved effects")); tray.appendChild(trayList);
-    var clr = el("button", "fxt-clear", "Clear all"); clr.type = "button";
-    clr.addEventListener("click", function () { stash = []; saveStash(); notify(); });
-    tray.appendChild(clr);
-    document.body.appendChild(chip); document.body.appendChild(tray);
-
-    btnEl.addEventListener("click", function () { if (state === "sel") { doSave(); } else if (state === "saved" || state === "ready") { doPaste(0); } });
-    closeEl.addEventListener("click", function () { readyOff = true; setState("off"); });
-    icoEl.addEventListener("click", function () { setTray(!trayOpen); });
-    document.addEventListener("pointerdown", function (e) {
-      if (trayOpen && !tray.contains(e.target) && !icoEl.contains(e.target)) { setTray(false); }
-    }, true);
+    if (vw) { return; }
+    var I = isl(), host = I && I.fxHost ? I.fxHost() : null;
+    if (!host) { return; }
+    vw = el("div", "fxv"); vw.setAttribute("data-fx", "none");
+    vw.innerHTML = '<div class="fxv-row"><span class="fxv-badge">fx</span><span class="fxv-lab" aria-live="polite"><span class="fxv-a"></span><span class="fxv-b"></span></span>' +
+      '<button type="button" class="fxv-btn"><span class="fxv-sa">Save</span><span class="fxv-sb">Paste</span></button></div><p class="fxv-hint"></p>';
+    aEl = vw.querySelector(".fxv-a"); bEl = vw.querySelector(".fxv-b"); btnEl = vw.querySelector(".fxv-btn"); hintEl = vw.querySelector(".fxv-hint");
+    host.appendChild(vw);
+    btnEl.addEventListener("click", function () { if (state === "saved") { doPaste(0); } else if (state === "sel") { doSave(); } });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && trayOpen) { setTray(false); return; }
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "v" || e.key === "V") && (state === "ready" || state === "saved")) {
-        var tv = e.target, tagv = tv && tv.tagName;
-        if (tagv === "INPUT" || tagv === "TEXTAREA" || (tv && tv.isContentEditable)) { return; }
-        doPaste(0); return;
-      }
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "c" || e.key === "C") && state === "sel") {
-        var t = e.target, tag = t && t.tagName;
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) { return; }
+      var k = e.key, t = e.target, tag = t && t.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (t && t.isContentEditable)) { return; }
+      if ((k === "v" || k === "V") && state === "saved") { doPaste(0); return; }
+      if ((k === "c" || k === "C") && state === "sel") {
         var sel = window.getSelection ? String(window.getSelection()) : "";
-        if (tag === "INPUT" || tag === "TEXTAREA" || (t && t.isContentEditable) || sel) { return; }
-        doSave();
+        if (!sel) { doSave(); }
       }
     });
-    document.addEventListener("transitionend", function (e) { if (e.target && e.target.id === "mt-island") { place(); } });
-    window.addEventListener("resize", place);
   }
 
-  function place() {
-    if (!chip) { return; }
-    var isl = document.getElementById("mt-island"), top = 8;
-    if (isl && isl.classList.contains("is-on")) { top = Math.round(isl.getBoundingClientRect().bottom + 8); }
-    chip.style.top = top + "px";
-    tray.style.top = (top + 46) + "px";
+  function paintView() {
+    if (!vw) { return; }
+    var m = state === "off" ? "none" : state, e0 = stash[0], a, b = "", hint = msgText || HINT[m], dis = busy || m === "none", sig;
+    if (m === "none") { a = "No effect selected"; }
+    else if (m === "saved") { a = e0 ? labelOf(e0) : ""; b = e0 ? plural(e0.fx.length) + " saved" : ""; }
+    else { a = peek && peek.names ? peek.names.join(", ") : ""; }
+    sig = [m, a, b, hint, dis, busy].join("\u0001");
+    if (sig === lastPaint) { return; }                                        // the poll repaints nothing when nothing changed
+    lastPaint = sig;
+    vw.setAttribute("data-fx", m);
+    if (aEl.textContent !== a) { aEl.textContent = a; }
+    if (m === "saved") { bEl.innerHTML = '<span class="fxv-ok">' + CHECK + "</span>" + b; }
+    hintEl.textContent = hint; hintEl.classList.toggle("is-error", !!msgText);
+    btnEl.disabled = dis; btnEl.classList.toggle("is-busy", busy);
+    var I = isl(); if (I && I.fxChanged) { I.fxChanged(); }
   }
 
-  function clearTimer() { if (timer) { clearTimeout(timer); timer = 0; } }
-  function setState(s, text, ms) {
-    build(); if (!chip) { return; }
-    clearTimer();
-    state = s;
-    if (s !== "off") { place(); }
-    chip.classList.toggle("is-on", s !== "off");
-    chip.setAttribute("data-state", s);
-    closeEl.hidden = (s !== "ready");
-    if (s === "off") { setTray(false); return; }
-    if (s === "ready") {
-      txtEl.textContent = stash[0] ? labelOf(stash[0]) : "";
-      btnEl.textContent = "Paste"; btnEl.hidden = false; btnEl.disabled = false;
-    } else if (s === "sel") {
-      txtEl.textContent = peek && peek.names ? peek.names.join(", ") : "";
-      btnEl.textContent = "Save"; btnEl.hidden = false; btnEl.disabled = false;
-    } else if (s === "saved") {
-      txtEl.innerHTML = '<span class="fxc-ok">' + CHECK + "</span>" + plural(stash[0] ? stash[0].fx.length : 0) + " saved";
-      btnEl.textContent = "Paste"; btnEl.hidden = false; btnEl.disabled = false;
-      timer = setTimeout(function () { dismissedSig = curSig; setState("off"); }, SAVED_MS);
-    } else if (s === "msg") {
-      txtEl.textContent = text || "";
-      btnEl.hidden = true;
-      timer = setTimeout(function () { dismissedSig = curSig; setState("off"); }, ms || MSG_MS);
+  // what the island should show: effects selected = "sel" (Save); nothing selected but a save waits for its Paste = "saved"; otherwise "off" (no dot)
+  function wanted() {
+    var selNow = curSig && curSig !== dismissedSig && !(pending && curSig === savedSig);
+    return selNow ? "sel" : (pending ? "saved" : "off");
+  }
+  function sync() {
+    build();
+    var m = wanted(), I = isl();
+    if (m !== state) {
+      state = m;
+      if (I && I.fxDot) { I.fxDot(m !== "off"); }
+      if (offT) { clearTimeout(offT); offT = 0; }
+      if (m === "off") { offT = setTimeout(function () { offT = 0; if (state === "off") { paintView(); } }, 520); return; }   // the island fades out first, then the tab resets
     }
+    paintView();
   }
   function say(res) {
-    var text = (res && res.message) || (res && res.ok ? "Done." : "Something went wrong.");
-    setState("msg", text, res && res.ok ? MSG_MS : 4200);
-    chip.classList.toggle("is-error", !(res && res.ok));
+    msgText = (res && res.message) || "Something went wrong.";
+    if (msgT) { clearTimeout(msgT); }
+    msgT = setTimeout(function () { msgT = 0; msgText = ""; paintView(); }, 4200);
+    paintView();
   }
 
   function doSave() {
-    if (btnEl.disabled) { return; }
-    btnEl.disabled = true;
+    if (busy || state !== "sel") { return; }
+    busy = true; paintView();
     copy("sel").then(function (res) {
-      if (res && res.ok) { savedSig = curSig; setState("saved"); } else { say(res); }
+      busy = false;
+      if (res && res.ok) { pending = true; savedSig = curSig; msgText = ""; sync(); } else { say(res); }
     });
   }
   function doPaste(idx) {
-    if (btnEl) { btnEl.disabled = true; }
-    setTray(false);
-    paste(idx).then(function (res) { say(res); });
-  }
-
-  /* ---------- tray ---------- */
-  function setTray(o) {
-    trayOpen = !!o && !!stash.length; if (!tray) { return; }
-    tray.classList.toggle("is-on", trayOpen);
-    icoEl.setAttribute("aria-expanded", trayOpen ? "true" : "false");
-    if (trayOpen) { place(); }
-  }
-  function paintTray() {
-    if (!trayList) { return; }
-    trayList.innerHTML = "";
-    stash.forEach(function (e, i) {
-      var row = el("div", "fxt-row");
-      var badge = el("span", "fxc-ico fxt-ico", "fx");
-      var info = el("span", "fxt-info");
-      var l = el("span", "fxt-name"); l.textContent = labelOf(e);
-      var s = el("span", "fxt-sub"); s.textContent = subOf(e);
-      info.appendChild(l); info.appendChild(s);
-      var b = el("button", "fxc-btn", "Paste"); b.type = "button";
-      b.addEventListener("click", function () { doPaste(i); });
-      row.appendChild(badge); row.appendChild(info); row.appendChild(b);
-      trayList.appendChild(row);
+    if (busy) { return; }
+    busy = true; paintView();
+    paste(idx).then(function (res) {
+      busy = false;
+      if (res && res.ok) {
+        pending = false; dismissedSig = curSig; msgText = "";
+        try { window.__MT.toast((res && res.message) || "Pasted.", false); } catch (e) { }
+        var I = isl(); if (I && I.fxClose) { I.fxClose(); }
+        sync();
+      } else { say(res); }
     });
-    if (!stash.length) { setTray(false); }
   }
 
   /* ---------- poll: which effects are selected? ---------- */
   function onPeek(d) {
     peek = d;
     var sig = d && d.count > 0 ? (d.layer + "|" + d.names.join("\u0001")) : "";
-    var layers = d ? (d.layers || 0) : 0;
     if (sig !== curSig) { curSig = sig; if (sig !== dismissedSig) { dismissedSig = ""; } }
-    if (!layers && !sig) { readyOff = false; }                                   // nothing selected: the x is forgotten
-    if (!sig) {
-      dismissedSig = "";
-      if (state === "sel") { setState("off"); }
-      var ready = layers > 0 && stash.length > 0 && !readyOff;
-      if (ready && state === "off") { setState("ready"); }
-      else if (ready && state === "ready") { txtEl.textContent = labelOf(stash[0]); }
-      else if (!ready && state === "ready") { setState("off"); }
-      return;
-    }
-    if (state === "off" || state === "ready") { if (sig !== dismissedSig) { setState("sel"); } else if (state === "ready") { setState("off"); } }
-    else if (state === "saved") { if (sig !== savedSig) { setState("sel"); } }
-    else if (state === "sel") { txtEl.textContent = d.names.join(", "); }
+    sync();
   }
   function schedule() { if (!pollT) { pollT = setTimeout(tick, fails > 3 ? 4000 : POLL_MS); } }
   function tick() {
     pollT = 0;
-    if (!chipOn() || document.hidden || !cs || inflight) { schedule(); return; }
+    if (!chipOn() || !islandOn() || document.hidden || !cs || inflight) { schedule(); return; }
     inflight = true;
     call("FX_peek", []).then(function (res) {
       inflight = false;
@@ -309,6 +264,6 @@
 
   window.MTFx = { renderSection: renderSection, copy: copy, paste: paste, list: function () { return stash.slice(); } };
 
-  function init() { build(); paintTray(); schedule(); }
+  function init() { build(); schedule(); }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

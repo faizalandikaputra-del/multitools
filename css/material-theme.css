@@ -606,7 +606,8 @@
    The dial is drawn differently under Material You (Dot orbit while still, morphing into a Cookie bloom while the colour changes,
    + pill brightness track; js/main.js ColorWheel drawMaterial). The card around it drops the Glass colour glow for a tonal surface; the HEX row becomes a pill. */
 :root[data-ui-theme="material"][data-theme] body .cw {
-  background: var(--md-surface-low); border: 0; border-radius: 28px; box-shadow: none; padding: var(--space-4, 1rem);
+  background: var(--md-surface-low); border: 0; border-radius: 28px; box-shadow: 0 0 0 2px rgba(var(--md-primary-rgb), 0); padding: var(--space-4, 1rem);
+  transition: box-shadow 0.32s var(--mu-ease);   /* the drag ring fades in and out instead of switching */
 }
 :root[data-ui-theme="material"][data-theme] body .cw.is-dragging { border: 0; box-shadow: 0 0 0 2px var(--md-primary); }
 :root[data-ui-theme="material"][data-theme] body .cw-wheel { border-radius: 24px; cursor: pointer; }

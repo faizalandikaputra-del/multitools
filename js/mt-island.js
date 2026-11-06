@@ -1,4 +1,9 @@
-/* Multi Tool - mt-island.js (v19: EFFECTS TAB)
+/* Multi Tool - mt-island.js (v20: TAB BAR)
+   v20: the ONE switch button is gone. An open island shows a row of tab icons (Timer, Stopwatch, Clock, Pin, + Effects while its dot shows, + Update while an update waits) above the
+   content; one click = straight to that tab. Only the active tab has a label, inside ONE white pill that stretches and slides to the new tab (WAAPI, 320 ms). Open: bar icons drop in 6 px
+   with a 30 ms stagger (140 - 420 ms), the label opens 300 - 420 ms, the content fades in 260 - 520 ms. Switch: old content leaves toward the old tab, new content comes from the new tab,
+   the island height follows in 460 ms (class .is-sw). The Effects slot is empty while there is no dot; the Update slot is reserved at the right end, so nothing else moves when it grows in.
+   Wheel / Esc as before; ArrowLeft / ArrowRight (not inside an input) step through the tabs. Animations switch off (data-reduce-motion) = no motion at all.
    v19: Copy Effects lives here now (js/mt-fxcopy.js drives it; the wide chip under the island is gone). A 7 px violet dot sits in the collapsed capsule while effects are
    selected / saved effects wait for a Paste (the capsule never changes size). A click on the island opens it straight on the new "Effects" tab (the tab is part of the switch cycle only
    while the dot shows). That tab auto-closes 420 ms after the pointer leaves. API for mt-fxcopy.js: MTIsland.fxHost() (the tab's container), fxDot(on), fxChanged() (re-measure), fxClose().
@@ -39,6 +44,17 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+  var ORDER = ["timer", "sw", "clock", "fav", "fx", "u"], NAMES = { timer: "Timer", sw: "Stopwatch", clock: "Clock", fav: "Pin", fx: "Effects", u: "Update" }, IW = 28, GAP = 2;
+  var SV = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+  var ICONS = {
+    timer: SV + '<path d="M7 3.5h10M7 20.5h10M8 3.5v3.6c0 1.6 1.7 2.8 4 4.9-2.3 2.1-4 3.3-4 4.9v3.6M16 3.5v3.6c0 1.6-1.7 2.8-4 4.9 2.3 2.1 4 3.3 4 4.9v3.6"/></svg>',
+    sw: SV + '<circle cx="12" cy="13.5" r="7"/><path d="M10 3h4M12 3v3.5M12 13.5l2.6-3"/></svg>',
+    clock: SV + '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    fav: SV + '<path d="M9 4h6l-1 5 3 3.2v1.3H7v-1.3L10 9 9 4zM12 13.5V20.5"/></svg>',
+    fx: '<span class="mi-fxt">fx</span>',
+    u: SV + '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>'
+  };
+  var bar, track, pill, pillIn, tb = {}, trackW = 0, pillGeo = null, pillAnim = null, barKey = "", enT = 0, swT = 0, outing = [], lastEl = null;
   var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
@@ -77,16 +93,15 @@
 
     // ---- expanded ----
     xEl = el("div", "mi-x");
-    var SWAP = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4L3.5 7.5 7 11M3.5 7.5H17M17 13l3.5 3.5L17 20M20.5 16.5H7" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    sw = btn("mi-swap", '<span class="mi-swwin"><span class="mi-swtrack">' +
-      '<span class="mi-swrow"><span class="mi-tico mi-tico-t"></span><span class="mi-tname">Timer</span><i class="mi-live"></i></span>' +
-      '<span class="mi-swrow"><span class="mi-tico mi-tico-s"></span><span class="mi-tname">Stopwatch</span><i class="mi-live"></i></span>' +
-      '<span class="mi-swrow"><span class="mi-tico mi-tico-k"></span><span class="mi-tname">Clock</span><i class="mi-live"></i></span>' +
-      '<span class="mi-swrow"><span class="mi-tico mi-tico-f"></span><span class="mi-tname">Pin</span><i class="mi-live"></i></span>' +
-      '<span class="mi-swrow mi-swrow-x"><span class="mi-tico mi-tico-x"></span><span class="mi-tname">Effects</span><i class="mi-live"></i></span>' +
-      '<span class="mi-swrow"><span class="mi-tico mi-tico-u"></span><span class="mi-tname">Update</span><i class="mi-live"></i></span>' +
-      '</span></span><span class="mi-swarrows">' + SWAP + '</span>', "Switch between timer, stopwatch, clock, pin, effects and update");
-    var rows = sw.querySelectorAll(".mi-swrow"); tabT = rows[0]; tabS = rows[1]; tabK = rows[2]; tabF = rows[3]; tabX = rows[4]; tabU = rows[5];
+    bar = el("div", "mi-tabbar"); bar.setAttribute("role", "tablist"); bar.setAttribute("aria-label", "Timer, stopwatch, clock, pin, effects and update");
+    track = el("div", "mi-tbs"); pill = el("div", "mi-pill", '<i class="mi-pill-in"></i>'); pillIn = pill.firstChild; track.appendChild(pill);
+    ORDER.forEach(function (k, i) {
+      var b = btn("mi-tb mi-tb-" + k, '<span class="mi-tbi"><span class="mi-ti">' + ICONS[k] + '<i class="mi-live"></i></span><span class="mi-tl"><span class="mi-tl-in">' + NAMES[k] + '</span></span></span>', NAMES[k]);
+      b.setAttribute("role", "tab"); b.setAttribute("data-k", k); b.querySelector(".mi-tbi").style.setProperty("--i", String(i));
+      b.addEventListener("click", function () { pick(k); });
+      tb[k] = { el: b, lab: b.querySelector(".mi-tl-in"), lw: 0, vis: k !== "fx" && k !== "u" }; track.appendChild(b);
+    });
+    bar.appendChild(track);
     var views = el("div", "mi-views");
 
     // timer view: setter + running state
@@ -186,19 +201,23 @@
       } catch (e) { }
     }
     views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vX); views.appendChild(vU);
-    xEl.appendChild(sw); xEl.appendChild(views);
+    xEl.appendChild(bar); xEl.appendChild(views);
 
     fxDotEl = el("i", "mi-fxdot"); fxDotEl.setAttribute("aria-hidden", "true");
     root.appendChild(cEl); root.appendChild(xEl); root.appendChild(fxDotEl); body().appendChild(root);
 
-    sw.addEventListener("click", function () { var c = cycle(), i = c.indexOf(view); pick(c[(i + 1) % c.length]); });
     root.addEventListener("click", function (e) { if (!open) { setOpen(true); } e.stopPropagation(); });
     root.addEventListener("mouseenter", function () { setHover(true); });
     root.addEventListener("mouseleave", function () { setHover(false); });
     root.addEventListener("keydown", function (e) { if (!open && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setOpen(true); } });
     document.addEventListener("pointerdown", function (e) { if (open && !root.contains(e.target)) { setOpen(false); } }, true);
     window.addEventListener("keydown", function (e) {
-      if (open && (e.key === "Escape" || e.keyCode === 27)) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(false); }
+      if (open && (e.key === "Escape" || e.keyCode === 27)) { e.stopImmediatePropagation(); e.preventDefault(); setOpen(false); return; }
+      if (open && (e.key === "ArrowLeft" || e.key === "ArrowRight") && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {      // v20: step through the tabs (never while typing in a field)
+        var tg = e.target; if (tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable)) { return; }
+        var c = cycle(), i = c.indexOf(view), j = i + (e.key === "ArrowRight" ? 1 : -1);
+        if (i >= 0 && j >= 0 && j < c.length) { e.stopImmediatePropagation(); e.preventDefault(); pick(c[j]); }
+      }
     }, true);
     bindDrop(); window.addEventListener("mtx-fav-change", onFavChange);
     try { var s = localStorage.getItem(SEL_KEY); if (s === "sw" || s === "timer" || s === "clock" || s === "fav") { sel = s; } } catch (e0) { }
@@ -279,15 +298,70 @@
   function tickClock() { if (clockShown() && !document.hidden) { paint(false); } }
   function pick(k) {
     if (view === k) { return; }
-    var c = cycle();
     if (k !== "u" && k !== "fx") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
-    root.setAttribute("data-dir", (c.indexOf(k) > c.indexOf(view) || view === "u" || c.indexOf(view) < 0) ? "next" : "prev");
+    root.setAttribute("data-dir", ORDER.indexOf(k) > ORDER.indexOf(view) ? "next" : "prev");     // the direction of the tabs themselves: old content leaves toward the old tab
     rollReset(k === "timer" ? tBig : (k === "clock" ? kBig : sBig));   // (fav has no digits)
     if (k === "clock") { rollReset(kSec); }
-    spin++; sw.style.setProperty("--mi-spin", (spin * 180) + "deg");
     if (k === "fav") { fKey = "\u0000"; }
+    if (open && !reduce()) { root.classList.add("is-sw"); clearTimeout(swT); swT = setTimeout(function () { root.classList.remove("is-sw"); }, 500); }      // height follows the new content in 460 ms
     view = k; paint(true);
   }
+
+  // ---------- tab bar (v20) ----------
+  function measure() {                                         // label widths (cached per open) and the room for them: all slots at icon size + one label must fit the track
+    if (!track) { return false; }
+    var tw = track.clientWidth; if (!tw) { return false; }
+    trackW = tw;
+    var n = 5 + (tb.fx.vis ? 1 : 0), cap = Math.max(0, tw - n * IW - (n - 1) * GAP - 4);
+    ORDER.forEach(function (k) { var w = tb[k].lab.offsetWidth; tb[k].lw = Math.max(0, Math.min(w, cap)); tb[k].el.style.setProperty("--lw", tb[k].lw + "px"); });
+    return true;
+  }
+  function geom() {                                            // where every tab sits (left, width): icons IW wide, the active one + its label; Update is pinned to the right end
+    var x = 0, out = {};
+    ORDER.forEach(function (k) {
+      if (!tb[k].vis && k === "fx") { return; }
+      var w = IW + (view === k ? tb[k].lw : 0);
+      if (k === "u") { out[k] = { l: Math.max(x, trackW - w), w: w }; } else { out[k] = { l: x, w: w }; x += w + GAP; }
+    });
+    return out;
+  }
+  function pillTo(g) { pill.style.width = g.w + "px"; pill.style.transform = "translate3d(" + g.l + "px,0,0)"; }
+  function placePill(anim) {                                   // anim: the white pill stretches over old + new tab, then settles (transform + width only)
+    var g = geom()[view]; if (!g) { return; }
+    var cur = null;
+    if (anim && pillGeo && !reduce() && pill.animate) {
+      try { var pr = pill.getBoundingClientRect(), tr = track.getBoundingClientRect(); cur = { l: pr.left - tr.left, w: pr.width }; } catch (e) { cur = null; }
+    }
+    if (pillAnim) { try { pillAnim.cancel(); } catch (e1) { } pillAnim = null; }
+    pillGeo = g; pillTo(g);
+    if (cur) {
+      var a = Math.min(cur.l, g.l), z = Math.max(cur.l + cur.w, g.l + g.w);
+      function kf(l, w, o, ease) { var f = { transform: "translate3d(" + l + "px,0,0)", width: w + "px", easing: ease }; if (o !== null) { f.offset = o; } return f; }
+      try {
+        pillAnim = pill.animate([kf(cur.l, cur.w, 0, "cubic-bezier(0.3, 0, 0.2, 1)"), kf(a, z - a, 0.42, "cubic-bezier(0.32, 0.72, 0, 1)"), kf(g.l, g.w, 1, "linear")], { duration: 320, easing: "linear" });
+      } catch (e2) { pillAnim = null; }
+    }
+  }
+  function enterBar() {                                        // island just opened: icons drop in (140 - 420 ms, 30 ms apart), the label opens 300 - 420 ms
+    if (!open || !track) { return; }
+    measure(); var g = geom()[view]; if (!g) { return; }
+    clearTimeout(enT);
+    if (pillAnim) { try { pillAnim.cancel(); } catch (e) { } pillAnim = null; }
+    bar.classList.remove("is-enter");
+    if (reduce()) { bar.classList.remove("is-l0"); pillGeo = g; pillTo(g); return; }
+    bar.classList.add("is-l0"); pill.style.setProperty("--pi", String(ORDER.indexOf(view)));
+    pill.style.width = IW + "px"; pill.style.transform = "translate3d(" + g.l + "px,0,0)"; pillGeo = g;
+    void bar.offsetWidth;
+    bar.classList.add("is-enter"); bar.classList.remove("is-l0"); pill.style.width = g.w + "px";
+    enT = setTimeout(function () { bar.classList.remove("is-enter"); }, 480);
+  }
+  function viewEl(k) { return k === "timer" ? vT : (k === "sw" ? vS : (k === "clock" ? vK : (k === "fav" ? vF : (k === "fx" ? vX : vU)))); }
+  function endOuts() { var e; while (outing.length) { e = outing.pop(); e.classList.remove("is-out"); if (e !== viewEl(view)) { e.hidden = true; } } }
+  function startOut(e) {                                       // the old content stays 240 ms, leaving toward the old tab (absolute, so the island height already follows the NEW content)
+    endOuts(); e.hidden = false; e.classList.remove("is-in", "is-fade"); void e.offsetWidth; e.classList.add("is-out"); outing.push(e);
+    setTimeout(function () { var i = outing.indexOf(e); if (i >= 0) { outing.splice(i, 1); e.classList.remove("is-out"); if (e !== viewEl(view)) { e.hidden = true; } } }, 260);
+  }
+  function fadeView() { var e = viewEl(view); [vT, vS, vK, vF, vX, vU].forEach(function (v) { v.classList.remove("is-in", "is-fade", "is-out"); }); void e.offsetWidth; e.classList.add("is-fade"); }   // open: content fades in 260 - 520 ms
 
   // ---------- geometry ----------
   function collapsedSize() {
@@ -327,7 +401,8 @@
     root.classList.toggle("is-open", o); root.setAttribute("aria-expanded", o ? "true" : "false");
     rollReset(tBig); rollReset(sBig); rollReset(cTime); rollReset(kBig); rollReset(kSec);          // the node that comes into view draws plain once (no roll through old digits)
     if (o) { view = upd ? "u" : (fxOn ? "fx" : ((activeOf("timer") || activeOf("sw")) ? effective() : sel)); if (view !== "u" && view !== "fx") { sel = view; } root.setAttribute("data-dir", "next"); }
-    fixOn(); paint(false);
+    barKey = ""; fixOn(); paint(false);
+    if (o) { endOuts(); enterBar(); fadeView(); } else { root.classList.remove("is-sw"); }
     if (!o) {
       try { if (root.contains(document.activeElement)) { document.activeElement.blur(); } } catch (e) { }
       holdUntil = Date.now() + 460; setTimeout(function () { paint(false); }, 480);
@@ -452,12 +527,18 @@
         cEl.classList.toggle("is-running", eff === "timer" ? !!cdd.running : !!(s && s.running));
       }
     } else {
-      // expanded: switch (one button, the rows slide)
-      tabT.classList.toggle("is-live", !!(t && t.active)); tabS.classList.toggle("is-live", !!(s && s.active));
-      tabX.classList.toggle("is-live", fxOn); tabU.classList.toggle("is-live", upd); tabU.style.display = upd ? "" : "none";
-      sw.setAttribute("data-on", view);
-      vT.hidden = view !== "timer"; vS.hidden = view !== "sw"; vK.hidden = view !== "clock"; vF.hidden = view !== "fav"; vX.hidden = view !== "fx"; vU.hidden = view !== "u";
-      if (viewChanged) { var v = view === "timer" ? vT : (view === "sw" ? vS : (view === "clock" ? vK : (view === "fav" ? vF : (view === "fx" ? vX : vU)))); v.classList.remove("is-in"); void v.offsetWidth; v.classList.add("is-in"); }
+      // expanded: tab bar (v20)
+      var fxVis = fxOn || view === "fx";
+      tb.timer.el.classList.toggle("is-live", !!(t && t.active)); tb.sw.el.classList.toggle("is-live", !!(s && s.active)); tb.fx.el.classList.toggle("is-live", fxOn);
+      tb.fx.vis = fxVis; tb.u.vis = upd; tb.fx.el.classList.toggle("is-vis", fxVis); tb.u.el.classList.toggle("is-vis", upd);
+      ORDER.forEach(function (k) { var on = view === k; tb[k].el.classList.toggle("is-on", on); tb[k].el.setAttribute("aria-selected", on ? "true" : "false"); tb[k].el.tabIndex = tb[k].vis ? (on ? 0 : -1) : -1; tb[k].el.setAttribute("aria-hidden", tb[k].vis ? "false" : "true"); });
+      var cur = viewEl(view);
+      if (viewChanged && lastEl && lastEl !== cur && !reduce()) { startOut(lastEl); }
+      [vT, vS, vK, vF, vX, vU].forEach(function (v) { v.hidden = v !== cur && !v.classList.contains("is-out"); });
+      if (viewChanged) { cur.classList.remove("is-in", "is-fade"); void cur.offsetWidth; cur.classList.add("is-in"); }
+      lastEl = cur;
+      var bk = view + "|" + (fxVis ? 1 : 0) + "|" + (upd ? 1 : 0) + "|" + window.innerWidth;
+      if (viewChanged || bk !== barKey) { var kchg = bk !== barKey; barKey = bk; if (kchg) { measure(); } placePill(viewChanged); }
 
       if (view === "timer" && t) {
         var run = !!t.active;
@@ -509,7 +590,7 @@
     try {
       new MutationObserver(function () { aim(); paint(false); }).observe(body(), { attributes: true, attributeFilter: ["class"] });   // idle / quiet changed
     } catch (e) { }
-    window.addEventListener("resize", function () { aim(); applySize(true); });
+    window.addEventListener("resize", function () { aim(); applySize(true); if (open) { measure(); placePill(false); } });
     /* v12: mouse wheel over the OPEN island = next / previous tool (Timer, Stopwatch, Clock, Update). A window-capture listener, so it runs before
        js/smooth-scroll.js (document capture) and the panel behind never scrolls. Left alone: the hour / minute steppers (they use the wheel to change the number)
        and the scrollable release notes. One notch = one step; a touchpad collects ~60 px per step; 380 ms pause after each switch, no wrap-around. */

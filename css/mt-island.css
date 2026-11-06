@@ -147,25 +147,23 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 .mi-pill-in { display: block; width: 100%; height: 100%; border-radius: 999px; background: #fff; }
 .mi-tb { position: relative; z-index: 1; flex: 0 0 auto; display: flex; align-items: center; height: 28px; margin: 0 0 0 2px; padding: 0; border: 0; border-radius: 999px; background: none; color: rgba(255, 255, 255, 0.58); font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color 0.12s linear 0.08s; }
 .mi-tb-timer { margin-left: 0; }
-.mi-tb-u { margin-left: auto; }
 .mi-tb:hover { color: rgba(255, 255, 255, 0.92); }
 .mi-tb.is-on, .mi-tb.is-on:hover { color: #0b0b0d; }
 .mi-tb:active .mi-ti { transform: scale(0.9); }
-.mi-tb:focus { outline: none; }
-.mi-tb:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 1px; }
+.mi-tb:focus, .mi-tb:focus-visible, .mi-tb:active { outline: none !important; box-shadow: none; }      /* no square focus ring on click (glass-theme.css button:focus-visible); the white pill already marks the tab */
 .mi-tb-fx:not(.is-vis) { display: none; }
-.mi-tb-u:not(.is-vis) { visibility: hidden; pointer-events: none; }
+.mi-tb-u:not(.is-vis) { display: none; }
 .mi-tb-fx.is-vis, .mi-tb-u.is-vis { animation: mi-tb-pop 0.18s var(--mi-ease) both; }
 @keyframes mi-tb-pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
 .mi-tbi { display: flex; align-items: center; height: 28px; }
-.mi-ti { position: relative; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; transition: transform 0.12s var(--mi-ease); }
+.mi-ti { position: relative; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: var(--sw, 28px); height: 28px; transition: width 0.32s var(--mi-ease), transform 0.12s var(--mi-ease); }
 .mi-ti svg { display: block; }
 .mi-fxt { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
 .mi-tl { display: block; width: 0; height: 28px; overflow: hidden; transition: width 0.32s var(--mi-ease); }
 .mi-tb.is-on .mi-tl { width: var(--lw, 0px); }
 .mi-tl-in { display: inline-block; vertical-align: top; padding-right: 10px; white-space: nowrap; line-height: 28px; opacity: 0; transition: opacity 0.1s linear; }
 .mi-tb.is-on .mi-tl-in { opacity: 1; transition: opacity 0.14s linear 0.1s; }
-.mi-live { display: none; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 5px rgba(61, 220, 132, 0.8); }
+.mi-live { display: none; position: absolute; top: 4px; left: 50%; margin-left: 5px; width: 5px; height: 5px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 5px rgba(61, 220, 132, 0.8); }
 .mi-tb.is-live .mi-live { display: block; }
 .mi-tb-fx .mi-live { background: #8b7cff; box-shadow: 0 0 5px rgba(139, 124, 255, 0.85); }
 /* open: icons drop 6 px + fade, 30 ms apart, all done at 420 ms; the label opens 300 - 420 ms (JS: .is-l0 holds it shut for one frame, then .is-enter runs the transition) */
@@ -174,7 +172,7 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 @keyframes mi-tb-in { from { opacity: 0; transform: translate3d(0, -6px, 0); } to { opacity: 1; transform: none; } }
 .mi-tabbar.is-enter .mi-tb.is-on .mi-tl, .mi-tabbar.is-enter .mi-pill { transition: width 0.12s linear 0.3s; }
 .mi-tabbar.is-l0 .mi-tb.is-on .mi-tl { width: 0 !important; transition: none !important; }
-.mi-tabbar.is-l0 .mi-pill { transition: none !important; }
+.mi-tabbar.is-l0 .mi-pill, .mi-tabbar.is-l0 .mi-ti { transition: none !important; }
 
 .mi-views { position: relative; padding-top: 12px; overflow: hidden; }
 .mi-view.is-in { animation: mi-view-in 0.34s cubic-bezier(0.05, 0.7, 0.1, 1) 0.12s both; }

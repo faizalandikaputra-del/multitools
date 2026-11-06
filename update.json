@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.123",
-    "changelog":  "- Update 1.8.123",
+    "latest_version":  "1.8.124",
+    "changelog":  "- Update 1.8.124",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -104,7 +104,7 @@
                   },
                   {
                       "path":  "css/mt-island.css",
-                      "sha256":  "ccf2659927748843080ad4b48a876a3428660353428734d864003f99f169b96b"
+                      "sha256":  "af8035bca494d120865cad8b54a55c0ffa339cd1cae3b01891c1052b8085d780"
                   },
                   {
                       "path":  "css/mt-island-boxes.css",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "75b9192bf3e9c66c558587e3fd7946868ae79b8ad2695a5e9a4a44047727ca6d"
+                      "sha256":  "8fe62ebd40cc2872a810cef4b7ffe0afbd1ede40e5468fc68774fccaffa32026"
                   },
                   {
                       "path":  "html/settings.html",
@@ -320,7 +320,7 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "e7e68b143cc6ce9e324228f0ff6e4082aeaccca44ce0951d3d66814abbbfaf06"
+                      "sha256":  "73dd773a0464b968617be60f0979ac17c97abb3cb725718d6f890833f2bef1a6"
                   },
                   {
                       "path":  "js/mt-island-boxes.js",
@@ -732,7 +732,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "b2cc12d093805481e0130b40819d737368a5f154c6711f638a358b2406556352"
+                      "sha256":  "23f8d545c530a10ae064b624933d8955c3d9c4df5a472d10eab0a73092770db1"
                   }
               ]
 }

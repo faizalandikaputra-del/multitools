@@ -2332,3 +2332,9 @@ fix55 (Dynamic island: tab bar instead of the single switch button):
   Animations switch off (data-reduce-motion) = no motion at all: bar, pill, labels, content.
   Files: js/mt-island.js (v20: tab bar, pill, enterBar / placePill / startOut, arrow keys; ?v=18), css/mt-island.css (v5: .mi-tabbar, .mi-tb, .mi-pill, .mi-tl, view in / out / fade; the old .mi-swap rules are gone; ?v=16), html/index.html.
   Tested in a headless browser with the host stubbed (open frames at 100 / 200 / 300 / 450 / 700 ms, tab switch, pill geometry equals the active tab, ArrowLeft, Update tab, Esc); not run inside After Effects.
+
+fix56 (Dynamic island tab bar: gap at the right, square focus ring on click):
+  Symptom: with only Timer / Stopwatch / Clock / Pin the tab row ended before the right edge (the Update slot was reserved but empty); a square accent outline appeared around the tab after a click.
+  Cause: js/mt-island.js reserved a fixed 28 px slot for Update at the right end. The outline was the tab's own :focus-visible rule (and the global button:focus-visible in css/glass-theme.css).
+  Fix: the icon slots now share all the room the active label leaves (--sw, set by measure()), so the bar is always full. Update / Effects take a slot only while they exist; when one comes or goes the slots re-spread and the white pill follows (animated). Focus outline removed on .mi-tb (the white pill marks the active tab).
+  Files: js/mt-island.js (measure, geom, enterBar, paint; ?v=19), css/mt-island.css (?v=17), html/index.html.

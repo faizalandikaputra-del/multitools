@@ -54,7 +54,7 @@
     fx: '<span class="mi-fxt">fx</span>',
     u: SV + '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>'
   };
-  var bar, track, pill, pillIn, tb = {}, trackW = 0, pillGeo = null, pillAnim = null, barKey = "", enT = 0, swT = 0, outing = [], lastEl = null;
+  var bar, track, pill, pillIn, tb = {}, trackW = 0, slotW = IW, pillGeo = null, pillAnim = null, barKey = "", enT = 0, swT = 0, outing = [], lastEl = null;
   var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
@@ -308,20 +308,23 @@
   }
 
   // ---------- tab bar (v20) ----------
-  function measure() {                                         // label widths (cached per open) and the room for them: all slots at icon size + one label must fit the track
+  function measure() {                                         // label widths + slot width: the icon slots share ALL the room the active label leaves, so the bar is always full (no empty gap at the right)
     if (!track) { return false; }
     var tw = track.clientWidth; if (!tw) { return false; }
     trackW = tw;
-    var n = 5 + (tb.fx.vis ? 1 : 0), cap = Math.max(0, tw - n * IW - (n - 1) * GAP - 4);
+    var n = 0; ORDER.forEach(function (k) { if (tb[k].vis) { n++; } });
+    var cap = Math.max(0, tw - n * IW - (n - 1) * GAP - 2);
     ORDER.forEach(function (k) { var w = tb[k].lab.offsetWidth; tb[k].lw = Math.max(0, Math.min(w, cap)); tb[k].el.style.setProperty("--lw", tb[k].lw + "px"); });
+    slotW = Math.max(IW, (tw - tb[view].lw - (n - 1) * GAP) / n);
+    bar.style.setProperty("--sw", slotW.toFixed(2) + "px");
     return true;
   }
-  function geom() {                                            // where every tab sits (left, width): icons IW wide, the active one + its label; Update is pinned to the right end
+  function geom() {                                            // where every visible tab sits (left, width): one slot each, the active one + its label
     var x = 0, out = {};
     ORDER.forEach(function (k) {
-      if (!tb[k].vis && k === "fx") { return; }
-      var w = IW + (view === k ? tb[k].lw : 0);
-      if (k === "u") { out[k] = { l: Math.max(x, trackW - w), w: w }; } else { out[k] = { l: x, w: w }; x += w + GAP; }
+      if (!tb[k].vis) { return; }
+      var w = slotW + (view === k ? tb[k].lw : 0);
+      out[k] = { l: x, w: w }; x += w + GAP;
     });
     return out;
   }
@@ -344,13 +347,13 @@
   }
   function enterBar() {                                        // island just opened: icons drop in (140 - 420 ms, 30 ms apart), the label opens 300 - 420 ms
     if (!open || !track) { return; }
-    measure(); var g = geom()[view]; if (!g) { return; }
+    bar.classList.add("is-l0"); measure(); var g = geom()[view]; if (!g) { return; }      // is-l0 first: slot widths and labels settle without a transition
     clearTimeout(enT);
     if (pillAnim) { try { pillAnim.cancel(); } catch (e) { } pillAnim = null; }
     bar.classList.remove("is-enter");
     if (reduce()) { bar.classList.remove("is-l0"); pillGeo = g; pillTo(g); return; }
-    bar.classList.add("is-l0"); pill.style.setProperty("--pi", String(ORDER.indexOf(view)));
-    pill.style.width = IW + "px"; pill.style.transform = "translate3d(" + g.l + "px,0,0)"; pillGeo = g;
+    pill.style.setProperty("--pi", String(ORDER.indexOf(view)));
+    pill.style.width = slotW + "px"; pill.style.transform = "translate3d(" + g.l + "px,0,0)"; pillGeo = g;
     void bar.offsetWidth;
     bar.classList.add("is-enter"); bar.classList.remove("is-l0"); pill.style.width = g.w + "px";
     enT = setTimeout(function () { bar.classList.remove("is-enter"); }, 480);
@@ -537,8 +540,8 @@
       [vT, vS, vK, vF, vX, vU].forEach(function (v) { v.hidden = v !== cur && !v.classList.contains("is-out"); });
       if (viewChanged) { cur.classList.remove("is-in", "is-fade"); void cur.offsetWidth; cur.classList.add("is-in"); }
       lastEl = cur;
-      var bk = view + "|" + (fxVis ? 1 : 0) + "|" + (upd ? 1 : 0) + "|" + window.innerWidth;
-      if (viewChanged || bk !== barKey) { var kchg = bk !== barKey; barKey = bk; if (kchg) { measure(); } placePill(viewChanged); }
+      var bk = view + "|" + (fxVis ? 1 : 0) + "|" + (upd ? 1 : 0);
+      if (viewChanged || bk !== barKey) { var kchg = bk !== barKey, hadKey = barKey !== ""; barKey = bk; if (kchg) { measure(); } placePill(viewChanged || (kchg && hadKey)); }      // a tab that comes or goes re-spreads the slots: the pill follows (animated)
 
       if (view === "timer" && t) {
         var run = !!t.active;

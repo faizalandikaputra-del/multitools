@@ -2317,3 +2317,10 @@ fix (Copy Effects: the wide chip is replaced by a dot + an "Effects" tab in the 
   Island switched off in Settings = no dot and no polling either (the Copy Effects box in the tabs still works). Off switch mtx.fxChip = "0" still stops the dot.
   Files: js/mt-island.js (v19: Effects tab, dot, fxHost / fxDot / fxChanged / fxClose, auto-close on pointer leave; ?v=17), css/mt-island.css (dot, extra switch row; ?v=15), js/mt-fxcopy.js (state machine + tab content; ?v=5), css/mt-fxcopy.css (tab styles, chip + tray styles removed; ?v=5), html/index.html.
   Tested in a headless browser with the host stubbed (dot, open on Effects, Save crossfade, pending dot after the effects are released, auto-close, Paste closes + dot off, capsule width unchanged); not run inside After Effects.
+
+fix54 (Idle screen: widgets too big and cut off at the right edge after changing the After Effects workspace and coming back):
+  Symptom: after switching the AE workspace (workflow) and back, the idle screen cards (e.g. Notes / To-Do) were bigger than the panel and ran off the right edge.
+  Cause: js/mt-idle-adjust.js syncZoom(). A workspace switch squeezes the panel to a very small or very large width for a moment. When the width left the 0.4 - 2.4 zoom range the saved layout width (ref) was rewritten to follow it at once and settle() saved the pushed positions. Back at the normal width the cards were zoomed by a wrong factor (test: ref 408 -> 375, zoom 1.0 -> 1.088) and the bad ref stayed saved in mtx.wLayout.
+  Fix: a short squeeze changes nothing. The ref now follows only when the panel stays out of range for 0.9 s (a real, lasting resize); the overlap check / save is skipped while the width is out of range, also on idle entry.
+  Note: a layout that was ALREADY corrupted by this bug keeps its wrong ref. Fix it once with Adjust widgets > Reset layout (or Settings > Reset everything).
+  Files: js/mt-idle-adjust.js (armRef, syncZoom, onResize; ?v=24), html/index.html. Reproduced and verified in a headless browser by squeezing the panel 408 -> 150 -> 408 px (original: zoom 1.088 and ref 375 afterwards; fixed: zoom 1 and ref 408); not run inside After Effects.

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.121",
-    "changelog":  "- Update 1.8.121",
+    "latest_version":  "1.8.122",
+    "changelog":  "- Update 1.8.122",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "e588ccaceeb33fa43cd30f0d82b858b29b7baacfd40d2cdd26d75587592155fb"
+                      "sha256":  "62b26d99cdd18cf22dd855ed51bfb57378eceaba18a685098c688e8408512624"
                   },
                   {
                       "path":  "html/settings.html",
@@ -308,7 +308,7 @@
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
-                      "sha256":  "1091662c8872764c56019b438e75d740c6dbc2f1ef23b3eff80c5f519b70d279"
+                      "sha256":  "622889bdc66c316ec1d644a20b987aa8297970c820e3101ca9b7911cb32c1b29"
                   },
                   {
                       "path":  "js/mt-idle-focus.js",
@@ -732,7 +732,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "f08bedf4680b997b0143a720811aece52b6d65fb50b7befbfdebca6351212b0b"
+                      "sha256":  "14fa5599493476a24e0a04284e02d2986e72cabc25ceb5c8b6023d927fba6d6c"
                   }
               ]
 }

@@ -1,4 +1,4 @@
-/* Multi Tool - mt-idle-adjust.js  (v19: FREE CANVAS + zoom on resize)
+/* Multi Tool - mt-idle-adjust.js  (v19: FREE CANVAS + zoom on resize; fix54: a short panel squeeze no longer rewrites the layout)
    Idle screen: move, resize and show / hide every widget without opening Settings, all from the "Adjust widgets" button
    (#ia-btn, bottom right of the idle screen).
 
@@ -134,7 +134,7 @@
       if (o.W < 60) { return false; }                                // panel hidden / collapsed: keep the last zoom
       if (!refW) { refW = o.W; }
       z = o.W / refW;
-      if (z < Z_MIN || z > Z_MAX) { z = clamp(z, Z_MIN, Z_MAX); refW = o.W / z; c = true; }
+      if (z < Z_MIN || z > Z_MAX) { z = clamp(z, Z_MIN, Z_MAX); c = true; }      // fix54: refW is NOT touched here (see armRef): a workspace switch squeezes the panel for a moment and used to overwrite it for good
     }
     Z = z; zClamped = c;
     if (hasItems()) { base = cardScale(); p.style.setProperty("--wa-zoom", String(Math.round(base * Z * 1000) / 1000)); }
@@ -934,7 +934,7 @@
           if (qT) { clearTimeout(qT); qT = 0; }
           setClass("is-ia-quiet", false); setQuiet(false);   // a late clear from the last exit must not hide this entry
           ahArm(); iaWake();
-          requestAnimationFrame(function () { if (isIdle() && hasItems()) { applyAll(); resolveAll(); saveLayout(); } });   // a saved layout never opens stacked or cut off
+          requestAnimationFrame(function () { if (isIdle() && hasItems()) { applyAll(); if (!zClamped) { resolveAll(); saveLayout(); } else { armRef(); } } });   // a saved layout never opens stacked or cut off
         } else {
           if (adjusting) { setAdjust(false); }
           if (ahTimer) { clearTimeout(ahTimer); ahTimer = 0; }
@@ -957,7 +957,25 @@
       var o = origin(); if (o.W < 60 || Math.abs(o.W - lastW) < 0.5) { return; }
       lastW = o.W;
       applyAll();
-      if (zClamped && isIdle()) { settle(); } else { syncEnd(); }
+      if (zClamped) { armRef(); } else { if (refT) { clearTimeout(refT); refT = 0; } }
+      syncEnd();
+    }
+    // fix54: changing the After Effects workspace (and back) makes the panel very small / very large for a moment. Following that width at once rewrote the saved layout
+    // width (ref) and pushed the widgets to fit the squeezed panel; back at the normal width the cards came out too big and cut off at the right edge.
+    // Now the ref follows only when the panel STAYS outside the 0.4 - 2.4 range for 0.9 s (a real, lasting resize); a short squeeze changes nothing.
+    var refT = 0;
+    function armRef() {
+      if (refT) { clearTimeout(refT); }
+      refT = setTimeout(function () {
+        refT = 0;
+        if (!hasItems() || !panel()) { return; }
+        var o = origin(), z; if (o.W < 60 || !refW) { return; }
+        z = o.W / refW;
+        if (z >= Z_MIN && z <= Z_MAX) { return; }
+        refW = o.W / clamp(z, Z_MIN, Z_MAX);
+        applyAll();
+        if (isIdle()) { settle(); } else { syncEnd(); }
+      }, 900);
     }
     function schedResize() { if (!rzRaf) { rzRaf = requestAnimationFrame(onResize); } }
     window.addEventListener("resize", schedResize);

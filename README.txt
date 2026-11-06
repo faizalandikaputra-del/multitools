@@ -2338,3 +2338,7 @@ fix56 (Dynamic island tab bar: gap at the right, square focus ring on click):
   Cause: js/mt-island.js reserved a fixed 28 px slot for Update at the right end. The outline was the tab's own :focus-visible rule (and the global button:focus-visible in css/glass-theme.css).
   Fix: the icon slots now share all the room the active label leaves (--sw, set by measure()), so the bar is always full. Update / Effects take a slot only while they exist; when one comes or goes the slots re-spread and the white pill follows (animated). Focus outline removed on .mi-tb (the white pill marks the active tab).
   Files: js/mt-island.js (measure, geom, enterBar, paint; ?v=19), css/mt-island.css (?v=17), html/index.html.
+
+fix (Animator Text): bubble angka slider tidak pas + tombol Reset
+  - Bubble nilai slider (.range-value-bubble, js/panel-refinements.js v11) muncul miring/jauh dari thumb saat --ui-scale bukan 100%. Penyebab: bubble position:fixed di <body> (di luar .app { zoom }), sedangkan CEF lama mengembalikan getBoundingClientRect() elemen di dalam .app sudah dibagi zoom. Fix: konversi rect zoom-proof (probe sekali per --ui-scale, metode sama dengan js/mt-tooltip.js) + posisi di tengah thumb (lebar track dikurangi lebar thumb).
+  - Tab Animator Text: tombol "Reset" di samping "Import from layer" (js/main.js v55, css/style.css v15). Mengembalikan semua field ke default (Characters, Left to Right, 4 / 5 / 2 / 2, In, Overshoot, Position Y 30 + Opacity aktif) dan mengosongkan pilihan preset. Preset tersimpan tidak dihapus.

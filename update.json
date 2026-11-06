@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.124",
-    "changelog":  "- Update 1.8.124",
+    "latest_version":  "1.8.125",
+    "changelog":  "- Update 1.8.125",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -224,7 +224,7 @@
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "8cc7a20554dde31efff33a1d8ddd72dd3e58d33018de7cbf529dba92c4573a96"
+                      "sha256":  "e4b5a3312f4fdd120dd909055916ccebc9bea91a26bae155716947acccd1fa07"
                   },
                   {
                       "path":  "css/tab-motion.css",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "8fe62ebd40cc2872a810cef4b7ffe0afbd1ede40e5468fc68774fccaffa32026"
+                      "sha256":  "06c5edd740f33eaa8c2050e5ad7c5f1a0bd857e819836c96e6bb83a5480c18b7"
                   },
                   {
                       "path":  "html/settings.html",
@@ -264,7 +264,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "a75b0c285b393f1752c2d485e6b7846a6fdef5daa08f087426ff2fe7a35ee9fa"
+                      "sha256":  "c0b706aca77142f67e9a2cd68854cf934848d20ad508a3ba4b8b70335b470946"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -396,7 +396,7 @@
                   },
                   {
                       "path":  "js/panel-refinements.js",
-                      "sha256":  "4ffb1e4cba4f2f483280647da5c496aa3960ebcf6cd14155ecd906a8401d50ed"
+                      "sha256":  "2ce7ecf028fcfa4fff2a9a846bf820e6d3935083e92d832d46e12282a9f221e6"
                   },
                   {
                       "path":  "js/panel-refresh.js",
@@ -732,7 +732,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "23f8d545c530a10ae064b624933d8955c3d9c4df5a472d10eab0a73092770db1"
+                      "sha256":  "74fdd9dc587dbca8be3b3b1d591b5ed617bc748ce7b12600b59523db4e51de98"
                   }
               ]
 }

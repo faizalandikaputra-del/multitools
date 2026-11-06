@@ -3266,6 +3266,7 @@
   // exist there), and the checked animator properties get the static values typed in this tab.
   // ---------------------------------------------------------
   var ICON_IMPORT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11M8 10.5l4 4 4-4M4.5 16.5v2.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5"/></svg>';
+  var ICON_RESET_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.34-5.66M4 4v5h5"/></svg>';
   var ICON_REFRESH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.66-5.66M20 12a8 8 0 0 1-13.66 5.66M4 4v5h5M20 20v-5h-5"/></svg>';
 
   var TextFlex = {
@@ -3323,7 +3324,10 @@
             '<button class="icon-btn" type="button" id="tf-preset-delete" title="Delete preset" aria-label="Delete preset">' + ICON_DELETE_SVG + '</button>' +
             '<button class="icon-btn" type="button" id="tf-preset-refresh" title="Refresh preset list" aria-label="Refresh preset list">' + ICON_REFRESH_SVG + '</button>' +
           '</div>' +
-          '<button class="btn tf-import" type="button" id="tf-import" title="Read the TextFlex settings from the selected text layer">' + ICON_IMPORT_SVG + '<span>Import from layer</span></button>' +
+          '<div class="tf-actions">' +
+            '<button class="btn tf-import" type="button" id="tf-import" title="Read the TextFlex settings from the selected text layer">' + ICON_IMPORT_SVG + '<span>Import from layer</span></button>' +
+            '<button class="btn tf-reset" type="button" id="tf-reset" title="Reset every setting in this tab to its default">' + ICON_RESET_SVG + '<span>Reset</span></button>' +
+          '</div>' +
           '<div class="field field-column">' +
             '<span class="field-label">Based on</span>' +
             '<select class="select" id="tf-based-on">' +
@@ -3455,6 +3459,25 @@
         });
       }
 
+      // ---- defaults (same values the markup above starts with) ----
+      function defaults() {
+        return {
+          basedOn: "characters", direction: "ltr",
+          frequency: 4, decay: 5, duration: 2, delay: 2,
+          mode: "in", markers: false, threeD: false, style: "overshoot",
+          props: {
+            position: { on: true,  v: { x: 0, y: 30, z: 0 } },
+            anchor:   { on: false, v: { x: 0, y: 0, z: 0 } },
+            rotation: { on: false, v: { x: 0, y: 0, z: 0 } },
+            scale:    { on: false, v: { x: 0, y: 0 } },
+            skew:     { on: false, v: { angle: 0, axis: 0 } },
+            tracking: { on: false, v: { value: 0 } },
+            blur:     { on: false, v: { value: 0 } },
+            opacity:  { on: true,  v: { value: 0 } }
+          }
+        };
+      }
+
       // ---- preset bar ----
       var presetSelect = wrap.querySelector("#tf-preset-select");
       function refreshPresetList() {
@@ -3515,6 +3538,17 @@
           btn.classList.remove("is-loading");
           toast(res.message || (res.ok ? "Done." : "Something went wrong."), !res.ok);
         });
+      });
+
+      // ---- Reset: every field of this tab back to its default (presets themselves are not touched) ----
+      wrap.querySelector("#tf-reset").addEventListener("click", function () {
+        apply(defaults());
+        presetSelect.value = "";
+        fire(presetSelect, "change");                       // lets the custom dropdown redraw (empty value = no preset load)
+        fire(wrap.querySelector("#tf-based-on"), "change");
+        fire(wrap.querySelector("#tf-direction"), "change");
+        snapshot();
+        toast("Animator Text settings reset to default.");
       });
 
       // ---- Import from layer: read the TextFlex animator of the selected text layer back into the fields ----

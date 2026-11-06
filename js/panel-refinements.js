@@ -345,15 +345,55 @@
     return pct;
   }
 
+  /* Zoom-proof rect. css/style.css has ".app { zoom: var(--ui-scale) }" but this bubble is position:fixed on <body>,
+     outside .app, so it is never zoomed. Older CEF (before ~Chrome 128) returns getBoundingClientRect() of an element
+     inside .app already DIVIDED by that zoom, so with any UI scale other than 100% the bubble landed beside / under
+     the wrong slider (it drifted more the farther the slider was from the panel's top-left). Which convention the host
+     uses is measured ONCE per --ui-scale on a hidden probe inside .app (same method as js/mt-tooltip.js): ratio ~1 =
+     old engine (multiply the rect by the zoom), ratio ~zoom = new engine (rect already in screen pixels). */
+  var bubbleK = { key: null, k: 1 };
+  function bubbleConvK() {
+    var key = document.documentElement.style.getPropertyValue("--ui-scale") || "";
+    var app, probe, z, v, ratio;
+    if (bubbleK.key === key) { return bubbleK.k; }
+    bubbleK.key = key; bubbleK.k = 1;
+    app = document.querySelector(".app");
+    if (!app) { return 1; }
+    z = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+    v = parseFloat(window.getComputedStyle(app).zoom);
+    if (!(z > 0)) { z = (v > 0) ? v : 1; }
+    if (Math.abs(z - 1) < 0.001) { return 1; }
+    probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;left:0;top:0;width:100px;height:10px;visibility:hidden;pointer-events:none;transform:none;";
+    app.appendChild(probe);
+    if (probe.offsetWidth > 0) {
+      ratio = probe.getBoundingClientRect().width / probe.offsetWidth;
+      bubbleK.k = (Math.abs(ratio - 1) < Math.abs(ratio - z)) ? z : 1;
+    }
+    app.removeChild(probe);
+    return bubbleK.k;
+  }
+
+  // Width of the slider thumb in the same pixels as the rect (the thumb centre travels width - thumbWidth, not width).
+  function thumbWidth(input, k) {
+    var w = 0;
+    try { w = parseFloat(window.getComputedStyle(input, "::-webkit-slider-thumb").width); } catch (e) { w = 0; }
+    if (!(w > 0)) { w = 14; }
+    return w * k;
+  }
+
   function positionBubble(input, pct) {
-    var rect = input.getBoundingClientRect();
+    var r = input.getBoundingClientRect();
+    var k = (input.closest && input.closest(".app")) ? bubbleConvK() : 1;
+    var left = r.left * k, top = r.top * k, width = r.width * k;
     var b = ensureBubble();
+    var tw = thumbWidth(input, k);
     b.textContent = input.value;
-    // Clamp so the bubble can't overshoot the slider's own left/right edge on the first/last tick.
-    var x = rect.left + (rect.width * pct / 100);
-    x = Math.max(rect.left + 8, Math.min(rect.right - 8, x));
+    // The bubble sits on the thumb's centre. The thumb's travel is the track width minus the thumb width.
+    var x = left + tw / 2 + (width - tw) * pct / 100;
+    x = Math.max(left + 8, Math.min(left + width - 8, x));
     b.style.left = x + "px";
-    b.style.top = rect.top + "px";
+    b.style.top = top + "px";
   }
 
   function showBubble(input) {

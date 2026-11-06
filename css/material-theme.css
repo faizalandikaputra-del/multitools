@@ -603,8 +603,8 @@
 :root[data-ui-theme="material"][data-theme] body.is-adjusting .wa-lift { box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.18); }
 
 /* ---------- 9. Colour wheel (Color Palette > .cw) ----------
-   The dial is drawn differently under Material You (rounded colour cells + pill brightness track, js/main.js ColorWheel
-   drawMaterial). The card around it drops the Glass colour glow for a tonal surface; the HEX row becomes a pill. */
+   The dial is drawn differently under Material You (Dot orbit while still, morphing into a Cookie bloom while the colour changes,
+   + pill brightness track; js/main.js ColorWheel drawMaterial). The card around it drops the Glass colour glow for a tonal surface; the HEX row becomes a pill. */
 :root[data-ui-theme="material"][data-theme] body .cw {
   background: var(--md-surface-low); border: 0; border-radius: 28px; box-shadow: none; padding: var(--space-4, 1rem);
 }

@@ -1558,7 +1558,7 @@
     // saturation (distance); brightness lives on the arc hugging the right side of the bezel (A0..A1 degrees, y down).
     var N = 340, K = N / 272, C = N / 2, RD = 98 * K, RA = 122 * K, A0 = -56, A1 = 56;
     var LIVE_MS = 60, LIVE_KEY = "cwLiveFill", uid = 0;
-    var baseImg = null, baseLight = null;
+    var baseImg = null, baseLight = null, cookieDisc = null;
 
     function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
     function hsvToRgb(h, s, v) {
@@ -1703,6 +1703,26 @@
       return !!h && (h === el || el.contains(h));
     }
 
+    // Material You: full-brightness hue / saturation disc for the "cookie bloom" face, built once and shared (Value is a cheap
+    // alpha overlay at draw time). Painted a little past RD so the scalloped edge has colour all the way out.
+    function buildCookieDisc() {
+      if (cookieDisc) { return cookieDisc; }
+      var cv = document.createElement("canvas"); cv.width = N; cv.height = N;
+      var x = cv.getContext("2d"), im = x.createImageData(N, N), d = im.data, i, j, dx, dy, dist, h, rgb, o, lim = RD * 1.12;
+      for (j = 0; j < N; j++) {
+        for (i = 0; i < N; i++) {
+          dx = i + 0.5 - C; dy = j + 0.5 - C; dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > lim) { continue; }
+          h = (Math.atan2(-dy, dx) * 180 / Math.PI + 360) % 360;
+          rgb = hsvToRgb(h, Math.min(1, dist / RD), 1); o = (j * N + i) * 4;
+          d[o] = rgb[0]; d[o + 1] = rgb[1]; d[o + 2] = rgb[2]; d[o + 3] = 255;
+        }
+      }
+      x.putImageData(im, 0, 0);
+      cookieDisc = cv;
+      return cv;
+    }
+
     function create(opts) {
       opts = opts || {};
       var id = "cw-live-" + (++uid);
@@ -1730,6 +1750,23 @@
       var canvas = root.querySelector(".cw-wheel"), ctx = canvas.getContext("2d");
       var hexEl = root.querySelector(".cw-hex"), rgbEl = root.querySelector(".cw-rgb");
       var raf = 0, dragging = false, dragBox = null, mode = "", lastHex = "";
+      // Material You face morph: 0 = Dot orbit (still), 1 = Cookie bloom (while the colour is being changed). Eases both ways;
+      // a change (drag, HEX, arrows, swatch click) keeps the bloom alive for HOLD_MS, a release for RELEASE_MS.
+      var morph = 0, morphT = 0, activeUntil = 0, holdT = 0, HOLD_MS = 650, RELEASE_MS = 450;
+      function bump(ms) { var u = Date.now() + (ms || HOLD_MS); if (u > activeUntil) { activeUntil = u; } }
+      function reduceMotion() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
+      function stepMorph() {
+        var now = Date.now(), target = (dragging || now < activeUntil) ? 1 : 0, dt = morphT ? Math.min(64, now - morphT) : 16;
+        morphT = now;
+        if (reduceMotion()) { morph = target; }
+        else {
+          morph += (target - morph) * (1 - Math.exp(-dt / 70));
+          if (Math.abs(target - morph) < 0.004) { morph = target; }
+        }
+        if (holdT) { clearTimeout(holdT); holdT = 0; }
+        if (morph !== target) { schedule(); }
+        else if (target === 1 && !dragging) { holdT = setTimeout(function () { holdT = 0; schedule(); }, Math.max(20, activeUntil - now + 20)); }
+      }
       var sinA1 = Math.sin(A1 * Math.PI / 180);
 
       function current() { return rgbToHex(hsvToRgb(st.h, st.s, st.v)); }
@@ -1740,7 +1777,7 @@
         var light = isLightTheme(), hr = st.h * Math.PI / 180, ka = (A0 + (1 - st.v) * (A1 - A0)) * Math.PI / 180;
         var kx = C + Math.cos(ka) * RA, ky = C + Math.sin(ka) * RA, mx = C + st.s * RD * Math.cos(hr), my = C - st.s * RD * Math.sin(hr);
         ctx.clearRect(0, 0, N, N);
-        if (isMaterial()) { drawMaterial(ctx, hex, full, kx, ky, ka, mx, my); finishDraw(hex, rgb); return; }
+        if (isMaterial()) { stepMorph(); drawMaterial(ctx, hex, full, kx, ky, ka, mx, my); finishDraw(hex, rgb); return; }
         ctx.drawImage(buildBase(), 0, 0);
 
         // brightness arc: track + gradient (full-brightness color -> black), knob carries the picked color
@@ -1778,16 +1815,17 @@
       }
 
       // ---- Material You face: same geometry + hit-testing as Glass (disc RD, arc A0..A1), different drawing ----
-      // Hue/saturation = 5 rings of rounded colour cells with a neutral centre dot (like the cells of a Material
-      // tonal palette); brightness = a thick pill track with a slim radial handle, haloed in the card colour.
-      var MAT_RINGS = 5, mc = null;
+      // Still = "Dot orbit": 6 rings of round dots round a neutral centre dot. While the colour is being changed the dots
+      // morph into the "Cookie bloom": a continuous hue / saturation disc in a 12-lobed scalloped edge (see morph in create()).
+      // Brightness = a thick tonal pill track with a tall primary handle, haloed in the card colour.
+      var MAT_RINGS = 6, mc = null;
       function isMaterial() { return document.documentElement.getAttribute("data-ui-theme") === "material"; }
       function matColors() {
         if (mc) { return mc; }
         var cs = window.getComputedStyle(document.documentElement);
         function v(n, d) { var x = cs.getPropertyValue(n); return x && x.trim() ? x.trim() : d; }
         mc = { card: v("--md-surface-low", "#f3f2fe"), track: v("--md-surface-highest", "#e2e1ed"), handle: v("--md-primary", "#6843cb"),
-               ring: v("--md-surface-lowest", "#ffffff"), ink: v("--md-on-surface", "#1b1b23") };
+               ring: v("--md-surface-lowest", "#ffffff"), ink: v("--md-on-surface", "#1b1b23"), onp: v("--md-on-primary", "#ffffff") };
         return mc;
       }
       function pill(c, x, y, w, h, r) {   // rounded rect without ctx.roundRect (CEF 74)
@@ -1797,38 +1835,57 @@
         c.lineTo(x + r, y + h); c.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
         c.lineTo(x, y + r); c.arc(x + r, y + r, r, Math.PI, Math.PI * 1.5); c.closePath();
       }
+      function cookiePath(c, r0) {   // 12-lobed scallop; its valleys stay on RD so a full-saturation pick is always inside
+        var i, a, r;
+        c.beginPath();
+        for (i = 0; i <= 180; i++) {
+          a = i * 2 * Math.PI / 180; r = r0 * (1.04 + 0.04 * Math.cos(12 * a));
+          if (i === 0) { c.moveTo(C + Math.cos(a) * r, C + Math.sin(a) * r); } else { c.lineTo(C + Math.cos(a) * r, C + Math.sin(a) * r); }
+        }
+        c.closePath();
+      }
       function drawMaterial(c, hex, full, kx, ky, ka, mx, my) {
-        var col = matColors(), t = RD / (MAT_RINGS + 1), gap = 3.2 * K, k, j, n, rm, w, span, capA, a0, a1, hc, rgbc, ang;
-        // brightness track: wide pill, gradient fill inset by 2px
+        var col = matColors(), t = RD / (MAT_RINGS + 1), k, j, n, rm, rr, hc, ang, m = morph, ease = m * m * (3 - 2 * m);
+        // brightness track: thick tonal pill, gradient fill, tall primary handle haloed in the card colour
         c.lineCap = "round";
-        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 18 * K; c.strokeStyle = col.track; c.stroke();
+        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 24 * K; c.strokeStyle = col.track; c.stroke();
         var g = c.createLinearGradient(0, C - RA * sinA1, 0, C + RA * sinA1);
         g.addColorStop(0, full); g.addColorStop(1, "#000");
-        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 12 * K; c.strokeStyle = g; c.stroke();
-        // neutral centre dot (saturation 0)
-        rgbc = hsvToRgb(st.h, 0, st.v);
-        c.beginPath(); c.arc(C, C, t - gap / 2, 0, Math.PI * 2); c.fillStyle = rgbToHex(rgbc); c.fill();
-        // colour cells
-        for (k = 1; k <= MAT_RINGS; k++) {
-          n = 6 * k; rm = (k + 0.5) * t; w = t - gap; span = 360 / n;
-          capA = (gap / 2 + w / 2) / rm * 180 / Math.PI;                 // degrees eaten by the gap and the round caps
-          c.lineWidth = w;
-          for (j = 0; j < n; j++) {
-            hc = j * span; rgbc = hsvToRgb(hc, k / MAT_RINGS, st.v);
-            a1 = -(hc - span / 2) - capA; a0 = -(hc + span / 2) + capA;   // canvas angles run opposite to hue
-            c.strokeStyle = rgbToHex(rgbc);
-            c.beginPath();
-            if (a1 <= a0) { ang = -hc * Math.PI / 180; c.arc(C + Math.cos(ang) * rm, C + Math.sin(ang) * rm, w / 2, 0, Math.PI * 2); c.fillStyle = c.strokeStyle; c.fill(); continue; }
-            c.arc(C, C, rm, a0 * Math.PI / 180, a1 * Math.PI / 180); c.stroke();
-          }
-        }
-        // handle on the track: card-coloured halo + slim primary pill lying along the radius
+        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 16 * K; c.strokeStyle = g; c.stroke();
         c.save(); c.translate(kx, ky); c.rotate(ka);
-        pill(c, -17 * K, -6 * K, 34 * K, 12 * K, 6 * K); c.fillStyle = col.card; c.fill();
-        pill(c, -14 * K, -3 * K, 28 * K, 6 * K, 3 * K); c.fillStyle = col.handle; c.fill();
+        pill(c, -21 * K, -8 * K, 42 * K, 16 * K, 8 * K); c.fillStyle = col.card; c.fill();
+        pill(c, -17 * K, -5 * K, 34 * K, 10 * K, 5 * K); c.fillStyle = col.handle; c.fill();
+        pill(c, -6 * K, -1.2 * K, 12 * K, 2.4 * K, 1.2 * K); c.fillStyle = col.onp; c.globalAlpha = 0.85; c.fill();
         c.restore();
-        // picked point: card ring + coloured core
-        c.beginPath(); c.arc(mx, my, 13 * K, 0, Math.PI * 2); c.fillStyle = "rgba(0,0,0,0.28)"; c.fill();
+        // Dot orbit (still): neutral centre + 6 rings of round dots, dots swell and fade as the bloom takes over
+        if (ease < 0.999) {
+          c.save(); c.globalAlpha = 1 - ease;
+          c.beginPath(); c.arc(C, C, t * 0.46 * (1 + 0.4 * ease), 0, Math.PI * 2); c.fillStyle = rgbToHex(hsvToRgb(st.h, 0, st.v)); c.fill();
+          for (k = 1; k <= MAT_RINGS; k++) {
+            n = 6 * k; rm = (k + 0.5) * t; rr = t * (0.30 + 0.16 * k / MAT_RINGS) * (1 + 0.4 * ease);
+            for (j = 0; j < n; j++) {
+              hc = j * 360 / n; ang = -hc * Math.PI / 180;
+              c.beginPath(); c.arc(C + Math.cos(ang) * rm, C + Math.sin(ang) * rm, rr, 0, Math.PI * 2);
+              c.fillStyle = rgbToHex(hsvToRgb(hc, k / MAT_RINGS, st.v)); c.fill();
+            }
+          }
+          c.restore();
+        }
+        // Cookie bloom (while changing): continuous disc inside a scalloped edge, grows in from 88%
+        if (ease > 0.001) {
+          var sc = 0.88 + 0.12 * ease;
+          c.save(); c.globalAlpha = ease;
+          c.translate(C, C); c.scale(sc, sc); c.translate(-C, -C);
+          cookiePath(c, RD); c.save(); c.clip();
+          c.drawImage(buildCookieDisc(), 0, 0);
+          if (st.v < 1) { c.fillStyle = "rgba(0,0,0," + (1 - st.v).toFixed(3) + ")"; c.fillRect(0, 0, N, N); }
+          c.restore();
+          cookiePath(c, RD); c.lineWidth = 2 * K; c.strokeStyle = col.ring; c.stroke();
+          c.restore();
+        }
+        // picked point: card halo, primary ring, light ring, coloured core
+        c.beginPath(); c.arc(mx, my, 17 * K, 0, Math.PI * 2); c.fillStyle = col.card; c.fill();
+        c.beginPath(); c.arc(mx, my, 14.5 * K, 0, Math.PI * 2); c.fillStyle = col.handle; c.fill();
         c.beginPath(); c.arc(mx, my, 12 * K, 0, Math.PI * 2); c.fillStyle = col.ring; c.fill();
         c.beginPath(); c.arc(mx, my, 8.5 * K, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
       }
@@ -1841,6 +1898,7 @@
 
       // called after every user change: repaint next frame + (optionally) push to the selected Fill effects
       function changed(force) {
+        bump();
         schedule();
         if (force || liveOn) { queueFill(current()); }
       }
@@ -1884,7 +1942,9 @@
       function end() {
         if (!dragging) { return; }
         dragging = false; dragBox = null; mode = "";
+        bump(RELEASE_MS);
         root.classList.remove("is-dragging");
+        schedule();   // starts the wait that lets the bloom relax back into the dots
         commit();
       }
       canvas.addEventListener("pointerup", end);
@@ -1930,6 +1990,7 @@
         var hsv = rgbToHsv.apply(null, hexToRgb(hex));
         if (hsv.s > 0 && hsv.v > 0) { st.h = hsv.h; }
         st.s = hsv.s; st.v = hsv.v;
+        bump();
         schedule();
       });
 
@@ -4637,7 +4698,7 @@
   // content (~110ms), then renderTab() swaps the content and plays the staggered card entrance.
   var MT_LEAVE_MS = 110;
   var MT_STAGGER_SEL = ".tool, .ta-group, .beat-card, .snippet-card, .info, .empty, .expr-item, " +
-    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group
+    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn, .el-fx";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group; .el-fx: Copy Effects box (js/mt-fxcopy.js), Easy Layer + Animation Presets
   var MT_STAGGER_MAX = 14;
   var leaveTimer = null;
   var staggerTimer = null;
@@ -4885,7 +4946,10 @@
       built = grid;
     }
     panel.appendChild(built);
+    // Animation Presets: Copy Effects box on top (collapsed until opened; same saved effects as the Easy Layer box)
+    if (tabId === "presets" && window.MTFx) { panel.insertBefore(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "presets", collapsed: true }), panel.firstChild); }
     if (tabId === "easy-layer") { panel.appendChild(EasyLayerFlip.render()); }   // Flip Horizontal/Vertical beneath the grid
+    if (tabId === "easy-layer" && window.MTFx) { panel.appendChild(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "easy-layer", collapsed: false })); }   // Copy Effects section (js/mt-fxcopy.js) beneath Flip
 
     // Feature B: grouped capsule cards, applied panel-wide. groupifyTaSections() only wraps
     // DIRECT ".ta-section" children of the node it's given, so calling it once here on `built`

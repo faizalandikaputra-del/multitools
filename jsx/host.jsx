@@ -9732,6 +9732,8 @@ function _ktScan(p, found, seen, mode, depth) {
   var i, k, n, path, keys, entry;
   if (!p || depth > 12) { return; }
   if (p.propertyType === PropertyType.PROPERTY) {
+    // Layer markers cannot be rebuilt with setValueAtKey, so they are never touched (they would be lost).
+    try { if (p.matchName === "ADBE Marker") { return; } } catch (eM) { }
     n = 0;
     try { n = p.numKeys; } catch (e0) { n = 0; }
     if (!n) { return; }
@@ -9850,6 +9852,10 @@ function KT_apply(cfg) {
     } else { throw new Error("Unknown mode: " + mode); }
     if (isNaN(ns) || isNaN(ne)) { throw new Error("Start / End is not a valid time."); }
     if (ns < -0.000001) { throw new Error("The new range would start before 0:00:00."); }
+    var half = 0.5 / fps;
+    if (Math.abs(ns - s0) < half && Math.abs(ne - e0) < half) {
+      throw new Error("Nothing to move: the keyframes are already there. Move the playhead (Auto) or change Start / End.");
+    }
 
     var snap = function (t) { return Math.round(t * fps) / fps; };
     var mapT = function (t) {
@@ -9876,6 +9882,29 @@ function KT_apply(cfg) {
         ok = false;
         // Put the originals back so a failed property never loses its keyframes.
         for (j = 0; j < caps.length; j++) { try { _ktPut(prop, caps[j], caps[j].t); } catch (eBack) { } }
+      }
+      // Verify: every keyframe must really sit at its new time, otherwise the property counts as failed.
+      if (ok) {
+        try {
+          if (prop.numKeys < caps.length) { ok = false; }
+          for (j = 0; ok && j < caps.length; j++) {
+            idx = prop.nearestKeyIndex(newTimes[j]);
+            if (Math.abs(prop.keyTime(idx) - newTimes[j]) > 0.0001) { ok = false; }
+          }
+        } catch (eV) { ok = false; }
+        if (!ok) {
+          // Remove only the keys that were added at the new times, then put the originals back.
+          try {
+            var del = [], dk;
+            for (j = 0; j < newTimes.length; j++) {
+              dk = prop.nearestKeyIndex(newTimes[j]);
+              if (Math.abs(prop.keyTime(dk) - newTimes[j]) <= 0.0001) { del.push(dk); }
+            }
+            del.sort(function (a, b) { return b - a; });
+            for (j = 0; j < del.length; j++) { if (j === 0 || del[j] !== del[j - 1]) { prop.removeKey(del[j]); } }
+          } catch (eClr) { }
+          for (j = 0; j < caps.length; j++) { try { _ktPut(prop, caps[j], caps[j].t); } catch (eBack2) { } }
+        }
       }
       if (!ok) { skipped++; continue; }
       // Roving is set last (it depends on the neighbours) and the moved keys are selected again, so Apply can be repeated.

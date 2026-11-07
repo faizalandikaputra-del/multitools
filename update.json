@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.127",
-    "changelog":  "- Update 1.8.127",
+    "latest_version":  "1.8.128",
+    "changelog":  "- Update 1.8.128",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -424,7 +424,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "d36a957e2b6872fb2a5e6f221167450f574923d11d8e8cb76a98ac97313775a7"
+                      "sha256":  "cfd8cbe83015e01f713085b77d2058b44cc114621b408cf61e05a9d8925fdac7"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -736,7 +736,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "8d4b6424851c3e9fe9efe0045d3535e6d28f3ec57e6269901accbb5b1691f01a"
+                      "sha256":  "726d60c32fad51b4bd85d6a0662e4ac7582de18ce4cd3f0a6b752a1db05b968a"
                   }
               ]
 }

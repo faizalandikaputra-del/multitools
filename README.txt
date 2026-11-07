@@ -2364,3 +2364,13 @@ fixKT-layer (tab Keyframe Timing: klik layer ikut menyesuaikan keyframe)
   - Perbaikan: _ktCollect punya pass ketiga. Jika tidak ada keyframe / properti terpilih, dipakai semua keyframe dari semua properti layer terpilih (comp.selectedLayers,
     mode "all"). Prioritas tetap: keyframe terpilih > properti terpilih > layer terpilih. Layer terkunci tetap dilewati di KT_apply.
   - Files: jsx/host.jsx (hanya _ktCollect). js/main.js dan html tidak berubah.
+
+fixKT-apply (tab Keyframe Timing: Apply tidak memindah keyframe)
+  - Masalah: Apply tidak terlihat memindah keyframe (terutama setelah memilih layer).
+  - Penyebab: (1) Apply melaporkan "Moved N" walau waktu baru sama dengan waktu lama (playhead sudah di keyframe pertama / Start sama), jadi tampak tidak berpindah;
+    (2) hasil tidak diverifikasi setelah keyframe ditambah ulang; (3) mode layer dari fixKT-layer ikut memindai properti Marker, yang tidak bisa dibangun ulang
+    dengan setValueAtKey, sehingga marker bisa hilang.
+  - Perbaikan (jsx/host.jsx saja): KT_apply memberi pesan jelas "Nothing to move" jika range baru sama dengan range lama (selisih < setengah frame);
+    tiap properti diverifikasi setelah dipindah (waktu tiap keyframe dicek), kalau gagal hanya keyframe yang baru ditambah dihapus lalu yang asli dikembalikan
+    dan properti dihitung "skipped"; _ktScan melewati properti Marker (ADBE Marker) sehingga marker tidak pernah disentuh.
+  - Files: jsx/host.jsx (_ktScan, KT_apply). js/main.js dan html tidak berubah.

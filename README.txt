@@ -2426,3 +2426,8 @@ fix-layout-v2: new layout for 8 tabs (Color Palette, Expression Code, Animation 
          Only opacity + transform. data-reduce-motion="true" = no motion. Easy Layer, Curve and Animator Text keep the old panel look (html[data-mt-skip]).
          Logic (renderTab, Bridge.call, host.jsx) is unchanged. Off switch: localStorage mtx.layoutV2 = "0".
   files: css/mt-layout-v2.css (new, loaded last), js/mt-layout-v2.js (new: flag + current-tab marker), js/main.js (showTab calls MTLayoutV2.tab, v62), html/index.html (link + script).
+
+fix-layout-v2b: layout v2 was not visible
+  cause: the v1 rules were too light (rail already rounded in Glass) and the Glass / Material You sheets use selectors with more weight, so several rules lost.
+  fix:   css/mt-layout-v2.css v2: visible properties carry !important (dark rail strip, flat idle slots + tinted active slot with accent edge, bigger header title with a hairline,
+         filled cards with a hairline border and no coloured left edge, bordered tiles / preset rows). html/index.html: stylesheet ?v=2.

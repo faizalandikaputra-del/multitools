@@ -2462,3 +2462,17 @@ fix-layout-v3.1 (anchor icons, dropdown zoom, Shortcutz delete all):
      [Delete everything, hide built-ins too] (built-ins are fixed code, so they are hidden; "Restore N hidden shortcuts" brings them back). js/main.js: askChoice(),
      Shortcutz.clearAll / confirmClearAll, TileCustom.hideMany. Also: Shortcutz.rerender() now groups sections like the first render (before, hide/restore lost the layout).
   files: js/main.js (v65), js/mt-select.js (v2), js/mt-layout-v3.js (v2), css/mt-layout-v3.css (v4), html/index.html + settings.html (version bumps).
+
+fix-sheet-ui (Sheet look: layout + icons + smooth motion):
+  what:  the 8 tabs (Color Palette, Expression Code, Animation Presets, Quick Comp Edit, Anchor Point & Align, Tools, Shortcutz, Info) and the icon rail now follow the "sheet" design:
+         flat charcoal panel (no glass blur), 3.25rem icon rail with a soft rounded-square active tab (white icon), bold 1.1rem titles, sunken inputs, one white primary button,
+         white pill chips, 8-column swatch grids, hex text on the colour chip (ink follows brightness), Anchor = dot grid with a white centre cell, Expression Code = Apply | Save side by side
+         and Clear as an X beside the name field, Animation Presets = refresh icon beside the folder row + Save / Import / Check support in a bar pinned to the bottom, Shortcutz = bare icons,
+         "+" add button, Tools rows dark instead of white, Info link rows with a chevron. Rail icons for Animation Presets, Anchor and Settings replaced by the sheet icon set.
+  motion: opacity + transform only. Tab switch = panel fade + 8 px rise (340 ms, ease-out) and cards stagger in (30 ms each, no scale pop); sliding rail highlight 460 ms ease-out (no overshoot);
+         hover 140 ms colour fade; press scale .97 / .95 (90 ms); toggle knob 320 ms; swatch hover grow; segmented controls fade; Animations switch (data-reduce-motion) = no motion.
+  cause: n/a (design change). No feature removed: every handler is reused; moved nodes keep their ids (#expr-save, #expr-clear-form, #preset-save, #preset-import, #preset-support-btn).
+  texts: UI text stays English (strict English rule); only the layout / icons / elements of the sheet were copied.
+  fix:   css/mt-sheet.css (loaded last, after mt-layout-v3.css), js/mt-sheet.js (new), html/index.html (link + script).
+         Switch back: localStorage mtx.sheetUI = "0" -> previous v3 look. Light theme: only structure applies, colours stay with the theme.
+  not touched: Easy Layer, Animator Text, Curve (NeuCurve) content (they get the new rail, title and tokens only), Settings window, idle screen, dynamic island.

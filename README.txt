@@ -2431,3 +2431,10 @@ fix-layout-v2b: layout v2 was not visible
   cause: the v1 rules were too light (rail already rounded in Glass) and the Glass / Material You sheets use selectors with more weight, so several rules lost.
   fix:   css/mt-layout-v2.css v2: visible properties carry !important (dark rail strip, flat idle slots + tinted active slot with accent edge, bigger header title with a hairline,
          filled cards with a hairline border and no coloured left edge, bordered tiles / preset rows). html/index.html: stylesheet ?v=2.
+
+fix-layout-v2c: layout v2 closer to the mockup (tested in headless Chromium, no script errors)
+  what:  header without a box + short subtitle per tab (html[data-mt-sub], shown through #panel-hint::after; the long hint stays in the DOM), tinted tile icons (align / shortcut / anchor),
+         bordered anchor + align buttons, and an "On the island" card on top of the Animation Presets tab: the presets pinned to the dynamic island, Apply = same call as the island row,
+         x removes the pin. Easy Layer, Curve, Animator Text still keep the old look.
+  files: css/mt-layout-v2.css (v4), js/mt-layout-v2.js (v2: subtitle map, decorate()), js/mt-island-presets.js (v2: list() / onChange()), js/main.js (v63, decorate hook after MTBoxes.afterRender),
+         html/index.html (version bumps).

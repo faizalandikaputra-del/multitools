@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.138",
-    "changelog":  "- Update 1.8.138",
+    "latest_version":  "1.8.139",
+    "changelog":  "- Update 1.8.139",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -187,10 +187,6 @@
                       "sha256":  "89a37004b2d5efeb904fec2192c259f1d7e9bb0f393e541ca5c0629b6087317a"
                   },
                   {
-                      "path":  "css/mt-sheet.css",
-                      "sha256":  "81f89e48b6c9281c71cc3257070779b058c4a215d6622d41d1fa82516dd563c0"
-                  },
-                  {
                       "path":  "css/mt-smooth.css",
                       "sha256":  "e655b6e53530e50ca86abd24968f7cdfd2c5ae4e764ee9c96f714d9a2f248c3b"
                   },
@@ -260,7 +256,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "524e08727d4d4d4dcc8b89de58171fcdd144fbdd745011700cbf602b57a2690a"
+                      "sha256":  "046b5b22192aa2348fe5ab5d7b4e645ae7fa445ca5eb349dbe78a6b10f672bed"
                   },
                   {
                       "path":  "html/settings.html",
@@ -401,10 +397,6 @@
                   {
                       "path":  "js/mt-settings-window.js",
                       "sha256":  "976cec61c50d1d95b897accf7cbd21ae7d705ba9da82c9572902845865576783"
-                  },
-                  {
-                      "path":  "js/mt-sheet.js",
-                      "sha256":  "2e6262e7ade20768b0208a561285ddaaa56fd904f04c9aa12fdae9a4fc0f7da6"
                   },
                   {
                       "path":  "js/mt-smooth.js",
@@ -764,7 +756,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "699345c85a32288eceedf677751a140352633282f9c741be07c47d3aa3ac4504"
+                      "sha256":  "f15661dd4b21be27d13948e358b2d60fe302c806d9231085b7405a3fa184c006"
                   }
               ]
 }

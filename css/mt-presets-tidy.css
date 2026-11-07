@@ -1,0 +1,12 @@
+/* Multi Tool - mt-presets-tidy.css (v1)
+   Animation Presets tab: tidy "Preset Folder" card. The five buttons form two even rows (Select Folder wide + Refresh; Save as Preset /
+   Import / Check Support equal thirds), one short help line below the path. Flex + margins only (no grid gap): works on Chromium 74. */
+.preset-toolbar { display: flex; flex-wrap: wrap; margin: 0.45rem -0.2rem 0; }
+.preset-toolbar > .btn {
+  flex: 1 1 28%; min-width: 0; margin: 0.2rem; padding-left: 0.4rem; padding-right: 0.4rem;
+  font-size: 0.78rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preset-toolbar > #preset-select { flex: 2 1 55%; }
+.preset-toolbar > #preset-refresh { flex: 1 1 30%; }
+.preset-path { margin-bottom: 0; }
+.preset-help { margin: 0.55rem 0 0; line-height: 1.4; }

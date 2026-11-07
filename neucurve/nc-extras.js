@@ -124,7 +124,7 @@
   function applyHandleCss(st) {
     if (!styleEl) { styleEl = document.createElement("style"); styleEl.id = "nc-handle-css"; document.head.appendChild(styleEl); }
     styleEl.textContent = Math.abs(st.line - 1.2) < 0.01 ? "" :
-      "svg.curve-svg g.handles > line { stroke-width: " + st.line + "px; }";
+      "svg.curve-svg g.handles > line, svg.curve-svg g.nc-mlines > line { stroke-width: " + st.line + "px; }";
   }
 
 

@@ -82,10 +82,11 @@
   <!-- Idle live numbers (date, time in AE, timer, stopwatch, counts): digit roll, same motion as the clock (loads after mt-idle-time.css) -->
   <link rel="stylesheet" href="../css/mt-idle-roll.css?v=2">
   <!-- Dynamic island for a running Timer / Stopwatch (loads after mt-idle-adjust.css and mt-idle-roll.css) -->
-  <link rel="stylesheet" href="../css/mt-island.css?v=17">
+  <link rel="stylesheet" href="../css/mt-island.css?v=18">
   <link rel="stylesheet" href="../css/mt-island-boxes.css?v=2">
+  <link rel="stylesheet" href="../css/mt-island-presets.css?v=1">
   <link rel="stylesheet" href="../css/mt-fxcopy.css?v=5">
-  <link rel="stylesheet" href="../css/mt-curve-top.css?v=2">
+  <link rel="stylesheet" href="../css/mt-curve-top.css?v=3">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=7">
   <!-- Keyframe Timing tab (Glass + Material You looks). Must stay AFTER material-theme.css. -->
@@ -98,6 +99,7 @@
   <link rel="stylesheet" href="../css/mt-preset-drop.css?v=1">
   <link rel="stylesheet" href="../css/mt-preset-support.css?v=2">
   <link rel="stylesheet" href="../css/mt-preset-actions.css?v=1">
+  <link rel="stylesheet" href="../css/mt-presets-tidy.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -764,13 +766,14 @@
   <script src="../js/mt-nav.js?v=2"></script>
   <script src="../js/mt-anim.js?v=1"></script>
   <script src="../js/mt-idle-roll.js?v=2"></script>
-  <script src="../js/mt-island.js?v=19"></script>
+  <script src="../js/mt-island.js?v=20"></script>
   <script src="../js/mt-island-boxes.js?v=2"></script>
+  <script src="../js/mt-island-presets.js?v=1"></script>
   <script src="../js/mt-fxcopy.js?v=5"></script>
   <script src="../js/mt-pro.js?v=3"></script>
-  <script src="../js/main.js?v=61"></script>
+  <script src="../js/main.js?v=62"></script>
   <script src="../js/mt-loader.js?v=1"></script>
-  <script src="../js/mt-curve-top.js?v=1"></script>
+  <!-- mt-curve-top.js removed: the band behind the island is transparent now (css/mt-curve-top.css v3) -->
   <script src="../js/mt-smooth.js?v=2"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->

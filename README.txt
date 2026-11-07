@@ -2412,3 +2412,23 @@ fixKT-tools (Keyframe Timing pindah ke tab Tools, preview keyframe dihapus)
     dengan gap (mengganti tata letak .ta-section).
   - jsx/host.jsx tidak berubah. Tab tersimpan atau urutan tab yang masih memuat "keyframes" diabaikan otomatis.
   - Files: js/main.js, html/index.html, css/mt-keyframes.css, README.txt.
+
+fixIsland-presets (guide line morph, band transparan, preset ke island, rapikan tab Presets dan Shortcutz)
+  - Permintaan: (1) animasi guide line saat ganti mode Bezier <-> Custom diperbaiki; (2) bagian atas tab NeuCurve dibuat transparan supaya dynamic island tidak tersamarkan;
+    (3) preset bisa ditarik ke dynamic island dengan layout rapi; (4) Copy Effects dihapus dari tab Animation Presets, teks dipersingkat, layout dirapikan;
+    (5) kalimat di tab Shortcutz dipersingkat.
+  - Guide line: sebelumnya garis guide disembunyikan selama morph lalu muncul lagi terlambat (setelah handle sudah sampai). Sekarang neucurve/nc-morph.js (v25)
+    menggambar garis proxy (g.nc-mlines, di bawah handle) yang bergerak dari garis lama ke garis baru dengan easing yang sama dengan kurva dan handle. Garis yang hanya ada
+    di satu mode tumbuh dari / menyusut ke titik jangkarnya. Garis asli tetap tersembunyi sampai morph selesai, lalu tampil di posisi yang sama tanpa fade (tanpa kedip).
+    neucurve/nc-morph.css: transition garis dimatikan, aturan sembunyi pakai !important (juga menang atas setting opacity Handle lines), gaya proxy mengikuti setting Handle lines
+    (off / dashed / opacity); neucurve/nc-extras.js: lebar garis ikut ke proxy.
+  - Band atas NeuCurve: css/mt-curve-top.css (v3) tidak lagi melukis band solid, jadi transparan. js/mt-curve-top.js tidak dimuat lagi (file dibiarkan).
+  - Preset ke island: baris preset (js/main.js, Presets.render) bisa di-drag (draggable + dragstart, tipe "text/mt-preset"). js/mt-island.js (v21) mengenali tipe itu,
+    membuka tampilan Pin, dan memanggil MTIslandPresets.add. File baru js/mt-island-presets.js + css/mt-island-presets.css: grid "Presets" 2 kolom (chip 36 px, nama satu baris
+    dengan ellipsis, x saat hover, animasi masuk / pop / keluar seperti tile tool) di antara tile tool dan box. Klik chip = PRE_apply ke layer terpilih. Disimpan di
+    localStorage "mtx.islandPresets". Baris di daftar preset tidak berubah.
+  - Tab Animation Presets: box Copy Effects dihapus dari tab ini (tetap ada di Easy Layer dan tab Effects di island). Hint dan catatan dipersingkat jadi satu baris bantuan,
+    tombol "Select Preset Folder" jadi "Select Folder", toolbar dirapikan (css/mt-presets-tidy.css: dua baris rata).
+  - Tab Shortcutz: catatan My Shortcuts, teks kosong, tombol Restore, dan keterangan tiga section dipersingkat.
+  - Files: neucurve/nc-morph.js, neucurve/nc-morph.css, neucurve/nc-extras.js, neucurve/index.html, css/mt-curve-top.css, css/mt-presets-tidy.css (baru),
+    css/mt-island-presets.css (baru), js/mt-island-presets.js (baru), js/mt-island.js, js/main.js (?v=62), html/index.html, README.txt.

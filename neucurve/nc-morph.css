@@ -2,17 +2,19 @@
    While the graph morphs between modes the handles glide (JS, via transform) and the thin handle / guide LINES are
    hidden, then fade back in when the morph is done. opacity only (GPU friendly). Off with Settings > Animations = off. */
 .curve-svg > g.handles > line {
-  transition: opacity .28s ease .1s;
+  transition: none;
 }
-.curve-svg.nc-morphing > g.handles > line {
-  opacity: 0;
-  transition: opacity .08s ease;
+/* v25: real guide lines stay hidden during the morph; proxy lines (g.nc-mlines, nc-morph.js) glide in their place, then the real ones
+   take over at the same spot with no fade. !important beats the Handle-lines opacity setting (html[data-nc-hgo]). */
+html body svg.curve-svg.nc-morphing > g.handles > line {
+  opacity: 0 !important;
 }
+.curve-svg > g.nc-mlines > line { stroke-opacity: .9; stroke-linecap: butt; }
+html[data-nc-hg="off"] svg.curve-svg > g.nc-mlines { display: none; }
+html[data-nc-hgs="dashed"] svg.curve-svg > g.nc-mlines > line { stroke-dasharray: 4 3; }
+html[data-nc-hgo] svg.curve-svg > g.nc-mlines { opacity: var(--nc-hgo, 1); }
 .curve-svg.nc-morphing > g.handles > g {
   pointer-events: none;
-}
-html[data-reduce-motion="true"] .curve-svg > g.handles > line {
-  transition: none;
 }
 /* mouse wheel over the mode tabs switches the mode */
 .mtab, .nav-tab { user-select: none; }

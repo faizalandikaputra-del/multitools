@@ -20,6 +20,7 @@
    so the very first mode switch after AE starts runs on already-optimised code.
    v24: the hidden mode warm-up (nc-warm.js) no longer disables the morph: it runs start() / render() / moveHandles() / fadeBack() and the
    .nc-morphing / .nc-morph-out style changes for real, with a 120 ms duration (WARM_DURATION), so the first real mode switch in AE is not cold.
+   v25: guide lines glide with the curve and handles (proxy lines, see "guide lines" below) instead of vanishing and fading in late.
    Plain ES5 for old CEF (AE 2019/2021).  Off switch: remove <script src="./nc-morph.js"> and <link href="./nc-morph.css">. */
 (function () {
   "use strict";
@@ -44,6 +45,8 @@
   var armedH = null;        // handle positions belonging to `armed`
   var armed = null;         // tab switched, waiting for the path update { from, until }
   var lastD = null;         // last "d" seen on the main path (not written by us)
+  var armedL = null;        // v25: guide-line geometry belonging to `armed`
+  var lastL = null;         // v25: last guide-line geometry seen - the "from" side of the guide-line motion
   var lastH = null;         // last handle positions seen (screen px) - the "from" side of the handle motion
 
   function reduced() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }   // v24: the hidden mode warm-up (nc-warm.js) now runs the REAL morph too, just short (WARM_DURATION), so its code path is not cold on the first real switch
@@ -183,6 +186,53 @@
     return out;
   }
 
+  /* ---------- guide lines (v25) ----------
+     The thin lines from an anchor to its handle (g.handles > line) used to be hidden during the whole morph and fade in afterwards, so after a
+     Bezier <-> Custom switch they popped in late, detached from the handles that had already glided. Now proxy lines (g.nc-mlines, drawn under the
+     real ones) are tweened every frame from the old line to the new line with the same easing as the curve and the handles; lines that exist in
+     only one of the two modes grow out of / shrink into their anchor. The real lines stay hidden (opacity 0) until the morph is over, then take
+     over at the exact same place with no fade, so there is no dip. */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function lineEls(svg) {
+    return svg ? Array.prototype.slice.call(svg.querySelectorAll("g.handles > line")) : [];
+  }
+  function readLine(el) {
+    var o = { x1: parseFloat(el.getAttribute("x1")), y1: parseFloat(el.getAttribute("y1")), x2: parseFloat(el.getAttribute("x2")), y2: parseFloat(el.getAttribute("y2")),
+              stroke: el.getAttribute("stroke") || "", w: el.getAttribute("stroke-width") || "" };
+    return (isFinite(o.x1) && isFinite(o.y1) && isFinite(o.x2) && isFinite(o.y2)) ? o : null;
+  }
+  function takeLines() {
+    var svg = document.querySelector("svg.curve-svg"), els = lineEls(svg), out = [], i;
+    for (i = 0; i < els.length; i++) { out.push(readLine(els[i])); }
+    return out;
+  }
+  function lerp(a, b, e) { return a + (b - a) * e; }
+  function moveLines(a, e) {
+    var els = lineEls(a.svg), n = Math.max(els.length, a.lFrom.length), i, to, fr, op, g, pr, src;
+    if (!a.lg) { return; }
+    a.lNow = [];
+    for (i = 0; i < n; i++) {
+      to = els[i] ? readLine(els[i]) : null; fr = a.lFrom[i] || null; op = 1;
+      if (!to && !fr) { a.lNow.push(null); if (a.lp[i]) { a.lp[i].style.display = "none"; } continue; }
+      if (to && !fr) { fr = { x1: to.x1, y1: to.y1, x2: to.x1, y2: to.y1 }; op = e; }                  // new line: grows out of its anchor
+      else if (fr && !to) { to = { x1: fr.x1, y1: fr.y1, x2: fr.x1, y2: fr.y1 }; op = 1 - e; }       // old line: shrinks into its anchor
+      pr = a.lp[i];
+      if (!pr) { pr = a.lp[i] = document.createElementNS(SVGNS, "line"); a.lg.appendChild(pr); }
+      src = els[i] ? to : a.lFrom[i];
+      g = { x1: lerp(fr.x1, to.x1, e), y1: lerp(fr.y1, to.y1, e), x2: lerp(fr.x2, to.x2, e), y2: lerp(fr.y2, to.y2, e), stroke: (src && src.stroke) || "", w: (src && src.w) || "" };
+      pr.style.display = "";
+      pr.setAttribute("x1", g.x1.toFixed(2)); pr.setAttribute("y1", g.y1.toFixed(2)); pr.setAttribute("x2", g.x2.toFixed(2)); pr.setAttribute("y2", g.y2.toFixed(2));
+      if (g.stroke) { pr.setAttribute("stroke", g.stroke); }
+      if (g.w) { pr.setAttribute("stroke-width", g.w); }
+      pr.style.opacity = op >= 1 ? "" : String(Math.max(0, Math.min(1, op)));
+      a.lNow.push(g);
+    }
+  }
+  function dropLines(a) {
+    if (a.lg && a.lg.parentNode) { a.lg.parentNode.removeChild(a.lg); }
+    a.lg = null; a.lp = [];
+  }
+
   /* ---------- the morph ---------- */
   /* NeuCurve eases its own Y viewport for ~0.5 s after a mode switch, so the app keeps rewriting "d" every frame
      during (and a bit after) our morph. We therefore treat the app's latest "d" as the live TARGET and blend
@@ -199,12 +249,14 @@
       if (writeTarget) { fadeBack(a.svg); }
     }
     clearHandleOffsets(a);
+    dropLines(a);
     if (writeTarget && a.path.parentNode) {
       a.path.setAttribute("d", a.toD);
       try { mo.takeRecords(); } catch (e) { }
     }
     lastD = a.toD;
     lastH = takeHandles();
+    lastL = takeLines();
   }
 
   /* glow stack comes back with a short fade (nc-morph.css, .nc-morph-out) instead of popping in */
@@ -278,17 +330,18 @@
     a.written = buildD(a, e);
     a.path.setAttribute("d", a.written);
     moveHandles(a, e);
+    moveLines(a, e);
     try { mo.takeRecords(); } catch (err) { }       // our own write must not look like an app update
   }
 
-  function start(path, fromD, toD, fromH) {
+  function start(path, fromD, toD, fromH, fromL) {
     var A = parsePolyline(fromD), sa, i, a, svg;
     if (!A || A.length < 2) { return; }
     sa = makeSampler(A);
     if (anim) { finish(anim, false); }
     svg = path.parentNode;
     a = { path: path, svg: svg, frame: 0, t0: now(), tr: 0, dur: window.__ncWarm === 1 ? WARM_DURATION : DURATION, xs: [], ya: [], sb: null, toD: toD, written: fromD,
-          appT: -1e9, parts: new Array(GRID + 1), hEls: handleEls(svg), hFrom: [], hNow: [] };
+          appT: -1e9, parts: new Array(GRID + 1), hEls: handleEls(svg), hFrom: [], hNow: [], lFrom: fromL || [], lNow: [], lp: [], lg: null };
     for (i = 0; i < a.hEls.length; i++) {
       a.hFrom.push(fromH && fromH.length ? (fromH[i] || fromH[fromH.length - 1]) : null);   // extra handles sprout from the last old one
     }
@@ -299,6 +352,11 @@
     anim = a;
     if (outTimer) { clearTimeout(outTimer); outTimer = 0; }
     if (outSvg && outSvg.classList) { outSvg.classList.remove(OUT_CLASS); outSvg = null; }
+    try {
+      a.lg = document.createElementNS(SVGNS, "g"); a.lg.setAttribute("class", "nc-mlines"); a.lg.setAttribute("pointer-events", "none");
+      var hg = svg.querySelector(":scope > g.handles");
+      if (hg) { svg.insertBefore(a.lg, hg); } else { svg.appendChild(a.lg); }
+    } catch (eL) { a.lg = null; }
     svg.classList.add(MORPH_CLASS);
     render(a);                                       // first frame in the same task as the switch: no flash of the new curve
     if (anim === a) {
@@ -341,6 +399,7 @@
 
     if (switched) {
       armedH = anim && anim.hNow && anim.hNow.length ? anim.hNow : lastH;
+      armedL = anim && anim.lNow && anim.lNow.length ? anim.lNow : lastL;
       /* old shape = what was on screen before this update (the in-between shape if a morph was running) */
       armed = { from: firstPath ? firstOld : (anim ? anim.written : lastD), until: t + 400 };
     }
@@ -349,7 +408,7 @@
     if (armed && firstPath) {
       from = armed.from;
       armed = null;
-      if (!reduced() && from && curD && from !== curD) { start(firstPath, from, curD, armedH); armedH = null; return; }
+      if (!reduced() && from && curD && from !== curD) { start(firstPath, from, curD, armedH, armedL); armedH = null; armedL = null; return; }
     }
 
     if (anim && firstPath && anim.path === firstPath && curD) {
@@ -358,7 +417,7 @@
       return;
     }
 
-    if (!anim) { var p = findMainPath(); if (p) { lastD = p.getAttribute("d"); lastH = takeHandles(); } }
+    if (!anim) { var p = findMainPath(); if (p) { lastD = p.getAttribute("d"); lastH = takeHandles(); lastL = takeLines(); } }
   });
 
 
@@ -428,7 +487,7 @@
   function boot() {
     warmUp();
     var p = findMainPath();
-    if (p) { lastD = p.getAttribute("d"); lastH = takeHandles(); }
+    if (p) { lastD = p.getAttribute("d"); lastH = takeHandles(); lastL = takeLines(); }
     mo.observe(document.documentElement, {
       subtree: true, childList: true,
       attributes: true, attributeOldValue: true, attributeFilter: ["d", "class"]

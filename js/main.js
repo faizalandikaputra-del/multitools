@@ -49,7 +49,7 @@
     },
     "presets": {
       title: "Animation Presets",
-      hint: "Pick your preset folder, select a layer, then click Apply.",
+      hint: "Pick a folder, select a layer, click Apply.",
       tools: [],
       custom: "presets"
     },
@@ -4327,7 +4327,7 @@
       var items = this.getItems();
       var inner = items.length
         ? items.map(this.itemTileHtml.bind(this)).join("")
-        : '<p class="shortcutz-empty">No custom shortcuts yet. Click &quot;+ Add Custom Shortcut&quot; above or right-click cards to pin your favorites.</p>';
+        : '<p class="shortcutz-empty">Nothing here yet. Use &quot;+ Add Custom Shortcut&quot; or pin from other tabs.</p>';
       return '<div class="shortcut-list" id="shortcutz-my-grid">' + inner + "</div>";
     },
 
@@ -4767,20 +4767,20 @@
 
       var hiddenCount = TileCustom.hiddenCount();
       var restoreHtml = hiddenCount
-        ? '<button type="button" class="btn" id="shortcutz-restore-hidden">Restore ' + hiddenCount + " hidden shortcut" + (hiddenCount === 1 ? "" : "s") + "</button>"
+        ? '<button type="button" class="btn" id="shortcutz-restore-hidden">Restore ' + hiddenCount + " hidden</button>"
         : "";
 
       wrap.innerHTML =
         '<button class="btn-apply shortcutz-add-btn" id="shortcutz-add-btn" type="button">+ Add Custom Shortcut</button>' +
         '<div class="ta-section shortcutz-my-section">' +
           '<h2 class="ta-title">My Shortcuts</h2>' +
-          '<p class="field-note">Pinned Animation Presets, pinned Code Expression snippets, and anything you add above. Drag a tile to reorder; the &times; removes it from Shortcutz only (the original preset/snippet is untouched). Right-click any tile - built-in or custom - to change its icon, set a background GIF/image, edit its function, or delete/hide it.</p>' +
+          '<p class="field-note">Pinned presets and snippets, plus your own. Drag to reorder. &times; removes a tile from here only. Right-click a tile to edit, restyle, or hide it.</p>' +
           this.myGridHtml() +
           restoreHtml +
         "</div>" +
-        builtinSection("Expression Shortcuts", "Select the target properties, then click a card to apply that expression.", "expr", this.EXPR_PRESETS) +
-        builtinSection("Quick Effect Shortcuts", "Adds the native effect to every selected layer's Effect Parade.", "effect", this.EFFECT_PRESETS) +
-        builtinSection("Utility Shortcuts", "Instant one-click workflow commands.", "util", this.UTIL_PRESETS);
+        builtinSection("Expression Shortcuts", "Select properties, then click a card.", "expr", this.EXPR_PRESETS) +
+        builtinSection("Quick Effect Shortcuts", "Adds the effect to selected layers.", "effect", this.EFFECT_PRESETS) +
+        builtinSection("Utility Shortcuts", "One-click commands.", "util", this.UTIL_PRESETS);
 
       // Built-in tiles: click + right-click delegation on each fixed group (never re-rendered
       // in place - a customization instead triggers rerender(), which rebuilds this whole tab -
@@ -5255,8 +5255,7 @@
       built = grid;
     }
     panel.appendChild(built);
-    // Animation Presets: Copy Effects box on top (collapsed until opened; same saved effects as the Easy Layer box)
-    if (tabId === "presets" && window.MTFx) { panel.insertBefore(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "presets", collapsed: true }), panel.firstChild); }
+    // Animation Presets: no Copy Effects box here any more (it stays in Easy Layer and in the island's Effects tab)
     if (tabId === "easy-layer") { panel.appendChild(EasyLayerFlip.render()); }   // Flip Horizontal/Vertical beneath the grid
     if (tabId === "easy-layer" && window.MTFx) { panel.appendChild(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "easy-layer", collapsed: false })); }   // Copy Effects section (js/mt-fxcopy.js) beneath Flip
 
@@ -6432,7 +6431,7 @@
           '<h2 class="ta-title">Preset Folder</h2>' +
           '<p class="field-note preset-path" id="preset-path"></p>' +
           '<div class="preset-toolbar">' +
-            '<button class="btn btn-primary" id="preset-select" type="button">Select Preset Folder</button>' +
+            '<button class="btn btn-primary" id="preset-select" type="button">Select Folder</button>' +
             '<button class="btn" id="preset-refresh" type="button">Refresh</button>' +
             '<button class="btn" id="preset-save" type="button">Save as Preset</button>' +
             '<button class="btn" id="preset-import" type="button" title="Add .ffx files to a folder in your preset folder">Import</button>' +
@@ -6452,9 +6451,7 @@
             "</div>" +
             '<p class="field-note psup-note" id="psup-note" aria-live="polite"></p>' +
           "</div>" +
-          '<p class="field-note">Drag .ffx files, or a folder of them, from Explorer or Finder onto this tab. Drop them on a folder to add them there.</p>' +
-          '<p class="field-note">Save as Preset stores the selected layer&rsquo;s effects and animated properties (or whatever properties you have selected). After Effects opens its own Save dialog for this: save into the preset folder.</p>' +
-          '<p class="field-note">Presets inside a subfolder of your preset folder show up under &ldquo;Categorized Presets&rdquo; below, grouped by that subfolder&rsquo;s name; everything else (loose .ffx files sitting directly in the preset folder) shows up under &ldquo;Ungrouped Presets.&rdquo;</p>' +
+          '<p class="field-note preset-help">Drop .ffx files or folders on this tab to import them. Save as Preset stores the selected layer&rsquo;s effects. Subfolders show as Categorized, loose files as Ungrouped.</p>' +
         "</div>" +
         '<div class="ta-section">' +
           '<h2 class="ta-title">Presets <span id="preset-count"></span></h2>' +
@@ -6602,7 +6599,7 @@
         var fav = presetFavStore.isFav(folder, p.file);
         var last = presetLastStore.is(folder, p.file);
         var sup = supportResult(p.file);
-        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
+        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" draggable="true" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
           (fav ? '<span class="preset-item-fav-badge" title="Favorite">' + ICON_STAR_SVG + "</span>" : "") +
           supportIconHtml(sup) +
           '<span class="preset-name" title="' + escapeHtml(p.file) + '">' + escapeHtml(p.name) + "</span>" +
@@ -6995,6 +6992,21 @@
           e.preventDefault();
         }
       }, true);
+
+      // Drag a preset row onto the dynamic island = pin it there (island "Pin" view, js/mt-island-presets.js). Copy, the row stays in the list.
+      listEl.addEventListener("dragstart", function (e) {
+        var itemEl = e.target && e.target.closest ? e.target.closest(".preset-item") : null;
+        if (!itemEl) { return; }
+        lpClear(); closeActions();
+        var nm = itemEl.querySelector(".preset-name"), name = nm ? nm.textContent : itemEl.getAttribute("data-file");
+        try {
+          e.dataTransfer.setData("text/mt-preset", JSON.stringify({ folder: self.folder(), file: itemEl.getAttribute("data-file"), name: name }));
+          e.dataTransfer.setData("text/plain", name);
+          e.dataTransfer.effectAllowed = "copy";
+        } catch (er) { }
+        document.documentElement.classList.add("mt-dragging-tool");
+      });
+      listEl.addEventListener("dragend", function () { document.documentElement.classList.remove("mt-dragging-tool"); });
 
       // ----- Support check (which presets work in this After Effects) -----
       // Reads every .ffx in the list (Node), collects the effects it uses and compares them with app.effects

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.125",
-    "changelog":  "- Update 1.8.125",
+    "latest_version":  "1.8.126",
+    "changelog":  "- Update 1.8.126",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -109,6 +109,10 @@
                   {
                       "path":  "css/mt-island-boxes.css",
                       "sha256":  "04f062db67d9a21bfd29bcf2daf1fc20cb36c115840d974e78f795341be98ad0"
+                  },
+                  {
+                      "path":  "css/mt-keyframes.css",
+                      "sha256":  "62f4b3d3f78c6329f352e2dc8bf9c7dd278246c816bfa2d73201417278dcbe92"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -244,7 +248,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "06c5edd740f33eaa8c2050e5ad7c5f1a0bd857e819836c96e6bb83a5480c18b7"
+                      "sha256":  "8ea717c0f805d7a4c04f2dfa00b44317ffd22ae33896efe5b437fea9fd139f15"
                   },
                   {
                       "path":  "html/settings.html",
@@ -264,7 +268,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "c0b706aca77142f67e9a2cd68854cf934848d20ad508a3ba4b8b70335b470946"
+                      "sha256":  "ccf89b40778183520884ffdfada14765ed896e2d08d00f52d0cdb0fd0f07a1db"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -420,7 +424,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "ec54827625ef21124bc6f8d4c6649c8acf3d9b41457b3c4eeb7f1094166d1198"
+                      "sha256":  "930692cd86515e4bb8ab3701313d4e650ab171ace28aa6ca2eca3d1d9d425baf"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -732,7 +736,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "74fdd9dc587dbca8be3b3b1d591b5ed617bc748ce7b12600b59523db4e51de98"
+                      "sha256":  "32ed5afb8f8abe51fde8717ea3f985c39c9ef52f8086a674b257d494053fe726"
                   }
               ]
 }

@@ -77,6 +77,12 @@
       tools: [],
       custom: "textFlex"
     },
+    "keyframes": {
+      title: "Keyframe Timing",
+      hint: "Select keyframes, pick a mode, then click Apply to move or stretch them.",
+      tools: [],
+      custom: "keyframeTiming"
+    },
     "shortcutz": {
       title: "Shortcutz",
       hint: "Speed Dial: one-click expressions, effects and utilities, pinned presets and snippets, and your own shortcuts.",
@@ -3627,6 +3633,309 @@
   };
 
   // ---------------------------------------------------------
+  // Keyframe Timing tab: move / stretch the selected keyframes (jsx/host.jsx KT_state / KT_apply / KT_playhead).
+  //   Auto     the first keyframe goes to the playhead, the length stays          (fields follow the playhead, locked)
+  //   Start    the first keyframe goes to Start, the length stays                 (End is the result, locked)
+  //   End      the last keyframe goes to End, the length stays                    (Start is the result, locked)
+  //   Stretch  the range becomes Start..End, keyframes in between scale with it   (both fields editable)
+  // The mini timeline previews the result: dashed diamonds = where the keyframes are now, solid = where they will be.
+  // While the tab is open the selection and the playhead are polled (KT_state), so the preview stays live.
+  // Time fields read / write M:SS:FF (minutes : seconds : frames). A bare number is frames, like After Effects.
+  // Look: Glass = dark inset well + accent handles. Material You = tonal surface + primary range + tertiary playhead
+  // (css/mt-keyframes.css, section "Material You").
+  // ---------------------------------------------------------
+  var ICON_PLAYHEAD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v13M7 12l5 5 5-5M5 21h14"/></svg>';
+  var ICON_LOCK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+  var KeyframeTiming = {
+    POLL_MS: 500,
+    // kept across tab switches (the tab is rebuilt from scratch every time it opens)
+    st: { mode: "auto", start: 0, end: 0, sig: "", fps: 24, ph: 0, dur: 0, range: null, keys: [], msg: "" },
+    timer: 0,
+
+    NOTES: {
+      auto: "Start follows the playhead and the length stays. Apply moves the selected keyframes there.",
+      start: "The first keyframe goes to Start. The length stays the same.",
+      end: "The last keyframe goes to End. The length stays the same.",
+      stretch: "Keyframes in between scale to fit the new Start and End."
+    },
+
+    pad2: function (n) { return (n < 10 ? "0" : "") + n; },
+    base: function (fps) { return Math.max(1, Math.round(fps) || 24); },
+    // seconds -> "M:SS:FF"
+    fmt: function (t, fps) {
+      var base = this.base(fps), fr = Math.round((t || 0) * (fps || 24)), neg = fr < 0, f, sTot;
+      if (neg) { fr = -fr; }
+      f = fr % base; sTot = Math.floor(fr / base);
+      return (neg ? "-" : "") + Math.floor(sTot / 60) + ":" + this.pad2(sTot % 60) + ":" + this.pad2(f);
+    },
+    // "M:SS:FF" | "SS:FF" | frames | "12.5s"  ->  seconds (null when it is not a time)
+    parse: function (str, fps) {
+      var s = String(str == null ? "" : str).replace(/^\s+|\s+$/g, ""), neg = false, parts, i, frames = 0, base = this.base(fps), mul = [1, base, base * 60, base * 3600];
+      if (!s) { return null; }
+      if (s.charAt(0) === "-") { neg = true; s = s.slice(1); }
+      if (/^[0-9]*\.?[0-9]+\s*s$/i.test(s)) { return (neg ? -1 : 1) * parseFloat(s); }
+      parts = s.split(/[:;.,]/);
+      if (parts.length > 4) { return null; }
+      for (i = 0; i < parts.length; i++) {
+        if (!/^[0-9]+$/.test(parts[i])) { return null; }
+        frames += parseInt(parts[i], 10) * mul[parts.length - 1 - i];
+      }
+      return (neg ? -frames : frames) / (fps || 24);
+    },
+
+    // What Apply will do with the current state: new range + the time mapping (same maths as KT_apply in host.jsx).
+    compute: function () {
+      var st = this.st, r = st.range, dur, ns, ne, s0, e0;
+      if (!r) { return null; }
+      s0 = r.start; e0 = r.end; dur = e0 - s0;
+      if (st.mode === "auto") { ns = st.ph; ne = ns + dur; }
+      else if (st.mode === "start") { ns = st.start; ne = ns + dur; }
+      else if (st.mode === "end") { ne = st.end; ns = ne - dur; }
+      else { ns = st.start; ne = st.end; }
+      return {
+        ns: ns, ne: ne, s0: s0, e0: e0, dur: dur,
+        valid: !(st.mode === "stretch" && (!(dur > 0) || !(ne > ns))) && ns > -0.000001,
+        map: function (t) { return (st.mode === "stretch") ? (dur > 0 ? ns + (t - s0) * (ne - ns) / dur : ns) : t + (ns - s0); }
+      };
+    },
+
+    // Visible time window of the mini timeline: the range (old and new) plus a margin, and the playhead when it is near.
+    view: function (c) {
+      var st = this.st, lo, hi, span, pad;
+      if (st.range) {
+        lo = st.range.start; hi = st.range.end;
+        if (c && isFinite(c.ns) && isFinite(c.ne)) { lo = Math.min(lo, c.ns); hi = Math.max(hi, c.ne); }
+        span = Math.max(hi - lo, 1);
+        if (st.ph >= lo - span * 2 && st.ph <= hi + span * 2) { lo = Math.min(lo, st.ph); hi = Math.max(hi, st.ph); span = Math.max(hi - lo, 1); }
+        pad = span * 0.14; lo -= pad; hi += pad;
+      } else { lo = 0; hi = Math.max(st.dur, 2); }
+      lo = Math.max(0, lo);
+      if (hi - lo < 1) { hi = lo + 1; }
+      return { lo: lo, hi: hi };
+    },
+
+    render: function () {
+      var self = this, st = this.st;
+      var wrap = document.createElement("div");
+      wrap.className = "ta kt";
+      var MODES = [["auto", "Auto"], ["start", "Start"], ["end", "End"], ["stretch", "Stretch"]];
+
+      wrap.innerHTML =
+        '<div class="ta-section">' +
+          '<h2 class="ta-title">Keyframes</h2>' +
+          '<div class="kt-tl" aria-hidden="true">' +
+            '<div class="kt-ruler" id="kt-ruler"></div>' +
+            '<div class="kt-track" id="kt-track"></div>' +
+            '<div class="kt-legend">' +
+              '<span><b class="kt-lg kt-lg-key"></b>Keyframe</span>' +
+              '<span class="kt-lg-old" id="kt-lg-old"><b class="kt-lg kt-lg-ghost"></b>Now</span>' +
+              '<span><b class="kt-lg kt-lg-range"></b>Range</span>' +
+              '<span><b class="kt-lg kt-lg-ph"></b>Playhead</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="kt-seg" role="radiogroup" aria-label="Keyframe timing mode">' +
+            MODES.map(function (m) {
+              return '<label class="kt-opt"><input type="radio" name="kt-mode" value="' + m[0] + '"' + (st.mode === m[0] ? " checked" : "") + '><span>' + m[1] + '</span></label>';
+            }).join("") +
+          '</div>' +
+          '<p class="kt-note" id="kt-note"></p>' +
+          '<div class="kt-fields">' +
+            '<div class="kt-f" id="kt-f-start"><label class="kt-lab" for="kt-start">Start</label><div class="kt-row">' +
+              '<div class="kt-well"><input class="kt-time" type="text" id="kt-start" spellcheck="false" autocomplete="off" inputmode="numeric" data-no-restore="" aria-label="Start time"><span class="kt-lock">' + ICON_LOCK_SVG + '</span></div>' +
+              '<button class="kt-pin" type="button" id="kt-pin-start" title="Use the playhead time as Start" aria-label="Use the playhead time as Start">' + ICON_PLAYHEAD_SVG + '</button>' +
+            '</div></div>' +
+            '<div class="kt-f" id="kt-f-end"><label class="kt-lab" for="kt-end">End</label><div class="kt-row">' +
+              '<div class="kt-well"><input class="kt-time" type="text" id="kt-end" spellcheck="false" autocomplete="off" inputmode="numeric" data-no-restore="" aria-label="End time"><span class="kt-lock">' + ICON_LOCK_SVG + '</span></div>' +
+              '<button class="kt-pin" type="button" id="kt-pin-end" title="Use the playhead time as End" aria-label="Use the playhead time as End">' + ICON_PLAYHEAD_SVG + '</button>' +
+            '</div></div>' +
+          '</div>' +
+          '<div class="kt-read"><span id="kt-read-l"></span><b id="kt-read-r"></b></div>' +
+          '<button class="btn-apply" type="button" id="kt-apply">Apply to keyframes</button>' +
+          '<div class="kt-foot">' +
+            '<button class="btn btn-ghost kt-reset" type="button" id="kt-reset" title="Back to Auto and the range of the current selection">' + ICON_RESET_SVG + '<span>Reset</span></button>' +
+            '<button class="btn kt-readsel" type="button" id="kt-readsel" title="Read the selected keyframes again">' + ICON_IMPORT_SVG + '<span>Read selection</span></button>' +
+          '</div>' +
+        '</div>';
+
+      var el = {
+        ruler: wrap.querySelector("#kt-ruler"), track: wrap.querySelector("#kt-track"), old: wrap.querySelector("#kt-lg-old"),
+        note: wrap.querySelector("#kt-note"), start: wrap.querySelector("#kt-start"), end: wrap.querySelector("#kt-end"),
+        pinS: wrap.querySelector("#kt-pin-start"), pinE: wrap.querySelector("#kt-pin-end"),
+        fS: wrap.querySelector("#kt-f-start"), fE: wrap.querySelector("#kt-f-end"),
+        rl: wrap.querySelector("#kt-read-l"), rr: wrap.querySelector("#kt-read-r"), apply: wrap.querySelector("#kt-apply")
+      };
+      Array.prototype.forEach.call(wrap.querySelectorAll("input"), function (i) { i.setAttribute("data-no-restore", ""); });
+
+      var lastTrack = "", lastRuler = "";
+
+      // ---- paint everything from self.st (cheap: DOM is only written when something really changed) ----
+      function paint() {
+        var c = st.range ? self.compute() : null;
+        var v = self.view(c), span = v.hi - v.lo;
+        function pos(t) { return (t - v.lo) / span * 100; }
+        function inView(p) { return p >= -1 && p <= 101; }
+
+        // ruler
+        var STEPS = [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1800], step = STEPS[STEPS.length - 1], i, t, html = "";
+        for (i = 0; i < STEPS.length; i++) { if (span / STEPS[i] <= 6) { step = STEPS[i]; break; } }
+        for (t = Math.ceil(v.lo / step - 1e-9) * step; t <= v.hi + 1e-9; t += step) {
+          var lbl = step < 1 ? (Math.round(t * 100) / 100) + "s" : (t < 60 ? Math.round(t) + "s" : Math.floor(t / 60) + ":" + self.pad2(Math.round(t % 60)));
+          html += '<span style="left:' + pos(t).toFixed(2) + '%">' + lbl + '</span>';
+        }
+        if (html !== lastRuler) { lastRuler = html; el.ruler.innerHTML = html; }
+
+        // track: range, ghost keys, keys, playhead
+        var moved = !!(c && c.valid && (Math.abs(c.ns - c.s0) > 0.5 / st.fps || Math.abs(c.ne - c.e0) > 0.5 / st.fps));
+        var th = "", k, p;
+        if (c && c.valid) {
+          var a = pos(c.ns), b = pos(c.ne);
+          th += '<i class="kt-span" style="left:' + a.toFixed(2) + '%;width:' + Math.max(b - a, 0).toFixed(2) + '%"></i>';
+        }
+        if (moved) {
+          for (k = 0; k < st.keys.length; k++) { p = pos(st.keys[k]); if (inView(p)) { th += '<i class="kt-key kt-ghost" style="left:' + p.toFixed(2) + '%"></i>'; } }
+        }
+        for (k = 0; k < st.keys.length; k++) {
+          p = pos(c && c.valid ? c.map(st.keys[k]) : st.keys[k]);
+          if (inView(p)) { th += '<i class="kt-key" style="left:' + p.toFixed(2) + '%"></i>'; }
+        }
+        p = pos(st.ph);
+        if (inView(p)) { th += '<i class="kt-ph" style="left:' + p.toFixed(2) + '%"></i>'; }
+        if (th !== lastTrack) { lastTrack = th; el.track.innerHTML = th; }
+        el.old.classList.toggle("is-on", moved);
+
+        // mode, note, fields
+        var mode = st.mode, active = document.activeElement;
+        Array.prototype.forEach.call(wrap.querySelectorAll('input[name="kt-mode"]'), function (r) { r.checked = (r.value === mode); });
+        el.note.textContent = st.range ? ((c && c.ns < -0.000001) ? "The new range would start before 0:00:00. Pick a later time." : self.NOTES[mode]) : (st.msg || "Select keyframes in the timeline. Their range shows up here.");
+        var editS = (mode === "start" || mode === "stretch"), editE = (mode === "end" || mode === "stretch");
+        var showS = c ? c.ns : 0, showE = c ? c.ne : 0;
+        if (active !== el.start) { el.start.value = c ? self.fmt(showS, st.fps) : "-"; }
+        if (active !== el.end) { el.end.value = c ? self.fmt(showE, st.fps) : "-"; }
+        el.start.readOnly = !(editS && c); el.end.readOnly = !(editE && c);
+        el.fS.classList.toggle("is-locked", !(editS && c)); el.fE.classList.toggle("is-locked", !(editE && c));
+        el.pinS.disabled = !(editS && c); el.pinE.disabled = !(editE && c);
+        var half = 0.5 / st.fps;
+        el.pinS.classList.toggle("is-on", !!(editS && c && Math.abs(showS - st.ph) < half));
+        el.pinE.classList.toggle("is-on", !!(editE && c && Math.abs(showE - st.ph) < half));
+
+        // readout + Apply
+        if (!c) { el.rl.textContent = "No keyframes selected"; el.rr.textContent = ""; el.rr.className = ""; }
+        else if (mode === "stretch") {
+          el.rl.textContent = "Length " + self.fmt(c.dur, st.fps) + " to " + self.fmt(Math.max(c.ne - c.ns, 0), st.fps);
+          el.rr.textContent = c.valid ? Math.round((c.ne - c.ns) / c.dur * 100) + "%" : "-";
+          el.rr.className = "kt-big";
+        } else {
+          el.rl.textContent = st.range.count + " keyframe" + (st.range.count === 1 ? "" : "s") + " on " + st.range.props + " propert" + (st.range.props === 1 ? "y" : "ies");
+          el.rr.textContent = "Length " + self.fmt(c.dur, st.fps); el.rr.className = "";
+        }
+        el.apply.disabled = !(c && c.valid);
+      }
+      self.paint = paint;
+
+      // ---- polling: selection + playhead ----
+      var busy = false;
+      function tick(forceFields) {
+        if (busy) { return Promise.resolve(); }
+        busy = true;
+        return Bridge.call("KT_state", []).then(function (res) {
+          busy = false;
+          var d = res && res.ok && res.data;
+          if (!d) {
+            if (cs) { st.range = null; st.keys = []; st.msg = (res && res.message) || ""; }
+            paint(); return;
+          }
+          st.fps = d.fps || st.fps; st.dur = d.duration || 0; st.ph = d.playhead || 0; st.keys = d.keys || []; st.msg = "";
+          if (d.count > 0) {
+            st.range = { start: d.start, end: d.end, count: d.count, props: d.props };
+            var sig = d.count + "|" + d.props + "|" + Math.round(d.start * 1000) + "|" + Math.round(d.end * 1000);
+            if (sig !== st.sig || forceFields) { st.sig = sig; st.start = d.start; st.end = d.end; }
+          } else { st.range = null; st.sig = ""; }
+          paint();
+        });
+      }
+      function stop() { if (self.timer) { clearInterval(self.timer); self.timer = 0; } }
+      stop();
+      self.timer = setInterval(function () {
+        if (currentTab !== "keyframes" || !wrap.isConnected) { stop(); return; }
+        tick(false);
+      }, self.POLL_MS);
+      self.tick = tick;
+
+      // ---- controls ----
+      Array.prototype.forEach.call(wrap.querySelectorAll('input[name="kt-mode"]'), function (r) {
+        r.addEventListener("change", function () { if (r.checked) { st.mode = r.value; paint(); } });
+      });
+
+      function commit(input, which) {
+        var v = self.parse(input.value, st.fps);
+        if (v === null || !isFinite(v)) { toast("Type a time like 1:06 (seconds : frames) or 0:01:06.", true); paint(); return; }
+        st[which] = Math.max(0, v);
+        paint();
+      }
+      [[el.start, "start"], [el.end, "end"]].forEach(function (pair) {
+        var input = pair[0], which = pair[1];
+        input.addEventListener("focus", function () { if (!input.readOnly) { try { input.select(); } catch (e) { } } });
+        input.addEventListener("change", function () { if (!input.readOnly) { commit(input, which); } });
+        input.addEventListener("blur", function () { paint(); });
+        input.addEventListener("keydown", function (e) {
+          if (input.readOnly) { return; }
+          if (e.key === "Enter") { input.blur(); }
+          else if (e.key === "ArrowUp" || e.key === "ArrowDown") {      // +-1 frame, Shift = +-1 second
+            e.preventDefault();
+            var d = (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 1 : 1 / st.fps);
+            st[which] = Math.max(0, (isFinite(st[which]) ? st[which] : 0) + d);
+            input.value = self.fmt(st[which], st.fps);
+            paint();
+          }
+        });
+      });
+
+      function usePlayhead(which) {
+        Bridge.call("KT_playhead", []).then(function (res) {
+          if (res && res.ok && res.data) { st.ph = res.data.playhead; st.fps = res.data.fps || st.fps; st[which] = res.data.playhead; paint(); }
+          else if (cs) { toast((res && res.message) || "Open a composition first.", true); }
+        });
+      }
+      el.pinS.addEventListener("click", function () { if (!el.pinS.disabled) { usePlayhead("start"); } });
+      el.pinE.addEventListener("click", function () { if (!el.pinE.disabled) { usePlayhead("end"); } });
+
+      el.apply.addEventListener("click", function () {
+        if (el.apply.disabled || el.apply.classList.contains("is-pending")) { return; }
+        el.apply.classList.add("is-pending");
+        Bridge.call("KT_apply", [{ mode: st.mode, start: st.start, end: st.end }]).then(function (res) {
+          var ok = !!(res && res.ok);
+          flashButtonResult(el.apply, ok);
+          toast((res && res.message) || (ok ? "Done." : "Something went wrong."), !ok);
+          tick(true);
+        });
+      });
+
+      wrap.querySelector("#kt-reset").addEventListener("click", function () {
+        st.mode = "auto";
+        if (st.range) { st.start = st.range.start; st.end = st.range.end; }
+        paint();
+        toast("Keyframe Timing reset.");
+      });
+      var readBtn = wrap.querySelector("#kt-readsel");
+      readBtn.addEventListener("click", function () {
+        if (readBtn.classList.contains("is-pending")) { return; }
+        readBtn.classList.add("is-pending");
+        tick(true).then(function () {
+          var ok = !!st.range || !cs;
+          flashButtonResult(readBtn, ok);
+          if (st.range) { toast("Read " + st.range.count + " keyframe" + (st.range.count === 1 ? "" : "s") + "."); }
+          else if (cs) { toast("Select keyframes (or a property with keyframes) first.", true); }
+        });
+      });
+
+      paint();
+      tick(false);
+      return wrap;
+    }
+  };
+
+  // ---------------------------------------------------------
   // Shortcutz tab - "Speed Dial" hub.
   //   - Built-in cards (Expression / Quick Effect / Utility Shortcuts): fixed, always shown,
   //     each just a thin wrapper around an existing Bridge call.
@@ -4980,6 +5289,8 @@
       built = UtilityTools.render();
     } else if (cfg.custom === "textFlex") {
       built = TextFlex.render();
+    } else if (cfg.custom === "keyframeTiming") {
+      built = KeyframeTiming.render();
     } else if (cfg.custom === "shortcutz") {
       built = Shortcutz.render();
     } else if (!cfg.tools.length) {

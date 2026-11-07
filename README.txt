@@ -2342,3 +2342,18 @@ fix56 (Dynamic island tab bar: gap at the right, square focus ring on click):
 fix (Animator Text): bubble angka slider tidak pas + tombol Reset
   - Bubble nilai slider (.range-value-bubble, js/panel-refinements.js v11) muncul miring/jauh dari thumb saat --ui-scale bukan 100%. Penyebab: bubble position:fixed di <body> (di luar .app { zoom }), sedangkan CEF lama mengembalikan getBoundingClientRect() elemen di dalam .app sudah dibagi zoom. Fix: konversi rect zoom-proof (probe sekali per --ui-scale, metode sama dengan js/mt-tooltip.js) + posisi di tengah thumb (lebar track dikurangi lebar thumb).
   - Tab Animator Text: tombol "Reset" di samping "Import from layer" (js/main.js v55, css/style.css v15). Mengembalikan semua field ke default (Characters, Left to Right, 4 / 5 / 2 / 2, In, Overshoot, Position Y 30 + Opacity aktif) dan mengosongkan pilihan preset. Preset tersimpan tidak dihapus.
+
+fix (Keyframe Timing, tab baru): atur keyframe terpilih (Auto / Start / End / Stretch / Playhead)
+  - Tab baru "Keyframe Timing" (ikon dua belah ketupat + panah, setelah Animator Text). Memindah atau meregangkan keyframe yang dipilih di timeline AE.
+    Auto = keyframe pertama ke playhead (panjang tetap); Start = keyframe pertama ke waktu Start; End = keyframe terakhir ke waktu End;
+    Stretch = range jadi Start..End dan keyframe di antaranya diskalakan proporsional (ada pembacaan persen). Tombol pin di samping Start / End
+    mengambil waktu playhead. Mini timeline menampilkan hasilnya (belah ketupat putus-putus = posisi sekarang) dan live: seleksi + playhead dibaca tiap 500 ms
+    selama tab terbuka. Jika tidak ada keyframe terpilih, dipakai semua keyframe dari properti yang dipilih. Waktu ditulis M:SS:FF (angka polos = frame, seperti AE);
+    panah atas/bawah = 1 frame, Shift = 1 detik. Reset = kembali ke Auto + range seleksi. Read selection = baca ulang seleksi.
+  - Host (jsx/host.jsx): KT_state, KT_playhead, KT_apply. Keyframe tidak bisa dipindah langsung di ExtendScript, jadi tiap keyframe ditangkap (nilai, interpolasi,
+    ease, tangent spasial, continuous/auto-bezier, roving), dihapus lalu ditambah lagi di waktu baru (dibulatkan ke frame), keyframe dipilih lagi supaya Apply bisa diulang.
+    Satu undo group "Keyframe Timing". Layer terkunci dilewati; kalau satu properti gagal, keyframe aslinya dikembalikan. Range baru tidak boleh mulai sebelum 0:00:00.
+  - Tampilan: Glass = sumur gelap inset + handle aksen + playhead cyan. Material You (css/mt-keyframes.css, dimuat setelah material-theme.css) = permukaan tonal,
+    range primary container dengan handle ramping, playhead dan tombol pin warna tertiary, segmented button M3 (outline + centang), field filled, tombol Apply filled primary.
+    Semua warna dari token --md-*, jadi Theme color, Light/Dark, dan Background color ikut.
+  - Files: jsx/host.jsx, js/main.js (?v=58), css/mt-keyframes.css (baru, ?v=2), html/index.html.

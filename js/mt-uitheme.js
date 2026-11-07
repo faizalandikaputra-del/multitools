@@ -18,7 +18,7 @@
   var KEY = "mtx.uiTheme";
   var root = document.documentElement;
 
-  function saved() { try { return localStorage.getItem(KEY) === "material" ? "material" : "glass"; } catch (e) { return "glass"; } }
+  function saved() { return "material"; }   // Glass removed: Material You is the only style
   function current() { return root.getAttribute("data-ui-theme") === "material" ? "material" : "glass"; }
 
   // Glass Light/Dark: "light" | "dark" pinned by the user (localStorage "mtx.glassMode"); nothing stored = follow the After
@@ -92,7 +92,7 @@
   }
 
   function apply(name) {
-    name = name === "material" ? "material" : "glass";
+    name = "material";
     var was = current();
     root.setAttribute("data-ui-theme", name);
     if (name === "material") {
@@ -108,6 +108,7 @@
   }
 
   function set(name) {
+    name = "material";
     apply(name);
     try { if (name === "material") { localStorage.setItem(KEY, "material"); } else { localStorage.removeItem(KEY); } } catch (e) { }
   }
@@ -173,5 +174,5 @@
   if (saved() === "material") { syncToMaterial(); }   // opened straight into Material You: still pick up the shared Light/Dark + background colour
 
   apply(saved());                                   // (the <head> script already did the attributes; this paints the picker)
-  window.MTUiTheme = { get: current, set: set, reset: function () { setGlassMode(null); set("glass"); if (window.MTMaterial) { window.MTMaterial.reset(); } } };
+  window.MTUiTheme = { get: current, set: set, reset: function () { setGlassMode(null); set("material"); if (window.MTMaterial) { window.MTMaterial.reset(); } } };
 })();

@@ -1828,7 +1828,7 @@
       }
 
       // ---- Material You face: same geometry + hit-testing as Glass (disc RD, arc A0..A1), different drawing ----
-      // Still = "Dot orbit": 6 rings of round dots round a neutral centre dot. While the colour is being changed the dots
+      // Still = "Radial petals": 6 rings of radial capsules round a neutral centre pip. While the colour is being changed the dots
       // morph into the "Cookie bloom": a continuous hue / saturation disc in a 12-lobed scalloped edge (see morph in create()).
       // Brightness = a thick tonal pill track with a tall primary handle, haloed in the card colour.
       var MAT_RINGS = 6, mc = null;
@@ -1871,16 +1871,21 @@
         pill(c, -17 * K, -5 * K, 34 * K, 10 * K, 5 * K); c.fillStyle = col.handle; c.fill();
         pill(c, -6 * K, -1.2 * K, 12 * K, 2.4 * K, 1.2 * K); c.fillStyle = col.onp; c.globalAlpha = 0.85; c.fill();
         c.restore();
-        // Dot orbit (still): neutral centre + 6 rings of round dots, dots swell and fade as the bloom takes over
+        // Radial petals (still): neutral centre pip + 6 rings of radial capsules. Each ring is one saturation step, each capsule one hue.
+        // While the colour is being changed the capsules widen and lengthen until they melt into the cookie bloom below.
         if (ease < 0.999) {
           c.save();   // stays fully opaque under the fading cookie, so the cross-fade never dips
-          c.beginPath(); c.arc(C, C, t * 0.46 * (1 + 0.4 * ease), 0, Math.PI * 2); c.fillStyle = rgbToHex(hsvToRgb(st.h, 0, st.v)); c.fill();
+          var cr = t * 0.42 * (1 + 0.4 * ease);
+          c.beginPath(); c.arc(C, C, cr, 0, Math.PI * 2); c.fillStyle = rgbToHex(hsvToRgb(st.h, 0, st.v)); c.fill();
           for (k = 1; k <= MAT_RINGS; k++) {
-            n = 6 * k; rm = (k + 0.5) * t; rr = t * (0.30 + 0.16 * k / MAT_RINGS) * (1 + 0.4 * ease);
+            n = 6 * k; rm = (k + 0.5) * t;
+            var pw = (2 * Math.PI * rm / n) * (0.46 + 0.5 * ease), pl = t * (0.70 + 0.22 * k / MAT_RINGS) * (1 + 0.5 * ease);
             for (j = 0; j < n; j++) {
               hc = j * 360 / n; ang = -hc * Math.PI / 180;
-              c.beginPath(); c.arc(C + Math.cos(ang) * rm, C + Math.sin(ang) * rm, rr, 0, Math.PI * 2);
+              c.save(); c.translate(C + Math.cos(ang) * rm, C + Math.sin(ang) * rm); c.rotate(ang);
+              pill(c, -pl / 2, -pw / 2, pl, pw, Math.min(pw, pl) / 2);
               c.fillStyle = rgbToHex(hsvToRgb(hc, k / MAT_RINGS, st.v)); c.fill();
+              c.restore();
             }
           }
           c.restore();
@@ -5223,7 +5228,9 @@
     Curve.hide();
 
     var built = null;
-    if (cfg.custom === "anchorAlign") {
+    if (cfg.info) {
+      built = renderInfo();
+    } else if (cfg.custom === "anchorAlign") {
       built = AnchorAlign.render();
     } else if (cfg.custom === "quickCompEdit") {
       built = QuickCompEdit.render();

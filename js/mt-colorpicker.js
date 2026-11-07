@@ -5,27 +5,12 @@
    It does NOT touch the Color Palette > Custom Color wheel (.cw, drawn on a canvas by main.js) - that one is separate.
    Picker: saturation/brightness field, hue slider, current vs new preview, HEX + RGB fields, quick swatches,
    recent colours (localStorage "mtRecentColors"), eyedropper when the host supports window.EyeDropper.
-   Close: Esc, click outside, scroll, resize. Opt out for one input: data-native="true". Plain ES5 (old CEP hosts).
-   WHEEL STYLE: when <html data-cp-style="wheel"> (set in neucurve/settings.html only) the hue slider + SV box are replaced by a
-   hue ring around a glowing saturation/brightness square. Same state, same events, same fields below it. */
+   Close: Esc, click outside, scroll, resize. Opt out for one input: data-native="true". Plain ES5 (old CEP hosts). */
 (function () {
   "use strict";
   var pop = null, input = null, st = null, startHex = "", dirty = false, closeTimer = 0, lastPt = { x: 40, y: 40 };
   var QUICK = ["#8b6cf7", "#5b8def", "#2dd4bf", "#4ade80", "#facc15", "#fb923c", "#f87171", "#f472b6", "#ffffff", "#16161a"];
   var RECENT_KEY = "mtRecentColors";
-  var W_SIZE = 212, W_CX = 106, W_THICK = 16, W_MID = 98;   /* wheel style: ring box, centre, ring thickness, ring mid radius (px) */
-  function wheelStyle() { return document.documentElement.getAttribute("data-cp-style") === "wheel"; }
-  function drawRing(cv) {
-    var dpr = Math.min(2, window.devicePixelRatio || 1), c, i, rad = Math.PI / 180;
-    cv.width = cv.height = Math.round(W_SIZE * dpr);
-    c = cv.getContext("2d"); c.scale(dpr, dpr);
-    for (i = 0; i < 360; i++) {
-      c.beginPath(); c.moveTo(W_CX, W_CX); c.arc(W_CX, W_CX, W_CX, (i - 90.6) * rad, (i - 88.4) * rad); c.closePath();
-      c.fillStyle = "hsl(" + i + ",100%,50%)"; c.fill();
-    }
-    c.globalCompositeOperation = "destination-out";
-    c.beginPath(); c.arc(W_CX, W_CX, W_CX - W_THICK, 0, Math.PI * 2); c.fill();
-  }
 
   /* ---------- colour math ---------- */
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
@@ -83,13 +68,8 @@
     el.setAttribute("aria-label", "Color picker");
     var rec = recent();
     el.innerHTML =
-      (wheelStyle()
-        ? '<div class="mt-cp-wheel" tabindex="0" role="slider" aria-label="Hue" aria-valuemin="0" aria-valuemax="360">' +
-            '<canvas class="mt-cp-ring"></canvas><span class="mt-cp-hknob"></span>' +
-            '<div class="mt-cp-sv" tabindex="0" role="slider" aria-label="Saturation and brightness"><span class="mt-cp-knob"></span></div>' +
-          '</div>'
-        : '<div class="mt-cp-sv" tabindex="0" role="slider" aria-label="Saturation and brightness"><span class="mt-cp-knob"></span></div>' +
-          '<div class="mt-cp-hue" tabindex="0" role="slider" aria-label="Hue" aria-valuemin="0" aria-valuemax="360"><span class="mt-cp-hknob"></span></div>') +
+      '<div class="mt-cp-sv" tabindex="0" role="slider" aria-label="Saturation and brightness"><span class="mt-cp-knob"></span></div>' +
+      '<div class="mt-cp-hue" tabindex="0" role="slider" aria-label="Hue" aria-valuemin="0" aria-valuemax="360"><span class="mt-cp-hknob"></span></div>' +
       '<div class="mt-cp-row">' +
         '<div class="mt-cp-prev" title="Old / New"><span class="mt-cp-old"></span><span class="mt-cp-new"></span></div>' +
         '<input class="mt-cp-hex" type="text" maxlength="7" spellcheck="false" aria-label="Hex">' +
@@ -102,8 +82,6 @@
       '</div>' +
       '<div class="mt-cp-label">Quick colors</div><div class="mt-cp-sws">' + swatches(QUICK) + '</div>' +
       (rec.length ? '<div class="mt-cp-label">Recent</div><div class="mt-cp-sws">' + swatches(rec) + '</div>' : "");
-    var ring = el.querySelector(".mt-cp-ring");
-    if (ring) { drawRing(ring); }
     return el;
   }
   function q(sel) { return pop.querySelector(sel); }
@@ -114,15 +92,7 @@
     q(".mt-cp-knob").style.left = (st.s * 100) + "%";
     q(".mt-cp-knob").style.top = ((1 - st.v) * 100) + "%";
     q(".mt-cp-knob").style.background = hex;
-    if (q(".mt-cp-wheel")) {
-      var ang = st.h * Math.PI / 180;
-      q(".mt-cp-hknob").style.left = (W_CX + W_MID * Math.sin(ang)) + "px";
-      q(".mt-cp-hknob").style.top = (W_CX - W_MID * Math.cos(ang)) + "px";
-      q(".mt-cp-wheel").setAttribute("aria-valuenow", Math.round(st.h));
-      pop.style.setProperty("--halo", "rgba(" + Math.round(c.r) + "," + Math.round(c.g) + "," + Math.round(c.b) + ",.5)");
-    } else {
-      q(".mt-cp-hknob").style.left = (st.h / 360 * 100) + "%";
-    }
+    q(".mt-cp-hknob").style.left = (st.h / 360 * 100) + "%";
     q(".mt-cp-hknob").style.background = "hsl(" + st.h + ",100%,50%)";
     q(".mt-cp-new").style.background = hex;
     pop.setAttribute("data-mt-color", hex);
@@ -160,40 +130,17 @@
       mv(e);
     });
   }
-  /* wheel style: press on the ring band, hue = angle around the centre (0 = top, clockwise); keeps tracking outside the band */
-  function wireRing() {
-    var w = q(".mt-cp-wheel");
-    function angleOf(ev) {
-      var r = w.getBoundingClientRect(), dx = ev.clientX - (r.left + r.width / 2), dy = ev.clientY - (r.top + r.height / 2);
-      var h = Math.atan2(dx, -dy) * 180 / Math.PI;
-      return { h: h < 0 ? h + 360 : h, d: Math.sqrt(dx * dx + dy * dy) / ((r.width / W_SIZE) || 1) };
-    }
-    w.addEventListener("mousedown", function (e) {
-      if (e.button !== 0 || (e.target.closest && e.target.closest(".mt-cp-sv"))) { return; }
-      var a = angleOf(e);
-      if (a.d < W_CX - W_THICK - 4 || a.d > W_CX + 4) { return; }
-      e.preventDefault();
-      try { w.focus(); } catch (er) { }
-      pop.classList.add("is-dragging");
-      function mv(ev) { st.h = Math.min(359.99, angleOf(ev).h); paint(); commit(); }
-      function up() { document.removeEventListener("mousemove", mv, true); document.removeEventListener("mouseup", up, true); if (pop) { pop.classList.remove("is-dragging"); } }
-      document.addEventListener("mousemove", mv, true); document.addEventListener("mouseup", up, true);
-      mv(e);
-    });
-  }
   function wire() {
     var sv = q(".mt-cp-sv"), hue = q(".mt-cp-hue");
     drag(sv, function (x, y) { st.s = x; st.v = 1 - y; paint(); commit(); });
-    if (hue) { drag(hue, function (x) { st.h = x * 360; if (st.h >= 360) { st.h = 359.99; } paint(); commit(); }); }
-    if (q(".mt-cp-wheel")) { wireRing(); }
+    drag(hue, function (x) { st.h = x * 360; if (st.h >= 360) { st.h = 359.99; } paint(); commit(); });
     sv.addEventListener("keydown", function (e) {
       var d = e.shiftKey ? 0.1 : 0.02, k = e.key, used = true;
       if (k === "ArrowLeft") { st.s = clamp(st.s - d, 0, 1); } else if (k === "ArrowRight") { st.s = clamp(st.s + d, 0, 1); }
       else if (k === "ArrowUp") { st.v = clamp(st.v + d, 0, 1); } else if (k === "ArrowDown") { st.v = clamp(st.v - d, 0, 1); } else { used = false; }
       if (used) { e.preventDefault(); paint(); commit(); }
     });
-    (hue || q(".mt-cp-wheel")).addEventListener("keydown", function (e) {
-      if (e.target !== this) { return; }
+    hue.addEventListener("keydown", function (e) {
       var d = e.shiftKey ? 20 : 4, k = e.key;
       if (k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); st.h = clamp(st.h + (k === "ArrowRight" ? d : -d), 0, 359.99); paint(); commit(); }
     });

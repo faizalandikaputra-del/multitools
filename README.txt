@@ -2489,3 +2489,14 @@ fix-dd-neucurve (NeuCurve library dropdown "Def / Sav" opened far from its field
   fix:   inside a frame the menu is now measured with offsetLeft / offsetTop and written as position:absolute in <body> (same units, same zoom). Skipped (old rect path
          kept) if an ancestor has a transform or CSS zoom. Test switch for a top-level page: <html data-mt-doc-pos>.
   files: js/mt-select.js (v4: docOffsets / positionInDoc), html/index.html + html/settings.html + neucurve/index.html (version bump).
+
+fix-no-glass-dd-grid (Glass removed, closed-loop dropdown, 3x3 Easy Layer, aligned tabs):
+  1) Glass style removed: Material You is the only style. js/mt-uitheme.js (saved() always "material", set() lands on Material), html/index.html head script (always
+     data-ui-theme="material"; Light/Dark = stored Material scheme, else the old Glass pick, else dark), html/settings.html (data-ui-theme="material"),
+     css/mt-uitheme.css (Glass card hidden). css/glass-theme.css stays loaded as the shared base sheet (other sheets still build on it); it is no longer reachable as a style.
+  2) Dropdowns (all <select>): after placing the menu, js/mt-select.js v5 measures field and menu with the same getBoundingClientRect() and nudges the menu until it sits
+     exactly under / over the field (2 passes). Hosts that report zoomed / unzoomed pixels differently cancel out. Checked with a faked 0.8 rect convention on the Settings
+     window and on NeuCurve: gap 6 px, dx 0.
+  3) Anchor Point & Align: both grids 252 px wide. Easy Layer: tool tiles always 3 x 3. Quick Comp Edit: Selected Layer / Active Composition = two tiles with the same
+     width, gap and radius as Start Timecode / Duration.
+  files: css/mt-tabs-v5.css (new), js/mt-select.js (v5), js/mt-uitheme.js, css/mt-uitheme.css (v8), html/index.html, html/settings.html, neucurve/index.html.

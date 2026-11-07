@@ -52,3 +52,6 @@
 .mu-swatch:active { transform: scale(0.94); }
 .mu-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--md-bg, var(--panel-bg, #fff)), 0 0 0 4px var(--md-primary, var(--accent, #ffffff)); }
 .mu-swatch:focus-visible { outline: 2px solid var(--md-primary, var(--accent, #ffffff)); outline-offset: 3px; }
+
+/* Glass style removed: only Material You is offered. */
+[data-ui-theme-opt="glass"] { display: none !important; }

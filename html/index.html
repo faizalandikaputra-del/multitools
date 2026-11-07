@@ -9,7 +9,7 @@
   <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
   <script>/* Node shim */try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }</script>
   <script src="../js/mt-persist.js?v=3"></script>
-  <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
+  <script>try { var r = document.documentElement, ms = localStorage.getItem("mtx.mdScheme"), gm0 = localStorage.getItem("mtx.glassMode"); r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", ms === "dark" || ms === "light" ? ms : (gm0 === "light" ? "light" : "dark")); } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=3">
   <link rel="stylesheet" href="../css/mt-boot.css?v=7">
@@ -60,7 +60,7 @@
   <!-- Auto update banner + Settings > Updates (js/mt-updater.js) -->
   <link rel="stylesheet" href="../css/mt-updater.css?v=1">
   <!-- Settings > Style picker (Glass / Material You) -->
-  <link rel="stylesheet" href="../css/mt-uitheme.css?v=7">
+  <link rel="stylesheet" href="../css/mt-uitheme.css?v=8">
   <!-- Layout clean-up (anchor/flip grids, wrapping text). Keep after mt-uitheme and before material-theme. -->
   <link rel="stylesheet" href="../css/mt-tidy.css?v=1">
   <link rel="stylesheet" href="../css/mt-ae-icons.css?v=1">
@@ -103,6 +103,7 @@
   <link rel="stylesheet" href="../css/mt-layout-v3.css?v=4">
   <link rel="stylesheet" href="../css/mt-anchor-v4.css?v=4">
   <link rel="stylesheet" href="../css/mt-palette-v4.css?v=2">
+  <link rel="stylesheet" href="../css/mt-tabs-v5.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -755,7 +756,7 @@
   <script src="../js/tab-wheel.js?v=2"></script>
   <script src="../js/mt-away.js?v=3"></script>
   <script src="../js/mt-tooltip.js?v=7"></script>
-  <script src="../js/mt-select.js?v=4"></script>
+  <script src="../js/mt-select.js?v=5"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
   <!-- GIF encoder for Tools > Export GIF (needs Node.js; must load before main.js) -->

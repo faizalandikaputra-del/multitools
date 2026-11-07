@@ -11,6 +11,7 @@
    Opt out for one select: add data-native="true". Plain ES5 for old CEP hosts (AE 2019/2021). */
 (function () {
   "use strict";
+  var clampedX = false;
   var menu = null, list = null, cur = null, host = null, items = [], active = -1, typed = "", typedAt = 0, closeTimer = 0;
   var CHECK = '<svg class="mt-opt-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
@@ -112,6 +113,7 @@
     list.style.maxHeight = (Math.min(natural, room) - 12) + "px";
     var h = Math.min(natural, room);
     var left = Math.max(pad, Math.min(pos.x, vw - Math.max(w, menu.offsetWidth) - pad));
+    clampedX = Math.abs(left - pos.x) > 0.5;
     menu.style.left = left + "px";
     menu.style.top = (up ? pos.y - gap - h : pos.y + h0 + gap) + "px";
     menu.className = "mt-menu" + (up ? " is-up" : "") + (menu.className.indexOf("is-open") >= 0 ? " is-open" : "");
@@ -160,6 +162,7 @@
     list.style.maxHeight = (Math.min(natural, room) - 12) + "px";
     var h = Math.min(natural, room);
     var left = Math.max(pad + sx, Math.min(pos.x, vw + sx - Math.max(w, menu.offsetWidth) - pad));
+    clampedX = Math.abs(left - pos.x) > 0.5;
     menu.style.left = left + "px";
     menu.style.top = (up ? pos.y - gap - h : pos.y + h0 + gap) + "px";
     menu.className = "mt-menu" + (up ? " is-up" : "") + (menu.className.indexOf("is-open") >= 0 ? " is-open" : "");
@@ -167,7 +170,7 @@
     return true;
   }
   function inFrame() { try { return window.self !== window.top; } catch (e) { return true; } }
-  function position() {
+  function place() {
     if (!cur || !menu) { return; }
     if (host && positionInHost()) { return; }
     if (!host && (inFrame() || document.documentElement.hasAttribute("data-mt-doc-pos")) && positionInDoc()) { return; }
@@ -175,6 +178,28 @@
     if (host && menu.parentNode === host) { host.removeChild(menu); document.body.appendChild(menu); host = null; menu.style.position = ""; }
     positionFixed();
   }
+  /* v5 closed loop: whichever path placed the menu, measure the field and the menu with the SAME call (getBoundingClientRect) and
+     nudge the menu until it sits exactly under (or over) the field. Both rects share one convention, so a host that reports zoomed
+     / unzoomed pixels differently (old CEF, iframes inside .app zoom) cancels out: dx / dy are converted with the menu's own
+     rect-to-layout ratio. Horizontal nudge is skipped when the menu was clamped to the window edge on purpose. */
+  function refine() {
+    if (!cur || !menu) { return; }
+    var tr = menu.style.transition, tf = menu.style.transform, s, m, k, up, gap = 6, tt, dx, dy, i;
+    for (i = 0; i < 2; i++) {
+      menu.style.transition = "none"; menu.style.transform = "none";
+      s = cur.getBoundingClientRect(); m = menu.getBoundingClientRect();
+      menu.style.transition = tr; menu.style.transform = tf;
+      if (!menu.offsetWidth || !m.width) { return; }
+      k = m.width / menu.offsetWidth; if (!(k > 0.2 && k < 5)) { k = 1; }
+      up = menu.className.indexOf("is-up") >= 0;
+      tt = up ? s.top - gap * k - m.height : s.bottom + gap * k;
+      dy = tt - m.top; dx = clampedX ? 0 : s.left - m.left;
+      if (Math.abs(dx) < 1.5 && Math.abs(dy) < 1.5) { return; }
+      menu.style.left = ((parseFloat(menu.style.left) || 0) + dx / k) + "px";
+      menu.style.top = ((parseFloat(menu.style.top) || 0) + dy / k) + "px";
+    }
+  }
+  function position() { place(); refine(); }
   function positionFixed() {
     var z = zoomOf(cur), r0 = cur.getBoundingClientRect(), k = 1, ow = cur.offsetWidth;
     if (Math.abs(z - 1) > 0.001 && ow > 0) { var ratio = r0.width / ow; if (Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; } }   // old convention: rect is in unzoomed px
@@ -192,6 +217,7 @@
     list.style.maxHeight = (Math.min(natural, room) - 12 * z) / z + "px";
     var h = Math.min(natural, room);
     var left = Math.max(pad, Math.min(r.left, vw - Math.max(want, menu.offsetWidth * z) - pad));
+    clampedX = Math.abs(left - r.left) > 0.5;
     menu.style.left = left / z + "px";
     menu.style.top = (up ? r.top - gap - h : r.bottom + gap) / z + "px";
     menu.className = "mt-menu" + (up ? " is-up" : "") + (menu.className.indexOf("is-open") >= 0 ? " is-open" : "");

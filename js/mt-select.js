@@ -68,24 +68,48 @@
   }
   function firstEnabled() { return step(-1, 1); }
 
+  /* The panel is zoomed (".app { zoom: var(--ui-scale) }", css/style.css) but this menu lives in <body>, outside the zoom. Old CEF (AE 2019/2021)
+     returns getBoundingClientRect() already divided by that zoom, newer builds return real screen px, so with a UI scale other than 100% the
+     menu landed lower / wider than its field and ran off the panel (Text Animation > Direction). realRect() gives the field's rect in real px
+     for both conventions (rect.width vs offsetWidth: ~1 = old, ~zoom = new, same test as ColorWheel in js/main.js), and the menu gets the same
+     zoom, so its text matches the panel; every length below is computed in real px and divided by z when written. At 100% nothing changes. */
+  function zoomOf(el) {
+    var z = 1, n, v;
+    for (n = el; n && n.nodeType === 1; n = n.parentElement) {
+      v = parseFloat(window.getComputedStyle(n).zoom);
+      if (v && v > 0 && v !== 1) { z *= v; }
+    }
+    if (z === 1) {
+      v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+      if (v && v > 0) { z = v; }
+    }
+    return z;
+  }
+  function realRect(el, z) {
+    var r = el.getBoundingClientRect(), ow = el.offsetWidth || 0, ratio = ow ? r.width / ow : 1, k = 1;
+    if (z !== 1 && Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
+    return { left: r.left * k, right: r.right * k, top: r.top * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
+  }
+
   function position() {
     if (!cur || !menu) { return; }
-    var r = cur.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, gap = 6, pad = 8;
+    var z = zoomOf(cur), r = realRect(cur, z), vw = window.innerWidth, vh = window.innerHeight, gap = 6, pad = 8;
     var want = Math.max(r.width, 120);
-    menu.style.minWidth = r.width + "px";
-    menu.style.maxWidth = Math.max(r.width, Math.min(vw - pad * 2, 360)) + "px";
+    menu.style.zoom = z === 1 ? "" : String(z);
+    menu.style.minWidth = (r.width / z) + "px";
+    menu.style.maxWidth = (Math.max(r.width, Math.min(vw - pad * 2, 360)) / z) + "px";
     list.style.maxHeight = "";
-    var natural = list.scrollHeight + 12;
+    var natural = (list.scrollHeight + 12) * z;                     // real px
     var below = vh - r.bottom - gap - pad, above = r.top - gap - pad;
     var up = natural > below && above > below;
     var room = Math.max(90, Math.min(300, up ? above : below));
-    list.style.maxHeight = Math.min(natural, room) - 12 + "px";
     var h = Math.min(natural, room);
-    var left = Math.max(pad, Math.min(r.left, vw - Math.max(want, menu.offsetWidth) - pad));
-    menu.style.left = left + "px";
-    menu.style.top = (up ? r.top - gap - h : r.bottom + gap) + "px";
+    list.style.maxHeight = (h / z - 12) + "px";
+    var left = Math.max(pad, Math.min(r.left, vw - Math.max(want, menu.offsetWidth * z) - pad));
+    menu.style.left = (left / z) + "px";
+    menu.style.top = ((up ? r.top - gap - h : r.bottom + gap) / z) + "px";
     menu.className = "mt-menu" + (up ? " is-up" : "") + (menu.className.indexOf("is-open") >= 0 ? " is-open" : "");
-    menu.style.transformOrigin = (r.left + r.width / 2 - left) + "px " + (up ? "100%" : "0%");
+    menu.style.transformOrigin = ((r.left + r.width / 2 - left) / z) + "px " + (up ? "100%" : "0%");
   }
 
   function open(sel) {

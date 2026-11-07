@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.145",
-    "changelog":  "- Update 1.8.145",
+    "latest_version":  "1.8.146",
+    "changelog":  "- Update 1.8.146",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -52,7 +52,7 @@
                   },
                   {
                       "path":  "css/mt-curve-top.css",
-                      "sha256":  "80e0cb3bab0de6823e5f8bfe266f5e198d12ccc74d0fb4194a9627ec5d3aa4f3"
+                      "sha256":  "da7e340572ed5d81dac18af1eb0cccbe69bd2dec219dcb81d7261299c02cfa87"
                   },
                   {
                       "path":  "css/mt-dialog.css",
@@ -256,11 +256,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "f05f3b68a4e2182b47d9fd796f4a17dc4f473246e10e93874f98d7525b8b1efa"
+                      "sha256":  "c262dcc9c92446182897d92bc2c8aa45c493be9436a96cb43320b3b71eff6622"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "8d58b343ce3fe6b6144e701faed2e65145f89016d7ab797966a2d039c26cf9e5"
+                      "sha256":  "02d4b7c77d60d8ac59212e69677f74a1faef608b830285862c2d4122a3786d2f"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "js/mt-select.js",
-                      "sha256":  "9e7fd130a6ddf0bc6750dfac0e4642e0162df35a5f73bfe48b9573623ce92ac7"
+                      "sha256":  "d4c141317f878a2acf9c43980784f98ea2f4e358fbb3a6170686569caca6cfd5"
                   },
                   {
                       "path":  "js/mt-settings-bus.js",
@@ -448,7 +448,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "f5e6aefd997815f8e079de660800f6b61511a0f00532718e4ab69dd294c481b7"
+                      "sha256":  "396979c67301551d237d369ffa380e7a1e19fbea459ba3d29abd8f9f7c9d0ff2"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -748,7 +748,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "c6dc326fce05ef9b5cd3a363354f45e9384d2a32a484636a54098dbd7d76b445"
+                      "sha256":  "39f5a6ad2d1f26d68b45fc341a4fc0c70ceb17b57d49766547a8ab6d0baada9d"
                   }
               ]
 }

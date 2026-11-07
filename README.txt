@@ -2432,3 +2432,12 @@ fixIsland-presets (guide line morph, band transparan, preset ke island, rapikan 
   - Tab Shortcutz: catatan My Shortcuts, teks kosong, tombol Restore, dan keterangan tiga section dipersingkat.
   - Files: neucurve/nc-morph.js, neucurve/nc-morph.css, neucurve/nc-extras.js, neucurve/index.html, css/mt-curve-top.css, css/mt-presets-tidy.css (baru),
     css/mt-island-presets.css (baru), js/mt-island-presets.js (baru), js/mt-island.js, js/main.js (?v=62), html/index.html, README.txt.
+
+fixSelect-zoom (dropdown salah posisi di tab Text Animation, band atas NeuCurve kembali solid)
+  - Masalah dropdown: menu <select> (js/mt-select.js) hidup di <body>, di luar ".app { zoom: var(--ui-scale) }". CEF lama (AE 2019/2021) mengembalikan
+    getBoundingClientRect() sudah dibagi zoom, jadi dengan UI scale selain 100% menu muncul lebih bawah dan lebih lebar dari field (Text Animation > Direction),
+    menutupi slider dan terpotong di bawah.
+  - Perbaikan: js/mt-select.js (?v=2) mengubah rect field ke piksel layar nyata (uji rect.width vs offsetWidth, sama dengan ColorWheel di js/main.js), memberi menu
+    zoom yang sama dengan panel (teks menu sama besar), dan menghitung semua ukuran dalam px nyata lalu dibagi zoom. Pada 100% tidak ada perubahan.
+  - Band atas NeuCurve: css/mt-curve-top.css (v4) dan js/mt-curve-top.js dikembalikan: band solid berwarna backdrop NeuCurve sendiri, bukan transparan.
+  - Files: js/mt-select.js, css/mt-curve-top.css, html/index.html, html/settings.html, neucurve/index.html, README.txt.

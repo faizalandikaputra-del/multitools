@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.150",
-    "changelog":  "- Update 1.8.150",
+    "latest_version":  "1.8.151",
+    "changelog":  "- Update 1.8.151",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -256,11 +256,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "40be60d67971e26c4b1daced427b5913027be581af75b18a76138627d5e95c43"
+                      "sha256":  "0e706f36f3855cdef9b5c361d67c5fea44764ad2239f76e839b7fb7085ebc3ff"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "2e87ec235221b5694d52f571ac08344372a00e2e224ab6b58bb0af2cc93e773c"
+                      "sha256":  "a2a0726f42b3b52afcff79fe405bc44bb28cd9de40ef0e5e63188369eb760348"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -276,7 +276,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "dbeba84bbf3db7617d8fdf1bdaeca5aefd74b8f7e0d69553ebb26de40e443931"
+                      "sha256":  "f620cd20628c82019b7fcb03e0438b86f08875af69e96e1c62ffef3e1742267c"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "js/mt-select.js",
-                      "sha256":  "5e494d1bd3df67f5cd4ce27411c90bf865de21e58f499c15f00b642d2052023a"
+                      "sha256":  "c26aa80da3dfc289d2eaf1e480f93dd805df360314ce579d854c94a77dd0c8ce"
                   },
                   {
                       "path":  "js/mt-settings-bus.js",
@@ -448,7 +448,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "396979c67301551d237d369ffa380e7a1e19fbea459ba3d29abd8f9f7c9d0ff2"
+                      "sha256":  "a16891fb3dc2d361889ea0a12c7d53291021fbd2e7ccd2b111d3b3cb6266dec0"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",

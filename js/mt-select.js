@@ -107,25 +107,40 @@
     return { left: r.left * k, right: r.right * k, top: r.top * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
   }
 
+  /* Closed loop, no guessing about zoom conventions. Everything is computed in "rect units" (whatever getBoundingClientRect() returns for
+     this CEF build) and the menu itself is calibrated: it is moved by 100 style px and the rect change gives rect units per style px (u).
+     After placing, the menu rect is compared with the target once more and corrected. The select and the menu share the same zoom, so
+     their rects use the same units whatever the engine does. */
   function position() {
     if (!cur || !menu) { return; }
-    var z = zoomOf(cur), r = realRect(cur, z), vw = window.innerWidth, vh = window.innerHeight, gap = 6, pad = 8;
-    var want = Math.max(r.width, 120);
+    var z = zoomOf(cur), r = cur.getBoundingClientRect(), gap = 6, pad = 8;
+    var m0, m1, u, vwR, vhR, natural, below, above, up, room, h, left, top, mr, keepT = menu.style.transform, keepTr = menu.style.transition;
     menu.style.zoom = z === 1 ? "" : String(z);
-    menu.style.minWidth = (r.width / z) + "px";
-    menu.style.maxWidth = (Math.max(r.width, Math.min(vw - pad * 2, 360)) / z) + "px";
+    menu.style.transition = "none"; menu.style.transform = "none";     // measure at rest, not in the scaled "closed" pose
+    menu.style.left = "0px"; menu.style.top = "0px"; m0 = menu.getBoundingClientRect();
+    menu.style.left = "100px"; menu.style.top = "100px"; m1 = menu.getBoundingClientRect();
+    u = (m1.left - m0.left) / 100; if (!(u > 0.05)) { u = 1; }
+    vwR = window.innerWidth * u / z; vhR = window.innerHeight * u / z;
+    menu.style.minWidth = (r.width / u) + "px";
+    menu.style.maxWidth = (Math.max(r.width, Math.min(vwR - pad * u * 2, 360 * u)) / u) + "px";
     list.style.maxHeight = "";
-    var natural = (list.scrollHeight + 12) * z;                     // real px
-    var below = vh - r.bottom - gap - pad, above = r.top - gap - pad;
-    var up = natural > below && above > below;
-    var room = Math.max(90, Math.min(300, up ? above : below));
-    var h = Math.min(natural, room);
-    list.style.maxHeight = (h / z - 12) + "px";
-    var left = Math.max(pad, Math.min(r.left, vw - Math.max(want, menu.offsetWidth * z) - pad));
-    menu.style.left = (left / z) + "px";
-    menu.style.top = ((up ? r.top - gap - h : r.bottom + gap) / z) + "px";
+    natural = (list.scrollHeight + 12) * u;
+    below = vhR - r.bottom - (gap + pad) * u; above = r.top - (gap + pad) * u;
+    up = natural > below && above > below;
+    room = Math.max(90 * u, Math.min(300 * u, up ? above : below));
+    h = Math.min(natural, room);
+    list.style.maxHeight = (h / u - 12) + "px";
+    mr = menu.getBoundingClientRect();
+    left = Math.max(pad * u, Math.min(r.left, vwR - Math.max(r.width, mr.width) - pad * u));
+    top = up ? r.top - gap * u - h : r.bottom + gap * u;
+    menu.style.left = ((left - m0.left) / u) + "px";
+    menu.style.top = ((top - m0.top) / u) + "px";
+    mr = menu.getBoundingClientRect();                                     // verify and correct once
+    if (Math.abs(mr.left - left) > 0.5) { menu.style.left = (parseFloat(menu.style.left) + (left - mr.left) / u) + "px"; }
+    if (Math.abs(mr.top - top) > 0.5) { menu.style.top = (parseFloat(menu.style.top) + (top - mr.top) / u) + "px"; }
+    menu.style.transform = keepT; menu.style.transition = keepTr;
     menu.className = "mt-menu" + (up ? " is-up" : "") + (menu.className.indexOf("is-open") >= 0 ? " is-open" : "");
-    menu.style.transformOrigin = ((r.left + r.width / 2 - left) / z) + "px " + (up ? "100%" : "0%");
+    menu.style.transformOrigin = ((r.left + r.width / 2 - left) / u) + "px " + (up ? "100%" : "0%");
   }
 
   function open(sel) {

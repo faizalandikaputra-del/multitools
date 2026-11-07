@@ -4982,10 +4982,12 @@
   // content (~110ms), then renderTab() swaps the content and plays the staggered card entrance.
   var MT_LEAVE_MS = 110;
   var MT_STAGGER_SEL = ".tool, .ta-group, .beat-card, .snippet-card, .info, .empty, .expr-item, " +
-    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn, .el-fx";   // .flip-btn: Easy Layer Flip row sits outside any .ta-group; .el-fx: Copy Effects box (js/mt-fxcopy.js), Easy Layer + Animation Presets
+    ".preset-folder, .preset-item, .qce-res-tile, .saber-wrap--tile, .shortcut-tile, .switch-row, .flip-btn, .el-fx, .cw, .cp-card";   // .cw / .cp-card: Color Palette wheel card + swatch card   // .flip-btn: Easy Layer Flip row sits outside any .ta-group; .el-fx: Copy Effects box (js/mt-fxcopy.js), Easy Layer + Animation Presets
   var MT_STAGGER_MAX = 14;
   var leaveTimer = null;
   var staggerTimer = null;
+  var staggered = (typeof WeakSet === "function") ? new WeakSet() : null;   // cards already given the entrance in this tab switch
+  var lateObs = null, lateRaf = 0;                                          // cards other modules add AFTER the render (Tools groups, Color Palette boxes) still get it
 
   function motionOff() {
     var de = document.documentElement;
@@ -5005,16 +5007,30 @@
 
   // Gives the first few visible cards of the freshly built panel an index for the CSS stagger delay
   // (see staggerWithin below; only the first MT_STAGGER_MAX get a growing delay).
+  function stopLateStagger() {
+    if (lateObs) { lateObs.disconnect(); lateObs = null; }
+    if (lateRaf) { window.cancelAnimationFrame(lateRaf); lateRaf = 0; }
+  }
   function staggerCards() {
     if (staggerTimer) { clearTimeout(staggerTimer); }
+    stopLateStagger();
+    if (staggered) { staggered = new WeakSet(); }
     // Drop the helper class once the entrance is over, so later display toggles (search filters,
     // collapsing cards) can never replay the animation on their own.
     staggerTimer = setTimeout(function () {
       staggerTimer = null;
+      stopLateStagger();
       var done = panel.querySelectorAll(".mt-stagger");
       Array.prototype.forEach.call(done, function (el) { el.classList.remove("mt-stagger"); });
     }, (window.MTAnim && window.MTAnim.cleanupMs) ? window.MTAnim.cleanupMs() : 900);   // Settings > Tab animation: slower speed / Cascade need longer than 900 ms
     staggerWithin(panel, true);
+    if (window.MutationObserver && staggered) {
+      lateObs = new MutationObserver(function () {
+        if (lateRaf) { return; }
+        lateRaf = window.requestAnimationFrame(function () { lateRaf = 0; if (staggerTimer) { staggerWithin(panel, true); } });
+      });
+      lateObs.observe(panel, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
+    }
   }
 
   // Gives each visible card under `root` an index for the CSS stagger delay. Only cards that are actually
@@ -5028,10 +5044,11 @@
     var made = [], k = 0, i;
     for (i = 0; i < nodes.length && k < MT_STAGGER_MAX * 3; i++) {
       var el = nodes[i];
+      if (staggered && staggered.has(el)) { continue; }           // already animated in this entrance
       if (!el.getClientRects().length) { continue; }              // display:none (collapsed folder, filtered row)
       if (useView) {
         var r = el.getBoundingClientRect();
-        if (r.top > mr.bottom + 40) { break; }                    // DOM order = top-to-bottom: nothing further is on screen
+        if (r.top > mr.bottom + 40) { continue; }                 // below the view (NOT break: rows of a collapsed group sit far below yet the groups after it are on screen)
         if (r.bottom < mr.top - 40) { continue; }                 // scrolled above the view
       }
       // Skip nested matches (e.g. a .tool inside an already-animated .ta-group): one animation per block.
@@ -5042,6 +5059,7 @@
       }
       if (nested) { continue; }
       el.classList.add("mt-stagger");
+      if (staggered) { staggered.add(el); }
       el.style.setProperty("--mt-i", String(Math.min(k, MT_STAGGER_MAX)));
       made.push(el);
       k++;

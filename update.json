@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.152",
-    "changelog":  "- Update 1.8.152",
+    "latest_version":  "1.8.153",
+    "changelog":  "- Update 1.8.153",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -256,11 +256,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "89982eb8e9d404db72f7d8b99ae890734df711fc1c4022c62e6de1292dc5c125"
+                      "sha256":  "9e71d6a6df38a57e344e61b5476389de541f246c5c522daece54fe4929ea5d7a"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "a2a0726f42b3b52afcff79fe405bc44bb28cd9de40ef0e5e63188369eb760348"
+                      "sha256":  "3863f8059685ffd405f861c561c987497703c549de3d0676973787894882be19"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -372,7 +372,7 @@
                   },
                   {
                       "path":  "js/mt-select.js",
-                      "sha256":  "c26aa80da3dfc289d2eaf1e480f93dd805df360314ce579d854c94a77dd0c8ce"
+                      "sha256":  "5ea6f44c3d9c788cb87d41590a49cbb3be86ec074fbfe85cbf5b47c1262c8152"
                   },
                   {
                       "path":  "js/mt-settings-bus.js",
@@ -448,7 +448,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "a16891fb3dc2d361889ea0a12c7d53291021fbd2e7ccd2b111d3b3cb6266dec0"
+                      "sha256":  "07262e9a05ec5d865c6b31afc4c252e4309890e451576b22a87b3430d23ed4c5"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",

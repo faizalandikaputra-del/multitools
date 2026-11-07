@@ -107,20 +107,23 @@
     return { left: r.left * k, right: r.right * k, top: r.top * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
   }
 
-  /* Closed loop, no guessing about zoom conventions. Everything is computed in "rect units" (whatever getBoundingClientRect() returns for
-     this CEF build) and the menu itself is calibrated: it is moved by 100 style px and the rect change gives rect units per style px (u).
-     After placing, the menu rect is compared with the target once more and corrected. The select and the menu share the same zoom, so
-     their rects use the same units whatever the engine does. */
+  /* The menu lives in the SAME zoom context as the select (inside .app when the select is, else <body>) and carries no zoom of its own, so
+     select and menu always report rects in the same units whatever the CEF build does with CSS zoom. Everything is then computed in those
+     "rect units": the menu is moved by 100 style px to learn rect units per style px (u), the viewport edge is read from a fixed probe,
+     and after placing the menu rect is compared with the target once more and corrected. */
   function position() {
     if (!cur || !menu) { return; }
-    var z = zoomOf(cur), r = cur.getBoundingClientRect(), gap = 6, pad = 8;
-    var m0, m1, u, vwR, vhR, natural, below, above, up, room, h, left, top, mr, keepT = menu.style.transform, keepTr = menu.style.transition;
-    menu.style.zoom = z === 1 ? "" : String(z);
+    var r = cur.getBoundingClientRect(), gap = 6, pad = 8, host = (cur.closest && cur.closest(".app")) || document.body;
+    var vp, vwR, vhR, m0, m1, u, natural, below, above, up, room, h, left, top, mr, keepT = menu.style.transform, keepTr = menu.style.transition;
+    if (menu.parentNode !== host) { host.appendChild(menu); }
+    menu.style.zoom = "";
+    vp = document.createElement("i");
+    vp.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;visibility:hidden;pointer-events:none";
+    host.appendChild(vp); mr = vp.getBoundingClientRect(); vwR = mr.right; vhR = mr.bottom; host.removeChild(vp);
     menu.style.transition = "none"; menu.style.transform = "none";     // measure at rest, not in the scaled "closed" pose
     menu.style.left = "0px"; menu.style.top = "0px"; m0 = menu.getBoundingClientRect();
     menu.style.left = "100px"; menu.style.top = "100px"; m1 = menu.getBoundingClientRect();
     u = (m1.left - m0.left) / 100; if (!(u > 0.05)) { u = 1; }
-    vwR = window.innerWidth * u / z; vhR = window.innerHeight * u / z;
     menu.style.minWidth = (r.width / u) + "px";
     menu.style.maxWidth = (Math.max(r.width, Math.min(vwR - pad * u * 2, 360 * u)) / u) + "px";
     list.style.maxHeight = "";
@@ -154,7 +157,7 @@
     list.className = "mt-list";
     list.innerHTML = build(sel);
     menu.appendChild(list);
-    document.body.appendChild(menu);
+    (sel.closest ? (sel.closest(".app") || document.body) : document.body).appendChild(menu);   // same zoom context as the select: identical rect units, no zoom maths
     items = Array.prototype.slice.call(list.querySelectorAll(".mt-opt"));
     sel.classList.add("mt-open");
     position();

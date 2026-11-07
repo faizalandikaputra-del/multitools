@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.136",
-    "changelog":  "- Update 1.8.136",
+    "latest_version":  "1.8.137",
+    "changelog":  "- Update 1.8.137",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -120,7 +120,7 @@
                   },
                   {
                       "path":  "css/mt-layout-v3.css",
-                      "sha256":  "86a7ddc9dc498b71caeff808f33a73b8ad2da418ba8dd175ba27944df57e77ac"
+                      "sha256":  "fb38ce30991b887a6ab6a89aa605a148be1802ca517f59a1c6fa8567dfcd6616"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -256,11 +256,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "04aa0a183497f9a728aecb762be61575336acf7c77cbc230f5693d6d2f99f27c"
+                      "sha256":  "046b5b22192aa2348fe5ab5d7b4e645ae7fa445ca5eb349dbe78a6b10f672bed"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "8d58b343ce3fe6b6144e701faed2e65145f89016d7ab797966a2d039c26cf9e5"
+                      "sha256":  "e22739cc50b5b237d62fdf442a421ed4ea2101aacc89ea546e23017d5adf727b"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -276,7 +276,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "cce4dd3456fa22586ad551adb775bd62c5c5468ef0b4e5e94c0c068e1cafb901"
+                      "sha256":  "d2a7892fb31bd27b2e6f8d74cf4e16d395fd764d93b554f393c9b0e1d37b5b4b"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -348,7 +348,7 @@
                   },
                   {
                       "path":  "js/mt-layout-v3.js",
-                      "sha256":  "6c42e1d4d2f4622d3ed3b36be8565192d1c295dc245f77b08fca2becff5b98d3"
+                      "sha256":  "32687df253f97f09ed290c226219a03d058af6cc6f1277faeb056ff4246449f5"
                   },
                   {
                       "path":  "js/mt-loader.js",
@@ -380,7 +380,7 @@
                   },
                   {
                       "path":  "js/mt-select.js",
-                      "sha256":  "9e7fd130a6ddf0bc6750dfac0e4642e0162df35a5f73bfe48b9573623ce92ac7"
+                      "sha256":  "c577d746babb7f0c414e9376a7a9923c098b600425367a57e2a8fba38c59a876"
                   },
                   {
                       "path":  "js/mt-settings-bus.js",
@@ -756,7 +756,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "22bd89ab9c87b553ee114f450def89c4030b3308a5a51a7dcb6ceaf2ec4b3376"
+                      "sha256":  "f15661dd4b21be27d13948e358b2d60fe302c806d9231085b7405a3fa184c006"
                   }
               ]
 }

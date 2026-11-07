@@ -119,6 +119,8 @@
       var bar = el("div", "v3-bar"), add = panel.querySelector("#shortcutz-add-btn");
       bar.appendChild(search("Search shortcuts", "sc", function () { scFilter(panel); }));
       if (add) { add.textContent = "+ Add"; add.title = "Add Custom Shortcut"; bar.appendChild(add); }
+      var clr = panel.querySelector("#shortcutz-clear-all");
+      if (clr) { clr.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>'; bar.appendChild(clr); }
       var chips = el("div", "v3-chips");
       CATS.forEach(function (c) {
         var b = el("button", "v3-chip", c[1]); b.type = "button"; b.setAttribute("data-cat", c[0]);

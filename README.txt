@@ -2451,3 +2451,14 @@ fix-layout-v3 (layout v3): new layout for 8 tabs - Color Palette, Expression Cod
   cause: n/a (design change; no feature removed - existing buttons and handlers are reused, only restyled / moved).
   fix:   css/mt-layout-v3.css (loaded after v2), js/mt-layout-v3.js (flags sections open, search / chips / tiles; Chromium-74 safe), html/index.html (link + script).
          Switch back: localStorage mtx.layoutV3 = "0" -> v2 layout.
+
+fix-layout-v3.1 (anchor icons, dropdown zoom, Shortcutz delete all):
+  1) Anchor Point & Align: new anchor icons - one 16x16 frame, the 9 handle points sit exactly ON the frame (4 / 12 / 20); the handle a button sets = solid dot + ring.
+     Each tool is one rounded pad, cells fill the width (css/mt-layout-v3.css; js/main.js _anchorIconSvg).
+  2) Animator Text "Based on" / "Direction" dropdown opened in the wrong place and too wide. cause: Settings > UI scale = ".app { zoom }" scales the panel but the
+     menu (js/mt-select.js) lives in <body>, and old CEF returns getBoundingClientRect() divided by that zoom. fix: position() measures the field in screen px
+     (detects the host's convention like mt-tooltip.js), gives the menu the same zoom and writes left/top/size in its own units. Same for every <select> in the panel.
+  3) Shortcutz: trash button beside "+ Add" -> dialog "Delete all shortcuts?": [Delete my shortcuts only] (My Shortcuts: custom + pinned presets/snippets) or
+     [Delete everything, hide built-ins too] (built-ins are fixed code, so they are hidden; "Restore N hidden shortcuts" brings them back). js/main.js: askChoice(),
+     Shortcutz.clearAll / confirmClearAll, TileCustom.hideMany. Also: Shortcutz.rerender() now groups sections like the first render (before, hide/restore lost the layout).
+  files: js/main.js (v65), js/mt-select.js (v2), js/mt-layout-v3.js (v2), css/mt-layout-v3.css (v4), html/index.html + settings.html (version bumps).

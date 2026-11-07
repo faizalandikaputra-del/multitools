@@ -541,6 +541,36 @@
     setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) { } }, 30);
   }
 
+  // Themed confirm with several buttons (replaces window.confirm). askChoice({ title, hint, choices: [{ label, danger }] }, function (index) { ... })
+  // The callback gets the index of the clicked choice; Cancel / Esc / click outside does nothing.
+  function askChoice(opts, done) {
+    var back = document.createElement("div"), box = document.createElement("div"), h = document.createElement("h3"), row = document.createElement("div"),
+        cancel = document.createElement("button"), shut = false;
+    back.className = "mt-dlg-back"; box.className = "mt-dlg"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+    h.textContent = opts.title || ""; box.appendChild(h);
+    if (opts.hint) { var p = document.createElement("p"); p.textContent = opts.hint; box.appendChild(p); }
+    row.className = "mt-dlg-actions mt-dlg-actions--stack";
+    cancel.type = "button"; cancel.textContent = "Cancel";
+    function close(idx) {
+      if (shut) { return; } shut = true;
+      document.removeEventListener("keydown", onKey, true);
+      back.classList.remove("is-open");
+      setTimeout(function () { if (back.parentNode) { back.parentNode.removeChild(back); } }, 200);
+      if (idx >= 0) { done(idx); }
+    }
+    function onKey(e) { if (e.key === "Escape" || e.keyCode === 27) { e.stopPropagation(); e.preventDefault(); close(-1); } }
+    (opts.choices || []).forEach(function (c, i) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "mt-dlg-ok" + (c.danger ? " mt-dlg-danger" : ""); b.textContent = c.label;
+      b.addEventListener("click", function () { close(i); }); row.appendChild(b);
+    });
+    row.appendChild(cancel); box.appendChild(row); back.appendChild(box); document.body.appendChild(back);
+    document.addEventListener("keydown", onKey, true);
+    cancel.addEventListener("click", function () { close(-1); });
+    back.addEventListener("mousedown", function (e) { if (e.target === back) { close(-1); } });
+    void back.offsetWidth; back.classList.add("is-open");
+    setTimeout(function () { try { cancel.focus(); } catch (e) { } }, 30);
+  }
+
   function toast(message, isError) {
     var el = $("toast");
     el.textContent = message;
@@ -756,29 +786,23 @@
     { code: "v", label: "Flip Vertical",   tip: "Mirror the selected layer(s) top-to-bottom (inverts Scale Y)", icon: '<path d="M3 12h18" stroke-dasharray="2 2"/><path d="M8 9 12 5l4 4M8 15l4 4 4-4"/>' }
   ];
 
-  // A faint bounding box with a small reference dot at each of the 9 handle positions, and a bold
-  // target-crosshair glyph over the one this button actually sets - reads at a glance as "anchor
-  // point alignment" instead of the old plain 3x3 dot grid.
+  // One 16x16 frame; its 9 handle points (corners, edge middles, centre) sit exactly ON the frame at 4 / 12 / 20.
+  // Every point is a small dot, and the one this button sets gets a solid accent dot with a ring, so the icon
+  // reads as "this handle of the box" and the marker is always centred on the frame line (no half-cut squares).
   function _anchorIconSvg(activeRow, activeCol) {
-    var dots = "";
+    var dots = "", P = [4, 12, 20];
     for (var r = 0; r < 3; r++) {
       for (var c = 0; c < 3; c++) {
-        if (r === activeRow && c === activeCol) { continue; } // the active spot gets the crosshair instead
-        var x = 4.5 + c * 7.5, y = 4.5 + r * 7.5;
-        dots += '<circle cx="' + x + '" cy="' + y + '" r="1" fill="currentColor" stroke="none" opacity="0.4"/>';
+        if (r === activeRow && c === activeCol) { continue; }
+        dots += '<circle cx="' + P[c] + '" cy="' + P[r] + '" r="1" fill="currentColor" stroke="none" opacity="0.5"/>';
       }
     }
-    var ax = 4.5 + activeCol * 7.5, ay = 4.5 + activeRow * 7.5;
-    var crosshair =
-      '<circle cx="' + ax + '" cy="' + ay + '" r="3.4" stroke="var(--accent-strong)"/>' +
-      '<path d="M' + ax + ' ' + (ay - 6) + 'V' + (ay - 4.2) +
-        'M' + ax + ' ' + (ay + 4.2) + 'V' + (ay + 6) +
-        'M' + (ax - 6) + ' ' + ay + 'H' + (ax - 4.2) +
-        'M' + (ax + 4.2) + ' ' + ay + 'H' + (ax + 6) +
-        '" stroke="var(--accent-strong)"/>';
+    var ax = P[activeCol], ay = P[activeRow];
     return '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-      '<rect x="2.75" y="2.75" width="18.5" height="18.5" rx="2.5" opacity="0.5"/>' +
-      dots + crosshair +
+      '<rect x="4" y="4" width="16" height="16" rx="2.5" stroke-width="1.5" opacity="0.55"/>' +
+      dots +
+      '<circle cx="' + ax + '" cy="' + ay + '" r="3.6" stroke="var(--accent-strong)" stroke-width="1.4" opacity="0.5"/>' +
+      '<circle cx="' + ax + '" cy="' + ay + '" r="2" fill="var(--accent-strong)" stroke="none"/>' +
       '</svg>';
   }
 
@@ -3932,6 +3956,12 @@
       Object.keys(all).forEach(function (k) { if (all[k] && all[k].hidden) { n++; } });
       return n;
     },
+    hideMany: function (keys) {      // hides built-in tiles in one write (Shortcutz > Delete all)
+      var all = this._load();
+      keys.forEach(function (k) { var e = all[k] || {}; e.hidden = true; all[k] = e; });
+      this._cache = all;
+      Store.set(this.KEY, JSON.stringify(all));
+    },
     clearAllHidden: function () {
       var all = this._load();
       Object.keys(all).forEach(function (k) {
@@ -4099,14 +4129,45 @@
       }
     },
 
+    // Delete all: mode "mine" = every tile in My Shortcuts (custom, pinned presets, pinned snippets); mode "all" = that plus every built-in tile
+    // (built-ins are fixed panel code, so they are hidden - the "Restore N hidden shortcuts" button brings them back).
+    clearAll: function (mode) {
+      var self = this, n = this.getItems().length;
+      this.saveItems([]);
+      if (mode === "all") {
+        var keys = [];
+        [["expr", this.EXPR_PRESETS], ["effect", this.EFFECT_PRESETS], ["util", this.UTIL_PRESETS]].forEach(function (g) {
+          (g[1] || []).forEach(function (d) { keys.push(g[0] + ":" + d.id); });
+        });
+        TileCustom.hideMany(keys);
+        n += keys.length;
+      }
+      if (currentTab === "shortcutz") { this.rerender(); } else { this.refresh(); }
+      toast(n ? "Deleted " + n + " shortcut" + (n === 1 ? "" : "s") + "." : "Nothing to delete.");
+      void self;
+    },
+    confirmClearAll: function () {
+      var self = this, mine = this.getItems().length;
+      askChoice({
+        title: "Delete all shortcuts?",
+        hint: "My Shortcuts (" + mine + ") are removed for good; the original presets and snippets they point to stay untouched. You can also hide the built-in shortcuts: they come back with \"Restore hidden shortcuts\".",
+        choices: [
+          { label: "Delete my shortcuts only", danger: true },
+          { label: "Delete everything, hide built-ins too", danger: true }
+        ]
+      }, function (i) { self.clearAll(i === 1 ? "all" : "mine"); });
+    },
+
     // Full re-render of the Shortcutz tab content in place (used after anything that changes a
     // BUILT-IN tile's look/behavior - custom icon, background, override, or hide/restore - since
     // those sections are otherwise only built once by render() and never touched by refresh()).
     rerender: function () {
       if (currentTab !== "shortcutz") { return; }
       var scrollTop = panel.scrollTop;
+      var built = this.render();
+      if (window.PanelRefinements && window.PanelRefinements.groupifyTaSections) { window.PanelRefinements.groupifyTaSections(built, { tabId: "shortcutz", openFirst: true }); }   // same capsule groups as the first render
       panel.innerHTML = "";
-      panel.appendChild(this.render());
+      panel.appendChild(built);
       panel.scrollTop = scrollTop;
     },
 
@@ -4773,6 +4834,7 @@
 
       wrap.innerHTML =
         '<button class="btn-apply shortcutz-add-btn" id="shortcutz-add-btn" type="button">+ Add Custom Shortcut</button>' +
+        '<button class="btn shortcutz-clear-btn" id="shortcutz-clear-all" type="button" title="Delete all shortcuts" aria-label="Delete all shortcuts">Delete all</button>' +
         '<div class="ta-section shortcutz-my-section">' +
           '<h2 class="ta-title">My Shortcuts</h2>' +
           '<p class="field-note">Pinned Animation Presets, pinned Code Expression snippets, and anything you add above. Drag a tile to reorder; the &times; removes it from Shortcutz only (the original preset/snippet is untouched). Right-click any tile - built-in or custom - to change its icon, set a background GIF/image, edit its function, or delete/hide it.</p>' +
@@ -4804,6 +4866,7 @@
       });
 
       wrap.querySelector("#shortcutz-add-btn").addEventListener("click", function () { self.openAddModal(); });
+      wrap.querySelector("#shortcutz-clear-all").addEventListener("click", function () { self.confirmClearAll(); });
 
       var restoreBtn = wrap.querySelector("#shortcutz-restore-hidden");
       if (restoreBtn) { restoreBtn.addEventListener("click", function () { TileCustom.clearAllHidden(); self.rerender(); }); }

@@ -176,3 +176,26 @@ html[data-layout="v3"][data-mt-tab="shortcutz"] .shortcut-tile-name { overflow-w
 /* ---------- fixes round 4 ---------- */
 html[data-layout="v3"][data-mt-tab="shortcutz"] .shortcut-tile { min-height: 76px; padding-bottom: 8px !important; }
 html[data-layout="v3"][data-mt-tab="shortcutz"] .shortcut-tile-name { font-size: 0.64rem !important; hyphens: auto; }
+
+/* ---------- Anchor & Align: one rounded pad per tool, cells fill the width ---------- */
+html[data-layout="v3"][data-mt-tab="anchor-align"] .anchor-grid,
+html[data-layout="v3"][data-mt-tab="anchor-align"] .align-grid { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 6px !important; gap: 4px !important; background: var(--surface-sunken) !important; border-radius: 14px !important; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .anchor-btn,
+html[data-layout="v3"][data-mt-tab="anchor-align"] .align-btn { width: 100% !important; max-width: none !important; aspect-ratio: auto !important; background: none !important; box-shadow: none !important; border-radius: 10px !important; transform: none; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .anchor-btn { height: 50px !important; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .align-btn { height: 42px !important; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .anchor-btn:hover,
+html[data-layout="v3"][data-mt-tab="anchor-align"] .align-btn:hover { background: var(--surface-hover) !important; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .anchor-btn:active,
+html[data-layout="v3"][data-mt-tab="anchor-align"] .align-btn:active { transform: scale(0.94); }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .anchor-btn svg { width: 30px !important; height: 30px !important; fill: none; stroke: var(--text-dim); stroke-width: 1.5; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .align-btn .align-icon svg { width: 22px; height: 22px; }
+html[data-layout="v3"][data-mt-tab="anchor-align"] .ta-group.v3-flat { padding-bottom: 16px !important; margin-bottom: 16px !important; }
+
+/* ---------- Shortcutz: delete-all button (icon beside "+ Add") + stacked confirm buttons ---------- */
+html[data-layout="v3"][data-mt-tab="shortcutz"] .shortcutz-clear-btn { flex: none; width: 34px; height: 34px; min-height: 0 !important; padding: 0 !important; display: grid; place-items: center; background: var(--surface) !important; color: var(--text-dim) !important; border: 0 !important; border-radius: 10px !important; }
+html[data-layout="v3"][data-mt-tab="shortcutz"] .shortcutz-clear-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+html[data-layout="v3"][data-mt-tab="shortcutz"] .shortcutz-clear-btn:hover { background: rgba(229, 72, 77, 0.16) !important; color: #ff6b70 !important; }
+.mt-dlg-actions--stack { display: flex; flex-direction: column; gap: 6px; }
+.mt-dlg-actions--stack button { width: 100%; }
+.mt-dlg-ok.mt-dlg-danger { background: #e5484d !important; color: #fff !important; }

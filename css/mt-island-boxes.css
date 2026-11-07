@@ -32,3 +32,24 @@
 .mi-moved-back { flex: 0 0 auto; height: 26px; padding: 0 10px; border: 0; border-radius: var(--radius-btn, 8px); background: var(--surface-card, rgba(255, 255, 255, 0.08)); color: var(--text, #fff); font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: background 0.15s ease; }
 .mi-moved-back:hover { background: var(--surface-hover, rgba(255, 255, 255, 0.16)); }
 .mi-moved-back:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+
+/* ---- preset chips (js/mt-island-presets.js): one row per .ffx preset dragged onto the island ---- */
+.mi-prewrap { margin-top: 10px; }
+.mi-prewrap[hidden] { display: none; }
+.mt-island .mi-pre { max-height: 150px; margin: 0 -3px; padding: 0 3px 2px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.mt-island .mi-pre::-webkit-scrollbar { width: 0; height: 0; }
+.mt-island .mi-prerow { position: relative; margin: 0 0 6px; }
+.mt-island .mi-prerow:last-child { margin-bottom: 0; }
+.mt-island .mi-prebtn { display: flex; align-items: center; box-sizing: border-box; width: 100%; height: 34px; margin: 0; padding: 0 40px 0 12px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.09); color: #fff; font: inherit; text-align: left; cursor: pointer; transition: background-color 0.15s ease, transform 0.18s ease; }
+.mt-island .mi-prebtn:hover { background: rgba(255, 255, 255, 0.17); }
+.mt-island .mi-prebtn:active { transform: scale(0.98); }
+.mt-island .mi-prebtn:focus-visible, .mt-island .mi-prerm:focus-visible { outline: 2px solid var(--accent, #5b8cff); outline-offset: 2px; }
+.mt-island .mi-prebtn.is-loading { opacity: 0.55; pointer-events: none; }
+.mt-island .mi-prebtn.is-success { background: rgba(61, 220, 132, 0.28); }
+.mt-island .mi-prebtn.is-error { background: rgba(255, 90, 90, 0.3); }
+.mt-island .mi-prename { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 600; }
+.mt-island .mi-preap { flex: 0 0 auto; margin-left: 8px; font-size: 0.64rem; font-weight: 600; color: rgba(255, 255, 255, 0.5); }
+.mt-island .mi-prerm { position: absolute; top: 7px; right: 8px; display: grid; place-items: center; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: #2b2b30; color: rgba(255, 255, 255, 0.8); cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease; }
+.mt-island .mi-prerm:hover { background: #ff5a5a; color: #fff; }
+/* preset tile in the tab: grab cursor while it can be dragged to the island */
+.preset-item[draggable="true"] { -webkit-user-drag: element; }

@@ -2412,3 +2412,10 @@ fixKT-tools (Keyframe Timing pindah ke tab Tools, preview keyframe dihapus)
     dengan gap (mengganti tata letak .ta-section).
   - jsx/host.jsx tidak berubah. Tab tersimpan atau urutan tab yang masih memuat "keyframes" diabaikan otomatis.
   - Files: js/main.js, html/index.html, css/mt-keyframes.css, README.txt.
+
+fix-island-presets: Animation Presets tiles can be dragged onto the dynamic island
+  what:  drag a .ffx preset tile (Animation Presets tab) onto the island; the island's Pin view shows a "Presets" row for it. Click the row = apply the preset to the
+         selected layer(s) (same PRE_apply call, toast and "Last used" marker as a pinned Shortcutz preset). x on the row removes it. The tile stays in the tab (copy, not move).
+         The list is remembered (localStorage mtx.island.presets, max 24). Island off in Settings = rows hidden with the island.
+  files: js/mt-island-presets.js (new), js/main.js (preset tile draggable + dragstart "text/mt-preset", window.__MT.runPreset), js/mt-island.js (v20: accepts the
+         drop, presetHost / presetsChanged, empty-state check counts presets), css/mt-island-boxes.css (v3: row styles), html/index.html (new script tag, version bumps).

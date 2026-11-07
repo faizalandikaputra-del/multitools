@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.130",
-    "changelog":  "- Update 1.8.130",
+    "latest_version":  "1.8.131",
+    "changelog":  "- Update 1.8.131",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -108,7 +108,7 @@
                   },
                   {
                       "path":  "css/mt-island-boxes.css",
-                      "sha256":  "04f062db67d9a21bfd29bcf2daf1fc20cb36c115840d974e78f795341be98ad0"
+                      "sha256":  "6a566ab9b5025053e8e1fa8b153034bb52387e8f82aca66a832fc5096d67024e"
                   },
                   {
                       "path":  "css/mt-keyframes.css",
@@ -248,7 +248,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "b759fa5d1fd51770f4045693e43ff7ea241a298cec94fdfb9b6d12f80dea946c"
+                      "sha256":  "e5af7737e5f07d09339e24441756261283ca3eb77bcc6d9471693cc240ba7c3c"
                   },
                   {
                       "path":  "html/settings.html",
@@ -268,7 +268,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "acfcf9026e9a399e644b82232a32808eb5ad689af44baee8091cdd5be3155f0f"
+                      "sha256":  "17339811d40206b54f7ad012c73b481451cca8bfde1cde61ff3e49c9a2a2738f"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -324,11 +324,15 @@
                   },
                   {
                       "path":  "js/mt-island.js",
-                      "sha256":  "73dd773a0464b968617be60f0979ac17c97abb3cb725718d6f890833f2bef1a6"
+                      "sha256":  "2bf29b8321761ce8790e76e3b7932c839a01cc4f47a85602c7dca3bf88e8aae7"
                   },
                   {
                       "path":  "js/mt-island-boxes.js",
                       "sha256":  "689977a19ba1d0054c6d39e8aee0fb3a43077edae00610f16618557da40c2e64"
+                  },
+                  {
+                      "path":  "js/mt-island-presets.js",
+                      "sha256":  "095b20e03785c59801ff5f5e30955ff1feb1c079f1e42958fb126bb7d64ecbd9"
                   },
                   {
                       "path":  "js/mt-loader.js",
@@ -736,7 +740,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "47c357cb27b14096536bed56b9b4e43168419600cd575723e293d4a3fabf7e66"
+                      "sha256":  "16d50e6e96114a33da3cf48e348313055c9627a20374544d50022303903807e4"
                   }
               ]
 }

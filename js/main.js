@@ -553,6 +553,7 @@
   window.__MT = {
     TABS: TABS, buildTool: buildTool, toast: toast, runTool: runTool,
     toolImg: function (tabId, toolId) { return Store.get(imgKey(tabId, toolId)); },
+    runPreset: function (o, tileEl) { Shortcutz.runItem({ type: "ffx", folder: o.folder, file: o.file }, tileEl); },   // island chip -> same apply path as a pinned Shortcutz preset
     current: function () { return currentTab; },
     panel: function () { return panel; },
     // Builds a tab's content WITHOUT showing it (js/mt-island-boxes.js uses it once at start to rebuild the boxes that were left in the island).
@@ -6602,7 +6603,7 @@
         var fav = presetFavStore.isFav(folder, p.file);
         var last = presetLastStore.is(folder, p.file);
         var sup = supportResult(p.file);
-        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
+        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" draggable="true" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
           (fav ? '<span class="preset-item-fav-badge" title="Favorite">' + ICON_STAR_SVG + "</span>" : "") +
           supportIconHtml(sup) +
           '<span class="preset-name" title="' + escapeHtml(p.file) + '">' + escapeHtml(p.name) + "</span>" +
@@ -6962,6 +6963,21 @@
           });
         }
       });
+
+      // Drag a preset tile onto the dynamic island (js/mt-island-presets.js): the island keeps a one-click Apply chip for it. The tile itself stays in the list.
+      listEl.addEventListener("dragstart", function (e) {
+        var itemEl = e.target && e.target.closest ? e.target.closest(".preset-item") : null;
+        if (!itemEl) { return; }
+        var nm = itemEl.querySelector(".preset-name");
+        try {
+          e.dataTransfer.setData("text/mt-preset", JSON.stringify({ folder: self.folder(), file: itemEl.getAttribute("data-file"), name: nm ? nm.textContent : itemEl.getAttribute("data-file") }));
+          e.dataTransfer.setData("text/plain", nm ? nm.textContent : "");
+          e.dataTransfer.effectAllowed = "copy";
+        } catch (er) { }
+        lpClear();
+        document.documentElement.classList.add("mt-dragging-tool");
+      });
+      listEl.addEventListener("dragend", function () { document.documentElement.classList.remove("mt-dragging-tool"); });
 
       // Long-press to favorite: mirrors listEl's own action-button click handler above,
       // but for a press-and-hold anywhere else on the card.

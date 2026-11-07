@@ -9783,6 +9783,18 @@ function _ktSummary(found) {
   return { start: s, end: e, count: n, times: times };
 }
 
+// Stretch remembers the length the keyframes had before it ($.global survives while After Effects is open).
+// Start / End then bring that length back, as long as the keyframes still sit exactly where Stretch put them.
+function _ktStretchEntry(comp, layer, sm, half) {
+  try {
+    var store = $.global.__ktStretch, e;
+    if (!store) { return null; }
+    e = store[comp.id + "/" + layer.index];
+    if (e && e.count === sm.count && Math.abs(e.ns - sm.start) < half && Math.abs(e.ne - sm.end) < half) { return e; }
+  } catch (x) { }
+  return null;
+}
+
 function _ktLayerOf(prop) {
   try { return prop.propertyGroup(prop.propertyDepth); } catch (e) { return null; }
 }
@@ -9792,20 +9804,22 @@ function KT_state() {
     var comp = app.project.activeItem;
     if (!(comp && comp instanceof CompItem)) { return _err(new Error("Open a composition first.")); }
     var found = _ktCollect(comp), sum = _ktSummary(found);
-    var i, lay, seen = {}, nLay = 0, lin = null, lout = null, fd = 1 / comp.frameRate;
+    var i, lay, seen = {}, nLay = 0, lin = null, lout = null, fd = 1 / comp.frameRate, firstLay = null, firstItems = [], ent = null;
     for (i = 0; i < found.length; i++) {
       lay = _ktLayerOf(found[i].prop);
       if (!lay) { continue; }
       if (!seen[lay.index]) {
         seen[lay.index] = true; nLay++;
-        if (lin === null) { lin = lay.inPoint; lout = lay.outPoint - fd; }   // preview uses the first layer
+        if (lin === null) { lin = lay.inPoint; lout = lay.outPoint - fd; firstLay = lay; }   // preview uses the first layer
       }
+      if (firstLay && lay.index === firstLay.index) { firstItems.push(found[i]); }
     }
+    if (firstLay) { ent = _ktStretchEntry(comp, firstLay, _ktSummary(firstItems), 0.5 * fd); }
     return _ok("", {
       fps: comp.frameRate, duration: comp.duration, playhead: comp.time,
       count: sum.count, props: found.length,
       start: sum.start, end: sum.end, keys: sum.times,
-      layerIn: lin, layerOut: lout, layers: nLay
+      layerIn: lin, layerOut: lout, layers: nLay, origDur: ent ? ent.dur : null
     });
   } catch (e) { return _err(e); }
 }
@@ -9905,16 +9919,17 @@ function KT_apply(cfg) {
     for (i = 0; i < groups.length; i++) {
       g = groups[i];
       sm = _ktSummary(g.items);
-      g.s0 = sm.start; g.e0 = sm.end; g.dur = sm.end - sm.start;
-      g.use = true; g.reason = "";
+      g.s0 = sm.start; g.e0 = sm.end; g.dur = sm.end - sm.start; g.count = sm.count;
+      g.use = true; g.reason = ""; g.rs = null;
+      if ((mode === "start" || mode === "end") && g.layer) { g.rs = _ktStretchEntry(comp, g.layer, sm, half); }
       if (mode === "auto") {
         g.ns = g.s0 + (comp.time - all.start); g.ne = g.ns + g.dur;
       } else if (!g.layer) {
         g.use = false; g.reason = "A selected property has no layer.";
       } else {
         lin = snap(g.layer.inPoint); lout = snap(g.layer.outPoint - fd);   // outPoint is the end of the last frame
-        if (mode === "start") { g.ns = lin; g.ne = g.ns + g.dur; }
-        else if (mode === "end") { g.ne = lout; g.ns = g.ne - g.dur; }
+        if (mode === "start") { g.ns = lin; g.ne = g.ns + (g.rs ? g.rs.dur : g.dur); }
+        else if (mode === "end") { g.ne = lout; g.ns = g.ne - (g.rs ? g.rs.dur : g.dur); }
         else {
           g.ns = lin; g.ne = lout;
           if (!(g.dur > 0)) { g.use = false; g.reason = "Stretch needs keyframes at two different times."; }
@@ -9924,7 +9939,7 @@ function KT_apply(cfg) {
       if (g.use && g.ns < -0.000001) { throw new Error("The new range would start before 0:00:00."); }
       if (g.use && Math.abs(g.ns - g.s0) < half && Math.abs(g.ne - g.e0) < half) { g.use = false; g.reason = ""; g.same = true; }
       if (!g.use && g.reason && !firstReason) { firstReason = g.reason; }
-      if (g.use) { g.map = _ktMapper(mode === "stretch", g, fps); active++; }
+      if (g.use) { g.map = _ktMapper(mode === "stretch" || !!g.rs, g, fps); active++; }
     }
     if (!active) {
       if (firstReason) { throw new Error(firstReason); }
@@ -9937,11 +9952,12 @@ function KT_apply(cfg) {
     touched = true;
     app.beginUndoGroup("Keyframe Timing");
     undoOpen = true;
-    var moved = 0, skipped = 0, okProps = 0, firstNs = null, firstNe = null, gi, item, prop, caps, newTimes, ok, idx, del, dk;
+    var before, moved = 0, skipped = 0, okProps = 0, firstNs = null, firstNe = null, gi, item, prop, caps, newTimes, ok, idx, del, dk;
     for (gi = 0; gi < groups.length; gi++) {
       g = groups[gi];
       if (!g.use) { continue; }
       if (firstNs === null) { firstNs = g.ns; firstNe = g.ne; }
+      before = okProps;
       for (i = 0; i < g.items.length; i++) {
         item = g.items[i]; prop = item.prop;
         try { lay = prop.propertyGroup(prop.propertyDepth); if (lay && lay.locked) { skipped++; continue; } } catch (eL) { }
@@ -9991,6 +10007,14 @@ function KT_apply(cfg) {
         }
         moved += caps.length;
         okProps++;
+      }
+      // Remember the length from before Stretch (Start / End bring it back); forget it once it has been restored.
+      if (okProps > before && g.layer) {
+        try {
+          if (!$.global.__ktStretch) { $.global.__ktStretch = {}; }
+          if (mode === "stretch") { $.global.__ktStretch[comp.id + "/" + g.layer.index] = { ns: g.ns, ne: g.ne, dur: g.dur, count: g.count }; }
+          else if (g.rs) { delete $.global.__ktStretch[comp.id + "/" + g.layer.index]; }
+        } catch (eSt) { }
       }
     }
     app.endUndoGroup();

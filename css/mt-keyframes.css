@@ -1,5 +1,5 @@
 /* ==========================================================
-   Multi Tool - mt-keyframes.css                      Keyframe Timing tab (js/main.js KeyframeTiming)
+   Multi Tool - mt-keyframes.css                      Keyframe Timing box in the Tools tab (js/main.js KeyframeTiming)
    Loaded AFTER material-theme.css. Two looks, one markup:
      1. GLASS (default)      dark inset timeline well, accent range handles, cyan playhead, gradient mode pill.
      2. MATERIAL YOU         under <html data-ui-theme="material">: tonal surfaces and M3 shapes, all colours from the
@@ -9,46 +9,9 @@
    ========================================================== */
 
 /* ---------- 1. Glass ---------- */
-.kt { --kt-ph: #5ad1ff; --kt-key: var(--text); }
+.kt { --kt-ph: #5ad1ff; --kt-key: var(--text); display: flex; flex-direction: column; gap: var(--space-2); }
 :root[data-theme="light"] .kt { --kt-ph: #0a86c2; }
 
-.kt .kt-tl {
-  position: relative; padding: 8px 10px 10px; border-radius: 12px;
-  background: var(--surface-sunken); box-shadow: inset 0 0 0 1px var(--border);
-}
-.kt .kt-ruler { position: relative; height: 14px; font-size: 9px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
-.kt .kt-ruler span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
-.kt .kt-track { position: relative; height: 44px; margin-top: 2px; border-radius: 8px; background: rgba(var(--accent-rgb, 255, 255, 255), 0.05); }
-.kt .kt-span {
-  position: absolute; top: 0; bottom: 0; box-sizing: border-box;
-  background: rgba(var(--accent-rgb, 255, 90, 44), 0.17);
-  border-left: 2px solid var(--accent); border-right: 2px solid var(--accent);
-}
-.kt .kt-span::before, .kt .kt-span::after {
-  content: ""; position: absolute; top: 50%; width: 10px; height: 18px; margin-top: -9px; border-radius: 5px;
-  background: var(--accent); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-}
-.kt .kt-span::before { left: -6px; }
-.kt .kt-span::after { right: -6px; }
-.kt .kt-key {
-  position: absolute; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 1.5px;
-  background: var(--kt-key); transform: rotate(45deg); box-sizing: border-box;
-}
-.kt .kt-key.kt-ghost { background: transparent; border: 1.5px dashed var(--text-dim); opacity: 0.8; }
-.kt .kt-ph { position: absolute; top: -16px; bottom: -4px; width: 0; border-left: 1.5px solid var(--kt-ph); pointer-events: none; }
-.kt .kt-ph::before {
-  content: ""; position: absolute; top: 0; left: -5.5px; width: 10px; height: 10px; background: var(--kt-ph);
-  -webkit-clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%); clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
-}
-.kt .kt-legend { margin-top: 8px; font-size: 10px; color: var(--text-dim); display: flex; flex-wrap: wrap; }
-.kt .kt-legend > span { margin-right: 12px; white-space: nowrap; }
-.kt .kt-lg { display: inline-block; vertical-align: -1px; margin-right: 5px; }
-.kt .kt-lg-key { width: 7px; height: 7px; margin-right: 6px; background: var(--kt-key); transform: rotate(45deg); border-radius: 1px; }
-.kt .kt-lg-ghost { width: 7px; height: 7px; margin-right: 6px; box-sizing: border-box; border: 1.5px dashed var(--text-dim); transform: rotate(45deg); border-radius: 1px; }
-.kt .kt-lg-range { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
-.kt .kt-lg-ph { width: 2px; height: 9px; background: var(--kt-ph); }
-.kt .kt-lg-old { display: none; }
-.kt .kt-lg-old.is-on { display: inline; }
 
 /* segmented mode switch (radio inputs are visually hidden but keep keyboard + screen-reader support) */
 .kt .kt-seg {
@@ -119,26 +82,6 @@
 :root[data-ui-theme="material"][data-theme] .kt { --kt-ph: var(--md-tertiary); --kt-key: var(--md-on-surface); }
 
 /* timeline: one tonal card, a lighter track inside, a primary-container range with slim primary handles */
-:root[data-ui-theme="material"][data-theme] .kt .kt-tl { padding: 12px 14px 14px; border-radius: var(--mu-r-card); background: var(--md-surface); box-shadow: none; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-ruler { color: var(--md-on-surface-variant); font-size: 10px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-track { height: 48px; border-radius: 16px; background: var(--md-surface-high); }
-:root[data-ui-theme="material"][data-theme] .kt .kt-span { background: var(--md-primary-container); border-left: 0; border-right: 0; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-span::before,
-:root[data-ui-theme="material"][data-theme] .kt .kt-span::after { width: 4px; height: 28px; margin-top: -14px; border-radius: 2px; background: var(--md-primary); box-shadow: none; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-span::before { left: 3px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-span::after { right: 3px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-key { background: var(--md-on-primary-container); border-radius: 2px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-key.kt-ghost { background: transparent; border: 1.5px dashed var(--md-outline); opacity: 1; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-ph { border-left-width: 2px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-ph::before {
-  left: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--md-tertiary);
-  -webkit-clip-path: none; clip-path: none;
-}
-:root[data-ui-theme="material"][data-theme] .kt .kt-legend { margin-top: 10px; color: var(--md-on-surface-variant); font-size: 11px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-lg-key { background: var(--md-on-primary-container); }
-:root[data-ui-theme="material"][data-theme] .kt .kt-lg-ghost { border-color: var(--md-outline); }
-:root[data-ui-theme="material"][data-theme] .kt .kt-lg-range { background: var(--md-primary-container); box-shadow: inset 0 0 0 1px var(--md-primary); border-radius: 3px; }
-:root[data-ui-theme="material"][data-theme] .kt .kt-lg-ph { width: 8px; height: 8px; border-radius: 50%; background: var(--md-tertiary); }
 
 /* segmented button (M3): outlined group, hairline dividers, selected = secondary container with a check */
 :root[data-ui-theme="material"][data-theme] .kt .kt-seg {

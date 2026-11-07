@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.129",
-    "changelog":  "- Update 1.8.129",
+    "latest_version":  "1.8.130",
+    "changelog":  "- Update 1.8.130",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -112,7 +112,7 @@
                   },
                   {
                       "path":  "css/mt-keyframes.css",
-                      "sha256":  "62f4b3d3f78c6329f352e2dc8bf9c7dd278246c816bfa2d73201417278dcbe92"
+                      "sha256":  "104b1b37997560318f940263c0215ced68945fe41fc5ede21b6c1745a11e94dc"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -248,7 +248,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "de6f3cd89500e53ea0c8d6e726279033aaae5360b80be110e596d7d000fa9333"
+                      "sha256":  "b759fa5d1fd51770f4045693e43ff7ea241a298cec94fdfb9b6d12f80dea946c"
                   },
                   {
                       "path":  "html/settings.html",
@@ -268,7 +268,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "ea0b9741974786f26e927cf8df5160e102f749bbe92fa0b11fb02ba351d67495"
+                      "sha256":  "acfcf9026e9a399e644b82232a32808eb5ad689af44baee8091cdd5be3155f0f"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -424,7 +424,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "53b3d7cf2825865673dc8b845d6dec83139f5266a9ec0588728f11775f76ded9"
+                      "sha256":  "1515c4ca4c20261d2f998f87bec40a683442ffb6befa93c1917d03ce43571727"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -736,7 +736,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "4c6733712afa1498311abeb3b51b68fd446e504afa31fecb2b6161faac20bd01"
+                      "sha256":  "47c357cb27b14096536bed56b9b4e43168419600cd575723e293d4a3fabf7e66"
                   }
               ]
 }

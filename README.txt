@@ -2388,3 +2388,27 @@ fixKT-layerinout (tab Keyframe Timing: Start / End / Stretch mengikuti layer, se
   - Perbaikan js/main.js (?v=59): field Start / End terkunci di semua mode (Auto = playhead, lainnya = In / Out layer), tombol pin playhead nonaktif, catatan mode diperbarui,
     preview memakai layer pertama jika beberapa layer dipilih.
   - Files: jsx/host.jsx (KT_state, KT_apply, _ktCapture, helper seleksi), js/main.js (KeyframeTiming), html/index.html (?v=59).
+
+fixKT-unstretch (tab Keyframe Timing: setelah Stretch, Start / End bisa mengembalikan panjang awal)
+  - Masalah: setelah Stretch keyframe sudah pas di In dan Out layer, jadi Start / End hanya menjawab "Nothing to move: the keyframes are already at the layer In / Out."
+    dan tidak ada jalan kembali ke panjang awal selain Undo.
+  - Perbaikan: KT_apply menyimpan panjang keyframe sebelum Stretch ($.global.__ktStretch, per comp + layer, bersama jumlah keyframe dan range hasil Stretch).
+    Selama keyframe masih persis di range hasil Stretch, Start memindah keyframe pertama ke In layer dan End memindah keyframe terakhir ke frame terakhir layer
+    dengan panjang ASLI (keyframe di antaranya diskalakan balik). Setelah dikembalikan, catatan itu dihapus. Jika keyframe sudah diubah (jumlah atau range tidak
+    cocok), Start / End kembali ke perilaku biasa. KT_state mengirim origDur supaya preview, catatan, dan readout di panel ikut menunjukkan hasilnya.
+    Catatan tersimpan selama After Effects terbuka; Undo (Ctrl+Z) tetap bisa dipakai.
+  - Files: jsx/host.jsx (_ktStretchEntry, KT_state, KT_apply), js/main.js (KeyframeTiming, ?v=60), html/index.html (?v=60).
+
+fixKT-tools (Keyframe Timing pindah ke tab Tools, preview keyframe dihapus)
+  - Permintaan: hapus preview keyframe (mini timeline) dan pindahkan fitur Keyframe Timing ke tab Tools.
+  - Perubahan js/main.js (?v=61): tab "keyframes" dihapus dari TABS dan dari renderTab. KeyframeTiming.render() sekarang mengembalikan satu .ta-section
+    ("Keyframe Timing") yang ditambahkan di akhir UtilityTools.render(), jadi menjadi satu card di tab Tools (bisa dibuka/tutup, diberi warna aksen, dan
+    dipindah ke dynamic island seperti box Tools lainnya). Mini timeline (ruler, track, legenda, belah ketupat) dan fungsi view() dibuang; field Start / End,
+    catatan mode, readout, Apply, Reset, Read selection tetap. Isi section dibungkus <div class="kt"> supaya CSS tidak hilang saat card dibuat.
+    Elemen dicari sekali saat render (radios), karena card / island memindahkan elemen. Polling KT_state per instance: berhenti setelah box hilang dari layar
+    beberapa tick (sebelumnya berhenti jika tab bukan "keyframes"), box di island tetap hidup.
+  - Perubahan html/index.html: tombol tab Keyframe Timing dihapus; main.js ?v=61, mt-keyframes.css ?v=3.
+  - Perubahan css/mt-keyframes.css: 37 aturan preview dibuang (.kt-tl, .kt-ruler, .kt-track, .kt-span, .kt-key, .kt-ph, .kt-legend, .kt-lg*); .kt jadi flex column
+    dengan gap (mengganti tata letak .ta-section).
+  - jsx/host.jsx tidak berubah. Tab tersimpan atau urutan tab yang masih memuat "keyframes" diabaikan otomatis.
+  - Files: js/main.js, html/index.html, css/mt-keyframes.css, README.txt.

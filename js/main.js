@@ -77,12 +77,6 @@
       tools: [],
       custom: "textFlex"
     },
-    "keyframes": {
-      title: "Keyframe Timing",
-      hint: "Select keyframes, pick a mode, then click Apply to move or stretch them.",
-      tools: [],
-      custom: "keyframeTiming"
-    },
     "shortcutz": {
       title: "Shortcutz",
       hint: "Speed Dial: one-click expressions, effects and utilities, pinned presets and snippets, and your own shortcuts.",
@@ -3261,6 +3255,9 @@
         });
       });
 
+      // Keyframe Timing: one more box at the end of the Tools tab.
+      wrap.appendChild(KeyframeTiming.render());
+
       return wrap;
     }
   };
@@ -3639,8 +3636,8 @@
   //   End      the last keyframe goes to the layer's last frame, the length stays (End = layer Out, Start is the result, locked)
   //   Stretch  the range becomes layer In..Out, keyframes in between scale with it (both locked)
   //   Several layers: each layer uses its own In / Out when applied; the preview shows the first layer.
-  // The mini timeline previews the result: dashed diamonds = where the keyframes are now, solid = where they will be.
-  // While the tab is open the selection and the playhead are polled (KT_state), so the preview stays live.
+  // Lives in the Tools tab as one box ("Keyframe Timing"); UtilityTools.render() appends KeyframeTiming.render().
+  // While the box is on screen the selection and the playhead are polled (KT_state), so the fields stay live.
   // Time fields read / write M:SS:FF (minutes : seconds : frames). A bare number is frames, like After Effects.
   // Look: Glass = dark inset well + accent handles. Material You = tonal surface + primary range + tertiary playhead
   // (css/mt-keyframes.css, section "Material You").
@@ -3651,14 +3648,17 @@
   var KeyframeTiming = {
     POLL_MS: 500,
     // kept across tab switches (the tab is rebuilt from scratch every time it opens)
-    st: { mode: "auto", start: 0, end: 0, sig: "", fps: 24, ph: 0, dur: 0, range: null, keys: [], msg: "", lin: null, lout: null, layers: 0 },
-    timer: 0,
+    st: { mode: "auto", start: 0, end: 0, sig: "", fps: 24, ph: 0, dur: 0, range: null, keys: [], msg: "", lin: null, lout: null, layers: 0, origDur: null },
 
     NOTES: {
       auto: "Start follows the playhead and the length stays. Apply moves the selected keyframes there.",
       start: "The first keyframe goes to the layer In point. The length stays the same.",
       end: "The last keyframe goes to the layer last frame (Out). The length stays the same.",
       stretch: "Keyframes scale to fill the layer from In to Out."
+    },
+    NOTES_RESTORE: {
+      start: "Back to the length from before Stretch. The first keyframe goes to the layer In point.",
+      end: "Back to the length from before Stretch. The last keyframe goes to the layer last frame (Out)."
     },
 
     pad2: function (n) { return (n < 10 ? "0" : "") + n; },
@@ -3687,54 +3687,32 @@
 
     // What Apply will do with the current state: new range + the time mapping (same maths as KT_apply in host.jsx).
     compute: function () {
-      var st = this.st, r = st.range, dur, ns, ne, s0, e0;
+      var st = this.st, r = st.range, dur, ns, ne, s0, e0, len;
       if (!r) { return null; }
       s0 = r.start; e0 = r.end; dur = e0 - s0;
+      // After a Stretch, Start / End bring the original length back (st.origDur comes from the host).
+      var rs = (st.origDur !== null && (st.mode === "start" || st.mode === "end"));
+      len = rs ? st.origDur : dur;
       if (st.mode === "auto") { ns = st.ph; ne = ns + dur; }
-      else if (st.mode === "start") { ns = (st.lin !== null) ? st.lin : st.start; ne = ns + dur; }
-      else if (st.mode === "end") { ne = (st.lout !== null) ? st.lout : st.end; ns = ne - dur; }
+      else if (st.mode === "start") { ns = (st.lin !== null) ? st.lin : st.start; ne = ns + len; }
+      else if (st.mode === "end") { ne = (st.lout !== null) ? st.lout : st.end; ns = ne - len; }
       else { ns = (st.lin !== null) ? st.lin : st.start; ne = (st.lout !== null) ? st.lout : st.end; }
       return {
-        ns: ns, ne: ne, s0: s0, e0: e0, dur: dur,
-        valid: !(st.mode === "stretch" && (!(dur > 0) || !(ne > ns))) && ns > -0.000001,
-        map: function (t) { return (st.mode === "stretch") ? (dur > 0 ? ns + (t - s0) * (ne - ns) / dur : ns) : t + (ns - s0); }
+        ns: ns, ne: ne, s0: s0, e0: e0, dur: dur, restore: rs,
+        valid: !((st.mode === "stretch" || rs) && (!(dur > 0) || !(ne > ns))) && ns > -0.000001,
+        map: function (t) { return (st.mode === "stretch" || rs) ? (dur > 0 ? ns + (t - s0) * (ne - ns) / dur : ns) : t + (ns - s0); }
       };
-    },
-
-    // Visible time window of the mini timeline: the range (old and new) plus a margin, and the playhead when it is near.
-    view: function (c) {
-      var st = this.st, lo, hi, span, pad;
-      if (st.range) {
-        lo = st.range.start; hi = st.range.end;
-        if (c && isFinite(c.ns) && isFinite(c.ne)) { lo = Math.min(lo, c.ns); hi = Math.max(hi, c.ne); }
-        span = Math.max(hi - lo, 1);
-        if (st.ph >= lo - span * 2 && st.ph <= hi + span * 2) { lo = Math.min(lo, st.ph); hi = Math.max(hi, st.ph); span = Math.max(hi - lo, 1); }
-        pad = span * 0.14; lo -= pad; hi += pad;
-      } else { lo = 0; hi = Math.max(st.dur, 2); }
-      lo = Math.max(0, lo);
-      if (hi - lo < 1) { hi = lo + 1; }
-      return { lo: lo, hi: hi };
     },
 
     render: function () {
       var self = this, st = this.st;
       var wrap = document.createElement("div");
-      wrap.className = "ta kt";
+      wrap.className = "ta-section";   // one box of the Tools tab (groupifyTaSections turns it into a card)
       var MODES = [["auto", "Auto"], ["start", "Start"], ["end", "End"], ["stretch", "Stretch"]];
 
       wrap.innerHTML =
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Keyframes</h2>' +
-          '<div class="kt-tl" aria-hidden="true">' +
-            '<div class="kt-ruler" id="kt-ruler"></div>' +
-            '<div class="kt-track" id="kt-track"></div>' +
-            '<div class="kt-legend">' +
-              '<span><b class="kt-lg kt-lg-key"></b>Keyframe</span>' +
-              '<span class="kt-lg-old" id="kt-lg-old"><b class="kt-lg kt-lg-ghost"></b>Now</span>' +
-              '<span><b class="kt-lg kt-lg-range"></b>Range</span>' +
-              '<span><b class="kt-lg kt-lg-ph"></b>Playhead</span>' +
-            '</div>' +
-          '</div>' +
+        '<h2 class="ta-title">Keyframe Timing</h2>' +
+        '<div class="kt">' +
           '<div class="kt-seg" role="radiogroup" aria-label="Keyframe timing mode">' +
             MODES.map(function (m) {
               return '<label class="kt-opt"><input type="radio" name="kt-mode" value="' + m[0] + '"' + (st.mode === m[0] ? " checked" : "") + '><span>' + m[1] + '</span></label>';
@@ -3760,7 +3738,6 @@
         '</div>';
 
       var el = {
-        ruler: wrap.querySelector("#kt-ruler"), track: wrap.querySelector("#kt-track"), old: wrap.querySelector("#kt-lg-old"),
         note: wrap.querySelector("#kt-note"), start: wrap.querySelector("#kt-start"), end: wrap.querySelector("#kt-end"),
         pinS: wrap.querySelector("#kt-pin-start"), pinE: wrap.querySelector("#kt-pin-end"),
         fS: wrap.querySelector("#kt-f-start"), fE: wrap.querySelector("#kt-f-end"),
@@ -3768,47 +3745,17 @@
       };
       Array.prototype.forEach.call(wrap.querySelectorAll("input"), function (i) { i.setAttribute("data-no-restore", ""); });
 
-      var lastTrack = "", lastRuler = "";
+      // The boxes of the Tools tab get re-parented (cards, dynamic island), so everything is looked up once, here.
+      var radios = Array.prototype.slice.call(wrap.querySelectorAll('input[name="kt-mode"]'));
 
       // ---- paint everything from self.st (cheap: DOM is only written when something really changed) ----
       function paint() {
         var c = st.range ? self.compute() : null;
-        var v = self.view(c), span = v.hi - v.lo;
-        function pos(t) { return (t - v.lo) / span * 100; }
-        function inView(p) { return p >= -1 && p <= 101; }
-
-        // ruler
-        var STEPS = [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1800], step = STEPS[STEPS.length - 1], i, t, html = "";
-        for (i = 0; i < STEPS.length; i++) { if (span / STEPS[i] <= 6) { step = STEPS[i]; break; } }
-        for (t = Math.ceil(v.lo / step - 1e-9) * step; t <= v.hi + 1e-9; t += step) {
-          var lbl = step < 1 ? (Math.round(t * 100) / 100) + "s" : (t < 60 ? Math.round(t) + "s" : Math.floor(t / 60) + ":" + self.pad2(Math.round(t % 60)));
-          html += '<span style="left:' + pos(t).toFixed(2) + '%">' + lbl + '</span>';
-        }
-        if (html !== lastRuler) { lastRuler = html; el.ruler.innerHTML = html; }
-
-        // track: range, ghost keys, keys, playhead
-        var moved = !!(c && c.valid && (Math.abs(c.ns - c.s0) > 0.5 / st.fps || Math.abs(c.ne - c.e0) > 0.5 / st.fps));
-        var th = "", k, p;
-        if (c && c.valid) {
-          var a = pos(c.ns), b = pos(c.ne);
-          th += '<i class="kt-span" style="left:' + a.toFixed(2) + '%;width:' + Math.max(b - a, 0).toFixed(2) + '%"></i>';
-        }
-        if (moved) {
-          for (k = 0; k < st.keys.length; k++) { p = pos(st.keys[k]); if (inView(p)) { th += '<i class="kt-key kt-ghost" style="left:' + p.toFixed(2) + '%"></i>'; } }
-        }
-        for (k = 0; k < st.keys.length; k++) {
-          p = pos(c && c.valid ? c.map(st.keys[k]) : st.keys[k]);
-          if (inView(p)) { th += '<i class="kt-key" style="left:' + p.toFixed(2) + '%"></i>'; }
-        }
-        p = pos(st.ph);
-        if (inView(p)) { th += '<i class="kt-ph" style="left:' + p.toFixed(2) + '%"></i>'; }
-        if (th !== lastTrack) { lastTrack = th; el.track.innerHTML = th; }
-        el.old.classList.toggle("is-on", moved);
 
         // mode, note, fields
         var mode = st.mode, active = document.activeElement;
-        Array.prototype.forEach.call(wrap.querySelectorAll('input[name="kt-mode"]'), function (r) { r.checked = (r.value === mode); });
-        el.note.textContent = st.range ? ((c && c.ns < -0.000001) ? "The new range would start before 0:00:00. Pick a later time." : (self.NOTES[mode] + ((mode !== "auto" && st.layers > 1) ? " Each layer uses its own In / Out (preview shows the first layer)." : ""))) : (st.msg || "Select keyframes in the timeline. Their range shows up here.");
+        radios.forEach(function (r) { r.checked = (r.value === mode); });
+        el.note.textContent = st.range ? ((c && c.ns < -0.000001) ? "The new range would start before 0:00:00. Pick a later time." : ((c && c.restore ? self.NOTES_RESTORE[mode] : self.NOTES[mode]) + ((mode !== "auto" && st.layers > 1) ? " Each layer uses its own In / Out (preview shows the first layer)." : ""))) : (st.msg || "Select keyframes in the timeline. Their range shows up here.");
         var editS = false, editE = false;   // all fields follow the playhead or the layer In / Out: nothing to type
         var showS = c ? c.ns : 0, showE = c ? c.ne : 0;
         if (active !== el.start) { el.start.value = c ? self.fmt(showS, st.fps) : "-"; }
@@ -3822,7 +3769,7 @@
 
         // readout + Apply
         if (!c) { el.rl.textContent = "No keyframes selected"; el.rr.textContent = ""; el.rr.className = ""; }
-        else if (mode === "stretch") {
+        else if (mode === "stretch" || c.restore) {
           el.rl.textContent = "Length " + self.fmt(c.dur, st.fps) + " to " + self.fmt(Math.max(c.ne - c.ns, 0), st.fps);
           el.rr.textContent = c.valid ? Math.round((c.ne - c.ns) / c.dur * 100) + "%" : "-";
           el.rr.className = "kt-big";
@@ -3847,7 +3794,7 @@
             paint(); return;
           }
           st.fps = d.fps || st.fps; st.dur = d.duration || 0; st.ph = d.playhead || 0; st.keys = d.keys || []; st.msg = "";
-          st.lin = (typeof d.layerIn === "number") ? d.layerIn : null; st.lout = (typeof d.layerOut === "number") ? d.layerOut : null; st.layers = d.layers || 0;
+          st.lin = (typeof d.layerIn === "number") ? d.layerIn : null; st.lout = (typeof d.layerOut === "number") ? d.layerOut : null; st.layers = d.layers || 0; st.origDur = (typeof d.origDur === "number") ? d.origDur : null;
           if (d.count > 0) {
             st.range = { start: d.start, end: d.end, count: d.count, props: d.props };
             var sig = d.count + "|" + d.props + "|" + Math.round(d.start * 1000) + "|" + Math.round(d.end * 1000);
@@ -3856,16 +3803,18 @@
           paint();
         });
       }
-      function stop() { if (self.timer) { clearInterval(self.timer); self.timer = 0; } }
-      stop();
-      self.timer = setInterval(function () {
-        if (currentTab !== "keyframes" || !wrap.isConnected) { stop(); return; }
+      var timer = 0, away = 0;
+      function stop() { if (timer) { clearInterval(timer); timer = 0; } }
+      timer = setInterval(function () {
+        // Stops once the box has been gone for a few ticks (tab left). A box in the dynamic island stays connected and keeps updating.
+        if (!el.apply.isConnected) { away++; if (away > 8) { stop(); } return; }
+        away = 0;
         tick(false);
       }, self.POLL_MS);
       self.tick = tick;
 
       // ---- controls ----
-      Array.prototype.forEach.call(wrap.querySelectorAll('input[name="kt-mode"]'), function (r) {
+      radios.forEach(function (r) {
         r.addEventListener("change", function () { if (r.checked) { st.mode = r.value; paint(); } });
       });
 
@@ -5291,8 +5240,6 @@
       built = UtilityTools.render();
     } else if (cfg.custom === "textFlex") {
       built = TextFlex.render();
-    } else if (cfg.custom === "keyframeTiming") {
-      built = KeyframeTiming.render();
     } else if (cfg.custom === "shortcutz") {
       built = Shortcutz.render();
     } else if (!cfg.tools.length) {

@@ -2431,3 +2431,23 @@ fix-layout-v2b: layout v2 was not visible
   cause: the v1 rules were too light (rail already rounded in Glass) and the Glass / Material You sheets use selectors with more weight, so several rules lost.
   fix:   css/mt-layout-v2.css v2: visible properties carry !important (dark rail strip, flat idle slots + tinted active slot with accent edge, bigger header title with a hairline,
          filled cards with a hairline border and no coloured left edge, bordered tiles / preset rows). html/index.html: stylesheet ?v=2.
+
+fix-layout-v2c: layout v2 closer to the mockup (tested in headless Chromium, no script errors)
+  what:  header without a box + short subtitle per tab (html[data-mt-sub], shown through #panel-hint::after; the long hint stays in the DOM), tinted tile icons (align / shortcut / anchor),
+         bordered anchor + align buttons, and an "On the island" card on top of the Animation Presets tab: the presets pinned to the dynamic island, Apply = same call as the island row,
+         x removes the pin. Easy Layer, Curve, Animator Text still keep the old look.
+  files: css/mt-layout-v2.css (v4), js/mt-layout-v2.js (v2: subtitle map, decorate()), js/mt-island-presets.js (v2: list() / onChange()), js/main.js (v63, decorate hook after MTBoxes.afterRender),
+         html/index.html (version bumps).
+
+fix-layout-v3 (layout v3): new layout for 8 tabs - Color Palette, Expression Code, Animation Presets, Quick Comp Edit, Anchor Point & Align, Tools, Shortcutz, Info / About.
+  Easy Layer, Curve (NeuCurve) and Animator Text are NOT touched (html[data-mt-skip]).
+  what:  flat sections with a hairline between them instead of boxed cards, one white primary button per tab, long hint under the title hidden.
+         Color Palette: wheel + big swatch + HEX side by side, Layer label as one 8x2 row, 8-column palette. Expression Code: taller editor, Apply + Save under it,
+         snippet search. Animation Presets: folder bar (path, Select, Refresh, small Save/Import/Check Support) + search + list; Copy Effects moved below the list.
+         Quick Comp Edit: two big timecode fields, Selected Layer / Active Composition as segmented control, aspect-ratio tiles, Fit as segmented control.
+         Anchor & Align: bigger 3x3 anchor grid, align as icon-only 3x2 grid. Tools: Save PNG / Save JPG / Export GIF quick tiles (they click the real buttons) + tool search,
+         every tool is a list row that opens. Shortcutz: search + "+ Add" in one bar, category chips (All / Mine / Expression / Effects / Utility), 3-column tiles.
+         Info: version row with "Check for updates" (MTUpdater.check), socials as rows.
+  cause: n/a (design change; no feature removed - existing buttons and handlers are reused, only restyled / moved).
+  fix:   css/mt-layout-v3.css (loaded after v2), js/mt-layout-v3.js (flags sections open, search / chips / tiles; Chromium-74 safe), html/index.html (link + script).
+         Switch back: localStorage mtx.layoutV3 = "0" -> v2 layout.

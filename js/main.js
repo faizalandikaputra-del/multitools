@@ -5270,8 +5270,7 @@
     if (window.PanelRefinements && window.PanelRefinements.groupifyTaSections) {
       window.PanelRefinements.groupifyTaSections(built, { tabId: tabId, openFirst: !(built.getAttribute && built.getAttribute("data-open-first") === "0") });
     }
-    if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }
-    if (window.MTLayoutV2) { try { window.MTLayoutV2.decorate(tabId, panel); } catch (eLd) { } }   // layout v2: "On the island" card on the Animation Presets tab (js/mt-layout-v2.js)   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
+    if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
     FormState.restore(tabId, panel);
     queueScrollRestore(tabId);
 

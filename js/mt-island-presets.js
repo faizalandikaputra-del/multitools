@@ -6,7 +6,7 @@
    Chromium-74 safe (no optional chaining, no flex gap). */
 (function () {
   "use strict";
-  var KEY = "mtx.island.presets", MAX = 24, list = [], started = false, subs = [];
+  var KEY = "mtx.island.presets", MAX = 24, list = [], started = false;
 
   function load() {
     var a; try { a = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { a = []; }
@@ -38,7 +38,6 @@
       row.appendChild(b); row.appendChild(rm); host.appendChild(row);
     });
     if (i.presetsChanged) { i.presetsChanged(list.length); }
-    subs.forEach(function (f) { try { f(); } catch (e) { } });
   }
 
   function add(json) {                       // 1 = added, 2 = already there, 0 = rejected
@@ -54,8 +53,8 @@
   }
   function remove(o) { var at = idx(o); if (at >= 0) { list.splice(at, 1); save(); render(); } }
 
-  function start() { if (started) { return; } started = true; load(); if (list.length) { render(); } else { subs.forEach(function (f) { try { f(); } catch (e) { } }); } }
-  window.MTIslandPresets = { add: add, remove: remove, count: function () { return list.length; }, list: function () { return list.slice(); }, onChange: function (f) { subs.push(f); } };
+  function start() { if (started) { return; } started = true; load(); if (list.length) { render(); } }
+  window.MTIslandPresets = { add: add, remove: remove, count: function () { return list.length; } };
   function boot() { setTimeout(start, 700); }                                                       // after main.js and mt-island.js have built their UI
   if (document.readyState === "complete") { boot(); } else { window.addEventListener("load", boot); }
 })();

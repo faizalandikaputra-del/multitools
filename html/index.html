@@ -9,7 +9,7 @@
   <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
   <script>/* Node shim */try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }</script>
   <script src="../js/mt-persist.js?v=3"></script>
-  <script>try { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } catch (e) { }</script>
+  <script>try { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "light" ? "light" : "dark"); } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=3">
   <link rel="stylesheet" href="../css/mt-boot.css?v=7">
@@ -748,7 +748,7 @@
   <script src="../js/tab-wheel.js?v=2"></script>
   <script src="../js/mt-away.js?v=3"></script>
   <script src="../js/mt-tooltip.js?v=7"></script>
-  <script src="../js/mt-select.js?v=2"></script>
+  <script src="../js/mt-select.js?v=3"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
   <!-- GIF encoder for Tools > Export GIF (needs Node.js; must load before main.js) -->
@@ -756,8 +756,8 @@
   <!-- Drag a label / idle number field left-right to change the value (after mt-spinbox.js) -->
   <script src="../js/mt-scrub.js?v=1"></script>
   <!-- Interface style switch (Glass / Material You). Needs main.js (window.mtSyncTheme) -->
-  <script src="../js/mt-material.js?v=3"></script>
-  <script src="../js/mt-uitheme.js?v=10"></script>
+  <script src="../js/mt-material.js?v=4"></script>
+  <script src="../js/mt-uitheme.js?v=12"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-nav.js?v=2"></script>
   <script src="../js/mt-anim.js?v=1"></script>
@@ -767,7 +767,7 @@
   <script src="../js/mt-island-presets.js?v=1"></script>
   <script src="../js/mt-fxcopy.js?v=5"></script>
   <script src="../js/mt-pro.js?v=3"></script>
-  <script src="../js/main.js?v=62"></script>
+  <script src="../js/main.js?v=65"></script>
   <script src="../js/mt-loader.js?v=1"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=2"></script>

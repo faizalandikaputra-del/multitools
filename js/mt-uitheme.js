@@ -96,7 +96,7 @@
     var was = current();
     root.setAttribute("data-ui-theme", name);
     if (name === "material") {
-      root.setAttribute("data-theme", "light");
+      root.setAttribute("data-theme", "dark");
       if (was !== "material") { syncToMaterial(); }
     } else if (was === "material") {
       root.setAttribute("data-theme", "dark");                          // sensible default...

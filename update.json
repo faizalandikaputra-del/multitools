@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.148",
-    "changelog":  "- Update 1.8.148",
+    "latest_version":  "1.8.149",
+    "changelog":  "- Update 1.8.149",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -256,11 +256,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "5361a73fd3df998b2016a8def370d9711018229d120fe1f43571c1f53454b62e"
+                      "sha256":  "52f19199ee3cb152bacf3daf91ce1d8cadb7a2453e16a45d67369c026f2e4615"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "d3235ba21ba3113b7ad1f794c57fc52f6478c5ce72d44a822960c48263a05609"
+                      "sha256":  "2e87ec235221b5694d52f571ac08344372a00e2e224ab6b58bb0af2cc93e773c"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -276,7 +276,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "55167d71344a46abf4b88faafdf668dbfdca8731c7bbf15ac969bb04b2ceff0c"
+                      "sha256":  "76625fec78fa435be9cad35ac1a0c748f141374506b6d4af389ec40b2d69bab6"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -348,7 +348,7 @@
                   },
                   {
                       "path":  "js/mt-material.js",
-                      "sha256":  "79e66e106133a35a4a45aebedde39d4fd4ed7a3503458a45a79bdcc5543fb057"
+                      "sha256":  "b8c0484cad00a0973b319055d80e055460273143199cabf2b0eac9e500a77ce6"
                   },
                   {
                       "path":  "js/mt-nav.js",
@@ -404,7 +404,7 @@
                   },
                   {
                       "path":  "js/mt-uitheme.js",
-                      "sha256":  "bb4eb1df1e0c4e199156f81444c82590c53bba183f5fd712da0f6072dc8ad172"
+                      "sha256":  "ecff31063395973fe327caf01dc7e8f18b157571cf7722495242ff4fb0dc468a"
                   },
                   {
                       "path":  "js/mt-updater.js",

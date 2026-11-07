@@ -1832,7 +1832,7 @@
       // morph into the "Cookie bloom": a continuous hue / saturation disc in a 12-lobed scalloped edge (see morph in create()).
       // Brightness = a thick tonal pill track with a tall primary handle, haloed in the card colour.
       var MAT_RINGS = 6, mc = null;
-      function isMaterial() { return document.documentElement.getAttribute("data-ui-theme") === "material"; }
+      function isMaterial() { return true; }   // Glass style removed: the petals face is the only wheel face
       function matColors() {
         if (mc) { return mc; }
         var cs = window.getComputedStyle(document.documentElement);
@@ -1858,55 +1858,48 @@
         c.closePath();
       }
       function drawMaterial(c, hex, full, kx, ky, ka, mx, my) {
-        var col = matColors(), t = RD / (MAT_RINGS + 1), k, j, n, rm, rr, hc, ang, ease = morphO.v < 0 ? 0 : (morphO.v > 1 ? 1 : morphO.v);
-        var lift = liftO.v < -0.4 ? -0.4 : (liftO.v > 1.3 ? 1.3 : liftO.v), ms = 1 + 0.18 * lift;   // picked-point ring: lifted while dragging
-        // brightness track: thick tonal pill, gradient fill, tall primary handle haloed in the card colour
+        var col = matColors(), i, r0, r1, a, h, sel, d, R = RD;
+        var lift = liftO.v < -0.4 ? -0.4 : (liftO.v > 1.3 ? 1.3 : liftO.v), ms = 1 + 0.16 * lift;   // picked-point bead lifts while dragging
+        // 1. brightness track on the right: slim tonal groove, colour -> black gradient, round bead handle
         c.lineCap = "round";
-        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 24 * K; c.strokeStyle = col.track; c.stroke();
+        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 15 * K; c.strokeStyle = col.track; c.stroke();
         var g = c.createLinearGradient(0, C - RA * sinA1, 0, C + RA * sinA1);
         g.addColorStop(0, full); g.addColorStop(1, "#000");
-        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 16 * K; c.strokeStyle = g; c.stroke();
-        c.save(); c.translate(kx, ky); c.rotate(ka);
-        pill(c, -21 * K, -8 * K, 42 * K, 16 * K, 8 * K); c.fillStyle = col.card; c.fill();
-        pill(c, -17 * K, -5 * K, 34 * K, 10 * K, 5 * K); c.fillStyle = col.handle; c.fill();
-        pill(c, -6 * K, -1.2 * K, 12 * K, 2.4 * K, 1.2 * K); c.fillStyle = col.onp; c.globalAlpha = 0.85; c.fill();
+        c.beginPath(); c.arc(C, C, RA, A0 * Math.PI / 180, A1 * Math.PI / 180); c.lineWidth = 7 * K; c.strokeStyle = g; c.stroke();
+        c.beginPath(); c.arc(kx, ky + 1.5 * K, 12 * K, 0, Math.PI * 2); c.fillStyle = "rgba(0,0,0,0.22)"; c.fill();
+        c.beginPath(); c.arc(kx, ky, 12 * K, 0, Math.PI * 2); c.fillStyle = "#fff"; c.fill();
+        c.beginPath(); c.arc(kx, ky, 8 * K, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
+        // 2. hue bezel: 120 ticks round the disc, each tinted with its own hue; the tick at the picked hue grows and turns white
+        sel = Math.round(st.h / 3) % 120;
+        c.lineCap = "round";
+        for (i = 0; i < 120; i++) {
+          h = i * 3; a = -h * Math.PI / 180; d = (i === sel);
+          r0 = R + 6 * K; r1 = R + (d ? 17 : (i % 10 === 0 ? 13 : 10)) * K;
+          c.beginPath(); c.moveTo(C + Math.cos(a) * r0, C + Math.sin(a) * r0); c.lineTo(C + Math.cos(a) * r1, C + Math.sin(a) * r1);
+          c.lineWidth = (d ? 3.4 : 2) * K; c.strokeStyle = d ? col.ink : rgbToHex(hsvToRgb(h, 0.85, 1)); c.globalAlpha = d ? 1 : 0.9; c.stroke();
+        }
+        c.globalAlpha = 1;
+        // 3. disc: continuous hue / saturation, value darkening, etched saturation rings, soft inner edge
+        c.save();
+        c.beginPath(); c.arc(C, C, R, 0, Math.PI * 2); c.clip();
+        c.drawImage(buildCookieDisc(), 0, 0);
+        if (st.v < 1) { c.fillStyle = "rgba(0,0,0," + (1 - st.v).toFixed(3) + ")"; c.fillRect(0, 0, N, N); }
+        for (i = 1; i <= 5; i++) {
+          c.beginPath(); c.arc(C, C, R * i / 6, 0, Math.PI * 2);
+          c.lineWidth = 1 * K; c.strokeStyle = "rgba(255,255,255,0.16)"; c.stroke();
+          c.beginPath(); c.arc(C, C, R * i / 6 + 1 * K, 0, Math.PI * 2);
+          c.lineWidth = 1 * K; c.strokeStyle = "rgba(0,0,0,0.07)"; c.stroke();
+        }
+        var vg = c.createRadialGradient(C, C, R * 0.72, C, C, R);
+        vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.22)");
+        c.fillStyle = vg; c.fillRect(0, 0, N, N);
         c.restore();
-        // Radial petals (still): neutral centre pip + 6 rings of radial capsules. Each ring is one saturation step, each capsule one hue.
-        // While the colour is being changed the capsules widen and lengthen until they melt into the cookie bloom below.
-        if (ease < 0.999) {
-          c.save();   // stays fully opaque under the fading cookie, so the cross-fade never dips
-          var cr = t * 0.42 * (1 + 0.4 * ease);
-          c.beginPath(); c.arc(C, C, cr, 0, Math.PI * 2); c.fillStyle = rgbToHex(hsvToRgb(st.h, 0, st.v)); c.fill();
-          for (k = 1; k <= MAT_RINGS; k++) {
-            n = 6 * k; rm = (k + 0.5) * t;
-            var pw = (2 * Math.PI * rm / n) * (0.46 + 0.5 * ease), pl = t * (0.70 + 0.22 * k / MAT_RINGS) * (1 + 0.5 * ease);
-            for (j = 0; j < n; j++) {
-              hc = j * 360 / n; ang = -hc * Math.PI / 180;
-              c.save(); c.translate(C + Math.cos(ang) * rm, C + Math.sin(ang) * rm); c.rotate(ang);
-              pill(c, -pl / 2, -pw / 2, pl, pw, Math.min(pw, pl) / 2);
-              c.fillStyle = rgbToHex(hsvToRgb(hc, k / MAT_RINGS, st.v)); c.fill();
-              c.restore();
-            }
-          }
-          c.restore();
-        }
-        // Cookie bloom (while changing): continuous disc inside a scalloped edge, grows in from 88%
-        if (ease > 0.001) {
-          var sc = 0.88 + 0.12 * ease;
-          c.save(); c.globalAlpha = ease;
-          c.translate(C, C); c.scale(sc, sc); c.translate(-C, -C);
-          cookiePath(c, RD); c.save(); c.clip();
-          c.drawImage(buildCookieDisc(), 0, 0);
-          if (st.v < 1) { c.fillStyle = "rgba(0,0,0," + (1 - st.v).toFixed(3) + ")"; c.fillRect(0, 0, N, N); }
-          c.restore();
-          cookiePath(c, RD); c.lineWidth = 2 * K; c.strokeStyle = col.ring; c.stroke();
-          c.restore();
-        }
-        // picked point: card halo, primary ring, light ring, coloured core
-        c.beginPath(); c.arc(mx, my, 17 * K * ms, 0, Math.PI * 2); c.fillStyle = col.card; c.fill();
-        c.beginPath(); c.arc(mx, my, 14.5 * K * ms, 0, Math.PI * 2); c.fillStyle = col.handle; c.fill();
-        c.beginPath(); c.arc(mx, my, 12 * K * ms, 0, Math.PI * 2); c.fillStyle = col.ring; c.fill();
-        c.beginPath(); c.arc(mx, my, 8.5 * K * ms, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
+        c.beginPath(); c.arc(C, C, R - 0.5 * K, 0, Math.PI * 2); c.lineWidth = 1.5 * K; c.strokeStyle = "rgba(255,255,255,0.35)"; c.stroke();
+        // 4. picked point: shadow, white ring, coloured core
+        c.beginPath(); c.arc(mx, my + 2 * K, 15 * K * ms, 0, Math.PI * 2); c.fillStyle = "rgba(0,0,0,0.28)"; c.fill();
+        c.beginPath(); c.arc(mx, my, 14 * K * ms, 0, Math.PI * 2); c.fillStyle = "#fff"; c.fill();
+        c.beginPath(); c.arc(mx, my, 10.5 * K * ms, 0, Math.PI * 2); c.fillStyle = hex; c.fill();
+        c.beginPath(); c.arc(mx, my, 10.5 * K * ms, 0, Math.PI * 2); c.lineWidth = 1.5 * K; c.strokeStyle = "rgba(0,0,0,0.18)"; c.stroke();
       }
       try {   // repaint when the style / palette changes (colours are cached per theme)
         var mo = new MutationObserver(function () { mc = null; if (root.isConnected) { schedule(); } else { mo.disconnect(); } });

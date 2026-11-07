@@ -9,7 +9,7 @@
   <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
   <script>/* Node shim */try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }</script>
   <script src="../js/mt-persist.js?v=3"></script>
-  <script>try { var r = document.documentElement, ms = localStorage.getItem("mtx.mdScheme"), gm0 = localStorage.getItem("mtx.glassMode"); r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", ms === "dark" || ms === "light" ? ms : (gm0 === "light" ? "light" : "dark")); } catch (e) { }</script>
+  <script>try { var r = document.documentElement, ms = localStorage.getItem("mtx.mdScheme"), gm0 = localStorage.getItem("mtx.glassMode"); r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdBg") ? (ms === "dark" || ms === "light" ? ms : "dark") : (localStorage.getItem("mtx.mdMode") === "light" ? "light" : "dark")); } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=3">
   <link rel="stylesheet" href="../css/mt-boot.css?v=7">
@@ -101,9 +101,9 @@
   <!-- Layout v2 (8 tabs; Easy Layer, Curve, Animator Text keep the old look). Must stay AFTER every other stylesheet. -->
   <link rel="stylesheet" href="../css/mt-layout-v2.css?v=4">
   <link rel="stylesheet" href="../css/mt-layout-v3.css?v=4">
-  <link rel="stylesheet" href="../css/mt-anchor-v4.css?v=4">
+  <link rel="stylesheet" href="../css/mt-anchor-v4.css?v=5">
   <link rel="stylesheet" href="../css/mt-palette-v4.css?v=2">
-  <link rel="stylesheet" href="../css/mt-tabs-v5.css?v=1">
+  <link rel="stylesheet" href="../css/mt-tabs-v5.css?v=2">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -764,7 +764,7 @@
   <!-- Drag a label / idle number field left-right to change the value (after mt-spinbox.js) -->
   <script src="../js/mt-scrub.js?v=1"></script>
   <!-- Interface style switch (Glass / Material You). Needs main.js (window.mtSyncTheme) -->
-  <script src="../js/mt-material.js?v=3"></script>
+  <script src="../js/mt-material.js?v=4"></script>
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-nav.js?v=2"></script>

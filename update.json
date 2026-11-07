@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.141",
-    "changelog":  "- Update 1.8.141",
+    "latest_version":  "1.8.142",
+    "changelog":  "- Update 1.8.142",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -32,7 +32,7 @@
                   },
                   {
                       "path":  "css/mt-anchor-v4.css",
-                      "sha256":  "3222b0218769d56c8d2c093f068056cdd733051546e2c3d5edfded375b01311a"
+                      "sha256":  "a2aed0e52be223df2c174527d1429dd19303dff243c78a6465aaa9275e9cac62"
                   },
                   {
                       "path":  "css/mt-anim-styles.css",
@@ -204,7 +204,7 @@
                   },
                   {
                       "path":  "css/mt-tabs-v5.css",
-                      "sha256":  "14e9dd0aeeb00ff6057903900c541dc81f6762907fe24fcc19a9ea328744e940"
+                      "sha256":  "3963cf450a4b8a3472c566e1a775272d957def30e26240ca1174680524b88b31"
                   },
                   {
                       "path":  "css/mt-tidy.css",
@@ -268,7 +268,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "c08dc88de90fe8e9eb84a4e8911035981f158270a2060d7e0262161decfd5ab3"
+                      "sha256":  "b9ba41c882b9e509e944a079fb12e498f927587f157099f0c640c01af5b9ef22"
                   },
                   {
                       "path":  "html/settings.html",
@@ -368,7 +368,7 @@
                   },
                   {
                       "path":  "js/mt-material.js",
-                      "sha256":  "79e66e106133a35a4a45aebedde39d4fd4ed7a3503458a45a79bdcc5543fb057"
+                      "sha256":  "b0daae002a99915be9ff7ca55b03aa459f15323c512ac08f97a9aaa9c2c8415d"
                   },
                   {
                       "path":  "js/mt-nav.js",
@@ -768,7 +768,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "cc079fbab9611f730d265c7609afd7e304cecca4accaed4a5c0a20d9cc2d5818"
+                      "sha256":  "7f960b865b3836d96d2e6b73aab0fd6d575016a8818dc11b69189507e824515e"
                   }
               ]
 }

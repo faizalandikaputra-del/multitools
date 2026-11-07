@@ -5,12 +5,12 @@
 
 /* 1) anchor + align: same column width */
 html:root:root[data-mt-tab="anchor-align"] .anchor-grid,
-html:root:root[data-mt-tab="anchor-align"] .align-grid { max-width: 252px !important; width: 100% !important; margin: 0 !important; }
+html:root:root[data-mt-tab="anchor-align"] .align-grid { max-width: none !important; width: 100% !important; margin: 0 !important; }   /* v2: fill the panel (was 252 px) */
 
 /* 2) easy layer: fixed 3 x 3 */
 html:root:root[data-mt-tab="easy-layer"] #panel .grid {
   display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important;
-  justify-items: stretch !important; max-width: 324px; margin-left: 0; margin-right: 0;
+  justify-items: stretch !important; max-width: none !important; width: 100% !important; margin-left: 0; margin-right: 0;   /* v2: fill the panel (was 324 px) */
 }
 html:root:root[data-mt-tab="easy-layer"] #panel .grid .tool { width: 100% !important; max-width: none !important; }
 
@@ -29,3 +29,24 @@ html:root:root[data-mt-tab="quick-comp-edit"] #qce-target-toggle .chip span {
 html:root:root[data-mt-tab="quick-comp-edit"] #qce-target-toggle .chip:hover span { color: var(--text) !important; }
 html:root:root[data-mt-tab="quick-comp-edit"] #qce-target-toggle .chip input:checked + span { background: var(--accent-strong) !important; color: var(--on-accent) !important; }
 html:root:root[data-mt-tab="quick-comp-edit"] #qce-target-toggle .chip input:focus-visible + span { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+
+/* 4) Material You (default style): Anchor Point / Align tiles and the Easy Layer 3 x 3 use the same tonal look and corner radius as
+      the rest of the panel, and span the full panel width. Needs [data-ui-theme="material"]; Glass is not touched. */
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn {
+  background: var(--md-surface) !important; border: 0 !important; border-radius: var(--mu-r-card, 24px) !important; color: var(--md-on-surface-variant);
+}
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-btn {
+  background: var(--md-secondary-container) !important; border: 0 !important; border-radius: 999px !important; height: 48px !important; color: var(--md-on-secondary-container);
+}
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn:hover { background: var(--md-surface-high) !important; border: 0 !important; color: var(--md-on-surface); }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-btn:hover { background: var(--md-secondary-container) !important; background-image: var(--mu-state-hover) !important; border: 0 !important; color: var(--md-on-secondary-container); }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn .aa-bg { fill: var(--md-surface); }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn:hover .aa-bg { fill: var(--md-surface-high); }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn .aa-ring,
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn .aa-tick,
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-btn .align-edge { stroke: var(--md-primary); }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-btn .aa-dot { fill: var(--md-primary); }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-btn:hover .align-icon svg rect { fill: var(--md-primary); }
+html:root:root[data-ui-theme="material"][data-mt-tab="easy-layer"] #panel .grid { gap: 10px !important; }
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-grid,
+html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-grid { gap: 10px !important; }

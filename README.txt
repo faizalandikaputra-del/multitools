@@ -2500,3 +2500,16 @@ fix-no-glass-dd-grid (Glass removed, closed-loop dropdown, 3x3 Easy Layer, align
   3) Anchor Point & Align: both grids 252 px wide. Easy Layer: tool tiles always 3 x 3. Quick Comp Edit: Selected Layer / Active Composition = two tiles with the same
      width, gap and radius as Start Timecode / Duration.
   files: css/mt-tabs-v5.css (new), js/mt-select.js (v5), js/mt-uitheme.js, css/mt-uitheme.css (v8), html/index.html, html/settings.html, neucurve/index.html.
+
+fix-default-dark-fit-tiles (Material You Dark default, Anchor/Align + Easy Layer tiles fit the panel):
+  1) Default Light/Dark is now DARK. Before, with nothing stored, Material You started Light.
+     cause: js/mt-material.js defaulted state.mode to "light" and only stored "dark".
+     fix:   default is "dark"; only a Light pick is stored (localStorage "mtx.mdMode" = "light"), nothing stored = dark. Reset everything -> dark.
+            html/index.html head script (first paint) follows the same rule, so there is no light flash. An old install with nothing stored opens dark after the update;
+            a custom Background color keeps the scheme it already had.
+  2) Anchor Point & Align: the 3x3 anchor tiles and the align buttons were capped at 252 px, so they sat at the left with an empty strip on the right.
+     fix:   no cap, both grids fill the panel width. Material You look: tonal tiles (--md-surface) with the same corner radius as the Easy Layer tiles, tonal pill align buttons,
+            icons in the theme primary color, hover = tonal state layer.
+  3) Easy Layer: the 3x3 tile grid was capped at 324 px. fix: fills the panel width (still always 3 x 3), gap 10 px in Material You.
+  files: js/mt-material.js, css/mt-tabs-v5.css (v2), css/mt-anchor-v4.css (v5), html/index.html (head script, cache-bust).
+  Not run inside After Effects; checked by reading the CSS cascade only (no browser available here).

@@ -15,7 +15,7 @@ html:root:root[data-mt-tab="anchor-align"] .align-btn {
   transition: transform .12s ease, background-color .15s ease, border-color .15s ease, color .15s ease !important;
 }
 /* square tile: padding-top trick (aspect-ratio needs Chromium 88, CEP is older) */
-html:root:root[data-mt-tab="anchor-align"] .anchor-grid { max-width: 252px !important; }
+html:root:root[data-mt-tab="anchor-align"] .anchor-grid { max-width: none !important; }   /* fills the panel width (was a 252 px cap) */
 html:root:root[data-mt-tab="anchor-align"] .anchor-btn { height: auto !important; }
 html:root:root[data-mt-tab="anchor-align"] .anchor-btn::before { content: ""; display: block; width: 0; padding-top: 100%; flex: none; }
 html:root:root[data-mt-tab="anchor-align"] .anchor-btn svg { position: absolute; left: 50%; top: 50%; margin: -16px 0 0 -16px; }

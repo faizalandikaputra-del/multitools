@@ -6,7 +6,7 @@
    every theme (dark, light, custom Background colour). Off switch: remove the <link> / <script> in html/index.html. */
 .main.is-curve::before {
   content: ""; position: absolute; top: 0; right: 0; left: 0; height: 50px; z-index: 1; pointer-events: none;
-  background-color: var(--curve-top-bg, #1a1a1a);
+  background-color: transparent;   /* v2: transparent again (asked for): the panel background shows behind the island. Solid version: var(--curve-top-bg, #1a1a1a) */
 }
 /* Island off (Settings > Appearance): no band, NeuCurve is back to its default layout (see css/mt-island.css). */
 :root[data-island="off"] .main.is-curve::before { display: none; }

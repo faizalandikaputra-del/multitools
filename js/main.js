@@ -88,9 +88,8 @@
       hint: "",
       tools: [],
       custom: "curve"      // NeuCurve: full tool, hosted by the Curve module below
-    },
-    "info": { title: "Info / About", hint: "", tools: [], info: true }
-  };
+    }
+  };   // "Info / About" tab removed (updates still show in the update banner + Settings > Updates)
 
   // ---------------------------------------------------------
   // Helpers

@@ -2513,3 +2513,19 @@ fix-default-dark-fit-tiles (Material You Dark default, Anchor/Align + Easy Layer
   3) Easy Layer: the 3x3 tile grid was capped at 324 px. fix: fills the panel width (still always 3 x 3), gap 10 px in Material You.
   files: js/mt-material.js, css/mt-tabs-v5.css (v2), css/mt-anchor-v4.css (v5), html/index.html (head script, cache-bust).
   Not run inside After Effects; checked by reading the CSS cascade only (no browser available here).
+
+fix-curve-halo-tiles-noinfo (NeuCurve handle halo on mode switch, fixed-height tiles, Info tab removed):
+  1) Curve tab, mode switch: the default handle halo (.nc-hglow) is hidden while the curve morphs, then it reappeared in ONE frame (no fade) while the glow and the
+     guide lines faded in = the handles looked like they popped. fix: the halo now fades in with the glow (.nc-morph-out, 0.3 s). Off with Settings > Animations.
+     files: neucurve/nc-morph.css (v17), neucurve/index.html (cache-bust). Reading the code only; the handle glide itself (nc-morph.js moveHandles) is unchanged.
+  2) Easy Layer 3x3 and Anchor Point 3x3: tiles keep the full panel width but have a fixed height (Easy Layer 84 px, Anchor 64 px, Align 48 px) instead of staying
+     square, so a landscape / wide panel no longer makes giant tiles. Wins over the AE 2021 aspect-ratio shim (!important beats its inline height).
+     files: css/mt-tabs-v5.css (v3, section 5), html/index.html (cache-bust).
+  3) "Info / About" tab removed: sidebar button (html/index.html) and the TABS entry (js/main.js). A saved tab order or reopen-tab value that still says "info" is ignored.
+     The update banner and Settings > Updates still work. renderInfo() / css/mt-layout-v3.css info rules are now unused (left in place).
+
+fix-curve-top-transparent (Curve tab: band behind the island):
+  What: the 50 px band above NeuCurve (behind the dynamic island) was a solid copy of NeuCurve's backdrop colour (black). It is transparent now, so the panel background /
+        wallpaper shows through, like the other tabs.
+  Files: css/mt-curve-top.css (v3). To get the solid band back, use background-color: var(--curve-top-bg, #1a1a1a) in the ".main.is-curve::before" rule.
+  Note: the band was solid on purpose before (a transparent one looked like a hole around the island when a wallpaper was set). Not run inside AE.

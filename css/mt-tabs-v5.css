@@ -50,3 +50,9 @@ html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-btn:
 html:root:root[data-ui-theme="material"][data-mt-tab="easy-layer"] #panel .grid { gap: 10px !important; }
 html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .anchor-grid,
 html:root:root[data-ui-theme="material"][data-mt-tab="anchor-align"] .align-grid { gap: 10px !important; }
+
+/* 5) Landscape / wide panel: the tiles keep the full panel width but a FIXED height, so they stay small rectangles instead of growing into
+      giant squares when the extension is stretched. Easy Layer 3 x 3 = 84 px tall, Anchor Point 3 x 3 = 64 px, Align buttons = 48 px.
+      (The old square rule - aspect-ratio / padding-top 100% - is switched off here.) */
+html:root:root[data-mt-tab="easy-layer"] #panel .grid .tool { aspect-ratio: auto !important; height: 84px !important; min-height: 0 !important; }
+html:root:root[data-mt-tab="anchor-align"] .anchor-btn::before { padding-top: 0 !important; height: 64px !important; }

@@ -2374,3 +2374,17 @@ fixKT-apply (tab Keyframe Timing: Apply tidak memindah keyframe)
     tiap properti diverifikasi setelah dipindah (waktu tiap keyframe dicek), kalau gagal hanya keyframe yang baru ditambah dihapus lalu yang asli dikembalikan
     dan properti dihitung "skipped"; _ktScan melewati properti Marker (ADBE Marker) sehingga marker tidak pernah disentuh.
   - Files: jsx/host.jsx (_ktScan, KT_apply). js/main.js dan html tidak berubah.
+
+fixKT-layerinout (tab Keyframe Timing: Start / End / Stretch mengikuti layer, seleksi tidak berubah setelah Apply)
+  - Permintaan: Start memindah keyframe pertama ke In layer, End memindah keyframe terakhir ke Out layer, Stretch meregangkan keyframe ke durasi layer (In..Out).
+    Setelah Apply, effect / properti yang dipilih tadi harus tetap terpilih (sebelumnya jumlahnya berkurang jadi satu).
+  - Penyebab seleksi: memindah keyframe = removeKey + addKey, dan itu mengubah seleksi layer / properti. Keyframe juga selalu dipilih ulang walau tadinya tidak terpilih
+    (mode effect / layer), sehingga seleksi effect berubah jadi seleksi keyframe.
+  - Perbaikan jsx/host.jsx: KT_state mengirim layerIn, layerOut (frame terakhir layer = outPoint dikurangi 1 frame, karena outPoint adalah akhir frame terakhir dan
+    bisa jatuh di luar durasi comp) dan layers (jumlah layer). KT_apply mengelompokkan keyframe per layer: Start = In layer, End = frame terakhir layer,
+    Stretch = In..frame terakhir layer, tiap layer memakai In / Out sendiri. cfg.start / cfg.end tidak dipakai lagi. Layer yang sudah pas dilewati; Stretch dengan
+    satu waktu keyframe dilewati dengan pesan. Seleksi layer + properti dicatat sebelum Apply dan dikembalikan persis sesudahnya (yang tidak ada di seleksi awal
+    dilepas), dan tiap keyframe mendapat kembali status terpilih / tidak terpilih aslinya.
+  - Perbaikan js/main.js (?v=59): field Start / End terkunci di semua mode (Auto = playhead, lainnya = In / Out layer), tombol pin playhead nonaktif, catatan mode diperbarui,
+    preview memakai layer pertama jika beberapa layer dipilih.
+  - Files: jsx/host.jsx (KT_state, KT_apply, _ktCapture, helper seleksi), js/main.js (KeyframeTiming), html/index.html (?v=59).

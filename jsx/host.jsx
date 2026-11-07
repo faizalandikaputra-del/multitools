@@ -9707,9 +9707,10 @@ function FX_paste(entry, mode, newest, pick) {
 //   KT_playhead()   -> { ok, data: { playhead, fps } }
 //   KT_apply(cfg)   -> cfg = { mode: "auto" | "start" | "end" | "stretch", start: sec, end: sec }
 //                      auto    : the first selected keyframe goes to the playhead, the span keeps its length
-//                      start   : the first selected keyframe goes to cfg.start, the span keeps its length
-//                      end     : the last selected keyframe goes to cfg.end, the span keeps its length
-//                      stretch : the span becomes cfg.start .. cfg.end, keyframes in between scale proportionally
+//                      start   : the first keyframe of each layer goes to that layer's In point, the span keeps its length
+//                      end     : the last keyframe of each layer goes to that layer's last frame (Out point minus one frame), the span keeps its length
+//                      stretch : the span of each layer becomes In .. last frame of that layer, keyframes in between scale proportionally
+//                      (cfg.start / cfg.end are ignored: start, end and stretch follow the layer, not typed times)
 //   Which keyframes: the selected ones. When no keyframe is selected, every keyframe of the selected properties.
 //   A keyframe cannot be moved in ExtendScript, so each one is captured (value, interpolation, ease, tangents,
 //   roving), removed and added again at its new time with everything restored. New times snap to whole frames.
@@ -9782,15 +9783,29 @@ function _ktSummary(found) {
   return { start: s, end: e, count: n, times: times };
 }
 
+function _ktLayerOf(prop) {
+  try { return prop.propertyGroup(prop.propertyDepth); } catch (e) { return null; }
+}
+
 function KT_state() {
   try {
     var comp = app.project.activeItem;
     if (!(comp && comp instanceof CompItem)) { return _err(new Error("Open a composition first.")); }
     var found = _ktCollect(comp), sum = _ktSummary(found);
+    var i, lay, seen = {}, nLay = 0, lin = null, lout = null, fd = 1 / comp.frameRate;
+    for (i = 0; i < found.length; i++) {
+      lay = _ktLayerOf(found[i].prop);
+      if (!lay) { continue; }
+      if (!seen[lay.index]) {
+        seen[lay.index] = true; nLay++;
+        if (lin === null) { lin = lay.inPoint; lout = lay.outPoint - fd; }   // preview uses the first layer
+      }
+    }
     return _ok("", {
       fps: comp.frameRate, duration: comp.duration, playhead: comp.time,
       count: sum.count, props: found.length,
-      start: sum.start, end: sum.end, keys: sum.times
+      start: sum.start, end: sum.end, keys: sum.times,
+      layerIn: lin, layerOut: lout, layers: nLay
     });
   } catch (e) { return _err(e); }
 }
@@ -9804,7 +9819,8 @@ function KT_playhead() {
 
 // Everything AE keeps about one keyframe, so it can be put back at another time.
 function _ktCapture(prop, k) {
-  var o = { t: prop.keyTime(k), v: prop.keyValue(k) };
+  var o = { t: prop.keyTime(k), v: prop.keyValue(k), sel: true };
+  try { o.sel = prop.keySelected(k); } catch (e0) { o.sel = true; }
   try { o.inT = prop.keyInInterpolationType(k); o.outT = prop.keyOutInterpolationType(k); } catch (e1) { }
   try { o.inE = prop.keyInTemporalEase(k); o.outE = prop.keyOutTemporalEase(k); } catch (e2) { }
   try { o.tc = prop.keyTemporalContinuous(k); o.tab = prop.keyTemporalAutoBezier(k); } catch (e3) { }
@@ -9831,99 +9847,163 @@ function _ktPut(prop, o, newT) {
   return idx;
 }
 
-function KT_apply(cfg) {
-  var undoOpen = false;
+// Snapshot of what is selected (layers and properties), so Apply can put the selection back exactly as it was.
+// Moving a keyframe means remove + add, and that changes the selection (several selected effects collapsed to one).
+function _ktSelSnap(comp) {
+  var snap = { layers: [], props: [] }, i, arr;
+  try { arr = comp.selectedLayers; for (i = 0; i < arr.length; i++) { snap.layers.push(arr[i]); } } catch (e1) { }
+  try { arr = comp.selectedProperties; for (i = 0; i < arr.length; i++) { snap.props.push({ obj: arr[i], path: _ktPath(arr[i]) }); } } catch (e2) { }
+  return snap;
+}
+
+function _ktSelRestore(comp, snap) {
+  var i, arr, keepL = {}, keepP = {};
   try {
-    var comp = _activeComp();
+    for (i = 0; i < snap.layers.length; i++) { keepL[snap.layers[i].index] = true; }
+    arr = comp.selectedLayers;
+    for (i = 0; i < arr.length; i++) { if (!keepL[arr[i].index]) { try { arr[i].selected = false; } catch (e0) { } } }
+    for (i = 0; i < snap.layers.length; i++) { try { snap.layers[i].selected = true; } catch (e1) { } }
+  } catch (e2) { }
+  try {
+    for (i = 0; i < snap.props.length; i++) { keepP[snap.props[i].path] = true; }
+    arr = comp.selectedProperties;
+    for (i = 0; i < arr.length; i++) { if (!keepP[_ktPath(arr[i])]) { try { arr[i].selected = false; } catch (e3) { } } }
+    for (i = 0; i < snap.props.length; i++) { try { snap.props[i].obj.selected = true; } catch (e4) { } }
+  } catch (e5) { }
+}
+
+// Time mapping for one layer group (old time -> new time, snapped to whole frames).
+function _ktMapper(stretch, g, fps) {
+  return function (t) {
+    var r = stretch ? (g.dur > 0 ? g.ns + (t - g.s0) * (g.ne - g.ns) / g.dur : g.ns) : t + (g.ns - g.s0);
+    return Math.round(r * fps) / fps;
+  };
+}
+
+function KT_apply(cfg) {
+  var undoOpen = false, touched = false, comp = null, selSnap = null;
+  try {
+    comp = _activeComp();
     cfg = cfg || {};
     var mode = String(cfg.mode || "auto");
+    if (mode !== "auto" && mode !== "start" && mode !== "end" && mode !== "stretch") { throw new Error("Unknown mode: " + mode); }
     var found = _ktCollect(comp);
     if (!found.length) { throw new Error("Select keyframes (or a property with keyframes) first."); }
 
-    var sum = _ktSummary(found), s0 = sum.start, e0 = sum.end, dur = e0 - s0;
-    var fps = comp.frameRate, ns, ne;
-    if (mode === "auto") { ns = comp.time; ne = ns + dur; }
-    else if (mode === "start") { ns = Number(cfg.start); ne = ns + dur; }
-    else if (mode === "end") { ne = Number(cfg.end); ns = ne - dur; }
-    else if (mode === "stretch") {
-      ns = Number(cfg.start); ne = Number(cfg.end);
-      if (!(dur > 0)) { throw new Error("Stretch needs keyframes at two different times."); }
-      if (!(ne > ns)) { throw new Error("End must be after Start."); }
-    } else { throw new Error("Unknown mode: " + mode); }
-    if (isNaN(ns) || isNaN(ne)) { throw new Error("Start / End is not a valid time."); }
-    if (ns < -0.000001) { throw new Error("The new range would start before 0:00:00."); }
-    var half = 0.5 / fps;
-    if (Math.abs(ns - s0) < half && Math.abs(ne - e0) < half) {
-      throw new Error("Nothing to move: the keyframes are already there. Move the playhead (Auto) or change Start / End.");
+    var fps = comp.frameRate, fd = 1 / fps, half = 0.5 / fps;
+    var snap = function (t) { return Math.round(t * fps) / fps; };
+
+    // One group per layer: Start / End / Stretch follow each layer's own In / Out.
+    var groups = [], gmap = {}, i, j, lay, key, g, sm;
+    for (i = 0; i < found.length; i++) {
+      lay = _ktLayerOf(found[i].prop);
+      key = lay ? String(lay.index) : "x";
+      if (!gmap[key]) { gmap[key] = { layer: lay, items: [] }; groups.push(gmap[key]); }
+      gmap[key].items.push(found[i]);
+    }
+    var all = _ktSummary(found), active = 0, firstReason = "", lin, lout;
+    for (i = 0; i < groups.length; i++) {
+      g = groups[i];
+      sm = _ktSummary(g.items);
+      g.s0 = sm.start; g.e0 = sm.end; g.dur = sm.end - sm.start;
+      g.use = true; g.reason = "";
+      if (mode === "auto") {
+        g.ns = g.s0 + (comp.time - all.start); g.ne = g.ns + g.dur;
+      } else if (!g.layer) {
+        g.use = false; g.reason = "A selected property has no layer.";
+      } else {
+        lin = snap(g.layer.inPoint); lout = snap(g.layer.outPoint - fd);   // outPoint is the end of the last frame
+        if (mode === "start") { g.ns = lin; g.ne = g.ns + g.dur; }
+        else if (mode === "end") { g.ne = lout; g.ns = g.ne - g.dur; }
+        else {
+          g.ns = lin; g.ne = lout;
+          if (!(g.dur > 0)) { g.use = false; g.reason = "Stretch needs keyframes at two different times."; }
+          else if (!(g.ne > g.ns)) { g.use = false; g.reason = "The layer is too short to stretch into."; }
+        }
+      }
+      if (g.use && g.ns < -0.000001) { throw new Error("The new range would start before 0:00:00."); }
+      if (g.use && Math.abs(g.ns - g.s0) < half && Math.abs(g.ne - g.e0) < half) { g.use = false; g.reason = ""; g.same = true; }
+      if (!g.use && g.reason && !firstReason) { firstReason = g.reason; }
+      if (g.use) { g.map = _ktMapper(mode === "stretch", g, fps); active++; }
+    }
+    if (!active) {
+      if (firstReason) { throw new Error(firstReason); }
+      throw new Error(mode === "auto"
+        ? "Nothing to move: the keyframes are already there. Move the playhead."
+        : "Nothing to move: the keyframes are already at the layer In / Out.");
     }
 
-    var snap = function (t) { return Math.round(t * fps) / fps; };
-    var mapT = function (t) {
-      if (mode === "stretch") { return snap(ns + (t - s0) * (ne - ns) / dur); }
-      return snap(t + (ns - s0));
-    };
-
+    selSnap = _ktSelSnap(comp);
+    touched = true;
     app.beginUndoGroup("Keyframe Timing");
     undoOpen = true;
-    var moved = 0, skipped = 0, i, j, item, prop, caps, newTimes, lay, ok, idx;
-    for (i = 0; i < found.length; i++) {
-      item = found[i]; prop = item.prop;
-      try { lay = prop.propertyGroup(prop.propertyDepth); if (lay && lay.locked) { skipped++; continue; } } catch (eL) { }
-      caps = []; newTimes = [];
-      for (j = 0; j < item.keys.length; j++) { caps.push(_ktCapture(prop, item.keys[j])); }
-      for (j = item.keys.length - 1; j >= 0; j--) { prop.removeKey(item.keys[j]); }   // highest index first: lower ones keep their numbers
-      ok = true;
-      try {
-        for (j = 0; j < caps.length; j++) {
-          newTimes.push(mapT(caps[j].t));
-          _ktPut(prop, caps[j], newTimes[j]);
-        }
-      } catch (ePut) {
-        ok = false;
-        // Put the originals back so a failed property never loses its keyframes.
-        for (j = 0; j < caps.length; j++) { try { _ktPut(prop, caps[j], caps[j].t); } catch (eBack) { } }
-      }
-      // Verify: every keyframe must really sit at its new time, otherwise the property counts as failed.
-      if (ok) {
+    var moved = 0, skipped = 0, okProps = 0, firstNs = null, firstNe = null, gi, item, prop, caps, newTimes, ok, idx, del, dk;
+    for (gi = 0; gi < groups.length; gi++) {
+      g = groups[gi];
+      if (!g.use) { continue; }
+      if (firstNs === null) { firstNs = g.ns; firstNe = g.ne; }
+      for (i = 0; i < g.items.length; i++) {
+        item = g.items[i]; prop = item.prop;
+        try { lay = prop.propertyGroup(prop.propertyDepth); if (lay && lay.locked) { skipped++; continue; } } catch (eL) { }
+        caps = []; newTimes = [];
+        for (j = 0; j < item.keys.length; j++) { caps.push(_ktCapture(prop, item.keys[j])); }
+        for (j = item.keys.length - 1; j >= 0; j--) { prop.removeKey(item.keys[j]); }   // highest index first: lower ones keep their numbers
+        ok = true;
         try {
-          if (prop.numKeys < caps.length) { ok = false; }
-          for (j = 0; ok && j < caps.length; j++) {
-            idx = prop.nearestKeyIndex(newTimes[j]);
-            if (Math.abs(prop.keyTime(idx) - newTimes[j]) > 0.0001) { ok = false; }
+          for (j = 0; j < caps.length; j++) {
+            newTimes.push(g.map(caps[j].t));
+            _ktPut(prop, caps[j], newTimes[j]);
           }
-        } catch (eV) { ok = false; }
-        if (!ok) {
-          // Remove only the keys that were added at the new times, then put the originals back.
-          try {
-            var del = [], dk;
-            for (j = 0; j < newTimes.length; j++) {
-              dk = prop.nearestKeyIndex(newTimes[j]);
-              if (Math.abs(prop.keyTime(dk) - newTimes[j]) <= 0.0001) { del.push(dk); }
-            }
-            del.sort(function (a, b) { return b - a; });
-            for (j = 0; j < del.length; j++) { if (j === 0 || del[j] !== del[j - 1]) { prop.removeKey(del[j]); } }
-          } catch (eClr) { }
-          for (j = 0; j < caps.length; j++) { try { _ktPut(prop, caps[j], caps[j].t); } catch (eBack2) { } }
+        } catch (ePut) {
+          ok = false;
+          // Put the originals back so a failed property never loses its keyframes.
+          for (j = 0; j < caps.length; j++) { try { _ktPut(prop, caps[j], caps[j].t); } catch (eBack) { } }
         }
+        // Verify: every keyframe must really sit at its new time, otherwise the property counts as failed.
+        if (ok) {
+          try {
+            if (prop.numKeys < caps.length) { ok = false; }
+            for (j = 0; ok && j < caps.length; j++) {
+              idx = prop.nearestKeyIndex(newTimes[j]);
+              if (Math.abs(prop.keyTime(idx) - newTimes[j]) > 0.0001) { ok = false; }
+            }
+          } catch (eV) { ok = false; }
+          if (!ok) {
+            // Remove only the keys that were added at the new times, then put the originals back.
+            try {
+              del = [];
+              for (j = 0; j < newTimes.length; j++) {
+                dk = prop.nearestKeyIndex(newTimes[j]);
+                if (Math.abs(prop.keyTime(dk) - newTimes[j]) <= 0.0001) { del.push(dk); }
+              }
+              del.sort(function (a, b) { return b - a; });
+              for (j = 0; j < del.length; j++) { if (j === 0 || del[j] !== del[j - 1]) { prop.removeKey(del[j]); } }
+            } catch (eClr) { }
+            for (j = 0; j < caps.length; j++) { try { _ktPut(prop, caps[j], caps[j].t); } catch (eBack2) { } }
+          }
+        }
+        if (!ok) { skipped++; continue; }
+        // Roving is set last (it depends on the neighbours). Each key gets back the selected / not selected state it had.
+        for (j = 0; j < caps.length; j++) {
+          try { idx = prop.nearestKeyIndex(newTimes[j]); } catch (eN) { continue; }
+          try { if (caps[j].rov !== undefined) { prop.setRovingAtKey(idx, caps[j].rov); } } catch (eR) { }
+          try { prop.setSelectedAtKey(idx, caps[j].sel !== false); } catch (eS) { }
+        }
+        moved += caps.length;
+        okProps++;
       }
-      if (!ok) { skipped++; continue; }
-      // Roving is set last (it depends on the neighbours) and the moved keys are selected again, so Apply can be repeated.
-      for (j = 0; j < caps.length; j++) {
-        try { idx = prop.nearestKeyIndex(newTimes[j]); } catch (eN) { continue; }
-        try { if (caps[j].rov !== undefined) { prop.setRovingAtKey(idx, caps[j].rov); } } catch (eR) { }
-        try { prop.setSelectedAtKey(idx, true); } catch (eS) { }
-      }
-      moved += caps.length;
     }
     app.endUndoGroup();
     undoOpen = false;
 
     if (!moved) { throw new Error("Nothing was moved (locked layers or properties that refused the change)."); }
-    return _ok("Moved " + moved + " keyframe" + (moved === 1 ? "" : "s") + " on " + (found.length - skipped) + " propert" + ((found.length - skipped) === 1 ? "y" : "ies") + (skipped ? " (" + skipped + " skipped)." : "."),
-      { start: snap(ns), end: snap(ne) });
+    return _ok("Moved " + moved + " keyframe" + (moved === 1 ? "" : "s") + " on " + okProps + " propert" + (okProps === 1 ? "y" : "ies") + (skipped ? " (" + skipped + " skipped)." : "."),
+      { start: snap(firstNs), end: snap(firstNe) });
   } catch (e) {
     return _err(e);
   } finally {
     if (undoOpen) { try { app.endUndoGroup(); } catch (eUndo) { /* nothing left to close */ } }
+    // Put the layer / property selection back as it was before Apply (the remove + add of keyframes changes it).
+    if (touched && comp && selSnap) { try { _ktSelRestore(comp, selSnap); } catch (eSel) { } }
   }
 }

@@ -3635,9 +3635,10 @@
   // ---------------------------------------------------------
   // Keyframe Timing tab: move / stretch the selected keyframes (jsx/host.jsx KT_state / KT_apply / KT_playhead).
   //   Auto     the first keyframe goes to the playhead, the length stays          (fields follow the playhead, locked)
-  //   Start    the first keyframe goes to Start, the length stays                 (End is the result, locked)
-  //   End      the last keyframe goes to End, the length stays                    (Start is the result, locked)
-  //   Stretch  the range becomes Start..End, keyframes in between scale with it   (both fields editable)
+  //   Start    the first keyframe goes to the layer's In point, the length stays  (Start = layer In, End is the result, locked)
+  //   End      the last keyframe goes to the layer's last frame, the length stays (End = layer Out, Start is the result, locked)
+  //   Stretch  the range becomes layer In..Out, keyframes in between scale with it (both locked)
+  //   Several layers: each layer uses its own In / Out when applied; the preview shows the first layer.
   // The mini timeline previews the result: dashed diamonds = where the keyframes are now, solid = where they will be.
   // While the tab is open the selection and the playhead are polled (KT_state), so the preview stays live.
   // Time fields read / write M:SS:FF (minutes : seconds : frames). A bare number is frames, like After Effects.
@@ -3650,14 +3651,14 @@
   var KeyframeTiming = {
     POLL_MS: 500,
     // kept across tab switches (the tab is rebuilt from scratch every time it opens)
-    st: { mode: "auto", start: 0, end: 0, sig: "", fps: 24, ph: 0, dur: 0, range: null, keys: [], msg: "" },
+    st: { mode: "auto", start: 0, end: 0, sig: "", fps: 24, ph: 0, dur: 0, range: null, keys: [], msg: "", lin: null, lout: null, layers: 0 },
     timer: 0,
 
     NOTES: {
       auto: "Start follows the playhead and the length stays. Apply moves the selected keyframes there.",
-      start: "The first keyframe goes to Start. The length stays the same.",
-      end: "The last keyframe goes to End. The length stays the same.",
-      stretch: "Keyframes in between scale to fit the new Start and End."
+      start: "The first keyframe goes to the layer In point. The length stays the same.",
+      end: "The last keyframe goes to the layer last frame (Out). The length stays the same.",
+      stretch: "Keyframes scale to fill the layer from In to Out."
     },
 
     pad2: function (n) { return (n < 10 ? "0" : "") + n; },
@@ -3690,9 +3691,9 @@
       if (!r) { return null; }
       s0 = r.start; e0 = r.end; dur = e0 - s0;
       if (st.mode === "auto") { ns = st.ph; ne = ns + dur; }
-      else if (st.mode === "start") { ns = st.start; ne = ns + dur; }
-      else if (st.mode === "end") { ne = st.end; ns = ne - dur; }
-      else { ns = st.start; ne = st.end; }
+      else if (st.mode === "start") { ns = (st.lin !== null) ? st.lin : st.start; ne = ns + dur; }
+      else if (st.mode === "end") { ne = (st.lout !== null) ? st.lout : st.end; ns = ne - dur; }
+      else { ns = (st.lin !== null) ? st.lin : st.start; ne = (st.lout !== null) ? st.lout : st.end; }
       return {
         ns: ns, ne: ne, s0: s0, e0: e0, dur: dur,
         valid: !(st.mode === "stretch" && (!(dur > 0) || !(ne > ns))) && ns > -0.000001,
@@ -3807,8 +3808,8 @@
         // mode, note, fields
         var mode = st.mode, active = document.activeElement;
         Array.prototype.forEach.call(wrap.querySelectorAll('input[name="kt-mode"]'), function (r) { r.checked = (r.value === mode); });
-        el.note.textContent = st.range ? ((c && c.ns < -0.000001) ? "The new range would start before 0:00:00. Pick a later time." : self.NOTES[mode]) : (st.msg || "Select keyframes in the timeline. Their range shows up here.");
-        var editS = (mode === "start" || mode === "stretch"), editE = (mode === "end" || mode === "stretch");
+        el.note.textContent = st.range ? ((c && c.ns < -0.000001) ? "The new range would start before 0:00:00. Pick a later time." : (self.NOTES[mode] + ((mode !== "auto" && st.layers > 1) ? " Each layer uses its own In / Out (preview shows the first layer)." : ""))) : (st.msg || "Select keyframes in the timeline. Their range shows up here.");
+        var editS = false, editE = false;   // all fields follow the playhead or the layer In / Out: nothing to type
         var showS = c ? c.ns : 0, showE = c ? c.ne : 0;
         if (active !== el.start) { el.start.value = c ? self.fmt(showS, st.fps) : "-"; }
         if (active !== el.end) { el.end.value = c ? self.fmt(showE, st.fps) : "-"; }
@@ -3846,6 +3847,7 @@
             paint(); return;
           }
           st.fps = d.fps || st.fps; st.dur = d.duration || 0; st.ph = d.playhead || 0; st.keys = d.keys || []; st.msg = "";
+          st.lin = (typeof d.layerIn === "number") ? d.layerIn : null; st.lout = (typeof d.layerOut === "number") ? d.layerOut : null; st.layers = d.layers || 0;
           if (d.count > 0) {
             st.range = { start: d.start, end: d.end, count: d.count, props: d.props };
             var sig = d.count + "|" + d.props + "|" + Math.round(d.start * 1000) + "|" + Math.round(d.end * 1000);

@@ -2419,3 +2419,10 @@ fix-island-presets: Animation Presets tiles can be dragged onto the dynamic isla
          The list is remembered (localStorage mtx.island.presets, max 24). Island off in Settings = rows hidden with the island.
   files: js/mt-island-presets.js (new), js/main.js (preset tile draggable + dragstart "text/mt-preset", window.__MT.runPreset), js/mt-island.js (v20: accepts the
          drop, presetHost / presetsChanged, empty-state check counts presets), css/mt-island-boxes.css (v3: row styles), html/index.html (new script tag, version bumps).
+
+fix-layout-v2: new layout for 8 tabs (Color Palette, Expression Code, Animation Presets, Quick Comp Edit, Anchor & Align, Tools, Shortcutz, Info)
+  what:  rail = rounded squares with a tinted active slot and accent edge (shared by all tabs); header, cards (hairline border instead of the coloured left edge) and tiles/rows
+         (radius 12-14 px, press = scale 0.96 / 120 ms) restyled. Motion: tab change = fade + 6 px rise 180 ms, cards follow 24 ms apart (max 6), rail indicator 220 ms.
+         Only opacity + transform. data-reduce-motion="true" = no motion. Easy Layer, Curve and Animator Text keep the old panel look (html[data-mt-skip]).
+         Logic (renderTab, Bridge.call, host.jsx) is unchanged. Off switch: localStorage mtx.layoutV2 = "0".
+  files: css/mt-layout-v2.css (new, loaded last), js/mt-layout-v2.js (new: flag + current-tab marker), js/main.js (showTab calls MTLayoutV2.tab, v62), html/index.html (link + script).

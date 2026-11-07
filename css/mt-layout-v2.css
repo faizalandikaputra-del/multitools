@@ -1,0 +1,47 @@
+/* Multi Tool - mt-layout-v2.css (v1)  -  new layout for 8 tabs: rail, header, cards, tiles, motion.
+   Everything is scoped to html[data-layout="v2"] (set by js/mt-layout-v2.js; localStorage mtx.layoutV2 = "0" turns it off).
+   Panel parts (header, cards, tiles, entrance) skip the tabs that keep their old look: Easy Layer, Curve, Animator Text (html[data-mt-skip]).
+   Only colour tokens of the active theme are used (Glass / Material You keep working). Motion = opacity + transform only. Loaded last. */
+
+/* ---- rail: rounded squares, tinted active slot with an accent edge (all tabs: the rail is shared) ---- */
+html[data-layout="v2"] .tab,
+html[data-layout="v2"] .tab::before,
+html[data-layout="v2"] .tab-indicator { border-radius: 11px; }
+html[data-layout="v2"] .tab::before { opacity: 0.4; }
+html[data-layout="v2"] .tab-indicator { background: rgba(var(--accent-rgb), 0.2); box-shadow: inset 3px 0 0 var(--accent-strong); transition: transform 0.22s var(--smooth), width var(--sbx-dur, 0.2s) var(--sbx-ease, ease); }
+html[data-layout="v2"] .tab.is-active { color: var(--accent-strong); }
+html[data-layout="v2"] .tab:active { transform: scale(0.96); transition: transform 0.12s ease; }
+
+/* ---- header ---- */
+html[data-layout="v2"]:not([data-mt-skip]) .panel-head h1 { font-size: 1.05rem; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel-head p { font-size: 0.72rem; }
+
+/* ---- cards: neutral hairline instead of the coloured left edge ---- */
+html[data-layout="v2"]:not([data-mt-skip]) .ta-group { border: 1px solid var(--border-soft); border-radius: 14px; box-shadow: none; }
+html[data-layout="v2"]:not([data-mt-skip]) .ta-group:hover { box-shadow: none; border-color: var(--border); }
+
+/* ---- tiles and rows ---- */
+html[data-layout="v2"]:not([data-mt-skip]) .tool,
+html[data-layout="v2"]:not([data-mt-skip]) .qce-res-tile,
+html[data-layout="v2"]:not([data-mt-skip]) .shortcut-tile { border-radius: 12px; transition: transform 0.12s ease, background-color var(--dur-fast) ease; }
+html[data-layout="v2"]:not([data-mt-skip]) .preset-item,
+html[data-layout="v2"]:not([data-mt-skip]) .preset-folder { border-radius: 12px; }
+html[data-layout="v2"]:not([data-mt-skip]) .tool:active,
+html[data-layout="v2"]:not([data-mt-skip]) .qce-res-tile:active,
+html[data-layout="v2"]:not([data-mt-skip]) .shortcut-tile:active { transform: scale(0.96); }
+
+/* ---- motion: tab change = fade + 6 px rise (180 ms), cards follow 24 ms apart (max 6) ---- */
+@keyframes mt2-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering { animation: mt2-in 0.18s cubic-bezier(0.2, 0, 0, 1) backwards; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering .ta-group { animation: mt2-in 0.18s cubic-bezier(0.2, 0, 0, 1) backwards; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering .ta-group:nth-of-type(2) { animation-delay: 24ms; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering .ta-group:nth-of-type(3) { animation-delay: 48ms; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering .ta-group:nth-of-type(4) { animation-delay: 72ms; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering .ta-group:nth-of-type(5) { animation-delay: 96ms; }
+html[data-layout="v2"]:not([data-mt-skip]) .panel.is-entering .ta-group:nth-of-type(n+6) { animation-delay: 120ms; }
+:root[data-reduce-motion="true"][data-layout="v2"] .panel.is-entering,
+:root[data-reduce-motion="true"][data-layout="v2"] .panel.is-entering .ta-group { animation: none; }
+:root[data-reduce-motion="true"][data-layout="v2"] .tab:active,
+:root[data-reduce-motion="true"][data-layout="v2"] .tool:active,
+:root[data-reduce-motion="true"][data-layout="v2"] .qce-res-tile:active,
+:root[data-reduce-motion="true"][data-layout="v2"] .shortcut-tile:active { transform: none; }

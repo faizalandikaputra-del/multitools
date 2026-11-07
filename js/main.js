@@ -5204,6 +5204,7 @@
     FormState.watch(panel);
     scrollPending = null;
     currentTab = tabId;
+    if (window.MTLayoutV2) { try { window.MTLayoutV2.tab(tabId); } catch (eLv) { } }   // layout v2 scope: Easy Layer, Curve, Animator Text keep the old look (js/mt-layout-v2.js)
 
     var tabs = document.querySelectorAll(".tabs .tab");
     Array.prototype.forEach.call(tabs, function (t) {

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.131",
-    "changelog":  "- Update 1.8.131",
+    "latest_version":  "1.8.132",
+    "changelog":  "- Update 1.8.132",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -113,6 +113,10 @@
                   {
                       "path":  "css/mt-keyframes.css",
                       "sha256":  "104b1b37997560318f940263c0215ced68945fe41fc5ede21b6c1745a11e94dc"
+                  },
+                  {
+                      "path":  "css/mt-layout-v2.css",
+                      "sha256":  "8abefba56b98a84c6456752a0eabb463784df17155c9183a49b10b3823aa8415"
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
@@ -248,7 +252,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "e5af7737e5f07d09339e24441756261283ca3eb77bcc6d9471693cc240ba7c3c"
+                      "sha256":  "b9730a01f8b4f2b51efbed94211260df03fdd93cc483a5ede8e4af488ad4bc89"
                   },
                   {
                       "path":  "html/settings.html",
@@ -268,7 +272,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "17339811d40206b54f7ad012c73b481451cca8bfde1cde61ff3e49c9a2a2738f"
+                      "sha256":  "060832fcf5fb37025ec4d387126150bf1aaeafd3b34708bb4e21ce131ddf9fe9"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -333,6 +337,10 @@
                   {
                       "path":  "js/mt-island-presets.js",
                       "sha256":  "095b20e03785c59801ff5f5e30955ff1feb1c079f1e42958fb126bb7d64ecbd9"
+                  },
+                  {
+                      "path":  "js/mt-layout-v2.js",
+                      "sha256":  "c995dbf0770f44d41809982b1417d5a029fbe770e49ea43167841faced363674"
                   },
                   {
                       "path":  "js/mt-loader.js",
@@ -740,7 +748,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "16d50e6e96114a33da3cf48e348313055c9627a20374544d50022303903807e4"
+                      "sha256":  "73f4364201248735ece17602058b8410ab9057acd59c71b05031c716e62518dd"
                   }
               ]
 }

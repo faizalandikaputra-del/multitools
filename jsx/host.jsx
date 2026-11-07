@@ -9757,6 +9757,10 @@ function _ktCollect(comp) {
     for (i = 0; i < sel.length; i++) { _ktScan(sel[i], found, seen, mode === 0 ? "selected" : "all", 0); }
     if (found.length) { return found; }
   }
+  // Nothing selected on property level: fall back to every keyframe of the selected layers.
+  var lays = comp.selectedLayers;
+  found = []; seen = {};
+  for (i = 0; i < lays.length; i++) { _ktScan(lays[i], found, seen, "all", 0); }
   return found;
 }
 

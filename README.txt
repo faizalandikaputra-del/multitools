@@ -2357,3 +2357,10 @@ fix (Keyframe Timing, tab baru): atur keyframe terpilih (Auto / Start / End / St
     range primary container dengan handle ramping, playhead dan tombol pin warna tertiary, segmented button M3 (outline + centang), field filled, tombol Apply filled primary.
     Semua warna dari token --md-*, jadi Theme color, Light/Dark, dan Background color ikut.
   - Files: jsx/host.jsx, js/main.js (?v=58), css/mt-keyframes.css (baru, ?v=2), html/index.html.
+
+fixKT-layer (tab Keyframe Timing: klik layer ikut menyesuaikan keyframe)
+  - Masalah: memilih layer saja (tanpa keyframe / properti terpilih) tidak terbaca. KT_state mengembalikan count 0, range null, tombol "Apply to keyframes" mati.
+  - Penyebab: _ktCollect (jsx/host.jsx) hanya membaca comp.selectedProperties, tanpa fallback ke layer.
+  - Perbaikan: _ktCollect punya pass ketiga. Jika tidak ada keyframe / properti terpilih, dipakai semua keyframe dari semua properti layer terpilih (comp.selectedLayers,
+    mode "all"). Prioritas tetap: keyframe terpilih > properti terpilih > layer terpilih. Layer terkunci tetap dilewati di KT_apply.
+  - Files: jsx/host.jsx (hanya _ktCollect). js/main.js dan html tidak berubah.

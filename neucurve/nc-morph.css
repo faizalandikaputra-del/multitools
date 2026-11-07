@@ -32,7 +32,3 @@ html[data-reduce-motion="true"] .curve-svg > path[fill]:not([fill="none"]):not([
 @keyframes nc-glow-in { from { opacity: 0; } }
 .curve-svg.nc-morph-out > g.nc-glow { animation: nc-glow-in .3s ease-out both; }
 html[data-reduce-motion="true"] .curve-svg.nc-morph-out > g.nc-glow { animation: none; }
-
-/* v27: the default handle halo (.nc-hglow, hidden while morphing) fades back in with the glow instead of popping in when the mode switch ends. */
-.curve-svg.nc-morph-out .nc-hglow { animation: nc-glow-in .3s ease-out both; }
-html[data-reduce-motion="true"] .curve-svg.nc-morph-out .nc-hglow { animation: none; }

@@ -88,8 +88,9 @@
       hint: "",
       tools: [],
       custom: "curve"      // NeuCurve: full tool, hosted by the Curve module below
-    }
-  };   // "Info / About" tab removed (updates still show in the update banner + Settings > Updates)
+    },
+    "info": { title: "Info / About", hint: "", tools: [], info: true }
+  };
 
   // ---------------------------------------------------------
   // Helpers
@@ -540,36 +541,6 @@
     setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) { } }, 30);
   }
 
-  // Themed confirm with several buttons (replaces window.confirm). askChoice({ title, hint, choices: [{ label, danger }] }, function (index) { ... })
-  // The callback gets the index of the clicked choice; Cancel / Esc / click outside does nothing.
-  function askChoice(opts, done) {
-    var back = document.createElement("div"), box = document.createElement("div"), h = document.createElement("h3"), row = document.createElement("div"),
-        cancel = document.createElement("button"), shut = false;
-    back.className = "mt-dlg-back"; box.className = "mt-dlg"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
-    h.textContent = opts.title || ""; box.appendChild(h);
-    if (opts.hint) { var p = document.createElement("p"); p.textContent = opts.hint; box.appendChild(p); }
-    row.className = "mt-dlg-actions mt-dlg-actions--stack";
-    cancel.type = "button"; cancel.textContent = "Cancel";
-    function close(idx) {
-      if (shut) { return; } shut = true;
-      document.removeEventListener("keydown", onKey, true);
-      back.classList.remove("is-open");
-      setTimeout(function () { if (back.parentNode) { back.parentNode.removeChild(back); } }, 200);
-      if (idx >= 0) { done(idx); }
-    }
-    function onKey(e) { if (e.key === "Escape" || e.keyCode === 27) { e.stopPropagation(); e.preventDefault(); close(-1); } }
-    (opts.choices || []).forEach(function (c, i) {
-      var b = document.createElement("button"); b.type = "button"; b.className = "mt-dlg-ok" + (c.danger ? " mt-dlg-danger" : ""); b.textContent = c.label;
-      b.addEventListener("click", function () { close(i); }); row.appendChild(b);
-    });
-    row.appendChild(cancel); box.appendChild(row); back.appendChild(box); document.body.appendChild(back);
-    document.addEventListener("keydown", onKey, true);
-    cancel.addEventListener("click", function () { close(-1); });
-    back.addEventListener("mousedown", function (e) { if (e.target === back) { close(-1); } });
-    void back.offsetWidth; back.classList.add("is-open");
-    setTimeout(function () { try { cancel.focus(); } catch (e) { } }, 30);
-  }
-
   function toast(message, isError) {
     var el = $("toast");
     el.textContent = message;
@@ -582,7 +553,6 @@
   window.__MT = {
     TABS: TABS, buildTool: buildTool, toast: toast, runTool: runTool,
     toolImg: function (tabId, toolId) { return Store.get(imgKey(tabId, toolId)); },
-    runPreset: function (o, tileEl) { Shortcutz.runItem({ type: "ffx", folder: o.folder, file: o.file }, tileEl); },   // island chip -> same apply path as a pinned Shortcutz preset
     current: function () { return currentTab; },
     panel: function () { return panel; },
     // Builds a tab's content WITHOUT showing it (js/mt-island-boxes.js uses it once at start to rebuild the boxes that were left in the island).
@@ -763,12 +733,12 @@
   // different length lined up on it. Bars are <rect> (filled with the accent by css/mt-ae-icons.css), the
   // reference line is a <path class="align-edge">.
   var ALIGN_BUTTONS = [
-    { code: "left",    label: "Align Left",              icon: '<path class="align-edge" d="M4.5 3.5v17"/><rect x="8" y="6" width="12" height="4" rx="1.2"/><rect x="8" y="14" width="7" height="4" rx="1.2"/>' },
-    { code: "hcenter", label: "Align Horizontal Center", icon: '<path class="align-edge" d="M12 3.5v17"/><rect x="4.5" y="6" width="15" height="4" rx="1.2"/><rect x="7.5" y="14" width="9" height="4" rx="1.2"/>' },
-    { code: "right",   label: "Align Right",             icon: '<path class="align-edge" d="M19.5 3.5v17"/><rect x="4" y="6" width="12" height="4" rx="1.2"/><rect x="9" y="14" width="7" height="4" rx="1.2"/>' },
-    { code: "top",     label: "Align Top",               icon: '<path class="align-edge" d="M3.5 4.5h17"/><rect x="6" y="8" width="4" height="12" rx="1.2"/><rect x="14" y="8" width="4" height="7" rx="1.2"/>' },
-    { code: "vcenter", label: "Align Vertical Center",   icon: '<path class="align-edge" d="M3.5 12h17"/><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="7.5" width="4" height="9" rx="1.2"/>' },
-    { code: "bottom",  label: "Align Bottom",            icon: '<path class="align-edge" d="M3.5 19.5h17"/><rect x="6" y="4" width="4" height="12" rx="1.2"/><rect x="14" y="9" width="4" height="7" rx="1.2"/>' }
+    { code: "left",    label: "Align Left",           icon: '<path class="align-edge" d="M4 3v18"/><rect x="7" y="6" width="13" height="4.5" rx="0.8"/><rect x="7" y="13.5" width="8" height="4.5" rx="0.8"/>' },
+    { code: "hcenter", label: "Align Horizontal Center", icon: '<path class="align-edge" d="M12 3v18"/><rect x="4" y="6" width="16" height="4.5" rx="0.8"/><rect x="7" y="13.5" width="10" height="4.5" rx="0.8"/>' },
+    { code: "right",   label: "Align Right",          icon: '<path class="align-edge" d="M20 3v18"/><rect x="4" y="6" width="13" height="4.5" rx="0.8"/><rect x="9" y="13.5" width="8" height="4.5" rx="0.8"/>' },
+    { code: "top",     label: "Align Top",            icon: '<path class="align-edge" d="M3 4h18"/><rect x="6" y="7" width="4.5" height="13" rx="0.8"/><rect x="13.5" y="7" width="4.5" height="8" rx="0.8"/>' },
+    { code: "vcenter", label: "Align Vertical Center", icon: '<path class="align-edge" d="M3 12h18"/><rect x="6" y="4" width="4.5" height="16" rx="0.8"/><rect x="13.5" y="7" width="4.5" height="10" rx="0.8"/>' },
+    { code: "bottom",  label: "Align Bottom",         icon: '<path class="align-edge" d="M3 20h18"/><rect x="6" y="4" width="4.5" height="13" rx="0.8"/><rect x="13.5" y="9" width="4.5" height="8" rx="0.8"/>' }
   ];
 
   var FIT_BUTTONS = [
@@ -785,23 +755,29 @@
     { code: "v", label: "Flip Vertical",   tip: "Mirror the selected layer(s) top-to-bottom (inverts Scale Y)", icon: '<path d="M3 12h18" stroke-dasharray="2 2"/><path d="M8 9 12 5l4 4M8 15l4 4 4-4"/>' }
   ];
 
-  // One 16x16 frame; its 9 handle points (corners, edge middles, centre) sit exactly ON the frame at 4 / 12 / 20.
-  // Every point is a small dot, and the one this button sets gets a solid accent dot with a ring, so the icon
-  // reads as "this handle of the box" and the marker is always centred on the frame line (no half-cut squares).
+  // A faint bounding box with a small reference dot at each of the 9 handle positions, and a bold
+  // target-crosshair glyph over the one this button actually sets - reads at a glance as "anchor
+  // point alignment" instead of the old plain 3x3 dot grid.
   function _anchorIconSvg(activeRow, activeCol) {
-    // v5 icon: a clean layer frame with ONE marker, a crosshair target on the handle this button sets
-    // (solid dot + ring + 4 ticks). No other handles, so the position reads at a glance. Corners of the
-    // frame are rounded; the marker sits exactly on the frame line (6 / 12 / 18).
-    var P = [6, 12, 18], ax = P[activeCol], ay = P[activeRow], R = 3.6, T = 2.2;
+    var dots = "";
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 3; c++) {
+        if (r === activeRow && c === activeCol) { continue; } // the active spot gets the crosshair instead
+        var x = 4.5 + c * 7.5, y = 4.5 + r * 7.5;
+        dots += '<circle cx="' + x + '" cy="' + y + '" r="1" fill="currentColor" stroke="none" opacity="0.4"/>';
+      }
+    }
+    var ax = 4.5 + activeCol * 7.5, ay = 4.5 + activeRow * 7.5;
+    var crosshair =
+      '<circle cx="' + ax + '" cy="' + ay + '" r="3.4" stroke="var(--accent-strong)"/>' +
+      '<path d="M' + ax + ' ' + (ay - 6) + 'V' + (ay - 4.2) +
+        'M' + ax + ' ' + (ay + 4.2) + 'V' + (ay + 6) +
+        'M' + (ax - 6) + ' ' + ay + 'H' + (ax - 4.2) +
+        'M' + (ax + 4.2) + ' ' + ay + 'H' + (ax + 6) +
+        '" stroke="var(--accent-strong)"/>';
     return '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-      '<rect class="aa-box" x="6" y="6" width="12" height="12" rx="2.2"/>' +
-      '<g class="aa-on">' +
-        '<circle class="aa-bg" cx="' + ax + '" cy="' + ay + '" r="' + R + '"/>' +
-        '<path class="aa-tick" d="M' + ax + ' ' + (ay - R - T) + 'v' + T + 'M' + ax + ' ' + (ay + R) + 'v' + T +
-          'M' + (ax - R - T) + ' ' + ay + 'h' + T + 'M' + (ax + R) + ' ' + ay + 'h' + T + '"/>' +
-        '<circle class="aa-ring" cx="' + ax + '" cy="' + ay + '" r="' + R + '"/>' +
-        '<circle class="aa-dot" cx="' + ax + '" cy="' + ay + '" r="1.4"/>' +
-      '</g>' +
+      '<rect x="2.75" y="2.75" width="18.5" height="18.5" rx="2.5" opacity="0.5"/>' +
+      dots + crosshair +
       '</svg>';
   }
 
@@ -3955,12 +3931,6 @@
       Object.keys(all).forEach(function (k) { if (all[k] && all[k].hidden) { n++; } });
       return n;
     },
-    hideMany: function (keys) {      // hides built-in tiles in one write (Shortcutz > Delete all)
-      var all = this._load();
-      keys.forEach(function (k) { var e = all[k] || {}; e.hidden = true; all[k] = e; });
-      this._cache = all;
-      Store.set(this.KEY, JSON.stringify(all));
-    },
     clearAllHidden: function () {
       var all = this._load();
       Object.keys(all).forEach(function (k) {
@@ -4128,45 +4098,14 @@
       }
     },
 
-    // Delete all: mode "mine" = every tile in My Shortcuts (custom, pinned presets, pinned snippets); mode "all" = that plus every built-in tile
-    // (built-ins are fixed panel code, so they are hidden - the "Restore N hidden shortcuts" button brings them back).
-    clearAll: function (mode) {
-      var self = this, n = this.getItems().length;
-      this.saveItems([]);
-      if (mode === "all") {
-        var keys = [];
-        [["expr", this.EXPR_PRESETS], ["effect", this.EFFECT_PRESETS], ["util", this.UTIL_PRESETS]].forEach(function (g) {
-          (g[1] || []).forEach(function (d) { keys.push(g[0] + ":" + d.id); });
-        });
-        TileCustom.hideMany(keys);
-        n += keys.length;
-      }
-      if (currentTab === "shortcutz") { this.rerender(); } else { this.refresh(); }
-      toast(n ? "Deleted " + n + " shortcut" + (n === 1 ? "" : "s") + "." : "Nothing to delete.");
-      void self;
-    },
-    confirmClearAll: function () {
-      var self = this, mine = this.getItems().length;
-      askChoice({
-        title: "Delete all shortcuts?",
-        hint: "My Shortcuts (" + mine + ") are removed for good; the original presets and snippets they point to stay untouched. You can also hide the built-in shortcuts: they come back with \"Restore hidden shortcuts\".",
-        choices: [
-          { label: "Delete my shortcuts only", danger: true },
-          { label: "Delete everything, hide built-ins too", danger: true }
-        ]
-      }, function (i) { self.clearAll(i === 1 ? "all" : "mine"); });
-    },
-
     // Full re-render of the Shortcutz tab content in place (used after anything that changes a
     // BUILT-IN tile's look/behavior - custom icon, background, override, or hide/restore - since
     // those sections are otherwise only built once by render() and never touched by refresh()).
     rerender: function () {
       if (currentTab !== "shortcutz") { return; }
       var scrollTop = panel.scrollTop;
-      var built = this.render();
-      if (window.PanelRefinements && window.PanelRefinements.groupifyTaSections) { window.PanelRefinements.groupifyTaSections(built, { tabId: "shortcutz", openFirst: true }); }   // same capsule groups as the first render
       panel.innerHTML = "";
-      panel.appendChild(built);
+      panel.appendChild(this.render());
       panel.scrollTop = scrollTop;
     },
 
@@ -4833,7 +4772,6 @@
 
       wrap.innerHTML =
         '<button class="btn-apply shortcutz-add-btn" id="shortcutz-add-btn" type="button">+ Add Custom Shortcut</button>' +
-        '<button class="btn shortcutz-clear-btn" id="shortcutz-clear-all" type="button" title="Delete all shortcuts" aria-label="Delete all shortcuts">Delete all</button>' +
         '<div class="ta-section shortcutz-my-section">' +
           '<h2 class="ta-title">My Shortcuts</h2>' +
           '<p class="field-note">Pinned Animation Presets, pinned Code Expression snippets, and anything you add above. Drag a tile to reorder; the &times; removes it from Shortcutz only (the original preset/snippet is untouched). Right-click any tile - built-in or custom - to change its icon, set a background GIF/image, edit its function, or delete/hide it.</p>' +
@@ -4865,7 +4803,6 @@
       });
 
       wrap.querySelector("#shortcutz-add-btn").addEventListener("click", function () { self.openAddModal(); });
-      wrap.querySelector("#shortcutz-clear-all").addEventListener("click", function () { self.confirmClearAll(); });
 
       var restoreBtn = wrap.querySelector("#shortcutz-restore-hidden");
       if (restoreBtn) { restoreBtn.addEventListener("click", function () { TileCustom.clearAllHidden(); self.rerender(); }); }
@@ -5266,7 +5203,6 @@
     FormState.watch(panel);
     scrollPending = null;
     currentTab = tabId;
-    if (window.MTLayoutV2) { try { window.MTLayoutV2.tab(tabId); } catch (eLv) { } }   // layout v2 scope: Easy Layer, Curve, Animator Text keep the old look (js/mt-layout-v2.js)
 
     var tabs = document.querySelectorAll(".tabs .tab");
     Array.prototype.forEach.call(tabs, function (t) {
@@ -5332,8 +5268,7 @@
     if (window.PanelRefinements && window.PanelRefinements.groupifyTaSections) {
       window.PanelRefinements.groupifyTaSections(built, { tabId: tabId, openFirst: !(built.getAttribute && built.getAttribute("data-open-first") === "0") });
     }
-    if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }
-    if (window.MTLayoutV2) { try { window.MTLayoutV2.decorate(tabId, panel); } catch (eLd) { } }   // layout v2: "On the island" card on the Animation Presets tab (js/mt-layout-v2.js)   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
+    if (window.MTBoxes) { try { window.MTBoxes.afterRender(tabId, built); } catch (e) { } }   // boxes can be dragged onto the dynamic island (js/mt-island-boxes.js)
     FormState.restore(tabId, panel);
     queueScrollRestore(tabId);
 
@@ -6667,7 +6602,7 @@
         var fav = presetFavStore.isFav(folder, p.file);
         var last = presetLastStore.is(folder, p.file);
         var sup = supportResult(p.file);
-        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" draggable="true" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
+        return '<div class="preset-item' + (fav ? " is-favorite" : "") + (last ? " is-last-used" : "") + '" data-file="' + escapeHtml(p.file) + '" data-support="' + (sup ? sup.state : "") + '" data-search="' + escapeHtml((p.name + " " + p.file + " " + (folderName || "")).toLowerCase()) + '">' +
           (fav ? '<span class="preset-item-fav-badge" title="Favorite">' + ICON_STAR_SVG + "</span>" : "") +
           supportIconHtml(sup) +
           '<span class="preset-name" title="' + escapeHtml(p.file) + '">' + escapeHtml(p.name) + "</span>" +
@@ -7027,21 +6962,6 @@
           });
         }
       });
-
-      // Drag a preset tile onto the dynamic island (js/mt-island-presets.js): the island keeps a one-click Apply chip for it. The tile itself stays in the list.
-      listEl.addEventListener("dragstart", function (e) {
-        var itemEl = e.target && e.target.closest ? e.target.closest(".preset-item") : null;
-        if (!itemEl) { return; }
-        var nm = itemEl.querySelector(".preset-name");
-        try {
-          e.dataTransfer.setData("text/mt-preset", JSON.stringify({ folder: self.folder(), file: itemEl.getAttribute("data-file"), name: nm ? nm.textContent : itemEl.getAttribute("data-file") }));
-          e.dataTransfer.setData("text/plain", nm ? nm.textContent : "");
-          e.dataTransfer.effectAllowed = "copy";
-        } catch (er) { }
-        lpClear();
-        document.documentElement.classList.add("mt-dragging-tool");
-      });
-      listEl.addEventListener("dragend", function () { document.documentElement.classList.remove("mt-dragging-tool"); });
 
       // Long-press to favorite: mirrors listEl's own action-button click handler above,
       // but for a press-and-hold anywhere else on the card.

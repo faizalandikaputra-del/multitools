@@ -7,7 +7,7 @@
  *
  *   seed colour  -> primary / secondary / tertiary tonal palettes + tinted neutrals (the Pixel look: the whole UI
  *                   carries a soft tint of the seed hue, accents are the seed hue at tone 40 (light) / 80 (dark))
- *   Light / Dark -> localStorage "mtx.mdMode"   ("dark" default = nothing stored | "light" stored when picked)
+ *   Light / Dark -> localStorage "mtx.mdMode"   ("light" default | "dark")
  *   Background   -> localStorage "mtx.mdBg"     optional custom canvas colour (Settings > Background color while
  *                   Material You is on). Cards / text are derived from it, and the scheme (light or dark text)
  *                   follows its brightness. Empty = the palette's own tinted background.
@@ -182,7 +182,7 @@
   }
 
   // ---------------------------------------------------------------- runtime
-  var state = { seed: DEFAULT_SEED, bg: null, mode: "dark", keys: [] };
+  var state = { seed: DEFAULT_SEED, bg: null, mode: "light", keys: [] };
 
   function lsGet(k) { try { return root.localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, val) { try { if (val == null) { root.localStorage.removeItem(k); } else { root.localStorage.setItem(k, val); } } catch (e) { } }
@@ -223,14 +223,14 @@
     apply();
   }
   function setMode(m) {
-    state.mode = m === "light" ? "light" : "dark";
+    state.mode = m === "dark" ? "dark" : "light";
     state.bg = null; lsSet(K_BG, null);                       // an explicit Light/Dark choice resets the canvas to the palette's own
-    lsSet(K_MODE, state.mode === "light" ? "light" : null);   // dark is the default: only a Light pick is stored
+    lsSet(K_MODE, state.mode === "dark" ? "dark" : null);
     apply();
   }
 
   state.bg = (function () { var b = lsGet(K_BG); return parseHex(b) ? b : null; })();
-  state.mode = lsGet(K_MODE) === "light" ? "light" : "dark";   // default = Material You Dark
+  state.mode = lsGet(K_MODE) === "dark" ? "dark" : "light";
 
   var api = {
     build: build,
@@ -240,7 +240,7 @@
     getSeed: function () { return state.seed; },
     canvas: function () { return build(state.seed, state.bg, state.mode)["--md-bg"]; },
     isCustomBg: function () { return !!state.bg; },
-    reset: function () { state.bg = null; state.mode = "dark"; lsSet(K_BG, null); lsSet(K_MODE, null); apply(); }
+    reset: function () { state.bg = null; state.mode = "light"; lsSet(K_BG, null); lsSet(K_MODE, null); apply(); }
   };
   root.MTMaterial = api;
 

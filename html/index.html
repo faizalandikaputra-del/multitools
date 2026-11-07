@@ -9,7 +9,7 @@
   <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
   <script>/* Node shim */try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }</script>
   <script src="../js/mt-persist.js?v=3"></script>
-  <script>try { var r = document.documentElement, ms = localStorage.getItem("mtx.mdScheme"), gm0 = localStorage.getItem("mtx.glassMode"); r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdBg") ? (ms === "dark" || ms === "light" ? ms : "dark") : (localStorage.getItem("mtx.mdMode") === "light" ? "light" : "dark")); } catch (e) { }</script>
+  <script>try { if (localStorage.getItem("mtx.uiTheme") === "material") { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "dark" ? "dark" : "light"); } else { var gm = localStorage.getItem("mtx.glassMode"); if (gm === "light" || gm === "dark") { document.documentElement.setAttribute("data-theme", gm); } } } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=3">
   <link rel="stylesheet" href="../css/mt-boot.css?v=7">
@@ -60,7 +60,7 @@
   <!-- Auto update banner + Settings > Updates (js/mt-updater.js) -->
   <link rel="stylesheet" href="../css/mt-updater.css?v=1">
   <!-- Settings > Style picker (Glass / Material You) -->
-  <link rel="stylesheet" href="../css/mt-uitheme.css?v=8">
+  <link rel="stylesheet" href="../css/mt-uitheme.css?v=7">
   <!-- Layout clean-up (anchor/flip grids, wrapping text). Keep after mt-uitheme and before material-theme. -->
   <link rel="stylesheet" href="../css/mt-tidy.css?v=1">
   <link rel="stylesheet" href="../css/mt-ae-icons.css?v=1">
@@ -83,9 +83,9 @@
   <link rel="stylesheet" href="../css/mt-idle-roll.css?v=2">
   <!-- Dynamic island for a running Timer / Stopwatch (loads after mt-idle-adjust.css and mt-idle-roll.css) -->
   <link rel="stylesheet" href="../css/mt-island.css?v=17">
-  <link rel="stylesheet" href="../css/mt-island-boxes.css?v=3">
+  <link rel="stylesheet" href="../css/mt-island-boxes.css?v=2">
   <link rel="stylesheet" href="../css/mt-fxcopy.css?v=5">
-  <link rel="stylesheet" href="../css/mt-curve-top.css?v=3">
+  <link rel="stylesheet" href="../css/mt-curve-top.css?v=2">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
   <link rel="stylesheet" href="../css/material-theme.css?v=7">
   <!-- Keyframe Timing tab (Glass + Material You looks). Must stay AFTER material-theme.css. -->
@@ -98,12 +98,6 @@
   <link rel="stylesheet" href="../css/mt-preset-drop.css?v=1">
   <link rel="stylesheet" href="../css/mt-preset-support.css?v=2">
   <link rel="stylesheet" href="../css/mt-preset-actions.css?v=1">
-  <!-- Layout v2 (8 tabs; Easy Layer, Curve, Animator Text keep the old look). Must stay AFTER every other stylesheet. -->
-  <link rel="stylesheet" href="../css/mt-layout-v2.css?v=4">
-  <link rel="stylesheet" href="../css/mt-layout-v3.css?v=4">
-  <link rel="stylesheet" href="../css/mt-anchor-v4.css?v=5">
-  <link rel="stylesheet" href="../css/mt-palette-v4.css?v=2">
-  <link rel="stylesheet" href="../css/mt-tabs-v5.css?v=3">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -192,6 +186,9 @@
             <circle cx="4" cy="20" r="1.5" fill="currentColor" stroke="none"/>
             <circle cx="20" cy="4" r="1.5" fill="currentColor" stroke="none"/>
           </svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="info" aria-label="Info / About">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
         </button>
       </div>
 
@@ -753,7 +750,7 @@
   <script src="../js/tab-wheel.js?v=2"></script>
   <script src="../js/mt-away.js?v=3"></script>
   <script src="../js/mt-tooltip.js?v=7"></script>
-  <script src="../js/mt-select.js?v=5"></script>
+  <script src="../js/mt-select.js?v=1"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
   <!-- GIF encoder for Tools > Export GIF (needs Node.js; must load before main.js) -->
@@ -761,20 +758,17 @@
   <!-- Drag a label / idle number field left-right to change the value (after mt-spinbox.js) -->
   <script src="../js/mt-scrub.js?v=1"></script>
   <!-- Interface style switch (Glass / Material You). Needs main.js (window.mtSyncTheme) -->
-  <script src="../js/mt-material.js?v=4"></script>
+  <script src="../js/mt-material.js?v=3"></script>
   <script src="../js/mt-uitheme.js?v=10"></script>
   <script src="../js/sidebar-expand.js?v=1"></script>
   <script src="../js/mt-nav.js?v=2"></script>
   <script src="../js/mt-anim.js?v=1"></script>
   <script src="../js/mt-idle-roll.js?v=2"></script>
-  <script src="../js/mt-island.js?v=20"></script>
+  <script src="../js/mt-island.js?v=19"></script>
   <script src="../js/mt-island-boxes.js?v=2"></script>
-  <script src="../js/mt-island-presets.js?v=2"></script>
   <script src="../js/mt-fxcopy.js?v=5"></script>
   <script src="../js/mt-pro.js?v=3"></script>
-  <script src="../js/mt-layout-v2.js?v=2"></script>
-  <script src="../js/mt-layout-v3.js?v=2"></script>
-  <script src="../js/main.js?v=65"></script>
+  <script src="../js/main.js?v=61"></script>
   <script src="../js/mt-loader.js?v=1"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=2"></script>

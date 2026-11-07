@@ -55,7 +55,7 @@
     u: SV + '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>'
   };
   var bar, track, pill, pillIn, tb = {}, trackW = 0, slotW = IW, pillGeo = null, pillAnim = null, barKey = "", enT = 0, swT = 0, outing = [], lastEl = null;
-  var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, preN = 0, fPreWrap, fPre, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
+  var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
   // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
@@ -177,12 +177,10 @@
     fClear.addEventListener("click", function () { var a = favItems(), i; for (i = 0; i < a.length; i++) { window.MTPro.favRemove(a[i].tab, a[i].tool.id); } });
     fHead.appendChild(fCount); fHead.appendChild(fClear);
     fGrid = el("div", "mi-fgrid");
-    fEmpty = el("div", "mi-fempty", "<b>Nothing pinned yet</b><span>Drag a tool tile, a box or a preset here to pin it.</span>");
+    fEmpty = el("div", "mi-fempty", "<b>Nothing pinned yet</b><span>Drag a tool tile or a box here to pin it.</span>");
     fBoxWrap = el("div", "mi-boxwrap"); fBoxWrap.hidden = true;
     fBoxes = el("div", "mi-boxes ta"); fBoxWrap.appendChild(el("div", "mi-boxlabel", "Boxes")); fBoxWrap.appendChild(fBoxes);
-    fPreWrap = el("div", "mi-prewrap"); fPreWrap.hidden = true;                                   // preset chips (js/mt-island-presets.js fills fPre through MTIsland.presetHost())
-    fPre = el("div", "mi-pre"); fPreWrap.appendChild(el("div", "mi-boxlabel", "Presets")); fPreWrap.appendChild(fPre);
-    vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fPreWrap); vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
+    vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fEmpty); vF.appendChild(fBoxWrap);
     try { if (window.ResizeObserver) { var rq = 0; boxRO = new ResizeObserver(function () { if (!rq) { rq = requestAnimationFrame(function () { rq = 0; if (open && view === "fav") { applySize(true); } }); } }); boxRO.observe(fBoxes); } } catch (eR) { }
 
     vX = el("div", "mi-view mi-view-x");                       // Copy Effects (filled by js/mt-fxcopy.js through MTIsland.fxHost())
@@ -457,12 +455,12 @@
     });
     fPrev = ids;
     setTxt(fCount, items.length ? (items.length === 1 ? "1 pinned" : items.length + " pinned") : "Pin");
-    fHead.hidden = !items.length && (boxN + preN) > 0; fClear.hidden = !items.length; fEmpty.hidden = !!items.length || (boxN + preN) > 0; fGrid.hidden = !items.length;
+    fHead.hidden = !items.length && boxN > 0; fClear.hidden = !items.length; fEmpty.hidden = !!items.length || boxN > 0; fGrid.hidden = !items.length;
   }
   function onFavChange() { if (!root) { return; } fKey = "\u0001"; if (open && view === "fav") { paint(false); } else if (open) { applySize(); } }
 
   // a tool tile or a box dragged from the Tools tab: the capsule opens on Pin, the drop pins the tile (it stays where it was) / moves the box in
-  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-tool") { return "tool"; } if (t[i] === "text/mt-box") { return "box"; } if (t[i] === "text/mt-preset") { return "preset"; } } return ""; }
+  function dragKind(e) { var t = e.dataTransfer && e.dataTransfer.types, i; if (!t) { return ""; } for (i = 0; i < t.length; i++) { if (t[i] === "text/mt-tool") { return "tool"; } if (t[i] === "text/mt-box") { return "box"; } } return ""; }
   function isToolDrag(e) { return !!dragKind(e); }
   function bindDrop() {
     root.addEventListener("dragenter", function (e) {
@@ -480,12 +478,6 @@
         var bk = ""; try { bk = e.dataTransfer.getData("text/mt-box"); } catch (erb) { }
         document.documentElement.classList.remove("mt-dragging-tool");
         setTimeout(function () { var ok = window.MTBoxes && window.MTBoxes.pin(bk); if (ok) { try { window.__MT.toast("Pinned."); } catch (er3) { } } }, 0);   // after dragend, so the moved header cannot cancel it
-        return;
-      }
-      if (dragKind(e) === "preset") {
-        var pv = ""; try { pv = e.dataTransfer.getData("text/mt-preset"); } catch (erp) { }
-        document.documentElement.classList.remove("mt-dragging-tool");
-        setTimeout(function () { var r = window.MTIslandPresets ? window.MTIslandPresets.add(pv) : 0; try { window.__MT.toast(r === 1 ? "Preset pinned to the island." : (r === 2 ? "Already pinned." : "Could not pin that preset."), !r); } catch (erq) { } }, 0);
         return;
       }
       var v = ""; try { v = e.dataTransfer.getData("text/mt-tool"); } catch (er) { }
@@ -660,11 +652,6 @@
     fBoxWrap.hidden = !boxN; fKey = "\u0001";
     if (open && view === "fav") { paint(false); } else if (open) { applySize(true); }
   }
-  function presetsChanged(n) {
-    preN = n || 0; if (!root) { return; }
-    fPreWrap.hidden = !preN; fKey = "\u0001";
-    if (open && view === "fav") { paint(false); } else if (open) { applySize(true); }
-  }
   function fxDot(on) {
     on = !!on; if (on === fxOn) { return; }
     fxOn = on; if (!root) { return; }
@@ -674,6 +661,6 @@
   function fxChanged() { fxRev++; if (open && view === "fx") { applySize(true); } }
   function fxClose() { if (open && view === "fx") { setOpen(false); } }
   function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }
-  window.MTIsland = { fxHost: function () { build(); return vX; }, fxDot: fxDot, fxChanged: fxChanged, fxClose: fxClose, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, presetHost: function () { build(); return fPre; }, presetsChanged: presetsChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
+  window.MTIsland = { fxHost: function () { build(); return vX; }, fxDot: fxDot, fxChanged: fxChanged, fxClose: fxClose, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

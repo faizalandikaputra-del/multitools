@@ -2509,9 +2509,7 @@ button.settings-sidebar-footer {
 }
 
 .settings-language-dropdown__menu {
-  background: rgba(9, 9, 11, 0.9);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  backdrop-filter: blur(18px) saturate(1.2);
+  background: #1f1f24;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.045);

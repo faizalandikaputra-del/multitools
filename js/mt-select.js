@@ -85,10 +85,32 @@
     }
     return z;
   }
+  /* Which rect convention the host uses (k = 1: real px, k = zoom: rect divided by zoom) is decided on the real screen: for each
+     candidate the field's rect is turned into real px and elementFromPoint (same pixels as the mouse) must hit the field at its
+     centre and just inside its top / bottom edge. The old ratio test (rect.width / offsetWidth) picked k = zoom on hosts that
+     already return real px (UI scale > 100%): the menu then opened ~zoom times too low and too wide, covering the next field
+     (Animator Text > Based on / Direction). The ratio is only the tie-breaker now. */
+  function scaled(r, k) { return { left: r.left * k, right: r.right * k, top: r.top * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k }; }
+  function hits(el, x, y) {
+    var h = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
+    return !!h && (h === el || (el.contains && el.contains(h)));
+  }
+  function score(el, r) {
+    var cx = (r.left + r.right) / 2, n = 0, inset = Math.min(3, r.height / 3);
+    if (r.width <= 0 || r.height <= 0) { return -1; }
+    if (hits(el, cx, (r.top + r.bottom) / 2)) { n++; }
+    if (hits(el, cx, r.top + inset)) { n++; }
+    if (hits(el, cx, r.bottom - inset)) { n++; }
+    return n;
+  }
   function realRect(el, z) {
-    var r = el.getBoundingClientRect(), ow = el.offsetWidth || 0, ratio = ow ? r.width / ow : 1, k = 1;
-    if (z !== 1 && Math.abs(ratio - 1) < Math.abs(ratio - z)) { k = z; }
-    return { left: r.left * k, right: r.right * k, top: r.top * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
+    var r = el.getBoundingClientRect(), ow = el.offsetWidth || 0, ratio = ow ? r.width / ow : 1, k = 1, a, b;
+    if (z !== 1) {
+      k = Math.abs(ratio - 1) < Math.abs(ratio - z) ? z : 1;                 // tie-breaker
+      a = score(el, scaled(r, 1)); b = score(el, scaled(r, z));
+      if (a > b) { k = 1; } else if (b > a) { k = z; }
+    }
+    return scaled(r, k);
   }
 
   function position() {

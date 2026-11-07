@@ -74,3 +74,30 @@ input[type="color"].mt-cp-open { box-shadow: inset 0 0 0 1px rgba(var(--accent-r
 @keyframes mtOptIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
 :root[data-reduce-motion="true"] .mt-cp, :root[data-reduce-motion="true"] .mt-cp.is-closing { transition: opacity .1s linear; transform: none; }
 :root[data-reduce-motion="true"] .mt-cp.is-open > * { animation: none; }
+
+/* ======================= WHEEL STYLE (html[data-cp-style="wheel"], NeuCurve Settings only) =======================
+   Hue ring around a rounded saturation/brightness square. The square carries a soft glow in the colour being picked,
+   so the ring + glow read as one object. Solid surface (no blur). Same JS state / events as the slider layout. */
+html[data-cp-style="wheel"] .mt-cp {
+  width: 236px; padding: 12px; gap: 12px; border-radius: 14px; background: #1f1f24;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.mt-cp-wheel { position: relative; width: 212px; height: 212px; margin: 0 auto; outline: none; border-radius: 50%; user-select: none; }
+.mt-cp-wheel:focus-visible { box-shadow: 0 0 0 2px rgba(var(--p-rgb, var(--accent-rgb, 255, 255, 255)), .8); }
+.mt-cp-ring { position: absolute; left: 0; top: 0; width: 212px; height: 212px; cursor: pointer; }
+.mt-cp-wheel .mt-cp-sv {
+  --halo: rgba(255, 255, 255, .25);
+  position: absolute; left: 46px; top: 46px; width: 120px; height: 120px; border-radius: 16px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 8px 26px var(--halo);
+  transition: box-shadow .2s ease;
+}
+.mt-cp-wheel .mt-cp-hknob { width: 20px; height: 20px; margin: -10px 0 0 -10px; z-index: 2; }
+.mt-cp-wheel .mt-cp-knob { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+html[data-cp-style="wheel"] .mt-cp.is-open > .mt-cp-wheel { animation: mtWheelIn .5s cubic-bezier(.2, .9, .25, 1.08) backwards; animation-delay: 0ms; }
+html[data-cp-style="wheel"] .mt-cp.is-open > .mt-cp-wheel .mt-cp-sv { animation: mtWheelSv .5s cubic-bezier(.2, .9, .25, 1.08) backwards; }
+@keyframes mtWheelIn { from { opacity: 0; transform: rotate(-50deg) scale(.82); } to { opacity: 1; transform: none; } }
+@keyframes mtWheelSv { from { opacity: 0; transform: rotate(50deg) scale(.6); } to { opacity: 1; transform: none; } }
+html[data-cp-style="wheel"] .mt-cp-hex:focus, html[data-cp-style="wheel"] .mt-cp-rgb input:focus {
+  box-shadow: inset 0 0 0 1px rgba(var(--p-rgb, 255, 255, 255), .9), 0 0 0 3px rgba(var(--p-rgb, 255, 255, 255), .3);
+}
+:root[data-reduce-motion="true"] .mt-cp.is-open > .mt-cp-wheel, :root[data-reduce-motion="true"] .mt-cp.is-open > .mt-cp-wheel .mt-cp-sv { animation: none; }

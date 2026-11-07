@@ -2441,3 +2441,15 @@ fixSelect-zoom (dropdown salah posisi di tab Text Animation, band atas NeuCurve 
     zoom yang sama dengan panel (teks menu sama besar), dan menghitung semua ukuran dalam px nyata lalu dibagi zoom. Pada 100% tidak ada perubahan.
   - Band atas NeuCurve: css/mt-curve-top.css (v4) dan js/mt-curve-top.js dikembalikan: band solid berwarna backdrop NeuCurve sendiri, bukan transparan.
   - Files: js/mt-select.js, css/mt-curve-top.css, html/index.html, html/settings.html, neucurve/index.html, README.txt.
+
+fixColorWheel-saber-select (color wheel NeuCurve, tab Info dihapus, glass Settings NeuCurve dihapus, garis tepi, dropdown Text Animation)
+  - Color wheel NeuCurve: popup warna di Settings NeuCurve (neucurve/settings.html, <html data-cp-style="wheel">) sekarang ring hue + kotak saturation/brightness
+    dengan glow sewarna pilihan. js/mt-colorpicker.js (?v=2) dan css/mt-colorpicker.css (?v=2); mode wheel hanya aktif bila atribut itu ada, picker Multi Tool tidak berubah.
+  - Tab Info / About dihapus: tombol di html/index.html, entri TABS dan cabang renderInfo di js/main.js (fungsi renderInfo dibiarkan, tidak dipanggil).
+  - Glass Settings NeuCurve dihapus: backdrop-filter di menu dropdown (neucurve/nc-settings.css, nc-settings-dd.css) dan di popup warna (mode wheel solid).
+  - Garis tepi Auto Parent dan editor Expression Code: cincin conic yang berputar tidak linear di kotak lebar-pendek (merayap di tengah, ngebut dan loncat di sudut).
+    Diganti stroke SVG rounded-rect (pathLength 100) dengan komet 6 lapis: kecepatan konstan di keliling, ikut radius sudut. File baru js/mt-saber.js + css/mt-saber.css.
+    Off = animasi di-pause (lanjut dari posisi sama). Animations OFF = statis.
+  - Dropdown Based on / Direction (Animator Text): js/mt-select.js (?v=3) memilih konvensi rect (k=1 atau k=zoom) lewat elementFromPoint di layar nyata, bukan hanya rasio rect/offsetWidth.
+  - Files: js/mt-colorpicker.js, css/mt-colorpicker.css, js/mt-select.js, js/mt-saber.js (baru), css/mt-saber.css (baru), js/main.js, html/index.html, html/settings.html,
+    neucurve/settings.html, neucurve/index.html, neucurve/nc-settings.css, neucurve/nc-settings-dd.css, README.txt.

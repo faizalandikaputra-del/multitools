@@ -88,8 +88,7 @@
       hint: "",
       tools: [],
       custom: "curve"      // NeuCurve: full tool, hosted by the Curve module below
-    },
-    "info": { title: "Info / About", hint: "", tools: [], info: true }
+    }
   };
 
   // ---------------------------------------------------------
@@ -5224,9 +5223,7 @@
     Curve.hide();
 
     var built = null;
-    if (cfg.info) {
-      built = renderInfo();
-    } else if (cfg.custom === "anchorAlign") {
+    if (cfg.custom === "anchorAlign") {
       built = AnchorAlign.render();
     } else if (cfg.custom === "quickCompEdit") {
       built = QuickCompEdit.render();

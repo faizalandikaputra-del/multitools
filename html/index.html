@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="../css/mt-select.css?v=2">
   <link rel="stylesheet" href="../css/mt-dialog.css?v=1">
   <!-- Themed colour picker popover for every <input type="color"> (not the Custom Color wheel). Companion: js/mt-colorpicker.js -->
-  <link rel="stylesheet" href="../css/mt-colorpicker.css?v=1">
+  <link rel="stylesheet" href="../css/mt-colorpicker.css?v=2">
   <!-- Smooth two-part stepper for every <input type="number">. Companion: js/mt-spinbox.js -->
   <link rel="stylesheet" href="../css/mt-spinbox.css?v=1">
   <link rel="stylesheet" href="../css/mt-gif-export.css?v=2">
@@ -100,6 +100,7 @@
   <link rel="stylesheet" href="../css/mt-preset-support.css?v=2">
   <link rel="stylesheet" href="../css/mt-preset-actions.css?v=1">
   <link rel="stylesheet" href="../css/mt-presets-tidy.css?v=1">
+  <link rel="stylesheet" href="../css/mt-saber.css?v=1">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -188,9 +189,6 @@
             <circle cx="4" cy="20" r="1.5" fill="currentColor" stroke="none"/>
             <circle cx="20" cy="4" r="1.5" fill="currentColor" stroke="none"/>
           </svg>
-        </button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="info" aria-label="Info / About">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
         </button>
       </div>
 
@@ -752,8 +750,8 @@
   <script src="../js/tab-wheel.js?v=2"></script>
   <script src="../js/mt-away.js?v=3"></script>
   <script src="../js/mt-tooltip.js?v=7"></script>
-  <script src="../js/mt-select.js?v=2"></script>
-  <script src="../js/mt-colorpicker.js?v=1"></script>
+  <script src="../js/mt-select.js?v=3"></script>
+  <script src="../js/mt-colorpicker.js?v=2"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
   <!-- GIF encoder for Tools > Export GIF (needs Node.js; must load before main.js) -->
   <script src="../js/mt-gif.js?v=1"></script>
@@ -794,5 +792,6 @@
   <script src="../js/panel-refinements.js?v=11"></script>
   <script src="../js/mt-newtools.js?v=2"></script>
   <script src="../js/mt-backup.js?v=1"></script>
+  <script src="../js/mt-saber.js?v=1"></script>
 </body>
 </html>

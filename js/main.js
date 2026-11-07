@@ -2055,8 +2055,7 @@
             "</div>" +
             '<div class="cp-grid" id="palette-extracted-grid" hidden></div>' +
             '<p class="field-note" id="palette-extract-hint" hidden>Click + on a color to save it to Saved.</p>') +
-        "</div>" +
-        '<p class="field-note">Clicking any swatch copies its HEX to the clipboard. If a layer (Solid/Text) or a color property (like Fill Color) is selected in the Timeline, it\'s applied there too.</p>';
+        "</div>";
 
       var customGrid = wrap.querySelector("#palette-custom-grid");
       var catControls = wrap.querySelector("#palette-cat-controls");

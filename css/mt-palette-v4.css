@@ -1,0 +1,18 @@
+/* Multi Tool - mt-palette-v4.css (v1)  -  Color Palette: simpler + bigger wheel.
+   One column: big wheel on top (fills the width, max 240 px), one slim row with swatch + HEX + RGB, Save / Reset, Live Fill switch.
+   Loaded after mt-layout-v3.css. Square wheel via the existing .cw-dial::before padding-top trick (works in old CEF). */
+html:root:root[data-mt-tab="color-palette"] .cw { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; row-gap: 12px !important; column-gap: 0 !important; align-items: stretch !important; }
+html:root:root[data-mt-tab="color-palette"] .cw > * { grid-column: 1 !important; grid-row: auto !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-dial { width: 100% !important; height: auto !important; max-width: 240px !important; margin: 0 auto !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-dial canvas { width: 100% !important; height: 100% !important; }
+
+/* swatch + HEX + RGB on one slim row */
+html:root:root[data-mt-tab="color-palette"] .cw-bar { display: grid !important; grid-template-columns: 44px minmax(0, 1fr) !important; grid-template-rows: auto auto; column-gap: 12px !important; row-gap: 0 !important; align-items: center !important; align-self: auto !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-chip { grid-row: 1 / span 2; width: 44px !important; height: 44px !important; flex: none !important; border-radius: 12px !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-hex { grid-column: 2; align-self: end; width: 100% !important; height: auto !important; padding: 0 !important; font-size: 0.95rem !important; line-height: 1.25 !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-rgb { grid-column: 2; align-self: start; flex: none !important; font-size: 0.68rem !important; line-height: 1.3 !important; }
+
+html:root:root[data-mt-tab="color-palette"] .cw-actions { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 8px !important; margin: 0 !important; align-self: auto !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-actions .btn { height: 36px !important; min-height: 0 !important; margin: 0 !important; font-size: 0.74rem !important; }
+html:root:root[data-mt-tab="color-palette"] .cw .switch-row { margin-top: 2px !important; }
+html:root:root[data-mt-tab="color-palette"] .cw-bar { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }

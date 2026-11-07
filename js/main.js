@@ -764,12 +764,12 @@
   // different length lined up on it. Bars are <rect> (filled with the accent by css/mt-ae-icons.css), the
   // reference line is a <path class="align-edge">.
   var ALIGN_BUTTONS = [
-    { code: "left",    label: "Align Left",           icon: '<path class="align-edge" d="M4 3v18"/><rect x="7" y="6" width="13" height="4.5" rx="0.8"/><rect x="7" y="13.5" width="8" height="4.5" rx="0.8"/>' },
-    { code: "hcenter", label: "Align Horizontal Center", icon: '<path class="align-edge" d="M12 3v18"/><rect x="4" y="6" width="16" height="4.5" rx="0.8"/><rect x="7" y="13.5" width="10" height="4.5" rx="0.8"/>' },
-    { code: "right",   label: "Align Right",          icon: '<path class="align-edge" d="M20 3v18"/><rect x="4" y="6" width="13" height="4.5" rx="0.8"/><rect x="9" y="13.5" width="8" height="4.5" rx="0.8"/>' },
-    { code: "top",     label: "Align Top",            icon: '<path class="align-edge" d="M3 4h18"/><rect x="6" y="7" width="4.5" height="13" rx="0.8"/><rect x="13.5" y="7" width="4.5" height="8" rx="0.8"/>' },
-    { code: "vcenter", label: "Align Vertical Center", icon: '<path class="align-edge" d="M3 12h18"/><rect x="6" y="4" width="4.5" height="16" rx="0.8"/><rect x="13.5" y="7" width="4.5" height="10" rx="0.8"/>' },
-    { code: "bottom",  label: "Align Bottom",         icon: '<path class="align-edge" d="M3 20h18"/><rect x="6" y="4" width="4.5" height="13" rx="0.8"/><rect x="13.5" y="9" width="4.5" height="8" rx="0.8"/>' }
+    { code: "left",    label: "Align Left",              icon: '<path class="align-edge" d="M4.5 3.5v17"/><rect x="8" y="6" width="12" height="4" rx="1.2"/><rect x="8" y="14" width="7" height="4" rx="1.2"/>' },
+    { code: "hcenter", label: "Align Horizontal Center", icon: '<path class="align-edge" d="M12 3.5v17"/><rect x="4.5" y="6" width="15" height="4" rx="1.2"/><rect x="7.5" y="14" width="9" height="4" rx="1.2"/>' },
+    { code: "right",   label: "Align Right",             icon: '<path class="align-edge" d="M19.5 3.5v17"/><rect x="4" y="6" width="12" height="4" rx="1.2"/><rect x="9" y="14" width="7" height="4" rx="1.2"/>' },
+    { code: "top",     label: "Align Top",               icon: '<path class="align-edge" d="M3.5 4.5h17"/><rect x="6" y="8" width="4" height="12" rx="1.2"/><rect x="14" y="8" width="4" height="7" rx="1.2"/>' },
+    { code: "vcenter", label: "Align Vertical Center",   icon: '<path class="align-edge" d="M3.5 12h17"/><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="7.5" width="4" height="9" rx="1.2"/>' },
+    { code: "bottom",  label: "Align Bottom",            icon: '<path class="align-edge" d="M3.5 19.5h17"/><rect x="6" y="4" width="4" height="12" rx="1.2"/><rect x="14" y="9" width="4" height="7" rx="1.2"/>' }
   ];
 
   var FIT_BUTTONS = [
@@ -790,19 +790,19 @@
   // Every point is a small dot, and the one this button sets gets a solid accent dot with a ring, so the icon
   // reads as "this handle of the box" and the marker is always centred on the frame line (no half-cut squares).
   function _anchorIconSvg(activeRow, activeCol) {
-    var dots = "", P = [4, 12, 20];
-    for (var r = 0; r < 3; r++) {
-      for (var c = 0; c < 3; c++) {
-        if (r === activeRow && c === activeCol) { continue; }
-        dots += '<circle cx="' + P[c] + '" cy="' + P[r] + '" r="1" fill="currentColor" stroke="none" opacity="0.5"/>';
-      }
-    }
-    var ax = P[activeCol], ay = P[activeRow];
+    // v5 icon: a clean layer frame with ONE marker, a crosshair target on the handle this button sets
+    // (solid dot + ring + 4 ticks). No other handles, so the position reads at a glance. Corners of the
+    // frame are rounded; the marker sits exactly on the frame line (6 / 12 / 18).
+    var P = [6, 12, 18], ax = P[activeCol], ay = P[activeRow], R = 3.6, T = 2.2;
     return '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-      '<rect x="4" y="4" width="16" height="16" rx="2.5" stroke-width="1.5" opacity="0.55"/>' +
-      dots +
-      '<circle cx="' + ax + '" cy="' + ay + '" r="3.6" stroke="var(--accent-strong)" stroke-width="1.4" opacity="0.5"/>' +
-      '<circle cx="' + ax + '" cy="' + ay + '" r="2" fill="var(--accent-strong)" stroke="none"/>' +
+      '<rect class="aa-box" x="6" y="6" width="12" height="12" rx="2.2"/>' +
+      '<g class="aa-on">' +
+        '<circle class="aa-bg" cx="' + ax + '" cy="' + ay + '" r="' + R + '"/>' +
+        '<path class="aa-tick" d="M' + ax + ' ' + (ay - R - T) + 'v' + T + 'M' + ax + ' ' + (ay + R) + 'v' + T +
+          'M' + (ax - R - T) + ' ' + ay + 'h' + T + 'M' + (ax + R) + ' ' + ay + 'h' + T + '"/>' +
+        '<circle class="aa-ring" cx="' + ax + '" cy="' + ay + '" r="' + R + '"/>' +
+        '<circle class="aa-dot" cx="' + ax + '" cy="' + ay + '" r="1.4"/>' +
+      '</g>' +
       '</svg>';
   }
 

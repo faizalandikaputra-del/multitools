@@ -2462,3 +2462,30 @@ fix-layout-v3.1 (anchor icons, dropdown zoom, Shortcutz delete all):
      [Delete everything, hide built-ins too] (built-ins are fixed code, so they are hidden; "Restore N hidden shortcuts" brings them back). js/main.js: askChoice(),
      Shortcutz.clearAll / confirmClearAll, TileCustom.hideMany. Also: Shortcutz.rerender() now groups sections like the first render (before, hide/restore lost the layout).
   files: js/main.js (v65), js/mt-select.js (v2), js/mt-layout-v3.js (v2), css/mt-layout-v3.css (v4), html/index.html + settings.html (version bumps).
+
+fix-anchor-v4 (Anchor Point & Align: separate tiles + new icons):
+  what:  every anchor point and every align button is its own bordered tile with an 8 px gap (before: all buttons sat inside one shared dark pad).
+         New anchor icon: layer box + 8 small handles + the active handle as an accent target (ring + dot, ring grows on hover).
+         New align icons: accent reference line, rounded bars, same 24 px grid; bars turn accent on hover.
+  cause: n/a (design change; Bridge calls AA_setAnchor / AA_align and handlers are unchanged).
+  files: css/mt-anchor-v4.css (new, loaded after mt-layout-v3.css), js/main.js (_anchorIconSvg, ALIGN_BUTTONS), html/index.html (link).
+
+fix-anchor-v4.1: anchor tiles are now square (1:1, max grid width 252 px, padding-top trick so it works in old CEF). css/mt-anchor-v4.css v3, html/index.html.
+
+fix-anchor-v4.2: new anchor icon - clean layer frame + a single crosshair target (ring, dot, 4 ticks) on the handle the button sets; the other 8 handle dots are gone. js/main.js (_anchorIconSvg), css/mt-anchor-v4.css v4, html/index.html.
+
+fix-palette-dd (Color Palette wheel + Animator Text dropdown):
+  1) Color Palette: simpler single-column layout. Big square wheel (full width, max 240 px), one slim row (swatch + HEX + RGB), Save / Reset side by side, Live Fill switch.
+     files: css/mt-palette-v4.css (new, after mt-layout-v3.css), html/index.html.
+  2) Animator Text (and every <select> in the panel): the dropdown menu opened far below / beside the field (too wide, wrong place).
+     cause: the menu lived in <body> and was placed from getBoundingClientRect(); the zoom convention of the host CEF (".app { zoom: --ui-scale }") was guessed wrong.
+     fix:   the menu is now mounted inside .app (same zoomed space) and placed with offsetLeft / offsetTop (+ scroll of the ancestors), so no guessing. The Settings window
+            (no .app) keeps the old fixed-position path. Checked at UI scale 80 / 100 / 130 %: menu top-left within 2 px of the field's bottom-left.
+     files: js/mt-select.js (v3), html/index.html + settings.html (version bump).
+
+fix-dd-neucurve (NeuCurve library dropdown "Def / Sav" opened far from its field):
+  cause: NeuCurve is an iframe inside the zoomed panel. js/mt-select.js placed the menu from getBoundingClientRect() / innerHeight, but old CEF reports those
+         in a different unit than the layout units the menu is written in, so the menu landed ~100 px off.
+  fix:   inside a frame the menu is now measured with offsetLeft / offsetTop and written as position:absolute in <body> (same units, same zoom). Skipped (old rect path
+         kept) if an ancestor has a transform or CSS zoom. Test switch for a top-level page: <html data-mt-doc-pos>.
+  files: js/mt-select.js (v4: docOffsets / positionInDoc), html/index.html + html/settings.html + neucurve/index.html (version bump).

@@ -82,7 +82,7 @@
       t = t.parentNode;
     }
     if (onGraph) {
-      L.down = true; root.classList.add("nc-graph-drag");
+      L.down = true; root.classList.add("nc-graph-drag"); curStart();
       /* grabbing a handle / anchor keeps the Move cursor for the whole drag; the rest of the graph keeps the crosshair */
       var h = e.target;
       while (h && h !== document.body) {
@@ -91,7 +91,14 @@
       }
     }
   }, true);
-  function release() { if (L.down) { L.down = false; root.classList.remove("nc-graph-drag"); root.classList.remove("nc-handle-drag"); } }
+  /* Re-send the drag cursor ~every 50 ms (see nc-live.css): After Effects resets the native cursor during live apply and Chromium would not notice. */
+  var curTimer = 0, curFlip = false;
+  function curStart() {
+    if (curTimer) { return; }
+    curTimer = window.setInterval(function () { curFlip = !curFlip; root.classList.toggle("nc-cur-b", curFlip); }, 50);
+  }
+  function curStop() { if (curTimer) { window.clearInterval(curTimer); curTimer = 0; } curFlip = false; root.classList.remove("nc-cur-b"); }
+  function release() { if (L.down) { L.down = false; root.classList.remove("nc-graph-drag"); root.classList.remove("nc-handle-drag"); } curStop(); }
   window.addEventListener("mouseup", release, true);
   window.addEventListener("blur", release);
   document.addEventListener("mouseleave", function (e) { if (e.buttons === 0) { release(); } });

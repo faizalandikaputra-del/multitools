@@ -13,17 +13,12 @@
    ========================================================== */
 
 /* 1. Explicit I-beam: never depend on "auto" cursor resolution */
-/* fix (cursor shape): number fields are scrubbable (js/mt-scrub.js) while NOT focused, so they must show the
-   horizontal-arrows cursor there, not the I-beam. Only a focused / opt-out / read-only number field gets the I-beam. */
 textarea,
 .code-area,
 .text-input,
 input[type="text"],
 input[type="search"],
-input[type="number"]:focus,
-input[type="number"][data-no-scrub="true"],
-input[type="number"][data-native="true"],
-input[type="number"]:read-only,
+input[type="number"],
 input[type="password"],
 [contenteditable="true"] {
   cursor: text !important;
@@ -56,31 +51,4 @@ input[type="password"],
 :root[data-reduce-motion="true"] .saber-wrap::before,
 :root[data-reduce-motion="true"] .saber-wrap::after {
   animation: none !important;
-}
-
-/* 6. Navigation tabs: the hand cursor must stay until the pointer leaves the tab circle.
-      Cause (same CEF behaviour as 2. and 3.): on hover a tab starts a transform animation (css/hover-polish.css: scale 1.04).
-      That promotes the tab to a new compositor layer and repaints it under the resting pointer, and CEF drops the cursor back
-      to the arrow. Fix: the tab is ALWAYS its own layer (will-change keeps it promoted, so nothing is promoted or repainted
-      when the hover starts), and every part of the tab (icon, circle, name) names the hand cursor itself.
-      Nothing changes visually. While a tab is being dragged, style.css still wins with the grabbing cursor (!important). */
-.sidebar .tab {
-  -webkit-transform: translateZ(0); transform: translateZ(0);
-  will-change: transform;
-  -webkit-backface-visibility: hidden; backface-visibility: hidden;
-}
-.sidebar .tab,
-.sidebar .tab *,
-.sidebar .tab::before { cursor: pointer; }
-
-/* 7. Other tabs: same hand-cursor reset as the navigation tabs (point 6).
-      css/hover-polish.css animates these small controls with a transform on hover (translateY / scale), which promotes them to a new
-      layer and repaints them under the resting pointer, so CEF drops the hand back to the arrow. Fix: they stay on their own layer
-      all the time (nothing is promoted when the hover starts). Only small, few controls are listed on purpose: long lists (presets,
-      expressions, snippet cards) and tool tiles are NOT here - hundreds of permanent layers cost memory, and a layer would trap any
-      pop-up menu inside a tile under its neighbours. No visual change. */
-.btn, .btn-primary, .btn-ghost, .btn-apply,
-.icon-btn, .social-btn, .btn-round-add, .btn-round-alt, .flip-btn, .cat-tab-add,
-.swatch, .accent-swatch {
-  will-change: transform;
 }

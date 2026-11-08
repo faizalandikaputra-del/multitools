@@ -1,0 +1,21 @@
+/* NeuCurve - nc-cursor-fix.css : the hand cursor must stay while the pointer rests on a button (same fix as css/cursor-fix.css points 6 + 7).
+   Cause: on hover the button icons (nc-icons-pro.css: svg.ncp translateY / scale) and a few buttons (nc-polish.css, nc-extras.css, nc-grad.css,
+   nc-settings-pro.css) animate with a transform. The animation promotes them to a new layer and repaints them under the resting pointer, and
+   CEF drops the cursor back to the arrow. Fix: they stay on their own layer all the time, so nothing is promoted when the hover starts.
+   Loaded LAST in index.html and settings.html. Purely additive, no visual change. Delete this file + its <link> tags to undo. */
+
+/* every refined icon (inside buttons) */
+svg.ncp { will-change: transform; }
+
+/* buttons that move / scale on hover */
+.nc-x-gp,
+.fl-modes .nav-tab,
+.apply-btn,
+#nc-gsize,
+.settings-swatches button,
+.settings-profile-avatar-button { will-change: transform; }
+
+/* the hand is named on the button AND its icon, so the cursor never depends on which child the hit test lands on.
+   Disabled buttons keep their own (not-allowed / default) cursor. */
+button:not(:disabled):not(.disabled):not([aria-disabled="true"]),
+button:not(:disabled):not(.disabled):not([aria-disabled="true"]) > svg { cursor: pointer; }

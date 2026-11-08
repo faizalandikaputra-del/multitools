@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.156",
-    "changelog":  "- Update 1.8.156",
+    "latest_version":  "1.8.157",
+    "changelog":  "- Update 1.8.157",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -8,7 +8,7 @@
                   },
                   {
                       "path":  "css/cursor-fix.css",
-                      "sha256":  "5aac5b87691fe2c9bfa44b5f811764b3be53d3f93e28578ffdecdc50b49a96b5"
+                      "sha256":  "37831ddc422c557f2c39cdf2fbc5f25bc19f31d6864e00671a3e862bb8907ac8"
                   },
                   {
                       "path":  "css/fluid-polish.css",
@@ -160,7 +160,7 @@
                   },
                   {
                       "path":  "css/mt-scrub.css",
-                      "sha256":  "4c2dd0690184974e0686639f26bdf72f005aa13bcd3958e8b2fc89f431fbe51a"
+                      "sha256":  "c45f197d0ec648c934825ab9f7a0e1323c9ce556f8b113a26f39e49226203933"
                   },
                   {
                       "path":  "css/mt-select.css",
@@ -256,7 +256,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "9e71d6a6df38a57e344e61b5476389de541f246c5c522daece54fe4929ea5d7a"
+                      "sha256":  "37225c235053ed0541f7d81f08bdc79a8b9956ee8538600ad045e87c9411517e"
                   },
                   {
                       "path":  "html/settings.html",
@@ -448,7 +448,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "07262e9a05ec5d865c6b31afc4c252e4309890e451576b22a87b3430d23ed4c5"
+                      "sha256":  "34c9cc9e213a88d32e57339b30d448f948d1566810441cb3b9eef8374358e7d3"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -485,6 +485,10 @@
                   {
                       "path":  "neucurve/nc-cards.css",
                       "sha256":  "a4a29368caa7e9b23676bcff165a153af13dedc85d87e3ea2fab33f3ac6024ce"
+                  },
+                  {
+                      "path":  "neucurve/nc-cursor-fix.css",
+                      "sha256":  "e1463631f94b1bd671f9dd9ca6f30da50cd24a5b85c1773ff7c536d7f6cb986a"
                   },
                   {
                       "path":  "neucurve/nc-expr.css",
@@ -744,11 +748,11 @@
                   },
                   {
                       "path":  "neucurve/settings.html",
-                      "sha256":  "dc3a09632af6bc8c92b57f116e7408e1e60dfd5b3cf231c2e1992ccfcc3080aa"
+                      "sha256":  "42fb9062e4aefe6cb1b64f5aa05a79caa2166a38b3d9cb601a6a238e85f3eadd"
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "39f5a6ad2d1f26d68b45fc341a4fc0c70ceb17b57d49766547a8ab6d0baada9d"
+                      "sha256":  "f9617fba703b1a1c3ec76252856ba6ebe7d7e5e79e3c2fb31a076f85dca7903c"
                   }
               ]
 }

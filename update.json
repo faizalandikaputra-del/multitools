@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.155",
-    "changelog":  "- Update 1.8.155",
+    "latest_version":  "1.8.156",
+    "changelog":  "- Update 1.8.156",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -256,7 +256,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "119fcaacbe422041918f6a8a2fe50198c47beb69e12accd5ec26dc093bb0baf6"
+                      "sha256":  "9e71d6a6df38a57e344e61b5476389de541f246c5c522daece54fe4929ea5d7a"
                   },
                   {
                       "path":  "html/settings.html",
@@ -297,10 +297,6 @@
                   {
                       "path":  "js/mt-colorpicker.js",
                       "sha256":  "8cd013cf087260c723d52782a1b378a7a69f9ec0ac3b8c1a29b3c9fd05fa8033"
-                  },
-                  {
-                      "path":  "js/mt-cursor.js",
-                      "sha256":  "6728ab872b5e137e5b6f55a1c7b4c845b3faa830431245d6c6a6128a9e2d9f5e"
                   },
                   {
                       "path":  "js/mt-curve-top.js",

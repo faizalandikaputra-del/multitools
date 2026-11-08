@@ -1,14 +1,8 @@
-/* NeuCurve - nc-live.css : cursor lock while dragging on the graph (see nc-live.js). The LIVE status badge UI was removed.
-   While a drag runs, After Effects keeps resetting the native cursor to the arrow (every live apply / repaint of the host window), and
-   Chromium never re-sends a cursor whose type did not change. So the drag cursor is a tiny inline SVG, and nc-live.js flips between two
-   copies of it (html.nc-cur-b; the second differs by one almost transparent pixel) every ~50 ms: each flip makes the browser send the
-   cursor again, so a reset lasts one frame at most. Looks identical to a normal cross / move cursor. */
-html.nc-graph-drag, html.nc-graph-drag * { cursor: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Cpath d=%22M16 4V12M16 20V28M4 16H12M20 16H28%22 stroke=%22%23000%22 stroke-width=%224%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M16 4V12M16 20V28M4 16H12M20 16H28%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") 16 16, crosshair !important; }
-html.nc-graph-drag.nc-cur-b, html.nc-graph-drag.nc-cur-b * { cursor: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Crect x=%220%22 y=%220%22 width=%221%22 height=%221%22 fill=%22%23000%22 fill-opacity=%220.012%22/%3E%3Cpath d=%22M16 4V12M16 20V28M4 16H12M20 16H28%22 stroke=%22%23000%22 stroke-width=%224%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M16 4V12M16 20V28M4 16H12M20 16H28%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") 16 16, crosshair !important; }
+/* NeuCurve - nc-live.css : cursor lock while dragging on the graph (see nc-live.js). The LIVE status badge UI was removed. */
+html.nc-graph-drag, html.nc-graph-drag * { cursor: crosshair !important; }
 
 /* Handles and anchors: Move cursor on hover and for the whole drag (nc-live.js adds html.nc-handle-drag). */
 html body .shell.shell svg.curve-svg g.handles > g,
 html body .shell.shell svg.curve-svg g.handles > g *,
 html body .shell.shell svg.curve-svg circle { cursor: move !important; }
-html.nc-graph-drag.nc-handle-drag, html.nc-graph-drag.nc-handle-drag * { cursor: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Cpath d=%22M16 3L11 8H14.5V14.5H8V11L3 16L8 21V17.5H14.5V24H11L16 29L21 24H17.5V17.5H24V21L29 16L24 11V14.5H17.5V8H21Z%22 fill=%22%23fff%22 stroke=%22%23000%22 stroke-width=%221.2%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 16 16, move !important; }
-html.nc-graph-drag.nc-handle-drag.nc-cur-b, html.nc-graph-drag.nc-handle-drag.nc-cur-b * { cursor: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Crect x=%220%22 y=%220%22 width=%221%22 height=%221%22 fill=%22%23000%22 fill-opacity=%220.012%22/%3E%3Cpath d=%22M16 3L11 8H14.5V14.5H8V11L3 16L8 21V17.5H14.5V24H11L16 29L21 24H17.5V17.5H24V21L29 16L24 11V14.5H17.5V8H21Z%22 fill=%22%23fff%22 stroke=%22%23000%22 stroke-width=%221.2%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 16 16, move !important; }
+html.nc-graph-drag.nc-handle-drag, html.nc-graph-drag.nc-handle-drag * { cursor: move !important; }

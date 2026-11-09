@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.162",
-    "changelog":  "- Update 1.8.162",
+    "latest_version":  "1.8.163",
+    "changelog":  "- Update 1.8.163",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -200,7 +200,7 @@
                   },
                   {
                       "path":  "css/mt-tools-layout.css",
-                      "sha256":  "06dbb5bd17d4599249678a192d108bb52b15018256c64948185add72b3c841ff"
+                      "sha256":  "6c544554b25d966d36f17354ad604a43b130683d140bc337c5d602ce9018b0a0"
                   },
                   {
                       "path":  "css/mt-tooltip.css",
@@ -260,7 +260,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "b0b3c4d4c118d12d3858ea5ab3f5648e1727985b6a5cbc41c6e73212847ecbb4"
+                      "sha256":  "18a452930847dc4d5e6fae8c43518151a976c1dea3fa06d658e5f3c57ab1bd8e"
                   },
                   {
                       "path":  "html/settings.html",
@@ -404,7 +404,7 @@
                   },
                   {
                       "path":  "js/mt-tools-layout.js",
-                      "sha256":  "f756ca30d8b45413434b119eae92d1ae4a34dde01fb14e72017e02c7b8f3ebc0"
+                      "sha256":  "1c5ab5421481c0e633fb4828761ddb3f57512cab8b54a75410ad39663a9bbd69"
                   },
                   {
                       "path":  "js/mt-tooltip.js",

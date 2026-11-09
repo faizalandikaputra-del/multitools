@@ -86,7 +86,7 @@
     bar.setAttribute("data-sig", sig);
     bar.innerHTML = groups.map(function (g, i) {
       var name = esc(labelOf(g));
-      return '<button type="button" class="mtt-ico" role="tab" aria-selected="false" data-i="' + i + '" title="' + name + '" aria-label="' + name + '">' + iconOf(g) + "</button>";
+      return '<button type="button" class="mtt-ico" role="tab" aria-selected="false" data-i="' + i + '" style="--i:' + i + '" title="' + name + '" aria-label="' + name + '">' + iconOf(g) + "</button>";
     }).join("");
     bar.addEventListener("click", function (e) {
       var b = e.target; while (b && b !== bar && !(b.classList && b.classList.contains("mtt-ico"))) { b = b.parentNode; }
@@ -101,6 +101,10 @@
     });
     h.classList.add("mtt-host");
     h.insertBefore(bar, h.firstChild);
+    // Entrance: the icons pop in one after another (css .mtt-bar.is-fresh). The class is dropped afterwards so a held
+    // animation never overrides the hover / press transforms.
+    bar.classList.add("is-fresh");
+    setTimeout(function () { bar.classList.remove("is-fresh"); }, 420 + groups.length * 28);
     select(h, cur);
   }
 

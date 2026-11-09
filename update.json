@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.160",
-    "changelog":  "- Update 1.8.160",
+    "latest_version":  "1.8.161",
+    "changelog":  "- Update 1.8.161",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -24,7 +24,7 @@
                   },
                   {
                       "path":  "css/material-theme.css",
-                      "sha256":  "b9a3f280b8328d5ce6c434d1c6ce41e059d8e835021fae1ff60aabe38b56a951"
+                      "sha256":  "7bd84e4ffbecb4d7e3f63187072729ed2273b6c99a06b90768ff7c06def49202"
                   },
                   {
                       "path":  "css/mt-ae-icons.css",
@@ -212,7 +212,7 @@
                   },
                   {
                       "path":  "css/panel-refinements.css",
-                      "sha256":  "40f2a9438ee7cfd163ed6f712643b4816bc2c21c23fa1cb8b073957b9c3b02b7"
+                      "sha256":  "a1b7b4c405b10b398f51d5eefdd45b88d3016c3245d202a20df9ef317413ee96"
                   },
                   {
                       "path":  "css/panel-refresh.css",
@@ -256,7 +256,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "15dee2e8d5be725a5891b2caae6c553193f32eb11db0bef1ffb68b0a1ade24f6"
+                      "sha256":  "442d7dc2376500595316dae2731a9e93218181f99a8553bc936be375b637bdbc"
                   },
                   {
                       "path":  "html/settings.html",
@@ -276,7 +276,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "937d92f2880bee52e825fa3f11dd9c48d3030e8192f9eca780c19c8ae7a51ca5"
+                      "sha256":  "ca5079b6759cc8f63200efc15badded35472c443c422a6293954461160bb7090"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -412,7 +412,7 @@
                   },
                   {
                       "path":  "js/panel-refinements.js",
-                      "sha256":  "2ce7ecf028fcfa4fff2a9a846bf820e6d3935083e92d832d46e12282a9f221e6"
+                      "sha256":  "0f2a98ecaf09f16d9e3ac9e015bac7b0891ea65181aa40afdfbc22460dea4daf"
                   },
                   {
                       "path":  "js/panel-refresh.js",

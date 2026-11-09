@@ -3742,7 +3742,7 @@
       var MODES = [["auto", "Auto"], ["start", "Start"], ["end", "End"], ["stretch", "Stretch"]];
 
       wrap.innerHTML =
-        '<h2 class="ta-title">Keyframe Timing</h2>' +
+        '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l4 4-4 4-4-4z"/><path d="M17 12l4 4-4 4-4-4z"/></svg><span>Keyframe Timing</span></h2>' +
         '<div class="kt">' +
           '<div class="kt-seg" role="radiogroup" aria-label="Keyframe timing mode">' +
             MODES.map(function (m) {

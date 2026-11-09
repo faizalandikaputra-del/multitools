@@ -75,7 +75,11 @@
       head.type = "button";
       head.className = "ta-group-head";
       head.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      // Section icon (Tools tab): copied from the heading's own <svg> into its own span BEFORE the label, so code that
+      // rewrites the label text (mt-newtools.js setBody) never wipes it. Headings without an icon are unchanged.
+      var ico = heading ? heading.querySelector("svg") : null;
       head.innerHTML =
+        (ico ? '<span class="ta-group-ico" aria-hidden="true">' + ico.outerHTML + "</span>" : "") +
         '<span class="ta-group-label">' + escapeHtml(label) + "</span>" +
         '<svg class="ta-group-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 

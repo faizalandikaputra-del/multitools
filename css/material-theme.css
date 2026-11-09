@@ -628,3 +628,10 @@
   width: 1.9rem; height: 1.9rem; padding: 0.38rem; box-sizing: border-box; border-radius: 0.6rem;
   background: var(--md-primary-container); color: var(--md-on-primary-container);
 }
+
+/* ---------- Capsule header icons (Tools tab, Material You): tonal rounded-square container ---------- */
+:root[data-ui-theme="material"][data-theme] .ta-group-ico {
+  width: 1.8rem; height: 1.8rem; border-radius: 0.6rem;
+  background: var(--md-primary-container); color: var(--md-on-primary-container);
+}
+:root[data-ui-theme="material"][data-theme] .ta-group-ico svg { width: 1.1rem; height: 1.1rem; color: inherit; }

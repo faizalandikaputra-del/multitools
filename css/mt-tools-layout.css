@@ -1,0 +1,27 @@
+/* Multi Tool - mt-tools-layout.css : Tools tab "Compact" layout (js/mt-tools-layout.js). Load after material-theme.css. */
+.mtt-bar { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.7rem, 1fr)); gap: 0.4rem; padding: 0.1rem 0 0.7rem; }
+.mtt-ico {
+  position: relative; aspect-ratio: 1 / 1; min-width: 0; display: grid; place-items: center;
+  border-radius: 0.9rem; color: var(--text-dim); background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+  transition: background-color var(--dur-fast, 0.16s) ease, color var(--dur-fast, 0.16s) ease,
+              border-radius var(--dur, 0.24s) ease, transform var(--dur-micro, 0.12s) ease;
+}
+.mtt-ico svg { width: 1.3rem; height: 1.3rem; pointer-events: none; }
+.mtt-ico:hover { color: var(--text); background: var(--surface-hover); }
+.mtt-ico:active { transform: scale(0.92); }
+.mtt-ico:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mtt-ico[aria-selected="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; border-radius: 0.65rem; }
+:root[data-reduce-motion="true"] .mtt-ico { transition: none; }
+
+/* Compact: only the chosen card is shown; its header becomes a plain title (no chevron, not clickable) */
+:root[data-mtt-layout="compact"] .mtt-host > .ta-group { display: none; }
+:root[data-mtt-layout="compact"] .mtt-host > .ta-group.mtt-on { display: block; }
+.mtt-on > .ta-group-head { pointer-events: none; cursor: default; }
+.mtt-on > .ta-group-head .ta-group-chevron { display: none; }
+
+/* Material You: tonal buttons, selected = primary */
+:root[data-ui-theme="material"][data-theme] .mtt-ico { background: var(--md-secondary-container); color: var(--md-on-secondary-container); box-shadow: none; border-radius: 1rem; }
+:root[data-ui-theme="material"][data-theme] .mtt-ico:hover { background: var(--md-secondary-container); filter: brightness(1.06); }
+:root[data-ui-theme="material"][data-theme] .mtt-ico[aria-selected="true"] { background: var(--md-primary); color: var(--md-on-primary); border-radius: 0.7rem; }
+:root[data-ui-theme="material"][data-theme] .mtt-ico:focus-visible { outline-color: var(--md-primary); }

@@ -6,3 +6,12 @@
 .mtp-dens-pv--roomy { gap: 8px; padding: 0 2px; }
 .mtp-dens-pv--roomy b { transform: scale(0.82); }
 .mtp-blur-hint { display: flex; justify-content: space-between; font-size: 0.68rem; opacity: 0.6; padding: 0 2px; }
+
+/* Tools layout cards (Settings > Appearance). Normal = stacked bars, Compact = icon row + one bar. */
+.mtt-pv { display: grid; width: 56px; height: 38px; margin: 0 auto 6px; gap: 3px; align-content: center; justify-content: stretch; padding: 0 6px; }
+.mtt-pv b { display: block; background: rgba(var(--accent-rgb, 255, 255, 255), 0.55); border-radius: 2px; }
+.mtt-pv--normal { grid-template-columns: 1fr; }
+.mtt-pv--normal b { height: 7px; }
+.mtt-pv--compact { grid-template-columns: repeat(4, 1fr); }
+.mtt-pv--compact b { aspect-ratio: 1 / 1; border-radius: 3px; }
+.mtt-pv--compact b:last-child { grid-column: 1 / -1; aspect-ratio: auto; height: 9px; opacity: 0.6; }

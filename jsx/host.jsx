@@ -606,6 +606,49 @@ function setCompResolution(width, height) {
   }
 }
 
+// Remembered resolution (Quick Resolution Presets). The panel calls this about once a second with the pinned size
+// (0, 0 = "do not resize, only note which comps exist"). A comp is "new" when its id was not seen on an earlier call
+// of this session; only NEW comps with NO layers are resized, so pre-comps, "New Comp from Selection" and duplicates
+// are never touched. The first call (and any call after the project file path changes) only records existing comps.
+// Cheap on idle ticks: nothing is scanned unless the item count changed or the active comp is unseen.
+var _QCE_SEEN = null, _QCE_SEEN_N = -1, _QCE_SEEN_SIG = "";
+function QCE_autoRes(width, height) {
+  try {
+    var proj = app.project, n = proj.numItems, sig = "", i, it, act, fresh = [], done = [], seeding, actNew;
+    var w = Math.round(parseFloat(width)), h = Math.round(parseFloat(height));
+    try { sig = proj.file ? proj.file.fsName : ""; } catch (eSig) { sig = ""; }
+    seeding = (_QCE_SEEN === null || sig !== _QCE_SEEN_SIG);
+    if (seeding) { _QCE_SEEN = {}; _QCE_SEEN_SIG = sig; _QCE_SEEN_N = -1; }
+    act = proj.activeItem;
+    actNew = (act instanceof CompItem) && !_QCE_SEEN[act.id];
+    if (!seeding && n === _QCE_SEEN_N && !actNew) { return _ok("", { changed: [] }); }
+    _QCE_SEEN_N = n;
+    for (i = 1; i <= n; i++) {
+      it = proj.item(i);
+      if (!(it instanceof CompItem) || _QCE_SEEN[it.id]) { continue; }
+      _QCE_SEEN[it.id] = true;
+      if (!seeding) { fresh.push(it); }
+    }
+    if (fresh.length && isFinite(w) && isFinite(h) && w >= QCE_RES_MIN && h >= QCE_RES_MIN && w <= QCE_RES_MAX && h <= QCE_RES_MAX) {
+      app.beginUndoGroup("Apply Resolution Preset to New Comp");
+      try {
+        for (i = 0; i < fresh.length; i++) {
+          it = fresh[i];
+          if (it.numLayers === 0 && (it.width !== w || it.height !== h)) {
+            it.width = w; it.height = h;
+            done.push(it.name);
+          }
+        }
+      } finally {
+        app.endUndoGroup();
+      }
+    }
+    return _ok("", { changed: done });
+  } catch (e) {
+    return _err(e);
+  }
+}
+
 // executeCommand() is modal: the script pauses while the dialog is open, so the evalScript
 // callback (and the button's loading state) only finish after OK / Cancel. Whatever the user
 // changes in the dialog (OK) is ALREADY its own undoable AE action - AE opens and closes its

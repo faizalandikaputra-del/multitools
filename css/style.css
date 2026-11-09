@@ -1091,6 +1091,13 @@ input[type="color"] {
 .qce-res-tile.is-active .qce-res-shape { color: var(--on-accent); opacity: 1; }
 .qce-res-tile.is-active .qce-res-corner { display: none; }
 .qce-res-tile.is-active:hover { filter: brightness(1.08); }
+/* Ratio icon: one rounded outline at the true aspect ratio (see _qceResIconSvg in main.js). Selected = tinted fill. */
+.qce-res-ico { width: 1.5rem; height: 1.5rem; flex: none; overflow: visible; pointer-events: none; color: var(--text-faint); }
+.qce-res-ico rect { fill: none; stroke: currentColor; stroke-width: 1.8; transition: fill var(--dur-fast) ease; }
+.qce-res-tile.is-active .qce-res-ico { color: var(--on-accent); }
+.qce-res-tile.is-active .qce-res-ico rect { fill: currentColor; fill-opacity: 0.25; }
+/* "Keep for new comps" chip: full width so the longer label ("New comps use 1080 x 1920") fits on one line */
+.chip.qce-res-keep { display: block; width: 100%; max-width: none; margin-bottom: 0; }
 .qce-res-tile.is-loading { opacity: 0.55; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
 
 /* ---------- Save Frame: split buttons (main = auto-save, icon = change folder) ---------- */

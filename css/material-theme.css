@@ -349,6 +349,9 @@
 }
 :root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-label { color: var(--md-on-surface-variant); }
 :root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-shape { color: var(--md-on-surface-variant); opacity: 0.9; }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-ico { color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active .qce-res-ico { color: var(--md-on-primary); }
+:root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active .qce-res-ico rect { fill: currentColor; fill-opacity: 0.22; }
 :root[data-ui-theme="material"][data-theme] .qce-res-tile .qce-res-corner { border-color: var(--md-outline); }
 
 :root[data-ui-theme="material"][data-theme] .qce-res-tile.is-active {

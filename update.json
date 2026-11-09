@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.158",
-    "changelog":  "- Update 1.8.158",
+    "latest_version":  "1.8.159",
+    "changelog":  "- Update 1.8.159",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -24,7 +24,7 @@
                   },
                   {
                       "path":  "css/material-theme.css",
-                      "sha256":  "8b7c322e89907e065c3faf604763f924fca889596934d9a1de3159d299e34fbe"
+                      "sha256":  "53a657c89c4d793055d89361f7693ce26e42c335f9ec23f006430986d459f9ed"
                   },
                   {
                       "path":  "css/mt-ae-icons.css",
@@ -236,7 +236,7 @@
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "e4b5a3312f4fdd120dd909055916ccebc9bea91a26bae155716947acccd1fa07"
+                      "sha256":  "3df412a7f2b71cfd354f61f4aa470ff085bfc2892c4eca0eaf3f95f53a1372e9"
                   },
                   {
                       "path":  "css/tab-motion.css",
@@ -256,7 +256,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "9e71d6a6df38a57e344e61b5476389de541f246c5c522daece54fe4929ea5d7a"
+                      "sha256":  "275f76a58cb61ee060672aa0f3703e77ca3d4a9185ca4c838d1d3f631d8adf5e"
                   },
                   {
                       "path":  "html/settings.html",
@@ -276,7 +276,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "b8b5c558a13ae397aa0afbeb8de15d86ce351edc917167ae49bb0c6b4d5eaf22"
+                      "sha256":  "ccae418819f45bd12a258df400fa790f4f8f0a8b1bb39c749935906cb1027a3c"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -436,7 +436,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "1515c4ca4c20261d2f998f87bec40a683442ffb6befa93c1917d03ce43571727"
+                      "sha256":  "dc7d0447e397a38e69ab49735a2677428b84db8a439df84da6c711f67717e390"
                   },
                   {
                       "path":  "neucurve/assets/index.js",

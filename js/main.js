@@ -893,18 +893,60 @@
     { ratio: "1:1",  w: 1080, h: 1080, shape: "square",    name: "Square" },
     { ratio: "4:3",  w: 1440, h: 1080, shape: "landscape", name: "Standard" }
   ];
+  // Material-style outlined ratio icon (same idea as Material Symbols "crop_16_9" / "crop_portrait" / "crop_square"):
+  // one rounded rectangle at the preset's TRUE aspect ratio, longest side 20 in a 24 box (squares 16). No corner
+  // brackets, no extra marks. Colours come from CSS (currentColor), so Glass and Material You each theme it.
+  function _qceResIconSvg(p) {
+    var W, H;
+    if (p.w === p.h) { W = 16; H = 16; }
+    else if (p.w > p.h) { W = 20; H = 20 * p.h / p.w; }
+    else { H = 20; W = 20 * p.w / p.h; }
+    function n(v) { return Math.round(v * 100) / 100; }
+    return '<svg class="qce-res-ico" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<rect x="' + n((24 - W) / 2) + '" y="' + n((24 - H) / 2) + '" width="' + n(W) + '" height="' + n(H) + '" rx="3"/></svg>';
+  }
   function _qceResTileHtml(p) {
     return '<button type="button" class="qce-res-tile is-' + p.shape + '" data-w="' + p.w + '" data-h="' + p.h + '"' +
       ' title="' + p.name + ' \u2014 ' + p.w + '\u00d7' + p.h + 'px"' +
       ' aria-label="' + p.ratio + ', ' + p.name + ', ' + p.w + ' by ' + p.h + ' pixels">' +
-        '<span class="qce-res-corner qce-res-corner-tl"></span>' +
-        '<span class="qce-res-corner qce-res-corner-tr"></span>' +
-        '<span class="qce-res-corner qce-res-corner-bl"></span>' +
-        '<span class="qce-res-corner qce-res-corner-br"></span>' +
-        '<span class="qce-res-shape"></span>' +
+        _qceResIconSvg(p) +
         '<span class="qce-res-label">' + p.ratio + '</span>' +
       '</button>';
   }
+
+  // Remembered resolution preset. The last tile the user clicked is stored; a light poll asks After Effects
+  // (QCE_autoRes in host.jsx) whether a NEW, EMPTY comp appeared and, if so, gives it that size - so the
+  // New Composition dialog never has to be touched. Runs panel-wide (not only while Quick Comp Edit is open).
+  // Switch: "Keep for new comps" chip under the tiles (default on). Comps that already have layers
+  // (pre-comps, "New Comp from Selection", duplicates) are never resized.
+  var ResPin = {
+    KEY: "qceResPin", KEEP: "qceResKeep", POLL_MS: 900, busy: false,
+    get: function () {
+      var m = /^(\d+)x(\d+)$/.exec(Store.get(this.KEY) || "");
+      return m ? { w: parseInt(m[1], 10), h: parseInt(m[2], 10) } : null;
+    },
+    set: function (w, h) { Store.set(this.KEY, w + "x" + h); },
+    isOn: function () { return Store.get(this.KEEP) !== "0"; },
+    setOn: function (on) { if (on) { Store.remove(this.KEEP); } else { Store.set(this.KEEP, "0"); } },
+    // Always calls the host, even with nothing pinned or the switch off (size 0 = "only note new comps"), so a comp made
+    // while the switch was off is not resized later when it is switched on again.
+    tick: function () {
+      var self = this, pin = this.get(), apply = !!(pin && this.isOn());
+      if (self.busy || !cs) { return; }
+      self.busy = true;
+      Bridge.call("QCE_autoRes", apply ? [pin.w, pin.h] : [0, 0]).then(function (res) {
+        self.busy = false;
+        var list = res && res.ok && res.data && res.data.changed;
+        if (!list || !list.length) { return; }
+        toast(list.length === 1 ? '"' + list[0] + '" set to ' + pin.w + " \u00d7 " + pin.h + "."
+                                : list.length + " new comps set to " + pin.w + " \u00d7 " + pin.h + ".", false);
+      });
+    },
+    init: function () {
+      var self = this;
+      setInterval(function () { self.tick(); }, this.POLL_MS);
+    }
+  };
 
   var QuickCompEdit = {
     render: function () {
@@ -956,6 +998,7 @@
           '<div class="qce-res-row" id="qce-res-row">' +
             QCE_RES_PRESETS.map(_qceResTileHtml).join("") +
           '</div>' +
+          '<label class="chip chip-solo qce-res-keep"><input type="checkbox" id="qce-res-keep"><span id="qce-res-keep-text">Keep for new comps</span></label>' +
         '</div>' +
 
         '<div class="ta-section">' +
@@ -986,6 +1029,19 @@
       var resNoteEl = wrap.querySelector("#qce-res-current");
       var resTiles = wrap.querySelectorAll(".qce-res-tile");
       var resBusy = false;
+      var keepEl = wrap.querySelector("#qce-res-keep");
+      var keepTextEl = wrap.querySelector("#qce-res-keep-text");
+      // Shows which size new comps will get once a tile has been picked.
+      function updateKeepLabel() {
+        var pin = ResPin.get();
+        keepTextEl.textContent = (pin && ResPin.isOn()) ? "New comps use " + pin.w + " \u00d7 " + pin.h : "Keep for new comps";
+      }
+      keepEl.checked = ResPin.isOn();
+      updateKeepLabel();
+      keepEl.addEventListener("change", function () {
+        ResPin.setOn(keepEl.checked);
+        updateKeepLabel();
+      });
 
       function isBusy() { return actionsEl.classList.contains("is-loading"); }
 
@@ -1176,6 +1232,7 @@
             flashButtonResult(tile, !!(res && res.ok));
             toast((res && res.message) || (res && res.ok ? "Done." : "Something went wrong."), !(res && res.ok));
             if (res && res.ok && res.data) { updateResTiles(res.data.width, res.data.height); }
+            if (res && res.ok) { ResPin.set(w, h); updateKeepLabel(); }
             refresh();
             // Settle passes: AE can recentre 3D layers by itself a moment after the resize. Each pass checks every layer
             // against its target and corrects only what is off (see _qceSettlePass in host.jsx).
@@ -8186,6 +8243,7 @@
     Settings.init();
     Idle.init();
     ScrollForward.init();
+    ResPin.init();
 
     // Requirement 1: create ~/Documents/Multitool_CEP_Data/saved_expressions.json (if missing) and,
     // if this is a fresh/reinstalled panel with nothing in localStorage yet, restore from it right

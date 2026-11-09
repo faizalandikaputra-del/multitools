@@ -2787,7 +2787,7 @@
 
       wrap.innerHTML =
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Save Frame as Image</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 4.5-4.5 3.5 3.5 2.5-2.5L20 17"/></svg><span>Save Frame as Image</span></h2>' +
           '<p class="field-note">Saves the frame at the current time indicator as a still image, without asking. The folder icon sets where files go; you are asked once, then it is remembered.</p>' +
           '<div class="split-row">' + splitButton("png", "PNG") + splitButton("jpg", "JPG") + '</div>' +
           '<p class="field-note save-dir" id="save-dir"></p>' +
@@ -2796,7 +2796,7 @@
         // ===================== Export GIF =====================
         // Settings -> js/mt-gif.js (PNG sequence rendered by host.jsx TOOLS_gifRender, encoded to .gif in the panel).
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Export GIF</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4-2.5z"/></svg><span>Export GIF</span></h2>' +
           '<p class="field-note">Renders the active composition as an animated GIF. After Effects is busy while it renders, then the panel encodes the file. The save folder is shared with Save Frame.</p>' +
           '<span class="gif-label">Range</span>' +
           '<div class="chips">' +
@@ -2841,7 +2841,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Split Text</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12M12 5v7M5 17h5M14 17h5"/></svg><span>Split Text</span></h2>' +
           '<p class="field-note">Splits the selected text layer(s) into separate layers, one per character or word, keeping their on-screen position. The original layer is disabled, not deleted.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="split-mode" value="char" checked><span>Character</span></label>' +
@@ -2851,7 +2851,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Stagger / Sequence Layers</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M7 12h9M10 18h9"/></svg><span>Stagger / Sequence Layers</span></h2>' +
           '<p class="field-note">Offsets each selected layer\'s start time sequentially by a set number of frames.</p>' +
           '<div class="param">' +
             '<label for="stagger-offset">Offset (frames)</label>' +
@@ -2865,7 +2865,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Auto Morph</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="12" r="3.5"/><rect x="13" y="8.5" width="7" height="7" rx="2"/></svg><span>Auto Morph</span></h2>' +
           '<p class="field-note">Select two shape layers. The upper one morphs into the lower one: its path (and fill / stroke colors) are keyframed from the playhead. Paths with different vertex counts are matched automatically. Rectangle, Ellipse and Star shapes need Convert to Bezier Path first.</p>' +
           '<div class="param">' +
             '<label for="morph-frames">Duration (frames)</label>' +
@@ -2877,7 +2877,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Pre-compose</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><rect x="8" y="8" width="8" height="8" rx="2"/></svg><span>Pre-compose</span></h2>' +
           '<p class="field-note"><strong>Each Layer:</strong> wraps every selected layer into its own new composition, one by one. <strong>Together:</strong> wraps all selected layers into ONE composition. Each new comp is trimmed to the time span of its layers, like the native "Adjust composition duration" option.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="precomp-move-attrs" checked><span>Move all attributes</span></label>' +
           '<div class="btn-pair">' +
@@ -2887,7 +2887,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Unprecompose</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H7a3 3 0 0 0-3 3v2M4 15v2a3 3 0 0 0 3 3h2M15 20h2a3 3 0 0 0 3-3v-2M20 9V7a3 3 0 0 0-3-3h-2"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg><span>Unprecompose</span></h2>' +
           '<p class="field-note">Extracts every layer inside the selected pre-comp back into this composition, timed to where the pre-comp sat. The pre-comp layer is disabled, not deleted.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="unpre-mode" value="copy" checked><span>Copy Attributes</span></label>' +
@@ -2898,14 +2898,14 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Duplicate Precomp (Deep)</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="3"/><path d="M16 8V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h1"/></svg><span>Duplicate Precomp (Deep)</span></h2>' +
           '<p class="field-note">Duplicates each selected pre-comp layer as a new layer on the timeline (effects, masks and transform are copied too). The new layer uses its own copy of the pre-comp <strong>and every pre-comp inside it</strong>, so you can edit the inside without changing the original. The original layer and comps stay untouched. Footage is still shared. Expressions like comp("Name") still point to the old comp.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="dupdeep-folder" checked><span>Put copies in a "Deep Copies" folder</span></label>' +
           '<button class="btn-apply" data-tool-action="duplicate-precomp-deep">Duplicate Pre-comp Layer</button>' +
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Trim to Playhead</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v4l-3 3-3-3zM12 10v10M4 20h16"/></svg><span>Trim to Playhead</span></h2>' +
           '<p class="field-note">Trims the In or Out point of selected layers to the current time indicator.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="trim-edge" value="in" checked><span>In Point</span></label>' +
@@ -2915,7 +2915,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Optimize AE</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg><span>Optimize AE</span></h2>' +
           '<p class="field-note">Purges all memory and disk cache and can lower the active comp\'s preview resolution, so the project feels lighter. Purging may also clear the undo history, so save first.</p>' +
           '<div class="chips chips-3">' +
             '<label class="chip"><input type="radio" name="optimize-res" value="keep"><span>Keep</span></label>' +
@@ -2928,7 +2928,7 @@
         // ===================== Batch Rename + Smart Color Coder =====================
         // Backend: host.jsx TOOLS_batchRename(opts) and TOOLS_autoColorCode(scope).
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Batch Rename Layers</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M4 12h5M4 17h6"/><path d="m13 19 1-3.5 5-5 2.5 2.5-5 5z"/></svg><span>Batch Rename Layers</span></h2>' +
           '<p class="field-note">Renames the selected layers, top to bottom. Find &amp; Replace is literal text (no regex). Numbering replaces the name with Base + number.</p>' +
           '<div class="param"><label for="br-find">Find</label><input class="text-input" type="text" id="br-find" autocomplete="off" spellcheck="false"></div>' +
           '<div class="param"><label for="br-replace">Replace</label><input class="text-input" type="text" id="br-replace" autocomplete="off" spellcheck="false"></div>' +
@@ -2944,7 +2944,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Smart Layer Color Coder</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></svg><span>Smart Layer Color Coder</span></h2>' +
           '<p class="field-note">Sets the layer label color by type: Shape = Blue, Text = Yellow, Audio only = Green, Adjustment = Purple. Other layers are left as they are.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="acc-scope" value="selected" checked><span>Selected</span></label>' +
@@ -2956,7 +2956,7 @@
         // ===================== Randomize Transform =====================
         // Backend: host.jsx SHTZ_randomize(what, a, b). Static values only (layers whose property has keyframes are skipped).
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Randomize Transform</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/></svg><span>Randomize Transform</span></h2>' +
           '<p class="field-note" id="rnd-note">Offsets each selected layer by a random amount, so copies do not look identical. Layers whose value is animated are skipped.</p>' +
           '<div class="chips chips-4">' +
             '<label class="chip"><input type="radio" name="rnd-what" value="position" checked><span>Position</span></label>' +
@@ -2976,7 +2976,7 @@
         // card in this tab (e.g. Beat Marker below).
         '<div class="ta-section">' +
           '<div class="beat-card">' +
-            '<h3 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Project Cleaner &amp; Sanitizer</span></h3>' +
+            '<h3 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6 7l1 12.5A1.5 1.5 0 0 0 8.5 21h7a1.5 1.5 0 0 0 1.5-1.5L18 7"/></svg><span>Project Cleaner &amp; Sanitizer</span></h3>' +
             '<p class="beat-card-note">Check only what you want, then run. This edits the Project panel itself - save your project first.</p>' +
             '<label class="switch-row" for="pc-clean-unused"><span>Remove Unused Footage</span><input type="checkbox" id="pc-clean-unused" checked><span class="switch-track"></span></label>' +
             '<label class="switch-row" for="pc-clean-dupes"><span>Consolidate Duplicate Footage</span><input type="checkbox" id="pc-clean-dupes" checked><span class="switch-track"></span></label>' +

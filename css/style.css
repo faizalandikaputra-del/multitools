@@ -602,7 +602,7 @@ input[type="color"] {
 
 /* Beat Detector title row: same label styling as .ta-title, plus a small leading glyph. */
 .ta-title-icon { display: flex; align-items: center; gap: 0.4rem; }
-.ta-title-icon svg { width: 0.85rem; height: 0.85rem; color: var(--accent); flex: 0 0 auto; }
+.ta-title-icon svg { width: 1.05rem; height: 1.05rem; color: var(--accent); flex: 0 0 auto; }
 
 /* Beat Marker: boxed card matching the tool's reference mockup (centered icon+title, a red
    warning note, a Threshold field, a Layer/Comp marker-target switch, a full-width Generate

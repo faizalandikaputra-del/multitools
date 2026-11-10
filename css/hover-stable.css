@@ -1,0 +1,48 @@
+/* ==========================================================
+   Multi Tool - hover-stable.css   (load LAST)
+   Fixes the mouse cursor flickering between styles (pointer / arrow / ...) when the pointer rests on a button.
+   Cause (reproduced): many :hover rules lift the element with translateY(-1..-3px). The lifted box slides UP and away from a pointer
+   resting in the bottom 1-3px of the button, so the element stops being hovered, drops back, is hovered again ... over and over;
+   CEF re-resolves the cursor on every flip. (The press rules ":active { translateY(0) scale(.96) }" did the same on the way down.)
+   Fix: the same elements keep their hover look (tint, ring, glow, brightness) but no longer MOVE sideways/up. Small tiles and
+   buttons grow a little (scale never leaves the pointer: the box only gets bigger around it); wide cards stay put.
+   Each rule below is the original selector with its translate removed. Nothing else is changed.
+   ========================================================== */
+
+.align-btn:hover { transform: scale(1.03) !important; }
+.anchor-btn:active { transform: scale(.96) !important; }
+.anchor-btn:hover { transform: scale(1.03) !important; }
+.btn-apply:active { transform: scale(.97) !important; }
+.btn-apply:hover { transform: scale(1.03) !important; }
+.btn-ghost:active { transform: scale(.97) !important; }
+.btn-ghost:hover { transform: scale(1.03) !important; }
+.btn-primary:active { transform: scale(.97) !important; }
+.btn-primary:hover { transform: scale(1.03) !important; }
+.btn-round-add:hover { transform: scale(1.06) !important; }
+.btn-round-alt:hover { transform: scale(1.06) !important; }
+.btn:active { transform: scale(.97) !important; }
+.btn:hover { transform: scale(1.03) !important; }
+.cat-tab-add:hover { transform: scale(1.06) !important; }
+.cat-tab:hover { transform: scale(1.03) !important; }
+.ctx-item:hover { transform: none !important; }
+.expr-item:active { transform: scale(.985) !important; }
+.expr-item:hover { transform: none !important; }
+.fit-btn:hover { transform: scale(1.03) !important; }
+.flip-btn:hover { transform: scale(1.03) !important; }
+.icon-btn:hover { transform: scale(1.06) !important; }
+.label-swatch:hover { transform: scale(1.05) !important; }
+.preset-folder-header:hover { transform: none !important; }
+.preset-item:active { transform: scale(.985) !important; }
+.preset-item:hover { transform: none !important; }
+.qce-res-tile:active { transform: scale(.96) !important; }
+.qce-res-tile:hover { transform: scale(1.03) !important; }
+.shortcut-tile:active { transform: scale(.96) !important; }
+.snippet-card:active { transform: scale(.985) !important; }
+.snippet-card:hover { transform: none !important; }
+.social-btn:hover { transform: scale(1.06) !important; }
+.swatch:hover { transform: scale(1.06) !important; }
+.ta-group-head:hover { transform: none !important; }
+.tab:hover:not(.is-active):not([aria-selected="true"]) { transform: scale(1.04) !important; }
+.tool:active { transform: scale(.96) !important; }
+.tool:hover { transform: scale(1.07) !important; }
+.ui-theme-card:hover { transform: none !important; }

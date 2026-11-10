@@ -968,7 +968,7 @@
 
       wrap.innerHTML =
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Timing</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Timing</span></h2>' +
           '<div class="chips" id="qce-target-toggle">' +
             '<label class="chip"><input type="radio" name="qce-target" value="layer"><span>Selected Layer</span></label>' +
             '<label class="chip"><input type="radio" name="qce-target" value="comp"><span>Active Composition</span></label>' +
@@ -993,7 +993,7 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Quick Resolution Presets</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10V8h2M17 14v2h-2"/></svg><span>Quick Resolution Presets</span></h2>' +
           '<p class="field-note" id="qce-res-current">Loading current resolution&hellip;</p>' +
           '<div class="qce-res-row" id="qce-res-row">' +
             QCE_RES_PRESETS.map(_qceResTileHtml).join("") +
@@ -1002,13 +1002,13 @@
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Fit to Composition</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h8M8 12l2-2M8 12l2 2M16 12l-2-2M16 12l-2 2"/></svg><span>Fit to Composition</span></h2>' +
           '<p class="field-note">Adjusts Scale on the selected layer(s) without distorting their aspect ratio.</p>' +
           '<div class="fit-grid">' + fitBtns + '</div>' +
         '</div>' +
 
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Match Comp to Layer</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>Match Comp to Layer</span></h2>' +
           '<p class="field-note">Select a footage, image or pre-comp layer. FPS and Resolution are matched to its source. Duration matches the layer\'s trimmed in/out span (not the full source length): the layer is moved to the start of the comp and the work area is set to that span.</p>' +
           '<div class="chips chips-3">' +
             '<label class="chip"><input type="checkbox" id="qce-match-fps" checked><span>FPS</span></label>' +
@@ -4069,6 +4069,13 @@
   };
 
   var Shortcutz = {
+    // Section heading with its icon (copied into the capsule header / compact icon bar by PanelRefinements + mt-tools-layout.js).
+    SECTION_ICONS: {"Expression Shortcuts": "<path d=\"m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14\"/>", "Quick Effect Shortcuts": "<path d=\"M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z\"/>", "Utility Shortcuts": "<path d=\"M4 7h10M18 7h2M4 17h2M10 17h10\"/><circle cx=\"16\" cy=\"7\" r=\"2\"/><circle cx=\"8\" cy=\"17\" r=\"2\"/>", "My Shortcuts": "<path d=\"m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z\"/>"},
+    sectionTitleHtml: function (title) {
+      var p = this.SECTION_ICONS[title];
+      return p ? '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true">' + p + "</svg><span>" + title + "</span></h2>"
+               : '<h2 class="ta-title">' + title + "</h2>";
+    },
     KEY: "shortcutz.items",
     modalBuilt: false,
 
@@ -4788,7 +4795,7 @@
         var visible = defs.filter(function (d) { var ov = TileCustom.getFor(group + ":" + d.id); return !(ov && ov.hidden); });
         if (!visible.length) { return ""; }
         return '<div class="ta-section">' +
-          '<h2 class="ta-title">' + title + "</h2>" +
+          self.sectionTitleHtml(title) +
           (hint ? '<p class="field-note">' + hint + "</p>" : "") +
           '<div class="shortcut-list" data-sc-group="' + group + '">' +
             visible.map(function (d) { return self.builtinTileHtml(group, d); }).join("") +
@@ -4804,7 +4811,7 @@
       wrap.innerHTML =
         '<button class="btn-apply shortcutz-add-btn" id="shortcutz-add-btn" type="button">+ Add Custom Shortcut</button>' +
         '<div class="ta-section shortcutz-my-section">' +
-          '<h2 class="ta-title">My Shortcuts</h2>' +
+          self.sectionTitleHtml("My Shortcuts") +
           '<p class="field-note">Pinned presets and snippets, plus your own. Drag to reorder. &times; removes a tile from here only. Right-click a tile to edit, restyle, or hide it.</p>' +
           this.myGridHtml() +
           restoreHtml +

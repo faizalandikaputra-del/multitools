@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.163",
-    "changelog":  "- Update 1.8.163",
+    "latest_version":  "1.8.164",
+    "changelog":  "- Update 1.8.164",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -21,6 +21,10 @@
                   {
                       "path":  "css/hover-polish.css",
                       "sha256":  "5ad7cdb5a7bd21cc49ffb84eda9d584f4bbde464c529a1ddaac3b6251eb01d63"
+                  },
+                  {
+                      "path":  "css/hover-stable.css",
+                      "sha256":  "ea304b9d0c9e5c94a45704ccefb9ea6109fbf9158fa6ea2234a5fb3699328064"
                   },
                   {
                       "path":  "css/material-theme.css",
@@ -200,7 +204,7 @@
                   },
                   {
                       "path":  "css/mt-tools-layout.css",
-                      "sha256":  "6c544554b25d966d36f17354ad604a43b130683d140bc337c5d602ce9018b0a0"
+                      "sha256":  "aa902efdbecd29053d2950410e6c298ee857d273f219615d1f4c13d2b85eaaf8"
                   },
                   {
                       "path":  "css/mt-tooltip.css",
@@ -260,11 +264,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "18a452930847dc4d5e6fae8c43518151a976c1dea3fa06d658e5f3c57ab1bd8e"
+                      "sha256":  "3c4c708e939964640f1d1de678068f84f03b5b14e57cedcd86462a0afb5a0006"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "d1c1cdb98e112c26d07bf0f9aba0c93fdaea98e8288ac66267b5abbf8b3e3313"
+                      "sha256":  "acbeb24354c30927000ab5b354104bc4dd8112069f759df2a58a9b04d105bdb6"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -280,7 +284,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "ca5079b6759cc8f63200efc15badded35472c443c422a6293954461160bb7090"
+                      "sha256":  "e52e6aa7632f516c4aecb045628ca6c59d3997e5ddce93fb570aab4902038715"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -404,7 +408,7 @@
                   },
                   {
                       "path":  "js/mt-tools-layout.js",
-                      "sha256":  "1c5ab5421481c0e633fb4828761ddb3f57512cab8b54a75410ad39663a9bbd69"
+                      "sha256":  "4b56b571c4a2271c2f8ee65b87768064c40e88b8250b39f657d7f9690a39d167"
                   },
                   {
                       "path":  "js/mt-tooltip.js",

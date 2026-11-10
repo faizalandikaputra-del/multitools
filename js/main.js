@@ -1333,11 +1333,15 @@
   // ---------------------------------------------------------
   // Color Palette tab
   // ---------------------------------------------------------
-  var PALETTE_PRESET = [
-    "#F94144", "#F3722C", "#F8961E", "#F9C74F", "#90BE6D", "#43AA8B",
-    "#4D908E", "#577590", "#277DA1", "#8B6CF7", "#B983FF", "#E85D75",
-    "#FF6B9D", "#FFD166", "#06D6A0", "#118AB2", "#073B4C", "#EF476F",
-    "#1E1E21", "#2B2B31", "#9A9AA2", "#E7E7EA", "#FFFFFF", "#000000"
+  var CURATED_PALETTES = [
+    { name: "Sunset", colors: ["#F94144", "#F3722C", "#F8961E", "#F9C74F", "#FFD166", "#EF476F"] },
+    { name: "Ocean",  colors: ["#073B4C", "#118AB2", "#277DA1", "#4D908E", "#43AA8B", "#06D6A0"] },
+    { name: "Orchid", colors: ["#3C1642", "#8B6CF7", "#B983FF", "#E85D75", "#FF6B9D", "#FFC2D4"] },
+    { name: "Forest", colors: ["#1B4332", "#2D6A4F", "#40916C", "#74C69D", "#95D5B2", "#D8F3DC"] },
+    { name: "Desert", colors: ["#5E3023", "#895737", "#C08552", "#DAB49D", "#E8C1A0", "#F3E9DC"] },
+    { name: "Neon",   colors: ["#00F5D4", "#00BBF9", "#9B5DE5", "#F15BB5", "#FEE440", "#FF006E"] },
+    { name: "Retro",  colors: ["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51", "#FFE8D6"] },
+    { name: "Mono",   colors: ["#000000", "#1E1E21", "#2B2B31", "#9A9AA2", "#E7E7EA", "#FFFFFF"] }
   ];
 
   // ---------------------------------------------------------
@@ -2039,7 +2043,98 @@
     return { create: create };
   })();
 
+  // ---------------------------------------------------------
+  // Floating color wheel (Color Palette tab). The dial sits in a popover that opens from a round button pinned to a corner of
+  // the panel. Settings > Appearance > Color wheel chooses: mode (float / inline), corner and button size.
+  // Keys (localStorage, mtx.*): cpWheelMode "float" | "inline", cpWheelCorner "br" | "bl" | "tr" | "tl", cpWheelSize "s" | "m" | "l".
+  // js/mt-palette-pro.js owns the Settings controls and fires "mt-cw-settings" when one changes.
+  // ---------------------------------------------------------
+  var CPWheel = (function () {
+    var dock = null, offs = [], opened = false;
+    function pick(key, ok, def) { var v = Store.get(key); return ok.indexOf(v) !== -1 ? v : def; }
+    function mode() { return pick("cpWheelMode", ["float", "inline"], "float"); }
+    function corner() { return pick("cpWheelCorner", ["br", "bl", "tr", "tl"], "br"); }
+    function size() { return pick("cpWheelSize", ["s", "m", "l"], "m"); }
+    function hexToRgb3(hex) { var n = parseInt(hex.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+
+    function fitPop() {
+      var app = document.querySelector(".app");
+      if (dock && app) {
+        var fab = dock.querySelector(".cw-fab"), pop = dock.querySelector(".cw-pop");
+        pop.style.maxHeight = Math.max(160, app.clientHeight - fab.offsetHeight - 44) + "px";
+      }
+    }
+    function setOpen(on) {
+      if (!dock) { return; }
+      opened = !!on;
+      dock.classList.toggle("is-open", opened);
+      dock.querySelector(".cw-fab").setAttribute("aria-expanded", String(opened));
+      dock.querySelector(".cw-pop").setAttribute("aria-hidden", String(!opened));
+      if (opened) { fitPop(); }
+    }
+    function dockOff() {
+      offs.forEach(function (f) { try { f(); } catch (e) { } }); offs = [];
+      if (dock && dock.parentNode) { dock.parentNode.removeChild(dock); }
+      dock = null; opened = false;
+    }
+    function dockOn(wheelRoot) {
+      dockOff();
+      var app = document.querySelector(".app");
+      if (!app) { return; }
+      dock = document.createElement("div");
+      dock.className = "cw-dock";
+      dock.setAttribute("data-corner", corner()); dock.setAttribute("data-size", size());
+      dock.innerHTML =
+        '<div class="cw-pop" aria-hidden="true" role="dialog" aria-label="Color wheel"></div>' +
+        '<button type="button" class="cw-fab" aria-label="Color wheel" aria-expanded="false" title="Color wheel">' +
+          '<span class="cw-fab-ring"></span><span class="cw-fab-dot"></span></button>';
+      dock.querySelector(".cw-pop").appendChild(wheelRoot);
+      app.appendChild(dock);
+
+      var fab = dock.querySelector(".cw-fab"), dot = dock.querySelector(".cw-fab-dot");
+      function paintDot(hex) { dot.style.background = hex; dock.style.setProperty("--cw-cur-rgb", hexToRgb3(hex).join(",")); }
+      paintDot(ActivePalette.get());
+      offs.push(ActivePalette.subscribe(function (hex) { paintDot(hex); }));
+
+      fab.addEventListener("click", function () { setOpen(!opened); });
+      function onDown(e) {
+        if (!opened || dock.contains(e.target)) { return; }
+        if (e.target.closest && e.target.closest("[data-cp-openwheel], #palette-hero-chip")) { return; }
+        setOpen(false);
+      }
+      function onKey(e) { if (e.key === "Escape" && opened) { setOpen(false); fab.focus(); } }
+      function onResize() { if (opened) { fitPop(); } }
+      document.addEventListener("pointerdown", onDown, true);
+      document.addEventListener("keydown", onKey, true);
+      window.addEventListener("resize", onResize);
+      offs.push(function () {
+        document.removeEventListener("pointerdown", onDown, true);
+        document.removeEventListener("keydown", onKey, true);
+        window.removeEventListener("resize", onResize);
+      });
+    }
+    // The hero strip at the top of the tab: round chip (opens the wheel), HEX + RGB of the active color.
+    function bindHero(wrap) {
+      var hero = wrap.querySelector("#palette-hero");
+      if (!hero) { return; }
+      var chip = hero.querySelector("i"), hexEl = hero.querySelector(".cp-hero-hex"), rgbEl = hero.querySelector(".cp-hero-rgb");
+      function paint(hex) {
+        var c = hexToRgb3(hex);
+        chip.style.background = hex; hexEl.textContent = hex; rgbEl.textContent = "rgb(" + c[0] + ", " + c[1] + ", " + c[2] + ")";
+        hero.style.setProperty("--cur", hex); hero.style.setProperty("--cur-rgb", c.join(","));
+      }
+      paint(ActivePalette.get());
+      offs.push(ActivePalette.subscribe(paint));
+      hero.querySelector("#palette-hero-chip").addEventListener("click", function () { setOpen(!opened); });
+    }
+    return { mode: mode, corner: corner, size: size, dockOn: dockOn, dockOff: dockOff, bindHero: bindHero };
+  })();
+
   var colorCatStore = CategoryStore("customColorCats");
+
+  document.addEventListener("mt-cw-settings", function () {   // Settings > Appearance > Color wheel changed: rebuild the tab
+    if (currentTab === "color-palette" && typeof renderTab === "function") { renderTab("color-palette"); }
+  });
 
   var ColorPalette = {
     isValidHex: function (v) { return /^#?[0-9a-f]{6}$/i.test(v || ""); },
@@ -2067,7 +2162,19 @@
       try { legacy = JSON.parse(Store.get("customColors") || "null"); } catch (e) { legacy = null; }
       var catData = colorCatStore.ensure("Custom Colors", legacy || []);
 
-      var presetHtml = PALETTE_PRESET.map(function (hex) { return self.swatchHtml(hex, null); }).join("");
+      function inkOf(hex) {   // readable label color on top of a swatch
+        var n = parseInt(hex.replace("#", ""), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, bl = n & 255;
+        return (0.299 * r + 0.587 * g + 0.114 * bl) > 150 ? "dark" : "light";
+      }
+      function chipHtml(hex) {
+        var sel = (hex.toUpperCase() === ActivePalette.get()) ? " is-selected" : "";
+        return '<button class="swatch cp-chip' + sel + '" data-hex="' + hex + '" data-ink="' + inkOf(hex) + '" style="background:' + hex + '" title="' + hex + '" aria-label="' + hex + '">' +
+          '<span class="cp-chip-hex">' + hex.slice(1) + "</span></button>";
+      }
+      var presetHtml = CURATED_PALETTES.map(function (pal) {
+        return '<div class="cp-pal"><span class="cp-pal-name">' + pal.name + '</span><div class="cp-strip">' + pal.colors.map(chipHtml).join("") + "</div></div>";
+      }).join("");
+      var floatMode = CPWheel.mode() === "float";
       var labelHtml = LAYER_LABELS.map(function (l) {
         return '<button class="label-swatch" data-label="' + l.index + '" style="background:' + l.hex + '" title="' + l.name + '" aria-label="' + l.name + '">' +
           '<span class="label-name">' + l.name + "</span></button>";
@@ -2084,16 +2191,19 @@
         return '<div class="cp-pane" data-cp-pane="' + key + '"' + (key === activeTab ? "" : " hidden") + ">" + inner + "</div>";
       }
 
+      wrap.className = "ta cp-root";
       wrap.innerHTML =
-        '<div id="palette-wheel-mount"></div>' +
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Layer Label Colors</h2>' +
-          '<div class="label-grid">' + labelHtml + "</div>" +
-          '<p class="field-note">Click a color to set it as the Layer Label of the currently selected layer(s) in After Effects.</p>' +
-        "</div>" +
+        (floatMode
+          ? '<div class="cp-hero" id="palette-hero">' +
+              '<button type="button" class="cp-hero-chip" id="palette-hero-chip" title="Open the color wheel" aria-label="Open the color wheel"><i></i></button>' +
+              '<div class="cp-hero-text"><b class="cp-hero-hex"></b><span class="cp-hero-rgb"></span></div>' +
+              '<button type="button" class="cp-hero-btn" data-cp-copy title="Copy HEX" aria-label="Copy HEX">' + ICON_COPY_SVG + '</button>' +
+              '<button type="button" class="cp-hero-btn" data-cp-addcur title="Save this color" aria-label="Save this color"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>' +
+            '</div>'
+          : '<div id="palette-wheel-mount"></div>') +
         '<div class="cp-card">' +
-          '<div class="cp-seg" role="tablist" aria-label="Swatch source">' + segBtn("cur", "Curated") + segBtn("sav", "Saved") + segBtn("img", "From image") + "</div>" +
-          pane("cur", '<div class="cp-grid">' + presetHtml + "</div>") +
+          '<div class="cp-seg" role="tablist" aria-label="Swatch source"><i class="cp-seg-ind" aria-hidden="true"></i>' + segBtn("cur", "Curated") + segBtn("sav", "Saved") + segBtn("img", "From image") + "</div>" +
+          pane("cur", '<div class="cp-pals">' + presetHtml + "</div>") +
           pane("sav", '<div id="palette-cat-controls"></div><div class="cp-grid" id="palette-custom-grid"></div>') +
           pane("img",
             '<div class="cp-drop">' +
@@ -2103,6 +2213,11 @@
             "</div>" +
             '<div class="cp-grid" id="palette-extracted-grid" hidden></div>' +
             '<p class="field-note" id="palette-extract-hint" hidden>Click + on a color to save it to Saved.</p>') +
+        "</div>" +
+        '<div class="ta-section">' +
+          '<h2 class="ta-title">Layer Label Colors</h2>' +
+          '<div class="label-grid">' + labelHtml + "</div>" +
+          '<p class="field-note">Click a color to set it as the Layer Label of the currently selected layer(s) in After Effects.</p>' +
         "</div>";
 
       var customGrid = wrap.querySelector("#palette-custom-grid");
@@ -2116,7 +2231,14 @@
       }
 
       // Dial: picks drive window.activePaletteColor + live Fill updates; Save appends to the active category.
-      wrap.querySelector("#palette-wheel-mount").appendChild(ColorWheel.create({ onSave: saveColor }));
+      // "float" (default): the dial lives in a round floating button in a corner of the panel (Settings > Appearance > Color wheel).
+      // "inline": the dial card sits at the top of the tab, like before.
+      if (floatMode) {
+        CPWheel.dockOn(ColorWheel.create({ onSave: saveColor }));
+        CPWheel.bindHero(wrap);
+      } else {
+        wrap.querySelector("#palette-wheel-mount").appendChild(ColorWheel.create({ onSave: saveColor }));
+      }
 
       // ---- Swatches card: source tabs ----
       wrap.querySelector(".cp-seg").addEventListener("click", function (e) {
@@ -2128,9 +2250,23 @@
           x.classList.toggle("is-active", on);
           x.setAttribute("aria-selected", String(on));
         });
-        Array.prototype.forEach.call(wrap.querySelectorAll("[data-cp-pane]"), function (pn) { pn.hidden = pn.getAttribute("data-cp-pane") !== key; });
+        Array.prototype.forEach.call(wrap.querySelectorAll("[data-cp-pane]"), function (pn) {
+          var show = pn.getAttribute("data-cp-pane") === key;
+          pn.hidden = !show;
+          pn.classList.remove("cp-pane-in");
+          if (show) { void pn.offsetWidth; pn.classList.add("cp-pane-in"); }
+        });
+        closeMenu(true);
+        moveSegInd();
         Store.set("cpSwatchTab", key);
       });
+      function moveSegInd() {
+        var ind = wrap.querySelector(".cp-seg-ind"), btns = wrap.querySelectorAll("[data-cp-tab]"), i, idx = 0;
+        if (!ind) { return; }
+        for (i = 0; i < btns.length; i++) { if (btns[i].classList.contains("is-active")) { idx = i; } }
+        ind.style.transform = "translateX(" + (idx * 100) + "%)";
+      }
+      moveSegInd();
 
       function renderCustomGrid() {
         var cat = colorCatStore.activeCat(catData);
@@ -2164,21 +2300,81 @@
         }
       }
 
-      function handleSwatchClick(hex) {
+      // ---- Swatch menu: click a color, pick where it goes (Shape Fill / Text Fill / Shape Stroke / Text Stroke) ----
+      var MENU_ITEMS = [
+        { kind: "shapeFill",   label: "Shape Fill",   icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" class="f"/></svg>' },
+        { kind: "textFill",    label: "Text Fill",    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6" class="s"/></svg>' },
+        { kind: "shapeStroke", label: "Shape Stroke", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4" class="s"/></svg>' },
+        { kind: "textStroke",  label: "Text Stroke",  icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6" class="s"/><path d="M3 22h18" class="s"/></svg>' }
+      ];
+      var menuEl = null, menuSw = null, menuOff = [], menuTimer = 0;
+      function offsetWithin(el, anc) {   // zoom-proof position of el inside anc (layout units, not screen pixels)
+        var x = 0, y = 0, n = el;
+        while (n && n !== anc) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+        return { x: x, y: y };
+      }
+      function closeMenu(instant) {
+        var m = menuEl, sw = menuSw;
+        menuOff.forEach(function (f) { f(); }); menuOff = [];
+        if (!m) { return; }
+        menuEl = null; menuSw = null;
+        if (sw) { sw.classList.remove("is-menu-open"); }
+        if (menuTimer) { clearTimeout(menuTimer); menuTimer = 0; }
+        if (instant) { if (m.parentNode) { m.parentNode.removeChild(m); } return; }
+        m.classList.remove("is-open"); m.classList.add("is-closing");
+        setTimeout(function () { if (m.parentNode) { m.parentNode.removeChild(m); } }, 200);
+      }
+      function openMenu(sw, hex, byKey) {
+        closeMenu(true);
+        var m = document.createElement("div");
+        m.className = "cp-menu"; m.setAttribute("role", "menu"); m.setAttribute("aria-label", "Apply " + hex);
+        m.innerHTML =
+          '<div class="cp-menu-head"><i style="background:' + hex + '"></i><b>' + hex + '</b><small>Copied</small></div>' +
+          MENU_ITEMS.map(function (it, i) {
+            return '<button type="button" class="cp-menu-item" role="menuitem" data-kind="' + it.kind + '" style="--i:' + i + '">' + it.icon + "<span>" + it.label + "</span></button>";
+          }).join("");
+        wrap.appendChild(m);
+        var pos = offsetWithin(sw, wrap), mw = m.offsetWidth, mh = m.offsetHeight, ww = wrap.offsetWidth;
+        var cx = pos.x + sw.offsetWidth / 2, left = Math.max(0, Math.min(ww - mw, cx - mw / 2));
+        m.style.left = left + "px";
+        m.style.top = (pos.y + sw.offsetHeight + 8) + "px";
+        m.style.setProperty("--ox", Math.round(cx - left) + "px");
+        menuEl = m; menuSw = sw;
+        sw.classList.add("is-menu-open");
+        void m.offsetWidth;
+        m.classList.add("is-open");
+        try { m.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e0) { }
+        if (byKey) { var first = m.querySelector(".cp-menu-item"); if (first) { first.focus(); } }
+
+        function onDown(e) { if (!m.contains(e.target) && !(menuSw && menuSw.contains(e.target))) { closeMenu(); } }
+        function onKey(e) {
+          if (e.key === "Escape") { closeMenu(); if (sw.focus) { sw.focus(); } return; }
+          if (e.key !== "ArrowDown" && e.key !== "ArrowUp") { return; }
+          var items = Array.prototype.slice.call(m.querySelectorAll(".cp-menu-item")), i = items.indexOf(document.activeElement);
+          e.preventDefault();
+          i = e.key === "ArrowDown" ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1);
+          items[i].focus();
+        }
+        document.addEventListener("pointerdown", onDown, true);
+        document.addEventListener("keydown", onKey, true);
+        menuOff.push(function () { document.removeEventListener("pointerdown", onDown, true); document.removeEventListener("keydown", onKey, true); });
+        m.addEventListener("click", function (e) {
+          var it = e.target.closest ? e.target.closest(".cp-menu-item") : null;
+          if (!it) { return; }
+          it.classList.add("is-chosen");
+          Bridge.call("COLOR_applyTarget", [hex, it.getAttribute("data-kind")]).then(function (res) {
+            toast(res.message || (res.ok ? "Color applied." : "Something went wrong."), !res.ok);
+          });
+          menuTimer = setTimeout(function () { menuTimer = 0; closeMenu(); }, 170);
+        });
+      }
+
+      function handleSwatchClick(sw, byKey) {
+        var hex = sw.getAttribute("data-hex");
+        if (menuSw === sw) { closeMenu(); return; }   // second click on the same color closes the menu
         ActivePalette.set(hex);   // becomes the color of the next SOL press
         copyToClipboard(hex);
-        // 1) Fill effects on the selected layer(s) follow the pick in place (no new layer).
-        // 2) Otherwise fall back to the original behavior: selected color property / Solid / Text.
-        Bridge.call("applyColorToSelectionOrFill", [hex]).then(function (fillRes) {
-          var d = fillRes && fillRes.data;
-          if (!fillRes || !fillRes.ok || !d || d.mode === "fill" || d.mode === "nocomp") {
-            toast((fillRes && fillRes.message) || "Something went wrong.", !(fillRes && fillRes.ok));
-            return;
-          }
-          Bridge.call("COLOR_applyToSelection", [hex]).then(function (res) {
-            toast(res.message || (res.ok ? "HEX copied." : "Something went wrong."), !res.ok);
-          });
-        });
+        openMenu(sw, hex, byKey);
       }
 
       wrap.addEventListener("click", function (e) {
@@ -2192,6 +2388,9 @@
           });
           return;
         }
+
+        var copyBtn = e.target.closest ? e.target.closest("[data-cp-copy]") : null;
+        if (copyBtn) { e.stopPropagation(); copyToClipboard(ActivePalette.get()); toast(ActivePalette.get() + " copied."); return; }
 
         var addCur = e.target.closest ? e.target.closest("[data-cp-addcur]") : null;
         if (addCur) { e.stopPropagation(); saveColor(ActivePalette.get()); return; }
@@ -2217,7 +2416,7 @@
         }
 
         var sw = e.target.closest ? e.target.closest(".swatch") : null;
-        if (sw) { handleSwatchClick(sw.getAttribute("data-hex")); }
+        if (sw) { handleSwatchClick(sw, e.detail === 0); }
       });
 
       // ---- Image color extraction ----
@@ -4311,6 +4510,7 @@
     if (currentTab && TABS[currentTab] && TABS[currentTab].custom !== "curve") { FormState.save(currentTab, panel); }
     FormState.watch(panel);
     scrollPending = null;
+    CPWheel.dockOff();   // the floating color wheel belongs to the Color Palette tab only
     currentTab = tabId;
 
     var tabs = document.querySelectorAll(".tabs .tab");

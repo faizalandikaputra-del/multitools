@@ -1,0 +1,208 @@
+/* Multi Tool - mt-palette-ui.css
+   Color Palette tab redesign: hero strip, sliding segmented control, palette strips, the swatch menu (Shape / Text Fill + Stroke),
+   the floating color wheel (round button + popover in a panel corner) and the Settings > Color wheel previews.
+   JS: js/main.js (ColorPalette, CPWheel), js/mt-palette-pro.js (Settings). Glass is the base; light and Material You override at the end.
+   CEF 74 safe: no flex-gap, inset shorthand or aspect-ratio. */
+
+/* ---------- spring curves used below ---------- */
+.cp-root, .cw-dock { --cp-spring: cubic-bezier(0.2, 1.15, 0.3, 1); --cp-soft: cubic-bezier(0.22, 0.8, 0.3, 1); }
+.cp-root { position: relative; }
+
+/* ---------- hero: the active color ---------- */
+.cp-hero {
+  --cur: #FFFFFF; --cur-rgb: 255, 255, 255;
+  display: flex; align-items: center; box-sizing: border-box; margin-bottom: var(--space-3, 12px); padding: 0.55rem 0.6rem 0.55rem 0.55rem;
+  border-radius: 18px; position: relative; overflow: hidden;
+  background: radial-gradient(120% 140% at 0% 0%, rgba(var(--cur-rgb), 0.24), rgba(var(--cur-rgb), 0) 60%), linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(var(--cur-rgb), 0.34);
+  transition: border-color 0.3s ease;
+}
+.cp-hero-chip {
+  position: relative; flex: 0 0 auto; width: 2.9rem; height: 2.9rem; margin: 0 0.75rem 0 0; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: conic-gradient(from 0deg, #ff4d4d, #ffd24d, #7dff4d, #4dffd9, #4d7dff, #d94dff, #ff4d4d);
+  transition: transform 0.35s var(--cp-spring);
+}
+.cp-hero-chip:hover { transform: scale(1.07) rotate(24deg); }
+.cp-hero-chip:active { transform: scale(0.92); }
+.cp-hero-chip i {
+  position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px; border-radius: 50%; display: block;
+  box-shadow: 0 0 0 3px var(--bg, #1e1e1e), inset 0 0 0 1px rgba(255, 255, 255, 0.3); transition: background-color 0.12s linear;
+}
+.cp-hero-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.cp-hero-hex { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; line-height: 1.2; color: var(--text); }
+.cp-hero-rgb { font-size: var(--fs-value, 0.72rem); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.cp-hero-btn {
+  flex: 0 0 auto; width: 2.1rem; height: 2.1rem; margin-left: 0.3rem; padding: 0; border: 0; border-radius: 50%; cursor: pointer; display: grid; place-items: center;
+  color: var(--text-dim); background: rgba(255, 255, 255, 0.07); transition: background-color 0.18s ease, color 0.18s ease, transform 0.3s var(--cp-spring);
+}
+.cp-hero-btn svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cp-hero-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.16); transform: scale(1.08); }
+.cp-hero-btn:active { transform: scale(0.9); }
+
+/* ---------- segmented control with a sliding thumb ---------- */
+.cp-root .cp-seg { position: relative; }
+.cp-seg-ind {
+  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 8px; pointer-events: none;
+  background: var(--text, #fff); box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.42s var(--cp-spring);
+}
+.cp-root .cp-seg-btn { position: relative; z-index: 1; }
+.cp-root .cp-seg-btn.is-active { background: transparent; box-shadow: none; }
+.cp-pane-in { animation: cp-pane-in 0.34s var(--cp-soft) both; }
+@keyframes cp-pane-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- curated palettes: one strip per palette, the hovered color widens ---------- */
+.cp-pals { display: grid; grid-row-gap: 0.8rem; }
+.cp-pal { display: grid; grid-row-gap: 0.32rem; }
+.cp-pal-name { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; color: var(--text-dim); padding-left: 0.15rem; }
+.cp-strip { display: flex; height: 2.8rem; margin: 0 -1.5px; }
+.cp-root .cp-strip .swatch {
+  flex: 1 1 0; min-width: 0; width: auto; max-width: none; height: auto; padding: 0 0 0.32rem; margin: 0 1.5px; border: 0; border-radius: 9px; box-sizing: border-box;
+  display: flex; align-items: flex-end; justify-content: center; overflow: hidden; cursor: pointer; position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: flex-grow 0.42s var(--cp-spring), box-shadow 0.2s ease, transform 0.25s var(--cp-spring);
+}
+.cp-root .cp-strip .swatch:first-child { border-top-left-radius: 13px; border-bottom-left-radius: 13px; }
+.cp-root .cp-strip .swatch:last-child { border-top-right-radius: 13px; border-bottom-right-radius: 13px; }
+.cp-root .cp-strip .swatch:hover, .cp-root .cp-strip .swatch:focus-visible, .cp-root .cp-strip .swatch.is-menu-open { flex-grow: 2.7; transform: none !important; }
+.cp-root .cp-strip .swatch:active { transform: scale(0.95) !important; }
+.cp-root .cp-strip .swatch.is-selected, .cp-root .cp-strip .swatch.is-menu-open { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.95), inset 0 0 0 3px rgba(0, 0, 0, 0.35); }
+.cp-chip-hex {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; pointer-events: none; white-space: nowrap;
+  opacity: 0; transform: translateY(7px); transition: opacity 0.2s ease, transform 0.32s var(--cp-spring);
+}
+.cp-chip[data-ink="dark"] .cp-chip-hex { color: rgba(0, 0, 0, 0.72); }
+.cp-chip[data-ink="light"] .cp-chip-hex { color: rgba(255, 255, 255, 0.92); }
+.cp-strip .swatch:hover .cp-chip-hex, .cp-strip .swatch:focus-visible .cp-chip-hex, .cp-strip .swatch.is-menu-open .cp-chip-hex { opacity: 1; transform: none; }
+
+/* round swatches (Saved / From image) */
+.cp-root .cp-grid .swatch { transition: transform 0.3s var(--cp-spring), box-shadow 0.2s ease; }
+.cp-root .cp-grid .swatch.is-menu-open { transform: scale(1.1) !important; box-shadow: 0 0 0 2px var(--bg, #18181b), 0 0 0 4px var(--accent-strong); }
+
+/* layer label colors: slim pills */
+.cp-root .label-grid { grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr)); grid-gap: 6px; }
+.cp-root .label-swatch { max-width: none; height: 1.9rem; aspect-ratio: auto; padding: 0 0.3rem; align-items: center; justify-content: center; border-radius: 999px; }
+.cp-root .label-name { width: auto; max-width: 100%; padding: 0.08rem 0.45rem; border-radius: 999px; }
+
+/* ---------- the swatch menu ---------- */
+.cp-menu {
+  position: absolute; z-index: 40; width: 11.8rem; box-sizing: border-box; padding: 6px; border-radius: 20px;
+  display: grid; grid-row-gap: 5px;
+  background: rgba(30, 30, 34, 0.84); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0; transform: translateY(-10px) scale(0.84); transform-origin: var(--ox, 50%) 0; pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.36s var(--cp-spring);
+}
+.cp-menu.is-open { opacity: 1; transform: none; pointer-events: auto; }
+.cp-menu.is-closing { opacity: 0; transform: translateY(-5px) scale(0.94); transition-duration: 0.14s; transition-timing-function: ease-in; }
+.cp-menu-head { display: flex; align-items: center; padding: 0.3rem 0.5rem 0.2rem 0.4rem; color: var(--text); }
+.cp-menu-head i { flex: 0 0 auto; width: 0.95rem; height: 0.95rem; margin-right: 0.5rem; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.cp-menu-head b { font-size: 0.74rem; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+.cp-menu-head small { margin-left: auto; font-size: 0.62rem; color: var(--text-dim); opacity: 0; transition: opacity 0.3s ease 0.25s; }
+.cp-menu.is-open .cp-menu-head small { opacity: 1; }
+.cp-menu-item {
+  display: flex; align-items: center; width: 100%; box-sizing: border-box; padding: 0.58rem 0.8rem; border: 0; border-radius: 13px; cursor: pointer;
+  font: inherit; font-size: 0.78rem; font-weight: 700; color: var(--text); text-align: left;
+  background: rgba(255, 255, 255, 0.075); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  opacity: 0; transform: translateY(-8px) scale(0.93);
+  transition: opacity 0.2s ease, transform 0.4s var(--cp-spring), background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.cp-menu.is-open .cp-menu-item { opacity: 1; transform: none; transition-delay: calc(var(--i) * 45ms + 40ms), calc(var(--i) * 45ms + 40ms), 0s, 0s; }
+.cp-menu-item svg { flex: 0 0 auto; width: 1.05rem; height: 1.05rem; margin-right: 0.65rem; opacity: 0.85; }
+.cp-menu-item svg .f { fill: currentColor; }
+.cp-menu-item svg .s { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cp-menu.is-open .cp-menu-item:hover, .cp-menu.is-open .cp-menu-item:focus-visible { background: rgba(255, 255, 255, 0.17); outline: 0; transition-delay: 0s; transform: translateX(3px); }
+.cp-menu.is-open .cp-menu-item:active { transform: scale(0.96); }
+.cp-menu.is-open .cp-menu-item.is-chosen { background: var(--accent-strong, #fff); color: var(--on-accent, #111); transform: scale(0.97); transition-delay: 0s; }
+
+/* ---------- floating color wheel ---------- */
+.cw-dock { --fab: 3rem; position: absolute; z-index: 20; width: var(--fab); height: var(--fab); pointer-events: none; }
+.cw-dock[data-size="s"] { --fab: 2.5rem; }
+.cw-dock[data-size="l"] { --fab: 3.7rem; }
+.cw-dock[data-corner="br"] { right: 14px; bottom: 14px; }
+.cw-dock[data-corner="bl"] { left: calc(var(--sidebar-w, 3.75rem) + 14px); bottom: 14px; }
+.cw-dock[data-corner="tr"] { right: 14px; top: 14px; }
+.cw-dock[data-corner="tl"] { left: calc(var(--sidebar-w, 3.75rem) + 14px); top: 14px; }
+
+.cw-fab {
+  position: relative; flex: 0 0 auto; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: 50%; cursor: pointer; pointer-events: auto;
+  background: transparent; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.42);
+  transition: transform 0.4s var(--cp-spring), box-shadow 0.3s ease;
+}
+.cw-fab-ring {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, #ff4d4d, #ffd24d, #7dff4d, #4dffd9, #4d7dff, #d94dff, #ff4d4d);
+  transition: transform 0.7s var(--cp-spring);
+}
+.cw-fab-dot {
+  position: absolute; top: 21%; left: 21%; right: 21%; bottom: 21%; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 3px var(--bg, #1e1e1e), inset 0 0 0 1px rgba(255, 255, 255, 0.3); transition: background-color 0.1s linear;
+}
+.cw-fab:hover { transform: scale(1.08); }
+.cw-fab:active { transform: scale(0.92); }
+.cw-fab:focus-visible { outline: 2px solid var(--accent-strong, #fff); outline-offset: 3px; }
+.cw-dock.is-open .cw-fab { box-shadow: 0 8px 26px rgba(var(--cw-cur-rgb, 255, 255, 255), 0.5), 0 0 0 3px rgba(var(--cw-cur-rgb, 255, 255, 255), 0.25); }
+.cw-dock.is-open .cw-fab-ring { transform: rotate(180deg); }
+
+.cw-pop {
+  position: absolute; width: 17.8rem; max-width: calc(100vw - var(--sidebar-w, 3.75rem) - 2.4rem); box-sizing: border-box; padding: 6px; overflow-x: hidden; overflow-y: auto; border-radius: 24px;
+  background: rgba(26, 26, 30, 0.9); -webkit-backdrop-filter: blur(22px) saturate(1.3); backdrop-filter: blur(22px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  visibility: hidden; pointer-events: none; opacity: 0;
+  transition: opacity 0.18s ease, transform 0.44s var(--cp-spring), visibility 0s linear 0.44s;
+}
+.cw-dock[data-corner="br"] .cw-pop { right: 0; bottom: calc(var(--fab) + 10px); transform-origin: bottom right; transform: translateY(16px) scale(0.78); }
+.cw-dock[data-corner="bl"] .cw-pop { left: 0; bottom: calc(var(--fab) + 10px); transform-origin: bottom left; transform: translateY(16px) scale(0.78); }
+.cw-dock[data-corner="tr"] .cw-pop { right: 0; top: calc(var(--fab) + 10px); transform-origin: top right; transform: translateY(-16px) scale(0.78); }
+.cw-dock[data-corner="tl"] .cw-pop { left: 0; top: calc(var(--fab) + 10px); transform-origin: top left; transform: translateY(-16px) scale(0.78); }
+.cw-dock.is-open .cw-pop { visibility: visible; pointer-events: auto; opacity: 1; transform: none !important; transition-delay: 0s; }
+.cw-pop .cw { margin: 0; }
+
+/* ---------- Settings > Color wheel previews ---------- */
+.mtcw-cards-4 { flex-wrap: wrap; }
+.mtcw-pv { display: block; position: relative; width: 44px; height: 56px; margin: 0 auto 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.22); }
+.mtcw-pv b { position: absolute; display: block; width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(#ff4d4d, #ffd24d, #7dff4d, #4dffd9, #4d7dff, #d94dff, #ff4d4d); }
+.mtcw-pv--br b, .mtcw-pv--float b, .mtcw-pv--size-s b, .mtcw-pv--size-m b, .mtcw-pv--size-l b { right: 5px; bottom: 5px; }
+.mtcw-pv--bl b { left: 5px; bottom: 5px; }
+.mtcw-pv--tr b { right: 5px; top: 5px; }
+.mtcw-pv--tl b { left: 5px; top: 5px; }
+.mtcw-pv--size-s b { width: 9px; height: 9px; }
+.mtcw-pv--size-l b { width: 20px; height: 20px; }
+.mtcw-pv--inline b { left: 5px; right: 5px; top: 6px; width: auto; height: 24px; border-radius: 7px; background: rgba(var(--accent-rgb, 255, 255, 255), 0.5); }
+
+/* ---------- light ---------- */
+:root[data-theme="light"] .cp-hero { background: radial-gradient(120% 140% at 0% 0%, rgba(var(--cur-rgb), 0.22), rgba(var(--cur-rgb), 0) 60%), rgba(255, 255, 255, 0.55); }
+:root[data-theme="light"] .cp-hero-btn { background: rgba(0, 0, 0, 0.07); }
+:root[data-theme="light"] .cp-hero-btn:hover { background: rgba(0, 0, 0, 0.14); }
+:root[data-theme="light"] .cp-menu, :root[data-theme="light"] .cw-pop { background: rgba(255, 255, 255, 0.9); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22); }
+:root[data-theme="light"] .cp-menu-item { background: rgba(0, 0, 0, 0.05); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); }
+:root[data-theme="light"] .cp-menu.is-open .cp-menu-item:hover, :root[data-theme="light"] .cp-menu.is-open .cp-menu-item:focus-visible { background: rgba(0, 0, 0, 0.11); }
+:root[data-theme="light"] .mtcw-pv { background: rgba(0, 0, 0, 0.05); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.2); }
+
+/* ---------- Material You ---------- */
+:root[data-ui-theme="material"][data-theme] body .cp-hero { background: var(--md-surface-low); border: 0; border-radius: 28px; }
+:root[data-ui-theme="material"][data-theme] body .cp-hero-btn { background: var(--md-surface-highest); color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] body .cp-hero-hex { color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body .cp-seg-ind { background: var(--md-primary); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] body .cp-seg-btn.is-active { color: var(--md-on-primary); }
+:root[data-ui-theme="material"][data-theme] body .cp-menu,
+:root[data-ui-theme="material"][data-theme] body .cw-pop { background: var(--md-surface-high); border: 0; border-radius: 28px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-ui-theme="material"][data-theme] body .cp-menu-item { background: var(--md-surface-highest); color: var(--md-on-surface); box-shadow: none; border-radius: 999px; }
+:root[data-ui-theme="material"][data-theme] body .cp-menu.is-open .cp-menu-item:hover { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .cp-menu.is-open .cp-menu-item.is-chosen { background: var(--md-primary); color: var(--md-on-primary); }
+:root[data-ui-theme="material"][data-theme] body .cp-menu-head { color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body .cw-fab-dot { box-shadow: 0 0 0 3px var(--md-surface, #1e1e1e), inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+:root[data-ui-theme="material"][data-theme] body .cp-hero-chip i { box-shadow: 0 0 0 3px var(--md-surface-low), inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+
+/* ---------- motion off ---------- */
+:root[data-reduce-motion="true"] .cp-menu-item,
+:root[data-reduce-motion="true"] .cp-menu.is-open .cp-menu-item { transition-delay: 0s !important; }
+:root[data-reduce-motion="true"] .cp-pane-in { animation: none; }
+
+/* ---------- keep the grids from growing wider than the panel ---------- */
+.cp-root .cp-card, .cp-root .cp-pane, .cp-root .cp-pals, .cp-root .cp-pal { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.cp-hero-hex { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the HEX field keeps its width; the RGB text takes what is left */
+.cw .cw-bar { grid-template-columns: 2.3rem minmax(4.8rem, auto) minmax(0, 1fr); }
+.cw .cw-rgb { text-align: right; min-width: 0; }

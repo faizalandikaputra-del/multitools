@@ -3034,6 +3034,117 @@ function COLOR_applyToSelection(hex) {
   }
 }
 
+// ---------- Color Palette: Shape / Text Fill + Stroke (swatch menu) ----------
+// COLOR_applyTarget(hex, kind)   kind = "shapeFill" | "shapeStroke" | "textFill" | "textStroke"
+// Shape kinds: if Fill/Stroke Color properties are selected in the Timeline, only those change. Otherwise every Fill (or
+// Stroke) inside the selected shape layers changes; a layer that has none gets a new one in each group that holds a path.
+// Text kinds: the whole text of every selected text layer (Fill / Stroke of the Character panel). Never moves the text.
+var _VEC_CONTAINERS = { "ADBE Root Vectors Group": 1, "ADBE Vectors Group": 1, "ADBE Vector Group": 1 };
+
+function _vecCollect(group, colorMatch, graphicMatch, out) {
+  var i, p, mn, cp;
+  for (i = 1; i <= group.numProperties; i++) {
+    p = group.property(i);
+    if (!p) { continue; }
+    mn = p.matchName;
+    if (mn === graphicMatch) { cp = p.property(colorMatch); if (cp) { out.push(cp); } }
+    else if (_VEC_CONTAINERS[mn]) { _vecCollect(p, colorMatch, graphicMatch, out); }
+  }
+}
+
+function _vecAddMissing(contents, colorMatch, graphicMatch, out) {
+  var i, p, mn, hasPath = false, g, cp;
+  for (i = 1; i <= contents.numProperties; i++) {
+    p = contents.property(i);
+    if (!p) { continue; }
+    mn = p.matchName;
+    if (mn === "ADBE Vector Group") { _vecAddMissing(p.property("ADBE Vectors Group"), colorMatch, graphicMatch, out); }
+    else if (mn.indexOf("ADBE Vector Shape") === 0) { hasPath = true; }
+  }
+  if (hasPath) {
+    g = contents.addProperty(graphicMatch);
+    cp = g ? g.property(colorMatch) : null;
+    if (cp) { out.push(cp); }
+  }
+}
+
+function _textSetColor(layer, comp, rgb, stroke) {
+  var t = comp.time, sp = layer.property("ADBE Text Properties").property("ADBE Text Document");
+  var guard = _cgSnapshot(layer, t);
+  try {
+    var doc = sp.valueAtTime(t, false);
+    if (stroke) { doc.strokeColor = rgb; doc.applyStroke = true; if (!(doc.strokeWidth > 0)) { doc.strokeWidth = 2; } }
+    else { doc.fillColor = rgb; doc.applyFill = true; }
+    if (sp.numKeys > 0) { sp.setValueAtTime(t, doc); } else { sp.setValue(doc); }
+  } finally {
+    _cgRestore(layer, guard);   // a color change must never move the text
+  }
+}
+
+function COLOR_applyTarget(hex, kind) {
+  try {
+    var comp = _activeComp(), rgb = _hexToUnit(hex), up = String(hex).toUpperCase();
+    if (up.charAt(0) !== "#") { up = "#" + up; }
+    var isShape = (kind === "shapeFill" || kind === "shapeStroke"), isStroke = (kind === "shapeStroke" || kind === "textStroke");
+    var label = { shapeFill: "Shape Fill", shapeStroke: "Shape Stroke", textFill: "Text Fill", textStroke: "Text Stroke" }[kind];
+    if (!label) { throw new Error("Unknown color target."); }
+    var sel = comp.selectedLayers, li, applied = 0, layers = 0, i, n;
+
+    if (isShape) {
+      var colorMatch = isStroke ? "ADBE Vector Stroke Color" : "ADBE Vector Fill Color";
+      var graphicMatch = isStroke ? "ADBE Vector Graphic - Stroke" : "ADBE Vector Graphic - Fill";
+      var targets = [], props = comp.selectedProperties, direct = false;
+      for (i = 0; i < (props ? props.length : 0); i++) {
+        if (props[i] instanceof Property && props[i].matchName === colorMatch) { targets.push(props[i]); direct = true; }
+      }
+      if (!direct) {
+        for (li = 0; li < (sel ? sel.length : 0); li++) {
+          if (!(sel[li] instanceof ShapeLayer)) { continue; }
+          layers++;
+        }
+        if (!layers) { throw new Error("Select a shape layer first."); }
+      }
+      app.beginUndoGroup(label + " " + up);
+      try {
+        if (!direct) {
+          for (li = 0; li < sel.length; li++) {
+            if (!(sel[li] instanceof ShapeLayer)) { continue; }
+            var root = sel[li].property("ADBE Root Vectors Group"), found = [];
+            if (!root) { continue; }
+            _vecCollect(root, colorMatch, graphicMatch, found);
+            if (!found.length) { _vecAddMissing(root, colorMatch, graphicMatch, found); }
+            for (n = 0; n < found.length; n++) { targets.push(found[n]); }
+          }
+        }
+        for (i = 0; i < targets.length; i++) {
+          try { targets[i].setValue([rgb[0], rgb[1], rgb[2], 1]); applied++; } catch (eS) { /* locked / expression-driven */ }
+        }
+      } finally {
+        app.endUndoGroup();
+      }
+      if (!applied) { throw new Error("No " + (isStroke ? "stroke" : "fill") + " could be changed. The shape layer may be empty or locked."); }
+      return _ok(label + " " + up + " on " + applied + " propert" + (applied === 1 ? "y" : "ies") + ".");
+    }
+
+    // text kinds
+    for (li = 0; li < (sel ? sel.length : 0); li++) { if (sel[li] instanceof TextLayer) { layers++; } }
+    if (!layers) { throw new Error("Select a text layer first."); }
+    app.beginUndoGroup(label + " " + up);
+    try {
+      for (li = 0; li < sel.length; li++) {
+        if (!(sel[li] instanceof TextLayer)) { continue; }
+        try { _textSetColor(sel[li], comp, rgb, isStroke); applied++; } catch (eT) { /* locked layer */ }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (!applied) { throw new Error("The text layer could not be changed. It may be locked."); }
+    return _ok(label + " " + up + " on " + applied + " text layer" + (applied === 1 ? "" : "s") + ".");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
 // ---------- Expression Code (snippet manager) ----------
 
 // Applies raw expression code (as text) to every selected property.

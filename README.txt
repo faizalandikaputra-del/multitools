@@ -2514,21 +2514,3 @@ downloader-1 (tab Shortcutz diganti tab Downloader TikTok)
     mt-tools-layout.js: COMPACT_TABS pakai "Downloader". Tombol "Pin to Shortcutz" disembunyikan lewat CSS (tab tujuannya sudah tidak ada).
     Kode Shortcutz, kartu tersimpan (mtx.shortcutz*) dan tile Speed Dial di Command Palette tidak dihapus.
   - Files: html/index.html, html/settings.html, js/main.js, js/mt-downloader.js, js/mt-tools-layout.js, css/mt-downloader.css, jsx/host.jsx, README.txt.
-
-downloader-2 (tikwm lambat / status "Getting the link" tidak selesai)
-  - Laporan owner: generate link di tikwm lama, status "Getting the link" terus. Snaptik tidak punya API resmi dan sumber scraper-nya tidak bisa diambil, jadi tetap tikwm
-    tapi dibuat jauh lebih tahan lambat. Penyebab pasti belum terkonfirmasi (belum bisa diuji dengan internet); perbaikan menutup penyebab yang paling mungkin.
-  - js/mt-downloader.js (?v=2): request ke API sekarang GET /api/?url=..&hd=.. (parameter count/cursor/web dibuang), koneksi keep-alive, batas waktu keras 14 detik per percobaan,
-    sampai 3 percobaan bergantian host www.tikwm.com dan tikwm.com (juga untuk "Free Api Limit"), status menghitung detik ("Getting the link... 8s", "(try 2 of 3)").
-    Chip HD sekarang MATI secara default (HD membuat service bekerja lebih lama); nyalakan lagi kalau perlu.
-  - Files: js/mt-downloader.js, html/index.html (?v=2), README.txt.
-
-downloader-3 (status "Getting the link" tetap tidak selesai: jalur cadangan curl + log)
-  - Laporan owner: setelah downloader-2, status masih "Getting the link" terus. Dugaan paling kuat: koneksi HTTPS Node di dalam panel CEP macet / ditolak CDN
-    (Node CEP lama, TLS beda dengan browser), bukan server tikwm. Belum bisa dikonfirmasi tanpa internet di sisi pembuat.
-  - js/mt-downloader.js (?v=3): panggilan API sekarang BALAPAN: Node jalan dulu, curl sistem (curl.exe di Windows 10+, curl di macOS) ikut jalan setelah 4,5 detik atau
-    langsung saat Node gagal; jawaban benar pertama menang. Kalau API hanya terjawab lewat curl, download file juga langsung lewat curl (Node dilewati); kalau satu jalur
-    gagal, jalur satunya dicoba. Download lewat Node punya batas 10 detik untuk mulai menerima data. Error gabungan tampil di status (contoh "node: ...; curl: ...").
-  - Log: ~/Documents/Multitool_CEP_Data/downloader.log (satu baris per tahap / error: "api ok via node|curl", "api fail ...", "job error ..."). Dibatasi 200 KB.
-  - paint() tidak lagi bisa melempar error (error di sana membuang listener dan membekukan teks status).
-  - Files: js/mt-downloader.js, html/index.html (?v=3), README.txt.

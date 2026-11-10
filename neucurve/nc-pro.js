@@ -217,9 +217,16 @@
   /* re-send the key list when the tab / panel gets attention again, and now and then */
   function again() { registerKeys(true); }
   window.addEventListener("focus", again);
-  window.addEventListener("mouseenter", again, true);
+  /* fixCursor-C: capture "mouseenter" fired for every element hovered = one host call (registerKeyEventsInterest) per hover, and the 5 s re-send
+     ran while the pointer rested inside; both made AE re-resolve the cursor (hand -> arrow blink). Now: only when the pointer enters the page itself,
+     and the periodic re-send only while the pointer is away. */
+  window.addEventListener("mouseenter", function (e) {
+    var t = e && e.target;
+    if (t && t !== document && t !== document.documentElement && t !== window) { return; }
+    again();
+  }, true);
   document.addEventListener("visibilitychange", again);
-  setInterval(function () { if (!(window.__ncAway && window.__ncAway())) { again(); } }, 5000);
+  setInterval(function () { if (window.__ncAway && window.__ncAway()) { again(); } }, 5000);
   /* console helper: NCPro.debug() -> what is stored, what AE was told */
   function debug() { return { on: rd("hotkeysOn"), map: hkMap(), interest: lastInterest, cep: !!window.__adobe_cep__, framed: window.parent !== window }; }
   window.NCPro = { apply: apply, press: press, debug: debug };

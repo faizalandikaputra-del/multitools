@@ -2456,3 +2456,12 @@ fixCursor-B (pointer berkedip tangan <-> panah saat diam di atas tab / tombol: o
   - Perbaikan (mt-away.js v4, ?v=4): status "moving" tetap aktif selama pointer ada di dalam panel, baru berakhir saat pointer keluar panel / panel tersembunyi.
     Orb (blink dan drift) berhenti selama pointer di panel dan lanjut saat pointer di luar. Tidak ada animasi lain yang diubah.
   - Files: js/mt-away.js, html/index.html, README.txt.
+
+fixCursor-C (pointer berkedip: registerKeyEventsInterest dipanggil tiap hover dan tiap 5 detik)
+  - Masalah: pointer tetap berkedip tangan <-> panah setelah fixCursor-A dan B.
+  - Penyebab: js/mt-hotkeys.js dan neucurve/nc-pro.js memasang listener "mouseenter" dengan CAPTURE di window, sehingga event datang untuk SETIAP elemen yang dimasuki
+    pointer dan tiap kali memanggil registerKeyEventsInterest (panggilan ke host AE). Ditambah panggilan paksa tiap 5 detik saat pointer diam di panel.
+    Panggilan host membuat AE menghitung ulang cursor.
+  - Perbaikan: mouseenter hanya diproses saat target = document / window (pointer masuk panel); kirim ulang berkala hanya saat pointer di luar panel
+    (mt-hotkeys: window.__mtMoving false; nc-pro: window.__ncAway true). Daftar yang tidak berubah tetap tidak dikirim ulang.
+  - Files: js/mt-hotkeys.js (?v=4), neucurve/nc-pro.js (?v=8), html/index.html, neucurve/index.html, README.txt.

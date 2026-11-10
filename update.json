@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.166",
-    "changelog":  "- Update 1.8.166",
+    "latest_version":  "1.8.167",
+    "changelog":  "- Update 1.8.167",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -264,7 +264,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "affe0c6ad45fc4b896e091457fb2909b3fa59f7b329ae40c8b32f7e04974a865"
+                      "sha256":  "6504894e066521d3a75b347a6e7a17731535d9f80a19ff6a96ec39c1805ca489"
                   },
                   {
                       "path":  "html/settings.html",
@@ -320,7 +320,7 @@
                   },
                   {
                       "path":  "js/mt-hotkeys.js",
-                      "sha256":  "c6d11892c98eede8a8ab8b3aa859b042c27da8aa22860d04e05a925fef22ded7"
+                      "sha256":  "6662410259ec2b3881ac998db4ea566bdf2c28596d471ffff6d97cb1464c8d4a"
                   },
                   {
                       "path":  "js/mt-hotkeys-settings.js",
@@ -460,7 +460,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "098a4b3e7f3ba7414721745f074e768cc22d98eb9eee419f9e4c6fd304782c1f"
+                      "sha256":  "d08dea99682a4f9b7add129e9755fff85e03903c83db56069eb9bac9ff4c2ea6"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -664,7 +664,7 @@
                   },
                   {
                       "path":  "neucurve/nc-pro.js",
-                      "sha256":  "b905d5042ad404a53ac20ef8a7340158bde6b222374b131fda8382c3188e81bd"
+                      "sha256":  "514bc26fa61fa3ca32d8d43768e4a9f0790d77e4468469a1580f1ae34731c111"
                   },
                   {
                       "path":  "neucurve/nc-pro-settings.css",
@@ -760,7 +760,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "d2c9d16fb551c75d78b9b761874dd228da7f206a463ee0b76b03bd19b7a8cdf7"
+                      "sha256":  "28251aa8be4381b6d5fddf77bd47b881724ed9e88edd6bc20322c7bf99fd67ed"
                   }
               ]
 }

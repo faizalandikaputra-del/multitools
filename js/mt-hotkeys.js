@@ -229,9 +229,17 @@
     } catch (e) { }
   }
   window.addEventListener("focus", function () { registerKeys(true); });
-  window.addEventListener("mouseenter", function () { registerKeys(true); }, true);
+  /* fixCursor-C: this listener is CAPTURE, so "mouseenter" arrived for EVERY element the pointer entered and each one made a host call
+     (registerKeyEventsInterest). The call after every hover, plus the forced call every 5 s while the pointer rested on the panel, made After Effects
+     re-resolve the mouse cursor (hand -> arrow blink). Now: only when the pointer enters the panel itself, and the periodic re-send only while the
+     pointer is OUTSIDE the panel. Unchanged lists are not re-sent. */
+  window.addEventListener("mouseenter", function (e) {
+    var t = e && e.target;
+    if (t && t !== document && t !== document.documentElement && t !== window) { return; }
+    registerKeys(true);
+  }, true);
   document.addEventListener("visibilitychange", function () { registerKeys(true); });
-  setInterval(function () { registerKeys(true); }, 5000);
+  setInterval(function () { if (window.__mtMoving) { return; } registerKeys(true); }, 5000);
 
   // ---------- Command Palette ----------
   var pal = { open: false, el: null, input: null, list: null, items: [], sel: 0, all: [] };

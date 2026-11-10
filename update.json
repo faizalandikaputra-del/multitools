@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.177",
-    "changelog":  "- Update 1.8.177",
+    "latest_version":  "1.8.178",
+    "changelog":  "- Update 1.8.178",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -136,7 +136,7 @@
                   },
                   {
                       "path":  "css/mt-palette-ui.css",
-                      "sha256":  "b564522966e48728e6396f157eda1bcd117a26783ffe963eba957184dcbede2a"
+                      "sha256":  "6003adfe702ad5beedeccf9d902157c4d586645e5a573e5a7065ca68df51e3ee"
                   },
                   {
                       "path":  "css/mt-preset-actions.css",
@@ -268,11 +268,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "4c7ba7de184c8b46795be8d1a22517971b001cd3ca6a011695de14b037aee43e"
+                      "sha256":  "6829984e57c07299d14c45612ef2c2ae253f824b11c71bab6f8e57816a96e4fb"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "bcee551ca3823005751a38adebf5017240d61548977aeb3cc67fa35bfcd794d8"
+                      "sha256":  "c0befbd0c05c31a118b3033d515603c10babd9b2caca835e53b72d08c4f236e0"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -288,7 +288,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "49419114319a8f7ea4b8646743aec82b810763f6bcae5c372e65887107dac83c"
+                      "sha256":  "99fea28f9a6145a028dee47dbbe39ee92cc88d6ab0c3ce599c207020796528dc"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -369,10 +369,6 @@
                   {
                       "path":  "js/mt-newtools.js",
                       "sha256":  "4f393dde962f1ecc568d1f954a748adb7e3272756adcfaff77840279fdc6c027"
-                  },
-                  {
-                      "path":  "js/mt-palette-pro.js",
-                      "sha256":  "5e9d0c5b754e1ef9b2eb00663ad59a4fb9c1a3d85d3fd2148d7d902ee4dfb6d5"
                   },
                   {
                       "path":  "js/mt-persist.js",
@@ -768,7 +764,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "3583cba86f6e657189b701d0fc51766f098e8d86025cef741254341c794329e1"
+                      "sha256":  "3d84c12466388f928c1c34752e8125482aece116f00bcc085eca9f441d8797ae"
                   }
               ]
 }

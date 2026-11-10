@@ -2522,10 +2522,9 @@ fixRemove-Shortcutz (tab Shortcutz dihapus total, termasuk datanya)
 
 Color Palette redesign (Multi_Tool_15 -> next)
   What: swatch click opens an animated menu (Shape Fill / Text Fill / Shape Stroke / Text Stroke); new tab layout (hero strip for the active color,
-        sliding Curated/Saved/From image control, 8 palette strips where the hovered color widens); the color wheel is now a floating round button
-        in a panel corner that opens a popover. Settings > Appearance > Color wheel: Floating or Inside tab, corner (4), button size (3).
-  Files: js/main.js (ColorPalette, CPWheel, menu), js/mt-palette-pro.js (Settings controls, new), css/mt-palette-ui.css (new),
-         jsx/host.jsx (COLOR_applyTarget), html/index.html + html/settings.html (links, Color wheel group).
-  Keys:  mtx.cpWheelMode / mtx.cpWheelCorner / mtx.cpWheelSize (covered by Backup "Color palettes").
+        sliding Curated/Saved/From image control, 8 palette strips where the hovered color widens); the color wheel is a floating round button
+        that opens a popover. Drag the button anywhere right of the sidebar; position saved in mtx.cpWheelPos (no Settings options). The popover
+        opens toward the free space and sits above the sidebar (z-index 45).
+  Files: js/main.js (ColorPalette, CPWheel, menu), css/mt-palette-ui.css (new), jsx/host.jsx (COLOR_applyTarget), html/index.html (link).
   Note:  a swatch click no longer recolors the selected Fill effect / Solid / color property by itself; the menu decides the target.
          The wheel's own live Fill update is unchanged.

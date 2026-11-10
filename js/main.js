@@ -2044,33 +2044,59 @@
   })();
 
   // ---------------------------------------------------------
-  // Floating color wheel (Color Palette tab). The dial sits in a popover that opens from a round button pinned to a corner of
-  // the panel. Settings > Appearance > Color wheel chooses: mode (float / inline), corner and button size.
-  // Keys (localStorage, mtx.*): cpWheelMode "float" | "inline", cpWheelCorner "br" | "bl" | "tr" | "tl", cpWheelSize "s" | "m" | "l".
-  // js/mt-palette-pro.js owns the Settings controls and fires "mt-cw-settings" when one changes.
+  // Floating color wheel (Color Palette tab). The dial sits in a popover that opens from a round button. Drag the button anywhere
+  // right of the sidebar; the spot is saved in localStorage mtx.cpWheelPos = {x, y} (fractions 0..1 of the free area, default bottom right).
   // ---------------------------------------------------------
   var CPWheel = (function () {
-    var dock = null, offs = [], opened = false;
-    function pick(key, ok, def) { var v = Store.get(key); return ok.indexOf(v) !== -1 ? v : def; }
-    function mode() { return pick("cpWheelMode", ["float", "inline"], "float"); }
-    function corner() { return pick("cpWheelCorner", ["br", "bl", "tr", "tl"], "br"); }
-    function size() { return pick("cpWheelSize", ["s", "m", "l"], "m"); }
+    var dock = null, offs = [], opened = false, POS_KEY = "cpWheelPos", FAB_PX = 48;
+    function mode() { return "float"; }
     function hexToRgb3(hex) { var n = parseInt(hex.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-
-    function fitPop() {
-      var app = document.querySelector(".app");
-      if (dock && app) {
-        var fab = dock.querySelector(".cw-fab"), pop = dock.querySelector(".cw-pop");
-        pop.style.maxHeight = Math.max(160, app.clientHeight - fab.offsetHeight - 44) + "px";
-      }
+    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+    function appEl() { return document.querySelector(".app"); }
+    function zoomK() {   // screen px per layout px (".app { zoom: var(--ui-scale) }")
+      var v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+      return v && v > 0 ? v : 1;
+    }
+    // Free area for the button: everything right of the navigation sidebar, 6px from every edge (layout px of .app).
+    function bounds() {
+      var app = appEl(), sb = document.querySelector(".sidebar"), f = dock ? dock.offsetWidth : FAB_PX;
+      var minX = (sb ? sb.offsetWidth : 0) + 6, minY = 6;
+      return { minX: minX, minY: minY, maxX: Math.max(minX, app.clientWidth - f - 6), maxY: Math.max(minY, app.clientHeight - f - 6) };
+    }
+    function savedPos() {
+      var o = null; try { o = JSON.parse(Store.get(POS_KEY) || "null"); } catch (e) { o = null; }
+      if (!o || typeof o.x !== "number" || typeof o.y !== "number") { return { x: 1, y: 1 }; }   // default: bottom right
+      return { x: clamp(o.x, 0, 1), y: clamp(o.y, 0, 1) };
+    }
+    function place(fx, fy) {   // fx, fy: 0..1 inside the free area (kept as fractions, so a resized panel keeps the button on screen)
+      if (!dock || !appEl()) { return; }
+      var bd = bounds();
+      dock.style.left = Math.round(bd.minX + (bd.maxX - bd.minX) * fx) + "px";
+      dock.style.top = Math.round(bd.minY + (bd.maxY - bd.minY) * fy) + "px";
+      dock.setAttribute("data-fx", String(fx)); dock.setAttribute("data-fy", String(fy));
+      orient();
+    }
+    // Popover opens toward the free space: up when the button is in the lower half, down otherwise; right-aligned in the right half.
+    function orient() {
+      if (!dock) { return; }
+      var app = appEl(), bd = bounds(), pop = dock.querySelector(".cw-pop"), fab = dock.querySelector(".cw-fab");
+      var x = parseFloat(dock.style.left) || 0, y = parseFloat(dock.style.top) || 0, f = fab.offsetWidth;
+      var up = (y + f / 2) > app.clientHeight / 2, right = (x + f / 2) > (bd.minX + app.clientWidth) / 2;
+      dock.setAttribute("data-v", up ? "up" : "down"); dock.setAttribute("data-h", right ? "r" : "l");
+      var pw = Math.min(pop.offsetWidth || 285, app.clientWidth - bd.minX - 6);
+      var off = right ? (x + f) - pw : x;                           // pop left edge in .app coordinates
+      off = clamp(off, bd.minX, app.clientWidth - pw - 6);
+      pop.style.left = Math.round(off - x) + "px"; pop.style.right = "auto";
+      var room = up ? (y - 6 - 10) : (app.clientHeight - (y + f) - 6 - 10);
+      pop.style.maxHeight = Math.max(160, room) + "px";
     }
     function setOpen(on) {
       if (!dock) { return; }
       opened = !!on;
+      if (opened) { orient(); }
       dock.classList.toggle("is-open", opened);
       dock.querySelector(".cw-fab").setAttribute("aria-expanded", String(opened));
       dock.querySelector(".cw-pop").setAttribute("aria-hidden", String(!opened));
-      if (opened) { fitPop(); }
     }
     function dockOff() {
       offs.forEach(function (f) { try { f(); } catch (e) { } }); offs = [];
@@ -2079,31 +2105,63 @@
     }
     function dockOn(wheelRoot) {
       dockOff();
-      var app = document.querySelector(".app");
+      var app = appEl();
       if (!app) { return; }
       dock = document.createElement("div");
       dock.className = "cw-dock";
-      dock.setAttribute("data-corner", corner()); dock.setAttribute("data-size", size());
       dock.innerHTML =
         '<div class="cw-pop" aria-hidden="true" role="dialog" aria-label="Color wheel"></div>' +
-        '<button type="button" class="cw-fab" aria-label="Color wheel" aria-expanded="false" title="Color wheel">' +
+        '<button type="button" class="cw-fab" aria-label="Color wheel. Drag to move" aria-expanded="false" title="Color wheel (drag to move)">' +
           '<span class="cw-fab-ring"></span><span class="cw-fab-dot"></span></button>';
       dock.querySelector(".cw-pop").appendChild(wheelRoot);
       app.appendChild(dock);
+      var sp = savedPos(); place(sp.x, sp.y);
 
       var fab = dock.querySelector(".cw-fab"), dot = dock.querySelector(".cw-fab-dot");
       function paintDot(hex) { dot.style.background = hex; dock.style.setProperty("--cw-cur-rgb", hexToRgb3(hex).join(",")); }
       paintDot(ActivePalette.get());
       offs.push(ActivePalette.subscribe(function (hex) { paintDot(hex); }));
 
-      fab.addEventListener("click", function () { setOpen(!opened); });
+      // ---- drag anywhere; a press that barely moves is a click (open / close) ----
+      var drag = null, justDragged = false;
+      fab.addEventListener("pointerdown", function (e) {
+        if (e.button !== undefined && e.button !== 0) { return; }
+        drag = { cx: e.clientX, cy: e.clientY, x: parseFloat(dock.style.left) || 0, y: parseFloat(dock.style.top) || 0, moved: false, k: zoomK(), id: e.pointerId };
+        try { fab.setPointerCapture(e.pointerId); } catch (e1) { }
+      });
+      fab.addEventListener("pointermove", function (e) {
+        if (!drag) { return; }
+        var dx = e.clientX - drag.cx, dy = e.clientY - drag.cy;
+        if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) { return; }
+        if (!drag.moved) { drag.moved = true; dock.classList.add("is-dragging"); if (opened) { setOpen(false); } }
+        var bd = bounds(), nx = clamp(drag.x + dx / drag.k, bd.minX, bd.maxX), ny = clamp(drag.y + dy / drag.k, bd.minY, bd.maxY);
+        dock.style.left = Math.round(nx) + "px"; dock.style.top = Math.round(ny) + "px";
+      });
+      function endDrag() {
+        if (!drag) { return; }
+        var was = drag.moved; drag = null;
+        dock.classList.remove("is-dragging");
+        if (was) {
+          justDragged = true; setTimeout(function () { justDragged = false; }, 60);
+          var bd = bounds(), x = parseFloat(dock.style.left) || 0, y = parseFloat(dock.style.top) || 0;
+          var fx = bd.maxX > bd.minX ? (x - bd.minX) / (bd.maxX - bd.minX) : 1, fy = bd.maxY > bd.minY ? (y - bd.minY) / (bd.maxY - bd.minY) : 1;
+          fx = clamp(fx, 0, 1); fy = clamp(fy, 0, 1);
+          Store.set(POS_KEY, JSON.stringify({ x: Math.round(fx * 1000) / 1000, y: Math.round(fy * 1000) / 1000 }));
+          place(fx, fy);
+        }
+      }
+      fab.addEventListener("pointerup", endDrag);
+      fab.addEventListener("pointercancel", endDrag);
+      fab.addEventListener("lostpointercapture", endDrag);
+      fab.addEventListener("click", function () { if (justDragged) { return; } setOpen(!opened); });
+
       function onDown(e) {
         if (!opened || dock.contains(e.target)) { return; }
-        if (e.target.closest && e.target.closest("[data-cp-openwheel], #palette-hero-chip")) { return; }
+        if (e.target.closest && e.target.closest("#palette-hero-chip")) { return; }
         setOpen(false);
       }
       function onKey(e) { if (e.key === "Escape" && opened) { setOpen(false); fab.focus(); } }
-      function onResize() { if (opened) { fitPop(); } }
+      function onResize() { var sp2 = savedPos(); place(sp2.x, sp2.y); }
       document.addEventListener("pointerdown", onDown, true);
       document.addEventListener("keydown", onKey, true);
       window.addEventListener("resize", onResize);
@@ -2127,14 +2185,10 @@
       offs.push(ActivePalette.subscribe(paint));
       hero.querySelector("#palette-hero-chip").addEventListener("click", function () { setOpen(!opened); });
     }
-    return { mode: mode, corner: corner, size: size, dockOn: dockOn, dockOff: dockOff, bindHero: bindHero };
+    return { mode: mode, dockOn: dockOn, dockOff: dockOff, bindHero: bindHero };
   })();
 
   var colorCatStore = CategoryStore("customColorCats");
-
-  document.addEventListener("mt-cw-settings", function () {   // Settings > Appearance > Color wheel changed: rebuild the tab
-    if (currentTab === "color-palette" && typeof renderTab === "function") { renderTab("color-palette"); }
-  });
 
   var ColorPalette = {
     isValidHex: function (v) { return /^#?[0-9a-f]{6}$/i.test(v || ""); },

@@ -2441,3 +2441,10 @@ fixSelect-zoom (dropdown salah posisi di tab Text Animation, band atas NeuCurve 
     zoom yang sama dengan panel (teks menu sama besar), dan menghitung semua ukuran dalam px nyata lalu dibagi zoom. Pada 100% tidak ada perubahan.
   - Band atas NeuCurve: css/mt-curve-top.css (v4) dan js/mt-curve-top.js dikembalikan: band solid berwarna backdrop NeuCurve sendiri, bukan transparan.
   - Files: js/mt-select.js, css/mt-curve-top.css, html/index.html, html/settings.html, neucurve/index.html, README.txt.
+
+fixCursor-A (cursor tangan berubah jadi panah: watchdog tooltip tidak lagi hit-test tiap 120 ms)
+  - Masalah: cursor pointer (tangan) di atas tombol / tab tiba-tiba jadi panah, di semua tab.
+  - Dugaan penyebab: js/mt-tooltip.js menjalankan elementFromPoint tiap 120 ms walau mouse diam; di CEF itu bisa membuat host menghitung ulang cursor.
+  - Perbaikan (mt-tooltip.js v8, ?v=8): watchdog (interval 250 ms) hanya mengecek jika mouse bergerak sejak cek terakhir atau elemen terakhir di bawah mouse
+    sudah lepas dari dokumen (panel re-render). Mouse diam di panel yang tidak berubah = tidak ada hit test. Perilaku tooltip lain tidak berubah.
+  - Files: js/mt-tooltip.js, html/index.html, neucurve/index.html, README.txt.

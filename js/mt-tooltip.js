@@ -12,6 +12,7 @@
  * - Icon-only buttons without a title fall back to their aria-label.
  * - Appears when the cursor rests (~0.3s); moving to a neighbour button swaps instantly.
  * - Animation: transform + opacity only (GPU), no layout work. ES5 on purpose (old CEF).
+ * - v8: watchdog only hit-tests after a mouse move or a re-render (no more elementFromPoint under a resting cursor).
  * - v7: tip position is calibrated against the tile's real on-screen edges (zoom-proof), and the title is only
  *   given back when the cursor really left the tile (a failed hit test used to give it back = native tooltip).
  */
@@ -404,16 +405,23 @@
 
   /* Watchdog: the native tooltip used to slip through whenever no mouseover reached us - a node re-created by the
      app under a resting cursor, a disabled button (browsers send it no mouse events), a titled child inside a
-     titled parent. Every 120 ms, while the cursor is in this document, look at what is REALLY under it and take
-     over its title the same way a mouseover would. Cheap: one elementFromPoint + a short parent walk. */
-  var inside = false;
-  document.addEventListener("mousemove", function () { inside = true; }, true);
+     titled parent.
+     v8 (fixCursor-A): it used to run elementFromPoint every 120 ms even with the cursor resting. In CEF a hit test
+     under a resting pointer can make the host re-resolve the mouse cursor (hand -> arrow). Now it only looks when
+     something changed: the cursor moved since the last check, or the element last seen under it left the document
+     (panel re-render). A resting cursor over an unchanged panel costs nothing. */
+  var inside = false, dirty = true;
+  document.addEventListener("mousemove", function () { inside = true; dirty = true; }, true);
+  document.addEventListener("mouseover", function () { dirty = true; }, true);
   window.addEventListener("blur", function () { inside = false; });
   setInterval(function () {
     var el, found;
     if (!inside || !document.elementFromPoint) { return; }
+    if (!dirty && !(lastTarget && !document.documentElement.contains(lastTarget))) { return; }
+    dirty = false;
     el = document.elementFromPoint(mx, my);
     if (!el) { return; }
+    lastTarget = el;
     found = findTarget(el);
     if (!found) { stripSidebar(el); return; }
     if (found.aria) { return; }
@@ -424,5 +432,5 @@
       cur.text = shorten(found.el.__mtTitle);
       if (shown && cur.text) { textEl.firstChild.nodeValue = cur.text; place(cur.el); }
     }
-  }, 120);
+  }, 250);
 })();

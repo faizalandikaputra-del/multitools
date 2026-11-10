@@ -15,7 +15,7 @@
     { id: "palettes", label: "Color palettes", re: /^(mtRecentColors|mtx\.(cpSwatchTab|palette|cp))/ },
     { id: "background", label: "Background image, GIF and position", re: /^mtx\.bg(?!Color)/, heavy: true },
     { id: "shortcutz", label: "Shortcutz cards and tool images", re: /^mtx\.(toolImg\.|shortcutz)/, heavy: true },
-    { id: "style", label: "Style, theme, layout and animation", re: /^(mtx\.(uiTheme|glassMode|mdScheme|mdBg|mdMode|themeColor|bgColor|navPos|taGroupAccent|tabOrder|pro\.|island|anim|uiScale)|mt_theme_state)/ },
+    { id: "style", label: "Style, theme, layout and animation", re: /^(mtx\.(uiTheme|glassMode|mdScheme|mdBg|mdMode|themeColor|bgColor|navPos|taGroupAccent|tabOrder|pro\.|island|tooltipOn|anim|uiScale)|mt_theme_state)/ },
     { id: "other", label: "Everything else", re: /^/ }
   ];
   function groupOf(key) { var i; for (i = 0; i < GROUPS.length; i++) { if (GROUPS[i].re.test(key)) { return GROUPS[i].id; } } return "other"; }

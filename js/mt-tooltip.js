@@ -52,6 +52,12 @@
     return s;
   }
 
+  /* Settings > Show tooltips (checkbox #tooltip-enabled, key mtx.tooltipOn, "0" = off). Off: nothing is ever shown and no timer starts; the title
+     is still borrowed while the pointer is on an element, so the browser's own tooltip does not take over. Read on every hover (one localStorage
+     read), so the Curve pane follows the panel without a message. */
+  var ON_KEY = "mtx.tooltipOn";
+  function enabled() { try { return window.localStorage.getItem(ON_KEY) !== "0"; } catch (e) { return true; } }
+
   var tip = null, textEl = null;
   var cur = null;          // { el, text, suppressed }
   var shown = false, showTimer = 0, hideStamp = 0;
@@ -188,7 +194,7 @@
 
   function show() {
     showTimer = 0;
-    if (!cur || cur.suppressed || !cur.text || !ensure()) { return; }
+    if (!cur || cur.suppressed || !cur.text || !enabled() || !ensure()) { return; }
     if (!document.documentElement.contains(cur.el)) { leave(); return; }
     textEl.firstChild.nodeValue = cur.text;
     shown = false;
@@ -216,7 +222,7 @@
     cur = { el: found.el, text: shorten(found.raw), suppressed: false };
     startX = mx = e.clientX; startY = my = e.clientY;
     if (showTimer) { clearTimeout(showTimer); showTimer = 0; }
-    if (!cur.text) { hide(); return; }
+    if (!cur.text || !enabled()) { hide(); return; }
     if (wasShown || Date.now() - hideStamp < WARM) { show(); }
     else { shown = false; showTimer = setTimeout(show, DELAY); }
   }
@@ -254,6 +260,7 @@
       if (!moved) { return; }
       cur.suppressed = false;
     } else if (!moved && showTimer) { return; }
+    if (!enabled()) { return; }
     startX = mx; startY = my;
     if (showTimer) { clearTimeout(showTimer); }
     showTimer = setTimeout(show, DELAY);                   // wait for the pointer to rest
@@ -271,6 +278,19 @@
   window.addEventListener("resize", function () { gk.key = null; quiet(); });
 
   /* Create the tip element and measure the zoom convention while nothing is hovered, so a tooltip never inserts DOM or probes at show time. */
+  function bindSetting() {          // main panel only: the checkbox lives in #settings-modal (the Settings window mirrors it)
+    var c = document.getElementById("tooltip-enabled"), rs = document.getElementById("settings-reset");
+    if (c) {
+      c.checked = enabled();
+      c.addEventListener("change", function () {
+        try { if (c.checked) { window.localStorage.removeItem(ON_KEY); } else { window.localStorage.setItem(ON_KEY, "0"); } } catch (e) { }
+        if (!c.checked) { quiet(); }
+      });
+    }
+    if (rs) { rs.addEventListener("click", function () { try { window.localStorage.removeItem(ON_KEY); } catch (e) { } if (c) { c.checked = true; } }); }   // Reset everything
+  }
+  if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", bindSetting); } else { bindSetting(); }
+
   function warmUp() { ensure(); try { convK(); } catch (e) { } }
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { setTimeout(warmUp, 600); }); }
   else { setTimeout(warmUp, 600); }

@@ -552,6 +552,17 @@
         <p class="field-note">The capsule at the top of the panel. Shows the time, or a running timer or stopwatch. Update notices still appear when it is off.</p>
       </div>
 
+      <!-- Tooltips on / off. Logic: js/mt-tooltip.js (key mtx.tooltipOn, "0" = off). -->
+      <div class="field field-column" id="tooltip-field">
+        <span class="field-label">Tooltips</span>
+        <label class="switch-row" for="tooltip-enabled">
+          <span>Show tooltips</span>
+          <input type="checkbox" id="tooltip-enabled" checked>
+          <span class="switch-track"></span>
+        </label>
+        <p class="field-note">The small name that appears when the pointer rests on a button. Turn it off if the mouse cursor flickers.</p>
+      </div>
+
       <!-- Idle screen extras: time in After Effects (live h/m/s), countdown timer with sound, notes, daily list.
            Logic: js/mt-idle-focus.js (keys mtx.timer*, mtx.notes, mtx.todo*). Shown by css/mt-idle-focus.css while body.is-idle. -->
       <div class="field field-column" id="idle-focus-field">
@@ -750,7 +761,7 @@
   <!-- Wheel over the left tab bar switches tabs. Loaded BEFORE main.js / smooth-scroll.js on purpose. -->
   <script src="../js/tab-wheel.js?v=2"></script>
   <script src="../js/mt-away.js?v=4"></script>
-  <script src="../js/mt-tooltip.js?v=10"></script>
+  <script src="../js/mt-tooltip.js?v=11"></script>
   <script src="../js/mt-select.js?v=5"></script>
   <script src="../js/mt-colorpicker.js?v=1"></script>
   <script src="../js/mt-spinbox.js?v=1"></script>
@@ -793,6 +804,6 @@
   <script src="../js/panel-refinements.js?v=12"></script>
   <script src="../js/mt-newtools.js?v=2"></script>
   <script src="../js/mt-tools-layout.js?v=3"></script>
-  <script src="../js/mt-backup.js?v=1"></script>
+  <script src="../js/mt-backup.js?v=2"></script>
 </body>
 </html>

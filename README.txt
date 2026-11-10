@@ -2484,3 +2484,13 @@ fixCursor-E (tooltip dibuat ulang: pointer tidak lagi berubah jadi panah saat to
   - css/mt-tooltip.css (?v=5): tanpa animasi scale / overshoot, tanpa will-change, tanpa backdrop-filter; css/mt-nav.css (?v=2): aturan transform .is-left dibuang (panah tetap).
   - Perilaku lain: tooltip hilang saat mouse keluar, klik, tombol keyboard, wheel, blur; muncul lagi setelah mouse bergerak lalu diam.
   - Files: js/mt-tooltip.js, css/mt-tooltip.css, css/mt-nav.css, html/index.html, neucurve/index.html, README.txt.
+
+fixTooltip-toggle (Settings > Show tooltips)
+  - Permintaan owner: opsi untuk mematikan tooltip di pengaturan Multi Tool (untuk menguji / menghindari cursor yang berkedip).
+  - html/index.html: field baru "Tooltips" > "Show tooltips" (#tooltip-enabled) di bawah Dynamic island; html/settings.html: grup "Tooltips" dengan toggle yang sama
+    (jendela Settings menirunya lewat id, tanpa kode tambahan). Kunci localStorage mtx.tooltipOn ("0" = mati, tidak ada = hidup).
+  - js/mt-tooltip.js (?v=11): enabled() dibaca tiap hover; saat mati tidak ada tooltip dan tidak ada timer, title tetap dipinjam selama pointer di atas elemen supaya
+    tooltip bawaan browser tidak muncul. Mematikan saat tooltip tampil menyembunyikannya seketika. Settings > Reset everything menyalakan lagi.
+    Pane Curve (NeuCurve) membaca kunci yang sama.
+  - js/mt-backup.js (?v=2): mtx.tooltipOn ikut kelompok "Style, theme, layout and animation".
+  - Files: js/mt-tooltip.js, js/mt-backup.js, html/index.html, html/settings.html, neucurve/index.html, README.txt.

@@ -2448,3 +2448,11 @@ fixCursor-A (cursor tangan berubah jadi panah: watchdog tooltip tidak lagi hit-t
   - Perbaikan (mt-tooltip.js v8, ?v=8): watchdog (interval 250 ms) hanya mengecek jika mouse bergerak sejak cek terakhir atau elemen terakhir di bawah mouse
     sudah lepas dari dokumen (panel re-render). Mouse diam di panel yang tidak berubah = tidak ada hit test. Perilaku tooltip lain tidak berubah.
   - Files: js/mt-tooltip.js, html/index.html, neucurve/index.html, README.txt.
+
+fixCursor-B (pointer berkedip tangan <-> panah saat diam di atas tab / tombol: orb ambient tidak lagi menyala saat pointer masih di panel)
+  - Masalah: setelah fixCursor-A pointer masih berkedip. Penyebab: js/mt-away.js mengakhiri status "moving" 1,5 detik setelah input terakhir, jadi orb ambient
+    (blink + drift) jalan lagi saat pointer masih diam di atas tab. Sidebar punya backdrop-filter blur di depan orb, jadi blur dihitung ulang tiap frame dan
+    CEF mereset cursor (tangan -> panah).
+  - Perbaikan (mt-away.js v4, ?v=4): status "moving" tetap aktif selama pointer ada di dalam panel, baru berakhir saat pointer keluar panel / panel tersembunyi.
+    Orb (blink dan drift) berhenti selama pointer di panel dan lanjut saat pointer di luar. Tidak ada animasi lain yang diubah.
+  - Files: js/mt-away.js, html/index.html, README.txt.

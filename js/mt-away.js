@@ -11,7 +11,7 @@
   function set(v) {
     if (v === away) { return; }
     away = v;
-    if (v) { root.className += " mt-away"; }
+    if (v) { root.className += " mt-away"; setMoving(false); }
     else { root.className = root.className.replace(/(^|\s)mt-away(?=\s|$)/g, ""); }
   }
   // "moving": the user is actively working in the panel (pointer / wheel / key in the last MOVING_MS).
@@ -26,7 +26,10 @@
     else { root.className = root.className.replace(/(^|\s)mt-moving(?=\s|$)/g, ""); }
     try { window.dispatchEvent(new Event("mt-motion-state")); } catch (e) { }
   }
-  function touch() { setMoving(true); clearTimeout(mTimer); mTimer = setTimeout(function () { setMoving(false); }, MOVING_MS); }
+  // v4 (fixCursor-B): "moving" no longer ends 1.5 s after the last input while the pointer is still INSIDE the panel. The orbs used to
+  // resume exactly while the pointer rested on a tab / button; the frosted sidebar re-blurred every frame and the cursor blinked
+  // (hand <-> arrow). Now it ends only when the pointer leaves the panel (or the panel is hidden): the orbs glow while the pointer is away.
+  function touch() { setMoving(true); clearTimeout(mTimer); mTimer = setTimeout(function () { if (away) { setMoving(false); } }, MOVING_MS); }
   var wake = function () { set(false); touch(); };
   ["mousemove", "mousedown", "wheel", "keydown", "touchstart", "mouseenter"].forEach(function (t) {
     document.addEventListener(t, wake, true);

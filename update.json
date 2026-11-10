@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.165",
-    "changelog":  "- Update 1.8.165",
+    "latest_version":  "1.8.166",
+    "changelog":  "- Update 1.8.166",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -264,7 +264,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "d386e09ee90ca88acfe29de67a76bcac1141366f751bc85ab6712a12624e2775"
+                      "sha256":  "affe0c6ad45fc4b896e091457fb2909b3fa59f7b329ae40c8b32f7e04974a865"
                   },
                   {
                       "path":  "html/settings.html",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/mt-away.js",
-                      "sha256":  "7533d001a5e23d525fe2e9df5c5d903296b66a04e31f32be815557beb5228d05"
+                      "sha256":  "1998ee2c941cb47eb8b89fd6f33fc6afabeaac51b57564b9bac09c322168e29f"
                   },
                   {
                       "path":  "js/mt-backup.js",
@@ -760,7 +760,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "6eea622df529db90d016cd8814682958dacaf92fe5f1cc6275a3fa71143ae8fe"
+                      "sha256":  "d2c9d16fb551c75d78b9b761874dd228da7f206a463ee0b76b03bd19b7a8cdf7"
                   }
               ]
 }

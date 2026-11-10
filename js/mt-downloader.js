@@ -9,8 +9,10 @@
                          capsule cards and the Compact icon bar work with no extra code).
      MTDl.add(url)       queue one link (what the Download button and the clipboard watcher call).
 
-   Download service: tikwm.com (free web downloader, no key). POST https://www.tikwm.com/api/  url=<link>&hd=1
+   Download service: tikwm.com (free web downloader, no key). GET https://www.tikwm.com/api/?url=<link>&hd=0|1
    returns JSON { code, msg, data: { id, title, play, hdplay, images[], author{unique_id} } }.
+   Speed notes: HD makes the service do extra work, so HD is OFF by default; the connection is kept alive; every attempt has a
+   hard deadline (14 s) and is retried (3 tries, both tikwm hosts) instead of hanging; the status line counts the seconds.
    The service allows about 1 request per second, so requests are spaced out.
 
    Storage (localStorage, prefix mtx.):  dlDir (save folder)  dlAuto  dlTl (add to timeline)  dlHd  dlHist (recent)
@@ -32,10 +34,13 @@
     }
   } catch (e) { fs = null; }
 
-  var API_HOST = "www.tikwm.com";
-  var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+    var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
   var URL_RE = /https?:\/\/(?:[a-z0-9-]+\.)?tiktok\.com\/[^\s"'<>]+/i;
   var API_GAP_MS = 1150;
+  var API_DEADLINE_MS = 14000;
+  var API_HOSTS = ["www.tikwm.com", "tikwm.com"];
+  var agentS = null, agentP = null;
+  try { agentS = new https.Agent({ keepAlive: true, maxSockets: 4 }); agentP = new http.Agent({ keepAlive: true, maxSockets: 4 }); } catch (e) { agentS = null; agentP = null; }
 
   // ---------------------------------------------------------------- tiny helpers
   function get(k) { try { return localStorage.getItem("mtx." + k); } catch (e) { return null; } }
@@ -82,7 +87,9 @@
       var body = opts.body || null, k;
       if (body) { headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"; headers["Content-Length"] = BufferCtor.byteLength(body); }
       if (opts.referer) { headers["Referer"] = opts.referer; }
-      var r = lib.request({ protocol: u.protocol, hostname: u.hostname, port: u.port || undefined, path: u.pathname + u.search, method: body ? "POST" : "GET", headers: headers }, function (res) {
+      var dead = null, settled = false;
+      var r = lib.request({ protocol: u.protocol, hostname: u.hostname, port: u.port || undefined, path: u.pathname + u.search, method: body ? "POST" : "GET", headers: headers, agent: (u.protocol === "http:" ? agentP : agentS) || undefined }, function (res) {
+        if (dead) { clearTimeout(dead); dead = null; }
         var code = res.statusCode || 0;
         if (code >= 300 && code < 400 && res.headers.location && depth < 6) {
           res.resume();
@@ -94,24 +101,52 @@
         if (code < 200 || code >= 300) { res.resume(); reject(new Error("Server answered " + code + ".")); return; }
         resolve(res);
       });
-      r.setTimeout(30000, function () { r.abort(); reject(new Error("Timed out.")); });
-      r.on("error", function (err) { reject(new Error(err && err.code === "ENOTFOUND" ? "No internet connection." : (err && err.message) || "Network error.")); });
+      r.setTimeout(opts.idle || 30000, function () { r.abort(); reject(new Error("Timed out.")); });
+      if (opts.deadline) { dead = setTimeout(function () { try { r.abort(); } catch (e) { } reject(new Error("The download service did not answer in time.")); }, opts.deadline); }
+      r.on("error", function (err) { if (dead) { clearTimeout(dead); dead = null; } reject(new Error(err && err.code === "ENOTFOUND" ? "No internet connection." : (err && err.message) || "Network error.")); });
       if (body) { r.write(body); }
       r.end();
     });
   }
-  function postJson(url, body) {
-    return request(url, { body: body }).then(function (res) {
+  function getJson(url) {
+    return request(url, { deadline: API_DEADLINE_MS, idle: API_DEADLINE_MS }).then(function (res) {
       return new Promise(function (resolve, reject) {
-        var chunks = [];
+        var chunks = [], t = setTimeout(function () { try { res.destroy(); } catch (e) { } reject(new Error("The download service did not answer in time.")); }, API_DEADLINE_MS);
         res.on("data", function (c) { chunks.push(c); });
         res.on("end", function () {
+          clearTimeout(t);
           try { resolve(JSON.parse(BufferCtor.concat(chunks).toString("utf8"))); } catch (e) { reject(new Error("The download service sent an unreadable answer.")); }
         });
-        res.on("error", reject);
+        res.on("error", function (e) { clearTimeout(t); reject(e); });
       });
     });
   }
+  // Up to 3 tries, alternating the two tikwm hosts. "Free Api Limit" / timeouts / odd answers are retried; a real
+  // "this link is private / removed" answer is not.
+  function fetchInfo(job, hd) {
+    var tries = 0, lastErr = null;
+    function attempt() {
+      var host = API_HOSTS[tries % API_HOSTS.length];
+      tries++;
+      patch(job, { status: "fetching", msg: tries > 1 ? "Getting the link\u2026 (try " + tries + " of 3)" : "Getting the link\u2026" });
+      var wait = Math.max(0, API_GAP_MS - (Date.now() - lastApiAt));
+      return sleep(wait).then(function () {
+        lastApiAt = Date.now();
+        return getJson("https://" + host + "/api/?url=" + encodeURIComponent(job.url) + "&hd=" + (hd ? "1" : "0"));
+      }).then(function (j) {
+        if (j && j.code === 0 && j.data) { return j.data; }
+        var m = (j && j.msg) ? String(j.msg) : "The service could not read this link.";
+        var e = new Error(m.replace(/^.*?:\s*/, "")); e.retry = /limit|busy|try again|too many/i.test(m); throw e;
+      }).catch(function (err) {
+        lastErr = err;
+        var retry = err.retry !== false && tries < 3;
+        if (!retry) { throw err; }
+        return sleep(/limit|many/i.test(err.message) ? 1800 : 600).then(attempt);
+      });
+    }
+    return attempt();
+  }
+
   function toFile(url, dest, onPct) {
     return request(url, { referer: "https://www.tiktok.com/" }).then(function (res) {
       return new Promise(function (resolve, reject) {
@@ -136,7 +171,7 @@
     var m = /\.(jpe?g|png|webp|heic|mp4|mov)(?:$|\?)/i.exec(String(url).split("#")[0]);
     return m ? "." + m[1].toLowerCase() : dflt;
   }
-  function absUrl(u) { u = String(u || ""); return u.charAt(0) === "/" ? "https://" + API_HOST + u : u; }
+  function absUrl(u) { u = String(u || ""); return u.charAt(0) === "/" ? "https://" + API_HOSTS[0] + u : u; }
 
   // ---------------------------------------------------------------- save folder
   var pendingPick = null;
@@ -171,19 +206,16 @@
   function patch(job, o) { var k; for (k in o) { if (o.hasOwnProperty(k)) { job[k] = o[k]; } } emit(); }
 
   function runJob(job) {
-    var dir, wantTl = flag("dlTl", true), hd = flag("dlHd", true), info;
+    var dir, wantTl = flag("dlTl", true), hd = flag("dlHd", false), info;
     return ensureDir().then(function (d) {
       if (!d) { throw new Error("No save folder chosen."); }
       dir = d;
+      job.t0 = Date.now();
       patch(job, { status: "fetching", msg: "Getting the link\u2026", pct: 0 });
-      var wait = Math.max(0, API_GAP_MS - (Date.now() - lastApiAt));
-      return sleep(wait);
     }).then(function () {
-      lastApiAt = Date.now();
-      return postJson("https://" + API_HOST + "/api/", "url=" + encodeURIComponent(job.url) + "&count=12&cursor=0&web=1&hd=" + (hd ? "1" : "0"));
-    }).then(function (j) {
-      if (!j || j.code !== 0 || !j.data) { throw new Error((j && j.msg) ? String(j.msg).replace(/^.*?:\s*/, "") : "The service could not read this link."); }
-      info = j.data;
+      return fetchInfo(job, hd);
+    }).then(function (data) {
+      info = data;
       var author = safeName(info.author && (info.author.unique_id || info.author.nickname)), base = author + "_" + safeName(info.id);
       var media = [], i;
       if (info.images && info.images.length) {
@@ -230,8 +262,9 @@
   function pump() {
     if (busy || !queue.length) { return; }
     busy = true;
-    var job = queue.shift();
-    runJob(job).then(function () { busy = false; pump(); }, function () { busy = false; pump(); });
+    var job = queue.shift(), tick = setInterval(emit, 1000);     // the status line counts the seconds
+    function next() { clearInterval(tick); busy = false; pump(); }
+    runJob(job).then(next, next);
   }
 
   function add(url) {
@@ -353,7 +386,7 @@
         '<div class="chips dl-chips">' +
           '<label class="chip" title="Download by itself when you copy a TikTok link"><input type="checkbox" id="dl-auto" data-no-restore><span>Auto</span></label>' +
           '<label class="chip" title="Add the file to the active comp at the playhead"><input type="checkbox" id="dl-tl" data-no-restore><span>Timeline</span></label>' +
-          '<label class="chip" title="Ask for the HD video when it exists"><input type="checkbox" id="dl-hd" data-no-restore><span>HD</span></label>' +
+          '<label class="chip" title="HD video (slower: the service needs more time)"><input type="checkbox" id="dl-hd" data-no-restore><span>HD</span></label>' +
         '</div>' +
         '<p class="field-note dl-status" id="dl-status" aria-live="polite"></p>' +
       '</div>' +
@@ -378,7 +411,7 @@
     var autoEl = $("dl-auto"), tlEl = $("dl-tl"), hdEl = $("dl-hd");
     autoEl.checked = flag("dlAuto", false);
     tlEl.checked = flag("dlTl", true);
-    hdEl.checked = flag("dlHd", true);
+    hdEl.checked = flag("dlHd", false);
     autoEl.addEventListener("change", function () { setAuto(autoEl.checked); paint(); });
     tlEl.addEventListener("change", function () { set("dlTl", tlEl.checked ? "1" : "0"); });
     hdEl.addEventListener("change", function () { set("dlHd", hdEl.checked ? "1" : "0"); });
@@ -435,7 +468,8 @@
 
       var live = jobs.filter(function (j) { return j.status !== "done" && j.status !== "error"; })[0] || jobs[0];
       if (live) {
-        st.textContent = (live.status === "downloading" && live.pct ? live.msg.replace(/\u2026$/, "") + " " + live.pct + "%" : live.msg);
+        var secs = live.t0 && (live.status === "fetching") ? " " + Math.round((Date.now() - live.t0) / 1000) + "s" : "";
+        st.textContent = (live.status === "downloading" && live.pct ? live.msg.replace(/\u2026$/, "") + " " + live.pct + "%" : live.msg + secs);
         st.setAttribute("data-state", live.status);
       } else {
         st.textContent = autoEl.checked ? "Watching the clipboard." : "";

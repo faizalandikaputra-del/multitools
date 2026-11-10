@@ -2514,3 +2514,11 @@ downloader-1 (tab Shortcutz diganti tab Downloader TikTok)
     mt-tools-layout.js: COMPACT_TABS pakai "Downloader". Tombol "Pin to Shortcutz" disembunyikan lewat CSS (tab tujuannya sudah tidak ada).
     Kode Shortcutz, kartu tersimpan (mtx.shortcutz*) dan tile Speed Dial di Command Palette tidak dihapus.
   - Files: html/index.html, html/settings.html, js/main.js, js/mt-downloader.js, js/mt-tools-layout.js, css/mt-downloader.css, jsx/host.jsx, README.txt.
+
+downloader-2 (tikwm lambat / status "Getting the link" tidak selesai)
+  - Laporan owner: generate link di tikwm lama, status "Getting the link" terus. Snaptik tidak punya API resmi dan sumber scraper-nya tidak bisa diambil, jadi tetap tikwm
+    tapi dibuat jauh lebih tahan lambat. Penyebab pasti belum terkonfirmasi (belum bisa diuji dengan internet); perbaikan menutup penyebab yang paling mungkin.
+  - js/mt-downloader.js (?v=2): request ke API sekarang GET /api/?url=..&hd=.. (parameter count/cursor/web dibuang), koneksi keep-alive, batas waktu keras 14 detik per percobaan,
+    sampai 3 percobaan bergantian host www.tikwm.com dan tikwm.com (juga untuk "Free Api Limit"), status menghitung detik ("Getting the link... 8s", "(try 2 of 3)").
+    Chip HD sekarang MATI secara default (HD membuat service bekerja lebih lama); nyalakan lagi kalau perlu.
+  - Files: js/mt-downloader.js, html/index.html (?v=2), README.txt.

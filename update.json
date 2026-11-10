@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.171",
-    "changelog":  "- Update 1.8.171",
+    "latest_version":  "1.8.172",
+    "changelog":  "- Update 1.8.172",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -268,7 +268,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "8e92f0ad4bd704172ba705bf1162c41b3c90c10fdeb5c723c459804e07c920a6"
+                      "sha256":  "ac18e3065f22f1118e869e5701fa15c34d971f70de0292af3fbdd0e253184cd9"
                   },
                   {
                       "path":  "html/settings.html",
@@ -316,7 +316,7 @@
                   },
                   {
                       "path":  "js/mt-downloader.js",
-                      "sha256":  "0f8f7d026b85aa5061f9d223dbb86c3b4d3f6fccb0478ebfcadad1fe715ef0e3"
+                      "sha256":  "6f60d0a5095daf155c80ba49c1569ee8673d344b61c7139f2a0cfb1a19bddc12"
                   },
                   {
                       "path":  "js/mt-fxcopy.js",
@@ -768,7 +768,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "b4fa81abb3ea9f69cc2862b7bcf80b9158e8f47a6e153a4f5294bf70ade34408"
+                      "sha256":  "bbd87b0a0de50b97e7fc71d432dc3b36bf28b8ec6e50783b515c623d11df7b6e"
                   }
               ]
 }

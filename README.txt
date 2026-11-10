@@ -2522,3 +2522,13 @@ downloader-2 (tikwm lambat / status "Getting the link" tidak selesai)
     sampai 3 percobaan bergantian host www.tikwm.com dan tikwm.com (juga untuk "Free Api Limit"), status menghitung detik ("Getting the link... 8s", "(try 2 of 3)").
     Chip HD sekarang MATI secara default (HD membuat service bekerja lebih lama); nyalakan lagi kalau perlu.
   - Files: js/mt-downloader.js, html/index.html (?v=2), README.txt.
+
+downloader-3 (status "Getting the link" tetap tidak selesai: jalur cadangan curl + log)
+  - Laporan owner: setelah downloader-2, status masih "Getting the link" terus. Dugaan paling kuat: koneksi HTTPS Node di dalam panel CEP macet / ditolak CDN
+    (Node CEP lama, TLS beda dengan browser), bukan server tikwm. Belum bisa dikonfirmasi tanpa internet di sisi pembuat.
+  - js/mt-downloader.js (?v=3): panggilan API sekarang BALAPAN: Node jalan dulu, curl sistem (curl.exe di Windows 10+, curl di macOS) ikut jalan setelah 4,5 detik atau
+    langsung saat Node gagal; jawaban benar pertama menang. Kalau API hanya terjawab lewat curl, download file juga langsung lewat curl (Node dilewati); kalau satu jalur
+    gagal, jalur satunya dicoba. Download lewat Node punya batas 10 detik untuk mulai menerima data. Error gabungan tampil di status (contoh "node: ...; curl: ...").
+  - Log: ~/Documents/Multitool_CEP_Data/downloader.log (satu baris per tahap / error: "api ok via node|curl", "api fail ...", "job error ..."). Dibatasi 200 KB.
+  - paint() tidak lagi bisa melempar error (error di sana membuang listener dan membekukan teks status).
+  - Files: js/mt-downloader.js, html/index.html (?v=3), README.txt.

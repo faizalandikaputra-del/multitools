@@ -24,12 +24,12 @@
   var ctx = null;
   // Without --mixed-context CEP only exposes require() as window.cep_node.require, and Buffer / process are not
   // globals, so they are taken from require() too (same pattern as js/mt-gif.js).
-  var req = null, fs = null, pathMod = null, https = null, http = null, cp = null, urlMod = null, BufferCtor = null, plat = "", ownPid = 0;
+  var req = null, fs = null, pathMod = null, https = null, http = null, cp = null, urlMod = null, osMod = null, BufferCtor = null, plat = "", ownPid = 0;
   try {
     req = (typeof global.require === "function") ? global.require : (global.cep_node && global.cep_node.require);
     if (req) {
       fs = req("fs"); pathMod = req("path"); https = req("https"); http = req("http"); cp = req("child_process");
-      urlMod = req("url"); BufferCtor = req("buffer").Buffer;
+      urlMod = req("url"); BufferCtor = req("buffer").Buffer; osMod = req("os");
       var proc = req("process"); plat = proc.platform || ""; ownPid = proc.pid || 0;
     }
   } catch (e) { fs = null; }
@@ -37,7 +37,8 @@
     var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
   var URL_RE = /https?:\/\/(?:[a-z0-9-]+\.)?tiktok\.com\/[^\s"'<>]+/i;
   var API_GAP_MS = 1150;
-  var API_DEADLINE_MS = 14000;
+  var API_DEADLINE_MS = 12000;
+  var preferCurl = false;      // set when the API only answered through curl: Node is stuck, so downloads skip it
   var API_HOSTS = ["www.tikwm.com", "tikwm.com"];
   var agentS = null, agentP = null;
   try { agentS = new https.Agent({ keepAlive: true, maxSockets: 4 }); agentP = new http.Agent({ keepAlive: true, maxSockets: 4 }); } catch (e) { agentS = null; agentP = null; }
@@ -74,6 +75,48 @@
 
   function saveHistory() { try { set("dlHist", JSON.stringify(history.slice(0, 12))); } catch (e) { } }
   function emit() { listeners = listeners.filter(function (fn) { try { return fn() !== false; } catch (e) { return false; } }); }
+
+
+  // ---------------------------------------------------------------- log file
+  // ~/Documents/Multitool_CEP_Data/downloader.log : one line per stage / error, so a stuck download can be diagnosed.
+  var logFile = null;
+  try {
+    if (fs && osMod) {
+      var ld = pathMod.join(osMod.homedir(), "Documents", "Multitool_CEP_Data");
+      try { if (!fs.existsSync(ld)) { fs.mkdirSync(ld); } } catch (e1) { }
+      logFile = pathMod.join(ld, "downloader.log");
+      try { if (fs.existsSync(logFile) && fs.statSync(logFile).size > 200000) { fs.unlinkSync(logFile); } } catch (e2) { }
+    }
+  } catch (e) { logFile = null; }
+  function log(msg) { try { if (logFile) { fs.appendFileSync(logFile, new Date().toISOString() + "  " + msg + "\n"); } } catch (e) { } }
+
+  // ---------------------------------------------------------------- curl (backup route)
+  // Node's TLS inside an old CEP build can stall or get refused by the service's CDN. The system curl (Windows 10+ and macOS
+  // ship one) uses the OS network stack, so it is raced against Node and used when Node fails.
+  function curlBin() { return plat === "win32" ? "curl.exe" : "curl"; }
+  function curlText(url, secs) {
+    return new Promise(function (resolve, reject) {
+      if (!cp) { reject(new Error("curl is not available")); return; }
+      try {
+        cp.execFile(curlBin(), ["-sS", "-L", "--max-time", String(secs), "-A", UA, url], { timeout: (secs + 3) * 1000, windowsHide: true, maxBuffer: 4 * 1024 * 1024, encoding: "utf8" }, function (err, out, errOut) {
+          if (err) { reject(new Error(String(errOut || err.message || "curl failed").split(/\r?\n/)[0].slice(0, 120))); return; }
+          resolve(out);
+        });
+      } catch (e) { reject(e); }
+    });
+  }
+  function curlFile(url, dest) {
+    return new Promise(function (resolve, reject) {
+      if (!cp) { reject(new Error("curl is not available")); return; }
+      var part = dest + ".part";
+      try {
+        cp.execFile(curlBin(), ["-sS", "-L", "--fail", "--max-time", "900", "-A", UA, "-e", "https://www.tiktok.com/", "-o", part, url], { timeout: 910000, windowsHide: true }, function (err, out, errOut) {
+          if (err) { try { fs.unlinkSync(part); } catch (x) { } reject(new Error(String(errOut || err.message || "curl failed").split(/\r?\n/)[0].slice(0, 120))); return; }
+          try { fs.renameSync(part, dest); resolve(dest); } catch (e) { reject(new Error("Cannot write to the save folder.")); }
+        });
+      } catch (e) { reject(e); }
+    });
+  }
 
   // ---------------------------------------------------------------- http (Node)
   function request(url, opts, depth) {
@@ -121,6 +164,28 @@
       });
     });
   }
+  // Node first; curl joins after 4.5 s, or at once when Node fails. First good answer wins.
+  function apiJson(url) {
+    return new Promise(function (resolve, reject) {
+      var done = false, fails = 0, errs = [], started = false, tm = null;
+      function ok(v, tag) { if (!done) { done = true; clearTimeout(tm); preferCurl = (tag === "curl"); log("api ok via " + tag); resolve(v); } }
+      function bad(tag, e) {
+        errs.push(tag + ": " + ((e && e.message) || "failed")); log("api fail " + errs[errs.length - 1]);
+        fails++;
+        if (fails >= 2 && !done) { done = true; clearTimeout(tm); reject(new Error(errs.join("; ").slice(0, 200))); }
+      }
+      function startCurl() {
+        if (started || done) { return; }
+        started = true;
+        curlText(url, 12).then(function (t) {
+          var j = null; try { j = JSON.parse(t); } catch (e) { }
+          if (j) { ok(j, "curl"); } else { bad("curl", new Error("unreadable answer")); }
+        }, function (e) { bad("curl", e); });
+      }
+      tm = setTimeout(startCurl, 4500);
+      getJson(url).then(function (j) { ok(j, "node"); }, function (e) { bad("node", e); startCurl(); });
+    });
+  }
   // Up to 3 tries, alternating the two tikwm hosts. "Free Api Limit" / timeouts / odd answers are retried; a real
   // "this link is private / removed" answer is not.
   function fetchInfo(job, hd) {
@@ -132,7 +197,7 @@
       var wait = Math.max(0, API_GAP_MS - (Date.now() - lastApiAt));
       return sleep(wait).then(function () {
         lastApiAt = Date.now();
-        return getJson("https://" + host + "/api/?url=" + encodeURIComponent(job.url) + "&hd=" + (hd ? "1" : "0"));
+        return apiJson("https://" + host + "/api/?url=" + encodeURIComponent(job.url) + "&hd=" + (hd ? "1" : "0"));
       }).then(function (j) {
         if (j && j.code === 0 && j.data) { return j.data; }
         var m = (j && j.msg) ? String(j.msg) : "The service could not read this link.";
@@ -148,7 +213,7 @@
   }
 
   function toFile(url, dest, onPct) {
-    return request(url, { referer: "https://www.tiktok.com/" }).then(function (res) {
+    return request(url, { referer: "https://www.tiktok.com/", deadline: 10000, idle: 15000 }).then(function (res) {
       return new Promise(function (resolve, reject) {
         var total = parseInt(res.headers["content-length"], 10) || 0, got = 0, part = dest + ".part";
         var out = fs.createWriteStream(part);
@@ -211,6 +276,7 @@
       if (!d) { throw new Error("No save folder chosen."); }
       dir = d;
       job.t0 = Date.now();
+      log("job start " + job.url + " -> " + dir);
       patch(job, { status: "fetching", msg: "Getting the link\u2026", pct: 0 });
     }).then(function () {
       return fetchInfo(job, hd);
@@ -231,7 +297,15 @@
         return chain.then(function () {
           n++;
           patch(job, { status: "downloading", msg: media.length > 1 ? "Downloading photo " + n + " of " + media.length + "\u2026" : "Downloading\u2026" });
-          return toFile(m.url, uniquePath(dir, m.base, m.ext), function (pct) { job.pct = pct; emit(); }).then(function (f) { files.push(f); });
+          var dest = uniquePath(dir, m.base, m.ext);
+          var viaNode = function () { return toFile(m.url, dest, function (pct) { job.pct = pct; emit(); }); };
+          var viaCurl = function () { return curlFile(m.url, dest); };
+          var first = preferCurl ? viaCurl : viaNode, second = preferCurl ? viaNode : viaCurl;
+          return first().catch(function (e) {
+            log("download failed (" + ((e && e.message) || "?") + "), trying the other route");
+            patch(job, { msg: "Downloading (backup route)\u2026", pct: 0 });
+            return second();
+          }).then(function (f) { files.push(f); });
         });
       }, Promise.resolve()).then(function () { return files; });
     }).then(function (files) {
@@ -245,6 +319,7 @@
     }).then(function () {
       finish(job);
     }, function (err) {
+      log("job error " + ((err && err.message) || "?"));
       patch(job, { status: "error", msg: (err && err.message) || "Download failed." });
       toast(job.msg, true);
       finish(job);
@@ -458,7 +533,8 @@
       }
     });
 
-    function paint() {
+    function paint() { try { return paintNow(); } catch (e) { log("paint error " + e.message); return true; } }
+    function paintNow() {
       var dir = getDir(), st = $("dl-status"), list = $("dl-list");
       if (!wrap.isConnected && wrap.__seen) { return false; }       // tab was rebuilt: drop this listener
       if (wrap.isConnected) { wrap.__seen = true; }

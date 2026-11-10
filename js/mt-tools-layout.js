@@ -1,6 +1,6 @@
 /* Multi Tool - mt-tools-layout.js
    Settings > Appearance > "Tab layout": Normal (all cards stacked, as before) or Compact (a row of icon buttons;
-   only the chosen card is shown below). Affects the tabs in COMPACT_TABS: Tools, Quick Comp Edit, Shortcutz.
+   only the chosen card is shown below). Affects the tabs in COMPACT_TABS: Tools, Quick Comp Edit.
    - setting      localStorage mtx.toolsLayout = "compact" (absent = normal); chosen card index per tab in
                   mtx.toolsSel (Tools, kept for older saves) / mtx.toolsSel.<tab title>
    - hidden real controls (#mtt-layout-normal / #mtt-layout-compact) live in #settings-modal and are mirrored into the
@@ -24,7 +24,7 @@
   apply(layout());   // first paint
 
   // Tabs whose cards can switch to the icon bar. A tab needs 2+ capsule cards (.ta-group) with an icon in each header.
-  var COMPACT_TABS = ["Tools", "Quick Comp Edit", "Shortcutz"];
+  var COMPACT_TABS = ["Tools", "Quick Comp Edit"];
   function tabTitle() { var t = $("panel-title"); return t ? t.textContent : ""; }
   function isTools() { return COMPACT_TABS.indexOf(tabTitle()) >= 0; }
   function selKey() { var t = tabTitle(); return t === "Tools" ? SEL : SEL + "." + t; }

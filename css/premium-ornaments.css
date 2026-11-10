@@ -174,7 +174,7 @@
      above so a host needs both features before anything changes. Where only backdrop-filter is
      supported (color-mix() missing), .panel-head simply keeps the opaque var(--surface) base
      from 3a above - still live-tinted, just not translucent.
-     DELIBERATELY EXCLUDED: .code-editor, .preset-folder-header, .shortcut-tile. Each of those
+     DELIBERATELY EXCLUDED: .code-editor, .preset-folder-header. Each of those
      is the masked "content" layer inside a .saber-wrap (saber-wrap--code / --folder / --tile -
      see style.css's own comment above .saber-wrap). That masking trick only works because the
      content keeps a fully OPAQUE background and paints over the wrapper's rotating conic-
@@ -195,7 +195,7 @@
    pills and round icon buttons (.btn, .cat-tab, .chip, .tab, toggle switches - all
    intentionally pill/circle-shaped at 999px/50%, not "cards"), so rather than widen those
    tokens globally this nudges just the boxed "card" surfaces named in the spec.
-   .code-editor / .preset-folder-header / .shortcut-tile are EXCLUDED here too, for a second,
+   .code-editor / .preset-folder-header are EXCLUDED here too, for a second,
    related reason: their radius is deliberately calc()'d in style.css to nest exactly inside
    their .saber-wrap parent's own radius minus its 2px padding (e.g. saber-wrap--folder is
    `radius-s + 0.15rem + 2px`, its .preset-folder-header child is `radius-s + 0.15rem`).
@@ -219,8 +219,8 @@
    A single fine 1px gradient-stroke (the classic double-background padding-box/border-box
    trick), used sparingly as the panel's one recurring "signature" accent instead of the earlier
    HUD corner brackets - here just the focused code editor. Calm and static (no spin, no
-   scan-line) - the panel's existing rotating .saber-wrap conic-gradient ring (Shortcutz tiles,
-   toggles, preset folders) remains the primary animated "active" treatment; this is the quiet,
+   scan-line) - the panel's existing rotating .saber-wrap conic-gradient ring
+   (toggles, preset folders) remains the primary animated "active" treatment; this is the quiet,
    non-animated variant for a text-input surface where a spinning ring would distract while
    typing. Layers on top of - not instead of - .code-editor's existing focus box-shadow glow
    in style.css: different CSS property, so both apply with no conflict. */

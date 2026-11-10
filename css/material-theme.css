@@ -137,18 +137,15 @@
 :root[data-ui-theme="material"][data-theme] .ta-group,
 :root[data-ui-theme="material"][data-theme] .switch-row,
 :root[data-ui-theme="material"][data-theme] .code-editor,
-:root[data-ui-theme="material"][data-theme] .preset-folder-header,
-:root[data-ui-theme="material"][data-theme] .shortcut-tile {
+:root[data-ui-theme="material"][data-theme] .preset-folder-header{
   background: var(--md-surface); border: 0; border-radius: var(--mu-r-card); box-shadow: none;
   -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--md-on-surface);
 }
 :root[data-ui-theme="material"][data-theme] .tool:hover,
 :root[data-ui-theme="material"][data-theme] .expr-item:hover,
 :root[data-ui-theme="material"][data-theme] .preset-item:hover,
-:root[data-ui-theme="material"][data-theme] .ta-group:hover,
-:root[data-ui-theme="material"][data-theme] .shortcut-tile:hover { background: var(--md-surface-high); box-shadow: none; }
-:root[data-ui-theme="material"][data-theme] .tool:active,
-:root[data-ui-theme="material"][data-theme] .shortcut-tile:active { background: var(--md-surface-highest); }
+:root[data-ui-theme="material"][data-theme] .ta-group:hover{ background: var(--md-surface-high); box-shadow: none; }
+:root[data-ui-theme="material"][data-theme] .tool:active{ background: var(--md-surface-highest); }
 :root[data-ui-theme="material"][data-theme] .tool::before { background: rgba(var(--md-primary-rgb), 0.10); }
 :root[data-ui-theme="material"][data-theme] .tool-code { color: var(--md-on-surface); font-weight: 700; letter-spacing: 0.01em; }
 :root[data-ui-theme="material"][data-theme] .tool-name { color: var(--md-on-surface-variant); font-weight: 500; }
@@ -168,7 +165,6 @@
 :root[data-ui-theme="material"][data-theme] .flip-btn,
 :root[data-ui-theme="material"][data-theme] .cat-tab,
 :root[data-ui-theme="material"][data-theme] .cat-tab-add,
-:root[data-ui-theme="material"][data-theme] .shortcutz-add-btn,
 :root[data-ui-theme="material"][data-theme] .social-btn,
 :root[data-ui-theme="material"][data-theme] .icon-btn {
   background: var(--md-secondary-container); color: var(--md-on-secondary-container); border: 0; border-radius: 999px;
@@ -186,7 +182,6 @@
 :root[data-ui-theme="material"][data-theme] .flip-btn:hover,
 :root[data-ui-theme="material"][data-theme] .cat-tab:hover,
 :root[data-ui-theme="material"][data-theme] .cat-tab-add:hover,
-:root[data-ui-theme="material"][data-theme] .shortcutz-add-btn:hover,
 :root[data-ui-theme="material"][data-theme] .social-btn:hover,
 :root[data-ui-theme="material"][data-theme] .icon-btn:hover {
   background-image: var(--mu-state-hover); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);

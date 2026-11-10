@@ -46,7 +46,7 @@
    blanket `transform: translateZ(0)` would silently clobber those instead of composing
    with them. will-change/backface-visibility carry no such risk. */
 .saber-wrap::before, .saber-wrap::after,
-.tool, .shortcut-tile, .preset-item, .expr-item, .qce-res-tile, .snippet-card,
+.tool, .preset-item, .expr-item, .qce-res-tile, .snippet-card,
 .panel.is-entering, .panel-head.is-entering,
 .modal, .ctx-menu, .tab-indicator {
   backface-visibility: hidden;
@@ -59,7 +59,7 @@
      - .tool already reserves ::before (hover glow flash) and ::after (border + resting
        glow, box-shadow only, no background) - the sweep rides on ::after's otherwise-empty
        background instead of adding a 3rd/4th paint layer.
-     - .shortcut-tile / .preset-item / .expr-item / .qce-res-tile / .snippet-card have no
+     - .preset-item / .expr-item / .qce-res-tile / .snippet-card have no
        reserved pseudo-elements, so the sweep is set directly on the element as the
        background-image LONGHAND. style.css sets their base color with the `background`
        SHORTHAND (e.g. `background: var(--surface)`), which only defines background-color
@@ -68,8 +68,7 @@
        alone, so the card keeps its exact resting color.
    Background paint is always clipped to the element's own border-box regardless of
    `overflow`, so this can never bleed past rounded corners even where overflow:hidden
-   isn't set. A tile with a user-set custom background image (inline style, e.g. Shortcutz
-   "has-bg") simply keeps winning via inline-style specificity - shimmer quietly no-ops
+   isn't set. A tile with a user-set custom background image (inline style) simply keeps winning via inline-style specificity - shimmer quietly no-ops
    there instead of fighting it. */
 .tool::after {
   background-image: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
@@ -80,18 +79,17 @@
 }
 .tool:hover::after { background-position: -60% 0; }
 
-.shortcut-tile, .preset-item, .expr-item, .qce-res-tile, .snippet-card {
+ .preset-item, .expr-item, .qce-res-tile, .snippet-card {
   background-image: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.10) 50%, transparent 65%);
   background-size: 250% 100%;
   background-position: 160% 0;
   background-repeat: no-repeat;
   transition: background-position var(--shimmer-dur) var(--fluid);
 }
-.shortcut-tile:hover, .preset-item:hover, .expr-item:hover, .qce-res-tile:hover, .snippet-card:hover {
+ .preset-item:hover, .expr-item:hover, .qce-res-tile:hover, .snippet-card:hover {
   background-position: -60% 0;
 }
 :root[data-reduce-motion="true"] .tool::after,
-:root[data-reduce-motion="true"] .shortcut-tile,
 :root[data-reduce-motion="true"] .preset-item,
 :root[data-reduce-motion="true"] .expr-item,
 :root[data-reduce-motion="true"] .qce-res-tile,

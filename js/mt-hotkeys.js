@@ -1,7 +1,7 @@
 /* Multi Tool - mt-hotkeys.js   (PANEL side of Settings > Keyboard shortcuts, plus the Command Palette)
    What it does
      1. Builds ONE list of commands from the panel itself: tabs, Easy Layer tools, anchor / align / fit / flip, Tools tab actions,
-        every Shortcutz tile (built-in and your own). Nothing is duplicated: each command calls the same Bridge function the button calls.
+        and the Save frame commands. Nothing is duplicated: each command calls the same Bridge function the button calls.
      2. Command Palette: a search box over that list. Default key Ctrl+K (change it in Settings > Keyboard shortcuts).
      3. Keyboard shortcuts: any command can get a key. Stored in localStorage "mt.hotkeys" = {on, palette, map:{commandId:{c:"Ctrl+Shift+1", k:49}}}.
      4. Talks to the Settings window over js/mt-settings-bus.js:  hkreq (window asks)  ->  hkstate (panel answers)  /  hkset (window saves).
@@ -28,10 +28,21 @@
       state.on = o.on !== false;
       state.palette = (o.palette === null) ? null : (o.palette && o.palette.c ? o.palette : DEFAULT_PALETTE);
       state.map = (o.map && typeof o.map === "object") ? o.map : {};
+      // The Shortcutz tab was removed: drop any key bound to one of its commands ("sc:...").
+      var staleKeys = Object.keys(state.map).filter(function (k) { return k.indexOf("sc:") === 0; });
+      if (staleKeys.length) { staleKeys.forEach(function (k) { delete state.map[k]; }); save(); }
     }
   }
   function save() { try { window.localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { } }
-  function recent() { try { var a = JSON.parse(window.localStorage.getItem(LS_RECENT) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function recent() {
+    try {
+      var a = JSON.parse(window.localStorage.getItem(LS_RECENT) || "[]");
+      if (!Array.isArray(a)) { return []; }
+      var clean = a.filter(function (x) { return String(x).indexOf("sc:") !== 0; });   // Shortcutz commands no longer exist
+      if (clean.length !== a.length) { try { window.localStorage.setItem(LS_RECENT, JSON.stringify(clean)); } catch (e1) { } }
+      return clean;
+    } catch (e) { return []; }
+  }
   function pushRecent(id) {
     var a = recent().filter(function (x) { return x !== id; });
     a.unshift(id);
@@ -76,7 +87,7 @@
   function add(list, id, group, title, run, kw) { list.push({ id: id, g: group, t: title, run: run, kw: kw || "" }); }
 
   function buildCommands() {
-    var list = [], i, id, T = core.TABS || {}, SC = core.Shortcutz, tools;
+    var list = [], i, id, T = core.TABS || {}, tools;
 
     // repeat the last command that was run (palette, hotkey or this one): the fastest way to do the same thing on the next layer
     add(list, "meta:repeat", "General", "Repeat last command", function () {
@@ -128,19 +139,6 @@
     add(list, "tool:frame:png", "Tools", "Save frame as PNG", function () { saveFrame("png"); }, "export still image");
     add(list, "tool:frame:jpg", "Tools", "Save frame as JPG", function () { saveFrame("jpg"); }, "export still image");
 
-    // Shortcutz tiles
-    if (SC) {
-      var groups = [["expr", SC.EXPR_PRESETS], ["effect", SC.EFFECT_PRESETS], ["util", SC.UTIL_PRESETS]], gi, defs, di;
-      for (gi = 0; gi < groups.length; gi++) {
-        defs = groups[gi][1] || [];
-        for (di = 0; di < defs.length; di++) {
-          (function (grp, def) { add(list, "sc:" + grp + ":" + def.id, "Shortcutz", def.name, function () { SC.runBuiltin(grp, def.id, dummyEl()); }, "speed dial " + (def.note || "")); })(groups[gi][0], defs[di]);
-        }
-      }
-      var items = [];
-      try { items = SC.getItems() || []; } catch (e) { items = []; }
-      for (i = 0; i < items.length; i++) { (function (item) { add(list, "sc:c:" + item.id, "My Shortcuts", item.name, function () { SC.runItem(item, dummyEl()); }, "custom"); })(items[i]); }
-    }
     return list;
   }
 
@@ -360,6 +358,6 @@
     });
   }
 
-  load(); rebuildLookup(); registerKeys(true);
+  load(); recent(); rebuildLookup(); registerKeys(true);   // recent() also drops stale "sc:" entries
   window.MTHotkeys = { open: openPalette, close: closePalette, commands: buildCommands, state: function () { return state; } };
 })();

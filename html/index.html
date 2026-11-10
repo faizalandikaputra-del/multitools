@@ -13,15 +13,15 @@
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=3">
   <link rel="stylesheet" href="../css/mt-boot.css?v=7">
-  <link rel="stylesheet" href="../css/style.css?v=17">
+  <link rel="stylesheet" href="../css/style.css?v=18">
   <!-- Additive UI polish pass (shimmer sweep, refined easing, GPU hints) - loaded after
        style.css on purpose, see the file's own header comment for what it does and doesn't
        touch. -->
-  <link rel="stylesheet" href="../css/fluid-polish.css?v=9">
+  <link rel="stylesheet" href="../css/fluid-polish.css?v=10">
   <!-- Premium visual ornament pass (ambient mesh glow, hairline section dividers, status pulse
        dots, glassmorphism, refined saber-style border trace) - loaded after fluid-polish.css
        on purpose, see the file's own header comment for what it does and doesn't touch. -->
-  <link rel="stylesheet" href="../css/premium-ornaments.css?v=9">
+  <link rel="stylesheet" href="../css/premium-ornaments.css?v=10">
   <!-- Panel refinements pass (grouped capsule cards, range slider fill-trail + floating value
        bubble, in-flight button pending/success/error states) - loaded after
        premium-ornaments.css on purpose, see the file's own header comment for what it does and
@@ -38,9 +38,9 @@
   <!-- FINAL pass: "Clean Dark Glassmorphism" design tokens + component overrides. Must stay the LAST
        stylesheet - it remaps the legacy tokens (--bg/--surface/--border/--shadow-card/--radius-*)
        and restyles cards, buttons, inputs, modal and sidebar. See the file's own header comment. -->
-  <link rel="stylesheet" href="../css/glass-theme.css?v=9">
+  <link rel="stylesheet" href="../css/glass-theme.css?v=10">
   <!-- v17: hover / press / focus polish for every tab (additive, loaded after glass-theme.css) -->
-  <link rel="stylesheet" href="../css/hover-polish.css?v=2">
+  <link rel="stylesheet" href="../css/hover-polish.css?v=3">
   <!-- Custom tooltip (name only, smooth pop) + smoother sidebar highlight. Companion: js/mt-tooltip.js -->
   <link rel="stylesheet" href="../css/mt-tooltip.css?v=5">
   <link rel="stylesheet" href="../css/panel-refresh.css?v=1">
@@ -62,10 +62,10 @@
   <!-- Settings > Style picker (Glass / Material You) -->
   <link rel="stylesheet" href="../css/mt-uitheme.css?v=7">
   <!-- Layout clean-up (anchor/flip grids, wrapping text). Keep after mt-uitheme and before material-theme. -->
-  <link rel="stylesheet" href="../css/mt-tidy.css?v=1">
+  <link rel="stylesheet" href="../css/mt-tidy.css?v=2">
   <link rel="stylesheet" href="../css/mt-ae-icons.css?v=1">
   <!-- Motion/focus fixes (Animations OFF really off, tile focus ring, fewer endless loops). js/mt-away.js now only drives the "user is working" calm rule. -->
-  <link rel="stylesheet" href="../css/mt-motion-fix.css?v=5">
+  <link rel="stylesheet" href="../css/mt-motion-fix.css?v=6">
   <!-- Smoother motion: sidebar highlight, tab-switch cards, Settings modal, finished flash. Needs js/mt-smooth.js. -->
   <link rel="stylesheet" href="../css/mt-smooth.css?v=3">
   <!-- Settings > Tab animation (Smooth / Glide / Pop / Fade / Cascade / None + speed + easing). Needs js/mt-anim.js. -->
@@ -88,7 +88,7 @@
   <link rel="stylesheet" href="../css/mt-fxcopy.css?v=5">
   <link rel="stylesheet" href="../css/mt-curve-top.css?v=4">
   <!-- Material You style: only active under <html data-ui-theme="material">. Must stay the LAST stylesheet. -->
-  <link rel="stylesheet" href="../css/material-theme.css?v=10">
+  <link rel="stylesheet" href="../css/material-theme.css?v=11">
   <link rel="stylesheet" href="../css/mt-tools-layout.css?v=2">
   <!-- Keyframe Timing tab (Glass + Material You looks). Must stay AFTER material-theme.css. -->
   <link rel="stylesheet" href="../css/mt-keyframes.css?v=3">
@@ -102,7 +102,7 @@
   <link rel="stylesheet" href="../css/mt-preset-actions.css?v=1">
   <link rel="stylesheet" href="../css/mt-presets-tidy.css?v=1">
   <!-- hover-stable.css must stay the LAST stylesheet: removes the hover lift that made the cursor flicker on button edges -->
-  <link rel="stylesheet" href="../css/hover-stable.css?v=1">
+  <link rel="stylesheet" href="../css/hover-stable.css?v=2">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
   <script>/* Node shim: with --enable-nodejs but no --mixed-context, CEP only exposes require() as window.cep_node.require */
@@ -181,9 +181,6 @@
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="textflex" aria-label="Animator Text">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h16v2M8 5v14M6 19h4M15 11v8M13 19h4M14 11h5"/></svg>
-        </button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="shortcutz" aria-label="Shortcutz">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.16 6.6.62-5 4.53 1.5 6.6L12 16.9l-5.99 3.51 1.5-6.6-5-4.53 6.6-.62L12 2.5Z"/></svg>
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="curve" aria-label="Curve">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -781,10 +778,10 @@
   <script src="../js/mt-island-presets.js?v=1"></script>
   <script src="../js/mt-fxcopy.js?v=5"></script>
   <script src="../js/mt-pro.js?v=3"></script>
-  <script src="../js/main.js?v=72"></script>
+  <script src="../js/main.js?v=73"></script>
   <script src="../js/mt-loader.js?v=1"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
-  <script src="../js/mt-smooth.js?v=2"></script>
+  <script src="../js/mt-smooth.js?v=3"></script>
   <!-- Smooth wheel scrolling for every scroll area (inertia easing). ScrollForward (main.js) skips any
        wheel event this script already handled, so load order between the two does not matter. -->
   <script src="../js/smooth-scroll.js?v=9"></script>
@@ -797,13 +794,13 @@
   <script src="../js/mt-idle-adjust.js?v=24"></script>
   <script src="../js/mt-settings-bus.js?v=4"></script>
   <script src="../js/mt-settings-remote.js?v=6"></script>
-  <script src="../js/mt-hotkeys.js?v=4"></script>
+  <script src="../js/mt-hotkeys.js?v=5"></script>
   <!-- Panel refinements: grouped capsule cards + range slider fill-trail/value bubble - see the
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->
-  <script src="../js/panel-refinements.js?v=12"></script>
+  <script src="../js/panel-refinements.js?v=13"></script>
   <script src="../js/mt-newtools.js?v=2"></script>
-  <script src="../js/mt-tools-layout.js?v=3"></script>
-  <script src="../js/mt-backup.js?v=2"></script>
+  <script src="../js/mt-tools-layout.js?v=4"></script>
+  <script src="../js/mt-backup.js?v=3"></script>
 </body>
 </html>

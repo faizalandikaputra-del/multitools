@@ -219,22 +219,22 @@ textarea:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.9); outlin
 /* ---------- 8. Cards that sit under a rotating "saber" ring must stay OPAQUE ----------
    The ring only works because the content layer masks the conic gradient; the now-translucent
    --surface would let it bleed through the whole card. Explicit solid twins fix that. */
-.code-editor, .preset-folder-header, .shortcut-tile, .saber-wrap > .switch-row {
+.code-editor, .preset-folder-header, .saber-wrap > .switch-row {
   background: var(--surface-solid);
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-.preset-folder-header:hover, .shortcut-tile:hover { background: var(--surface-hover-solid); }
+.preset-folder-header:hover{ background: var(--surface-hover-solid); }
 .code-editor:focus-within {
   background-image:
     linear-gradient(var(--surface-sunken), var(--surface-sunken)),
     linear-gradient(135deg, rgba(var(--accent-rgb), 0.7), rgba(var(--accent-rgb), 0.25));
 }
-.shortcut-list { background: var(--surface-solid); }
+
 .select option, select option { background: var(--surface-solid); color: var(--text); }
 
 /* ---------- 9. Buttons ---------- */
 .btn, .btn-apply, .btn-round-add, .btn-round-alt, .split-btn, .align-btn, .anchor-btn, .fit-btn, .flip-btn,
-.cat-tab, .cat-tab-add, .shortcutz-add-btn {
+.cat-tab, .cat-tab-add{
   border-radius: var(--radius-btn);
 }
 .btn {
@@ -381,9 +381,9 @@ input[type="color"] { border: 0; border-radius: var(--radius-btn); box-shadow: i
 .saber-wrap { --sw-r: calc(var(--radius-s) + 0.15rem); }
 .saber-wrap--code { --sw-r: 10px; }
 .saber-wrap--folder { --sw-r: calc(var(--radius-s) + 0.15rem + 2px); }
-.saber-wrap--tile { --sw-r: var(--tile-r); }
 
-.saber-wrap, .saber-wrap--code, .saber-wrap--folder, .saber-wrap--tile {
+
+.saber-wrap, .saber-wrap--code, .saber-wrap--folder{
   border-radius: var(--sw-r);
   -webkit-clip-path: inset(0 round var(--sw-r));
   clip-path: inset(0 round var(--sw-r));
@@ -407,77 +407,17 @@ input[type="color"] { border: 0; border-radius: var(--radius-btn); box-shadow: i
   background-color: rgba(var(--accent-rgb), 0.16);
 }
 
-/* Native focus rings off on tiles (square + detached in old Chromium). Separate rules: see note above.
-   Keyboard focus is still visible - :focus-within lights the wrapper ring. */
-.shortcut-tile:focus { outline: none !important; }
-.shortcut-tile:active { outline: none !important; }
-.shortcut-tile-remove:focus { outline: none !important; }
-.shortcut-tile, .shortcut-tile-remove { -webkit-tap-highlight-color: transparent; }
-.saber-wrap--tile > .shortcut-tile { box-sizing: border-box; overflow: hidden; }
-.saber-wrap--tile > .shortcut-tile:focus, .saber-wrap--tile > .shortcut-tile:active {
-  box-shadow: inset 0 0 0 1px var(--border-subtle) !important;   /* neutral; the ring is the only accent */
-}
-.shortcut-tile-remove:focus { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.9); opacity: 1; }
-.saber-wrap--tile:hover .shortcut-tile-remove, .saber-wrap--tile:focus-within .shortcut-tile-remove { opacity: 1; }  /* style.css pairs this with :focus-visible in one group, which old Chromium drops whole */
 
-/* ---------- 16. Shortcutz tiles = the Easy Layer "ADJ" box ----------
-   Not the rotating ring: the BOX itself. An Easy Layer tile (.tool) is a rounded glass card with a 1px
-   hairline outline, a light top edge and a soft drop shadow; on hover the outline turns accent with a soft
-   glow. Shortcutz tiles now use exactly that recipe (same tokens: --surface-card, --shadow-card,
-   --radius-card, --border-subtle, --accent-glow). The saber ring is off for tiles, the wrapper keeps its
-   2px padding (so spacing does not change) and no longer clips, so the hover glow is not cut off.
-   No pressed / focus / shimmer effect: clicking looks the same as hovering. */
-.saber-wrap--tile::before, .saber-wrap--tile::after { display: none; animation: none; }
-.saber-wrap--tile,
-.saber-wrap--tile:hover, .saber-wrap--tile:focus-within {
-  -webkit-clip-path: none; clip-path: none; overflow: visible;
-  background: transparent;
-}
-.saber-wrap--tile > .shortcut-tile {
-  background-color: var(--surface-card);
-  border: 0 !important;
-  border-radius: var(--radius-card) !important;
-  box-shadow: var(--shadow-card) !important;      /* 1px hairline (inset) + top light edge + soft drop shadow */
-  outline: none !important;
-  transition: background-color var(--dur-ui) ease, box-shadow var(--dur-ui) ease;
-}
-.saber-wrap--tile > .shortcut-tile:not(.has-bg) {
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0) 100%);
-}
-:root[data-theme="light"] .saber-wrap--tile > .shortcut-tile:not(.has-bg) {
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
-}
+
+
 /* Hover = ADJ hover: accent outline + soft glow. :active / :focus intentionally identical (no extra effect). */
-.saber-wrap--tile > .shortcut-tile:hover,
-.saber-wrap--tile > .shortcut-tile:focus,
-.saber-wrap--tile > .shortcut-tile:active {
-  background-color: var(--surface-hover);
-  outline: none !important;
-  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.7), 0 0 14px var(--accent-glow) !important;
-}
-.saber-wrap--tile > .shortcut-tile.has-bg:hover,
-.saber-wrap--tile > .shortcut-tile.has-bg:active { background-color: transparent; }
-.shortcut-tile-remove:focus { box-shadow: none; }
+
+
 /* Built-in lists were one solid slab with dividers; now each row is its own card, so the slab goes. */
-.shortcut-list { background: transparent; box-shadow: none; }
-.saber-wrap--tile > .shortcut-tile { border-bottom: 0 !important; }
+
+
 /* Drag-to-reorder insertion line (box-shadow on the wrapper) is visible because the wrapper no longer clips. */
 
-/* ---------- 17. Custom tile background must never zoom / drift ----------
-   fluid-polish.css gives every .shortcut-tile a hover "shimmer" (background-size: 250%, and it slides
-   background-position on :hover). That was meant for the gradient sheen, but a tile with a custom
-   background image/GIF (.has-bg, image set inline) inherits the same size + position, so the picture
-   blew up 2.5x and slid around whenever the cursor was over the tile. Pin it: always cover + centred,
-   in every state, with no transition. */
-.saber-wrap--tile > .shortcut-tile.has-bg,
-.saber-wrap--tile > .shortcut-tile.has-bg:hover,
-.saber-wrap--tile > .shortcut-tile.has-bg:focus,
-.saber-wrap--tile > .shortcut-tile.has-bg:active {
-  background-size: cover !important;
-  background-position: center center !important;
-  background-repeat: no-repeat !important;
-  transition: box-shadow var(--dur-ui) ease !important;
-}
 
 /* ---------- Animation Presets list: no outlines on the boxes ----------
    Removes the 1px inset ring every card gets from --shadow-card, the accent ring on hover, and the

@@ -8,7 +8,7 @@
   if (!window.MutationObserver) { return; }
 
   var DONE_SEL = ".btn, .btn-apply, .tool, .split-btn, .anchor-btn, .align-btn, .fit-btn, .flip-btn, " +
-                 ".shortcut-tile, .qce-res-tile, .preset-apply, .btn-round-add, .label-swatch";
+                 ".qce-res-tile, .preset-apply, .btn-round-add, .label-swatch";
 
   function reduced() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
 

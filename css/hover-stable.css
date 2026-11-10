@@ -36,7 +36,7 @@
 .preset-item:hover { transform: none !important; }
 .qce-res-tile:active { transform: scale(.96) !important; }
 .qce-res-tile:hover { transform: scale(1.03) !important; }
-.shortcut-tile:active { transform: scale(.96) !important; }
+
 .snippet-card:active { transform: scale(.985) !important; }
 .snippet-card:hover { transform: none !important; }
 .social-btn:hover { transform: scale(1.06) !important; }

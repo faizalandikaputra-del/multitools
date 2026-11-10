@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.175",
-    "changelog":  "- Update 1.8.175",
+    "latest_version":  "1.8.176",
+    "changelog":  "- Update 1.8.176",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -12,23 +12,23 @@
                   },
                   {
                       "path":  "css/fluid-polish.css",
-                      "sha256":  "73d5b84013214c193c4de5fc4e4f564d8ca446d71762f0ded46f1d9772cd1d46"
+                      "sha256":  "250999d1ae7288c9115aca10ce521fbfafe0f4b18ae2a2a29a335838165b4d3e"
                   },
                   {
                       "path":  "css/glass-theme.css",
-                      "sha256":  "e2fc0c5bf9a720f4a536386bb45d87518b8ceb9b8f44279a9704bf4c9b4b6611"
+                      "sha256":  "30633f0ff68513e5d5a6c40c114ebf3b9b7a368b2d662a4a2fdfdd0a371133f0"
                   },
                   {
                       "path":  "css/hover-polish.css",
-                      "sha256":  "5ad7cdb5a7bd21cc49ffb84eda9d584f4bbde464c529a1ddaac3b6251eb01d63"
+                      "sha256":  "4fe97377047149868988a0bd300a4efd0ea902267326a55e5593632a434a29ba"
                   },
                   {
                       "path":  "css/hover-stable.css",
-                      "sha256":  "ea304b9d0c9e5c94a45704ccefb9ea6109fbf9158fa6ea2234a5fb3699328064"
+                      "sha256":  "6f901c1061e1ce33b27f5cdcf4bc11c2cdaaeee8c8c75bc3431fa1297b1ef4d3"
                   },
                   {
                       "path":  "css/material-theme.css",
-                      "sha256":  "7bd84e4ffbecb4d7e3f63187072729ed2273b6c99a06b90768ff7c06def49202"
+                      "sha256":  "953529aac4dc3194f10c81918cc5bebfedc810b9129d2196b6fe269efeaf9b91"
                   },
                   {
                       "path":  "css/mt-ae-icons.css",
@@ -124,7 +124,7 @@
                   },
                   {
                       "path":  "css/mt-motion-fix.css",
-                      "sha256":  "6724370b64ab6f5ece6425f456381b6f10fd9f91131e5570ac8f875f397e688a"
+                      "sha256":  "c46748c1bb744ec22b8ef0b9fd73fc9c455cdbf573100766f01528600b3b8043"
                   },
                   {
                       "path":  "css/mt-nav.css",
@@ -200,7 +200,7 @@
                   },
                   {
                       "path":  "css/mt-tidy.css",
-                      "sha256":  "f6e78386dad1890453f8776a40762d0bfefb35d696494a67a8ccaa1fd2d12975"
+                      "sha256":  "0d1b57066dc98c6e3c463a4aa7907c523d7fa61dab45594da4693295a5520d62"
                   },
                   {
                       "path":  "css/mt-tools-layout.css",
@@ -228,7 +228,7 @@
                   },
                   {
                       "path":  "css/premium-ornaments.css",
-                      "sha256":  "8ac7a8ad167b28c530b76c45c5da96b073dd68b4dd026946770702275da056c3"
+                      "sha256":  "fab13bcaef371b786d9b8720c25ebce2785b63ba2f49a5a148ffc5e14f04e4b2"
                   },
                   {
                       "path":  "css/sidebar-center.css",
@@ -244,7 +244,7 @@
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "2953e03fdb78c432c913d08b5ab451b7c9e8fcd4640c845fa99f65477f44160e"
+                      "sha256":  "af3d9d4c24577fb738ff6c2fd5a534e1cee59848495c0f6e1275c6b73863371d"
                   },
                   {
                       "path":  "css/tab-motion.css",
@@ -264,11 +264,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "733d9840af18f103a681ea9963cddbff700f178f9ab1c3da6b772532985d2432"
+                      "sha256":  "4df54a277cc147d9b02a61a2897a519a33906ab0e4e4aad4b64623edf4652a99"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "1dbe3032b900b6f1904a8d1975a72c183d0c59e7be3db6430f726299d5218b33"
+                      "sha256":  "c0befbd0c05c31a118b3033d515603c10babd9b2caca835e53b72d08c4f236e0"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -284,7 +284,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "e52e6aa7632f516c4aecb045628ca6c59d3997e5ddce93fb570aab4902038715"
+                      "sha256":  "40eafba96668e3cf57140cc21ed0b7d948b4c987571f2eea9daf3371bc538b74"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -296,7 +296,7 @@
                   },
                   {
                       "path":  "js/mt-backup.js",
-                      "sha256":  "c992c643be7c7126ec54037e01601f7f9e1e5dd90c67934286d954aaca2eb2be"
+                      "sha256":  "53cd4f205ce8ed9b253e842dd87a0bf72cdc4ea0c285102f353f862353fc93cd"
                   },
                   {
                       "path":  "js/mt-bg-preview.js",
@@ -320,7 +320,7 @@
                   },
                   {
                       "path":  "js/mt-hotkeys.js",
-                      "sha256":  "6662410259ec2b3881ac998db4ea566bdf2c28596d471ffff6d97cb1464c8d4a"
+                      "sha256":  "913f8cdf9a55350d2f0e09246d2402f7fa94ca341281c35fbe5af3a6cb2b4b31"
                   },
                   {
                       "path":  "js/mt-hotkeys-settings.js",
@@ -400,7 +400,7 @@
                   },
                   {
                       "path":  "js/mt-smooth.js",
-                      "sha256":  "dc77db96528ca12ac3740eb03ca192b324cff7e1b745c2672f2ed7b7a433efc6"
+                      "sha256":  "bf3aada72e9f6fecef675eabfaa397b3fff8368dc1784cd5a2d678e086b97798"
                   },
                   {
                       "path":  "js/mt-spinbox.js",
@@ -408,7 +408,7 @@
                   },
                   {
                       "path":  "js/mt-tools-layout.js",
-                      "sha256":  "4b56b571c4a2271c2f8ee65b87768064c40e88b8250b39f657d7f9690a39d167"
+                      "sha256":  "e80a7bf37edcdd81d32a89684ed83cff720485b39685f5880e10fc1264959969"
                   },
                   {
                       "path":  "js/mt-tooltip.js",
@@ -424,7 +424,7 @@
                   },
                   {
                       "path":  "js/panel-refinements.js",
-                      "sha256":  "0f2a98ecaf09f16d9e3ac9e015bac7b0891ea65181aa40afdfbc22460dea4daf"
+                      "sha256":  "d95b3d228c7c34f146f02dfa38335d392d50f26f93d7dc8f4f900545227211b0"
                   },
                   {
                       "path":  "js/panel-refresh.js",
@@ -448,7 +448,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "dc7d0447e397a38e69ab49735a2677428b84db8a439df84da6c711f67717e390"
+                      "sha256":  "34f47bc2920e327e65e7dfc203a690518139467361bd66181c95df9ea35cc148"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -760,7 +760,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "e446b696a73991445c42045e8eef18dc5b2864a3822785f6daa2f9eb2248d74b"
+                      "sha256":  "a8bccdb73927922fbaf363e9fcd52f9ee4265657a6b605dcbd7b0b11d85f74d6"
                   }
               ]
 }

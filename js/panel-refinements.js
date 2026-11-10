@@ -152,7 +152,7 @@
   // capsules that wrap ExpressFlex-style tool groups, Project Cleaner, Beat Marker, etc.)
   // to pick a custom accent color for that one card, overriding the automatic nth-of-type
   // cycle. One shared menu is built lazily and reused for every card, the same pattern as
-  // main.js's own ShortcutzMenu. Colors persist in one JSON blob in localStorage, keyed by
+  // main.js's own tool context menu. Colors persist in one JSON blob in localStorage, keyed by
   // "<tabId>::<card label>", so they survive tab switches and panel reloads.
   //
   // Right-clicking an actual form control inside the card (a slider, a text field, the
@@ -306,11 +306,9 @@
 
   function wireAccentMenu(group, key) {
     group.addEventListener("contextmenu", function (e) {
-      // A tile inside the card (Shortcutz rows etc.) already opened its own menu and called preventDefault -
-      // the event then bubbles up here. Without this check BOTH menus opened at the same spot and overlapped
-      // (the "Change Accent Color" menu stacked on top of the Shortcutz menu).
+      // A control inside the card that already opened its own menu called preventDefault - the event then
+      // bubbles up here. Without this check BOTH menus would open at the same spot and overlap.
       if (e.defaultPrevented) { return; }
-      if (e.target.closest && e.target.closest(".shortcut-tile, [data-sc-run], [data-sc-builtin]")) { return; }
       if (isInteractiveTarget(e.target, group)) { return; } // real controls keep their native menu
       e.preventDefault();
       AccentMenu.open(e.clientX, e.clientY, group, key);

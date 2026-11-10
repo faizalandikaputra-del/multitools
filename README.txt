@@ -167,7 +167,7 @@ verify the fallback math (margins/heights) matches the native gap/aspect-ratio l
 exactly, and separately confirming the script no-ops with zero DOM changes and zero
 console errors when real support is detected (the normal AE 2022+/2024 case).
 
-SHORTCUTZ TAB
+SHORTCUTZ TAB (REMOVED - see "fixRemove-Shortcutz" at the end of this file)
 -------------
 New "Shortcutz" tab: a Speed Dial / Favorites Hub.
 - Expression Shortcuts / Quick Effect Shortcuts / Utility Shortcuts: fixed built-in cards, always
@@ -2494,3 +2494,28 @@ fixTooltip-toggle (Settings > Show tooltips)
     Pane Curve (NeuCurve) membaca kunci yang sama.
   - js/mt-backup.js (?v=2): mtx.tooltipOn ikut kelompok "Style, theme, layout and animation".
   - Files: js/mt-tooltip.js, js/mt-backup.js, html/index.html, html/settings.html, neucurve/index.html, README.txt.
+
+fixRemove-Shortcutz (tab Shortcutz dihapus total, termasuk datanya)
+  - Permintaan owner: bersihkan data tab Shortcutz tanpa sisa, pastikan Multi Tool tetap normal. Tab ini nanti diganti fitur editing baru (belum dibuat).
+  - Yang dihapus:
+    * html/index.html: tombol tab Shortcutz di sidebar. js/main.js: entri TABS "shortcutz", seluruh modul Shortcutz (TileCustom, ShortcutzMenu, Shortcutz: tile bawaan,
+      My Shortcuts, modal Add Custom Shortcut, drag reorder, menu klik kanan), cabang render, ekspor MTCore.Shortcutz, ikon ICON_PIN_SVG / ICON_PUSHPIN_SVG.
+    * Tombol pin "Pin to Shortcutz" di tab Animation Presets dan Expression Code (beserta handler-nya).
+    * js/mt-hotkeys.js: perintah "Shortcutz" dan "My Shortcuts" di Command Palette / Keyboard shortcuts (tab lain, Easy Layer, Anchor & Align, Tools tetap).
+    * js/mt-tools-layout.js: Shortcutz keluar dari COMPACT_TABS (Compact layout kini untuk Tools dan Quick Comp Edit). html/settings.html: teks bantuan disesuaikan.
+    * jsx/host.jsx: semua SHTZ_* dan helper _shtz* dihapus KECUALI SHTZ_randomize (dipakai tombol Randomize di tab Tools, tetap jalan).
+    * css/*: semua aturan .shortcut-*, .shortcutz-*, .saber-wrap--tile, .ctx-menu--shortcutz; selector bersama dirapikan (.preset-item, .expr-item, .tool, dst tetap).
+  - Pembersihan data (otomatis tiap panel dibuka, js/main.js DOMContentLoaded + js/mt-hotkeys.js):
+    * localStorage mtx.shortcutz.items dan mtx.shortcutz.tileCustom (semua kunci mtx.shortcutz*), entri "shortcutz" di mtx.tabOrder.
+    * Hotkey yang terikat ke perintah Shortcutz ("sc:...") di mt.hotkeys, dan riwayat Command Palette (mt.hotkeys.recent).
+    * File gambar ikon / background tile (tile-icon-*, tile-bg-*) di Documents/MyMultitoolExtension/Backgrounds.
+    * Cermin settings-backup.json ikut bersih karena penghapusan localStorage ditulis ulang oleh mt-persist.js. Restore dari file Backup lama yang masih membawa kunci
+      Shortcutz tidak menghidupkannya lagi (dibersihkan saat panel dimuat ulang).
+  - js/mt-backup.js: kelompok "Shortcutz cards and tool images" diganti "Tool images" (hanya mtx.toolImg.*).
+  - Tidak dihapus (di luar jangkauan panel): snapshot Backup otomatis lama di Documents/MyMultitoolExtension/backups/ masih memuat data Shortcutz lama sampai bergulir (disimpan 3 terakhir).
+  - Cache-buster ?v= dinaikkan 1 untuk semua css/js yang berubah (index.html, settings.html).
+  - Uji (Chromium headless, tanpa After Effects): 9 tab terbuka tanpa error baru, Command Palette terbuka, tab Tools > Randomize masih ada, tidak ada tombol pin tersisa,
+    data Shortcutz palsu yang disuntik ke localStorage hilang setelah reload.
+  - Files: html/index.html, html/settings.html, js/main.js, js/mt-hotkeys.js, js/mt-backup.js, js/mt-tools-layout.js, js/mt-smooth.js, js/panel-refinements.js, jsx/host.jsx,
+    css/style.css, css/glass-theme.css, css/material-theme.css, css/fluid-polish.css, css/hover-polish.css, css/hover-stable.css, css/mt-motion-fix.css, css/mt-tidy.css,
+    css/premium-ornaments.css, README.txt.

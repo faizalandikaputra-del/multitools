@@ -17,10 +17,7 @@
 
 /* Text that used to be clipped now wraps */
 .field-note.save-dir, .save-dir { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
-.shortcut-tile-name {
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  white-space: normal; overflow: hidden; overflow-wrap: anywhere; line-height: 1.2;
-}
+
 
 /* Small helper text: slightly larger and with consistent line height */
 .field-note { font-size: 0.7rem; line-height: 1.45; }

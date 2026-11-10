@@ -14,7 +14,7 @@
     { id: "curve", label: "Curve (NeuCurve) settings", re: /^(neucurve_|curveEditorPresets$)/ },
     { id: "palettes", label: "Color palettes", re: /^(mtRecentColors|mtx\.(cpSwatchTab|palette|cp))/ },
     { id: "background", label: "Background image, GIF and position", re: /^mtx\.bg(?!Color)/, heavy: true },
-    { id: "shortcutz", label: "Shortcutz cards and tool images", re: /^mtx\.(toolImg\.|shortcutz)/, heavy: true },
+    { id: "toolimg", label: "Tool images", re: /^mtx\.toolImg\./, heavy: true },
     { id: "style", label: "Style, theme, layout and animation", re: /^(mtx\.(uiTheme|glassMode|mdScheme|mdBg|mdMode|themeColor|bgColor|navPos|taGroupAccent|tabOrder|pro\.|island|tooltipOn|anim|uiScale)|mt_theme_state)/ },
     { id: "other", label: "Everything else", re: /^/ }
   ];
@@ -124,7 +124,7 @@
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   var picked = {}, noteEl;
-  GROUPS.forEach(function (g) { picked[g.id] = !g.heavy || g.id === "shortcutz"; });
+  GROUPS.forEach(function (g) { picked[g.id] = !g.heavy || g.id === "toolimg"; });
   picked.background = false;
 
   function note(t, bad) { if (noteEl) { noteEl.textContent = t || ""; noteEl.style.color = bad ? "var(--danger)" : ""; } }

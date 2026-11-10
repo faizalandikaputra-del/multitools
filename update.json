@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.174",
-    "changelog":  "- Update 1.8.174",
+    "latest_version":  "1.8.175",
+    "changelog":  "- Update 1.8.175",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -61,10 +61,6 @@
                   {
                       "path":  "css/mt-dialog.css",
                       "sha256":  "4d164e532b7ae097888ec45c52609416451766db623f29acd998cd7901615a31"
-                  },
-                  {
-                      "path":  "css/mt-downloader.css",
-                      "sha256":  "6aab3d827074e8305e09d033a8c5d02d53476df83f54aa140da5fa3fbd01c8b4"
                   },
                   {
                       "path":  "css/mt-final-controls.css",
@@ -268,11 +264,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "8e92f0ad4bd704172ba705bf1162c41b3c90c10fdeb5c723c459804e07c920a6"
+                      "sha256":  "733d9840af18f103a681ea9963cddbff700f178f9ab1c3da6b772532985d2432"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "c6c1f662d924297e8ead96d48bcad24f7962d4e170b553b6a61d8dc0fb39c56f"
+                      "sha256":  "1dbe3032b900b6f1904a8d1975a72c183d0c59e7be3db6430f726299d5218b33"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -288,7 +284,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "f8cc1afad9d75ee0412cd6c558dd2412d05624c71e37e9fab2679a2604ad8dc4"
+                      "sha256":  "e52e6aa7632f516c4aecb045628ca6c59d3997e5ddce93fb570aab4902038715"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -313,10 +309,6 @@
                   {
                       "path":  "js/mt-curve-top.js",
                       "sha256":  "39f35a5b850287a01114dc9be244e09482ce38e1dc2eb0ef1323d686102bd49c"
-                  },
-                  {
-                      "path":  "js/mt-downloader.js",
-                      "sha256":  "0f8f7d026b85aa5061f9d223dbb86c3b4d3f6fccb0478ebfcadad1fe715ef0e3"
                   },
                   {
                       "path":  "js/mt-fxcopy.js",
@@ -416,7 +408,7 @@
                   },
                   {
                       "path":  "js/mt-tools-layout.js",
-                      "sha256":  "6d7c155668d17457047ed25c4aea72e9300ab219c55541b7a1740090eb63cac9"
+                      "sha256":  "4b56b571c4a2271c2f8ee65b87768064c40e88b8250b39f657d7f9690a39d167"
                   },
                   {
                       "path":  "js/mt-tooltip.js",
@@ -456,7 +448,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "9f30785d87f5b4ce526221cc6a2a3b1d01d2bf2b365ba901e564625739fdd14b"
+                      "sha256":  "dc7d0447e397a38e69ab49735a2677428b84db8a439df84da6c711f67717e390"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -768,7 +760,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "b4fa81abb3ea9f69cc2862b7bcf80b9158e8f47a6e153a4f5294bf70ade34408"
+                      "sha256":  "e446b696a73991445c42045e8eef18dc5b2864a3822785f6daa2f9eb2248d74b"
                   }
               ]
 }

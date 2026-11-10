@@ -1,0 +1,29 @@
+/* Multi Tool - mt-downloader.css : Downloader tab (js/mt-downloader.js).
+   Only what the shared tab classes (.ta-section, .split-btn, .chip, .text-input, .icon-btn, .field-note) do not already cover:
+   the "Recent" rows and the status line. Colours come from the panel tokens, so Glass and Material You both follow. */
+
+.dl-tab .dl-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dl-tab .dl-status { min-height: 1em; }
+.dl-tab .dl-status[data-state="error"] { color: var(--danger, #e5484d); }
+.dl-tab .dl-status[data-state="done"] { color: var(--text); }
+
+.dl-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.dl-row {
+  display: flex; align-items: center; gap: 0.4rem;
+  min-height: 1.7rem; padding: 0.15rem 0.2rem 0.15rem 0.45rem;
+  border-radius: var(--radius-s, 8px);
+  background: var(--surface-card, transparent);
+}
+.dl-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem; color: var(--text); }
+.dl-dot { flex: 0 0 auto; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--text-faint, #888); }
+.dl-dot[data-state="done"] { background: var(--ok, #3fb950); }
+.dl-dot[data-state="error"] { background: var(--danger, #e5484d); }
+.dl-dot[data-state="fetching"], .dl-dot[data-state="downloading"], .dl-dot[data-state="importing"], .dl-dot[data-state="queued"] {
+  background: var(--accent, #7c9cff);
+  animation: dl-pulse 0.9s ease-in-out infinite;
+}
+@keyframes dl-pulse { 50% { opacity: 0.35; } }
+html[data-reduce-motion="true"] .dl-dot { animation: none; }
+
+/* The Shortcutz tab is gone, so its "pin" buttons (Expression Code, Animation Presets) would pin to nowhere. */
+.icon-btn[data-action="pin"] { display: none !important; }

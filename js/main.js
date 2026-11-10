@@ -77,11 +77,11 @@
       tools: [],
       custom: "textFlex"
     },
-    "shortcutz": {
-      title: "Shortcutz",
-      hint: "Speed Dial: one-click expressions, effects and utilities, pinned presets and snippets, and your own shortcuts.",
+    "downloader": {
+      title: "Downloader",
+      hint: "Copy a TikTok link: the video or photos download and land on your timeline.",
       tools: [],
-      custom: "shortcutz"
+      custom: "downloader"
     },
     "curve": {
       title: "Curve",
@@ -5296,8 +5296,8 @@
       built = UtilityTools.render();
     } else if (cfg.custom === "textFlex") {
       built = TextFlex.render();
-    } else if (cfg.custom === "shortcutz") {
-      built = Shortcutz.render();
+    } else if (cfg.custom === "downloader") {
+      built = window.MTDl ? window.MTDl.render({ Bridge: Bridge, toast: toast, flashButtonResult: flashButtonResult }) : document.createElement("div");
     } else if (!cfg.tools.length) {
       var empty = document.createElement("div");
       empty.className = "empty";
@@ -5351,6 +5351,7 @@
     var saved;
     try { saved = JSON.parse(Store.get("tabOrder") || "null"); } catch (e) { saved = null; }
     if (!saved || !saved.length) { return; }
+    saved = saved.map(function (id) { return id === "shortcutz" ? "downloader" : id; });   // Shortcutz was replaced by Downloader: keep its slot
 
     var tabs = Array.prototype.slice.call(container.querySelectorAll(".tab"));
     var byId = {};
@@ -8244,6 +8245,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     syncTheme();
     if (cs) { try { cs.addEventListener(CSInterface.THEME_COLOR_CHANGED_EVENT, syncTheme); } catch (e) {} }
+    if (window.MTDl) { try { window.MTDl.init({ Bridge: Bridge, toast: toast, flashButtonResult: flashButtonResult }); } catch (eDl) { } }   // Downloader tab: clipboard watcher when Auto is on
     initTabs();
     initResponsiveLayout();
     ContextMenu.init();

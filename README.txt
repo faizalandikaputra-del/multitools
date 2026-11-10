@@ -2494,3 +2494,23 @@ fixTooltip-toggle (Settings > Show tooltips)
     Pane Curve (NeuCurve) membaca kunci yang sama.
   - js/mt-backup.js (?v=2): mtx.tooltipOn ikut kelompok "Style, theme, layout and animation".
   - Files: js/mt-tooltip.js, js/mt-backup.js, html/index.html, html/settings.html, neucurve/index.html, README.txt.
+
+downloader-1 (tab Shortcutz diganti tab Downloader TikTok)
+  - Permintaan owner: hapus tab Shortcutz, ganti dengan tab Downloader yang terhubung ke website downloader TikTok. Saat link disalin, video/foto otomatis
+    terdownload dan otomatis masuk timeline. Sebelum itu user diminta memilih folder simpan. Layout compact dan ikon meniru tab lain (ikon simpel).
+  - html/index.html: tombol tab data-tab="shortcutz" jadi data-tab="downloader" (ikon panah turun, slot urutan sama). Tambah css/mt-downloader.css (?v=1) dan
+    js/mt-downloader.js (?v=1, dimuat sebelum main.js). main.js ?v=73.
+  - js/mt-downloader.js (BARU, window.MTDl): mesin + UI tab. 3 kartu kapsul (Download, Save Folder, Recent) memakai kelas yang sama dengan tab Tools
+    (.ta-section, .split-btn, .chip, .text-input, .icon-btn), jadi mode Compact (icon bar) jalan otomatis. Chip: Auto (download saat link disalin),
+    Timeline (tambah ke comp aktif di playhead), HD. Service: tikwm.com (POST https://www.tikwm.com/api/, jeda >= 1,15 detik antar request).
+    Video disimpan <author>_<id>.mp4, slideshow foto disimpan <author>_<id>_01.jpg dst. Nama bentrok diberi akhiran _2, _3.
+  - Folder simpan: kunci mtx.dlDir lewat TOOLS_chooseSaveFolder (host.jsx, sudah ada). Kalau belum ada / folder hilang, dialog folder muncul dulu sebelum download
+    (juga saat Auto dinyalakan). Kunci lain: mtx.dlAuto, mtx.dlTl, mtx.dlHd, mtx.dlHist (12 item terakhir).
+  - Pemantau clipboard (hanya saat Auto nyala): Windows = satu proses PowerShell tersembunyi yang mencetak teks clipboard saat berubah (berhenti sendiri kalau AE
+    ditutup; isi clipboard saat Auto dinyalakan tidak ikut didownload). macOS = pbpaste tiap 1 detik. Tanpa Node = navigator.clipboard (hanya saat panel fokus).
+  - jsx/host.jsx: DL_importFiles(paths, addToTimeline) - import ke Project, lalu tambah layer di playhead comp aktif (satu undo group "Downloader: Import").
+    Tanpa comp aktif: hanya import ke Project dan pesan "Open a comp to add it to the timeline."
+  - main.js: TABS "shortcutz" -> "downloader" (render lewat MTDl.render, MTDl.init saat boot), urutan tab tersimpan "shortcutz" dipetakan ke "downloader".
+    mt-tools-layout.js: COMPACT_TABS pakai "Downloader". Tombol "Pin to Shortcutz" disembunyikan lewat CSS (tab tujuannya sudah tidak ada).
+    Kode Shortcutz, kartu tersimpan (mtx.shortcutz*) dan tile Speed Dial di Command Palette tidak dihapus.
+  - Files: html/index.html, html/settings.html, js/main.js, js/mt-downloader.js, js/mt-tools-layout.js, css/mt-downloader.css, jsx/host.jsx, README.txt.

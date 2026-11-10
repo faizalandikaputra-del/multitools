@@ -2465,3 +2465,11 @@ fixCursor-C (pointer berkedip: registerKeyEventsInterest dipanggil tiap hover da
   - Perbaikan: mouseenter hanya diproses saat target = document / window (pointer masuk panel); kirim ulang berkala hanya saat pointer di luar panel
     (mt-hotkeys: window.__mtMoving false; nc-pro: window.__ncAway true). Daftar yang tidak berubah tetap tidak dikirim ulang.
   - Files: js/mt-hotkeys.js (?v=4), neucurve/nc-pro.js (?v=8), html/index.html, neucurve/index.html, README.txt.
+
+fixCursor-D (pointer berubah jadi panah 0,3 detik setelah berhenti di atas tombol, saat tooltip muncul)
+  - Clue dari owner: panah muncul sekitar 0,3 detik setelah mouse diam, di dalam tab, bersamaan dengan tooltip, dan kembali normal saat mouse digerakkan.
+  - Penyebab: js/mt-tooltip.js calibrate() menjalankan ~40 elementFromPoint (gallop + bisect 4 arah) di SETIAP kemunculan tooltip bila UI scale bukan 100%,
+    dan tooltip punya backdrop-filter blur yang muncul di bawah pointer. Keduanya membuat AE mereset cursor ke panah.
+  - Perbaikan: calibrate() hanya sekali per nilai --ui-scale (maks 3 percobaan kalau hasilnya ambigu), css/mt-tooltip.css tanpa backdrop-filter
+    (isi sedikit lebih pekat, 0.94). Tooltip tetap sama (nama, pop, posisi).
+  - Files: js/mt-tooltip.js (?v=9), css/mt-tooltip.css (?v=4), html/index.html, neucurve/index.html, README.txt.

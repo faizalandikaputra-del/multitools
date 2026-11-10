@@ -73,13 +73,13 @@
      Which convention the host uses is measured ONCE per --ui-scale on a hidden probe inside .app (a tile cannot be
      used: it scales 1.07 on hover, which fakes the ratio), then double-checked against the real cursor position
      (calibrate). Elements outside .app (toast, menus, Curve iframe) are never scaled: k = 1. */
-  var gk = { key: null, k: 1, z: 1 };
+  var gk = { key: null, k: 1, z: 1, cal: false, tries: 0 };
 
   function convK() {
     var key = document.documentElement.style.getPropertyValue("--ui-scale") || "";
     var app, probe, z, ratio, v;
     if (gk.key === key) { return gk.k; }
-    gk.key = key; gk.k = 1; gk.z = 1;
+    gk.key = key; gk.k = 1; gk.z = 1; gk.cal = false; gk.tries = 0;
     app = document.querySelector(".app");
     if (!app) { return 1; }
     z = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
@@ -131,13 +131,14 @@
     if (!(el.closest && el.closest(".app"))) { return; }
     convK();
     z = gk.z;
-    if (Math.abs(z - 1) < 0.001 || !hitEl(el, mx, my)) { return; }
+    if (gk.cal || gk.tries >= 3 || Math.abs(z - 1) < 0.001 || !hitEl(el, mx, my)) { return; }
+    gk.tries++;     // v8 (fixCursor-D): ~40 elementFromPoint calls ran on EVERY tooltip show (0.3 s after the pointer rested) and the host reset the cursor to the arrow. Now once per --ui-scale (max 3 tries when the result is ambiguous)
     r = el.getBoundingClientRect();
     L = mx - reach(el, -1, 0); R = mx + reach(el, 1, 0);
     T = my - reach(el, 0, -1); B = my + reach(el, 0, 1);
     function cost(k) { return Math.abs(L - r.left * k) + Math.abs(R - r.right * k) + Math.abs(T - r.top * k) + Math.abs(B - r.bottom * k); }
     c1 = cost(1); cz = cost(z);
-    if (Math.abs(c1 - cz) >= 8) { gk.k = (c1 < cz) ? 1 : z; }
+    if (Math.abs(c1 - cz) >= 8) { gk.k = (c1 < cz) ? 1 : z; gk.cal = true; }
   }
 
   /* Is the cursor really on el? Hit test = same pixels as the mouse events, independent of any zoom maths. */

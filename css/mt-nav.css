@@ -27,8 +27,6 @@
 :root[data-nav="right"] .sidebar.is-expanded .tab-label { -webkit-transform: translateX(0) translateZ(0); transform: translateX(0) translateZ(0); }
 
 /* tooltip of a rail tab opens to the LEFT of the rail (js/mt-tooltip.js adds .is-left) */
-.mt-tip.is-left { transform-origin: 100% var(--mt-a); transform: translate3d(7px, 0, 0) scale(0.86); }
-.mt-tip.is-left.is-in { transform: translate3d(0, 0, 0) scale(1); }
 .mt-tip.is-left::after { top: var(--mt-a); right: -5.5px; left: auto; margin-top: -4px; transform: rotate(45deg); border-bottom: 0; border-left: 0; border-radius: 0 3px 0 0; }
 
 /* Settings cards: a tiny panel with the rail on the chosen side */

@@ -2473,3 +2473,14 @@ fixCursor-D (pointer berubah jadi panah 0,3 detik setelah berhenti di atas tombo
   - Perbaikan: calibrate() hanya sekali per nilai --ui-scale (maks 3 percobaan kalau hasilnya ambigu), css/mt-tooltip.css tanpa backdrop-filter
     (isi sedikit lebih pekat, 0.94). Tooltip tetap sama (nama, pop, posisi).
   - Files: js/mt-tooltip.js (?v=9), css/mt-tooltip.css (?v=4), html/index.html, neucurve/index.html, README.txt.
+
+fixCursor-E (tooltip dibuat ulang: pointer tidak lagi berubah jadi panah saat tooltip muncul)
+  - Permintaan owner: curiga tooltip jadi penyebab cursor bug (panah muncul ~0,3 detik setelah mouse diam, bersamaan dengan tooltip), minta tooltip dibuat ulang.
+  - js/mt-tooltip.js ditulis ulang (v10, ?v=10), 277 baris. Cara kerja dari luar sama (nama saja, title dipinjam lalu dikembalikan, fallback aria-label, delay 0,3 detik,
+    swap instan antar tombol, tanpa tooltip di sidebar dan pane Curve, __mtTitle / data-mt-title tetap ada untuk nc-pro.js, nc-flow.js, nc-quick.js).
+    Yang dibuang: semua elementFromPoint (calibrate / reach / over / pointerOn), watchdog interval, aliveTimer, loop requestAnimationFrame saat tooltip tampil, MutationObserver.
+    Elemen tooltip dibuat sekali saat start-up (tidak ada insert DOM saat tampil), zoom .app diukur sekali saat start-up.
+    Posisi lewat transform (JS), muncul dengan fade opacity saja.
+  - css/mt-tooltip.css (?v=5): tanpa animasi scale / overshoot, tanpa will-change, tanpa backdrop-filter; css/mt-nav.css (?v=2): aturan transform .is-left dibuang (panah tetap).
+  - Perilaku lain: tooltip hilang saat mouse keluar, klik, tombol keyboard, wheel, blur; muncul lagi setelah mouse bergerak lalu diam.
+  - Files: js/mt-tooltip.js, css/mt-tooltip.css, css/mt-nav.css, html/index.html, neucurve/index.html, README.txt.

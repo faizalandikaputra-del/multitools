@@ -1,5 +1,5 @@
 /* mt-tooltip.css - custom tooltip (name only) with a smooth pop, shared by the main panel and the Curve tab.
-   Companion: js/mt-tooltip.js. Uses only transform + opacity for the animation (GPU, no layout).
+   Companion: js/mt-tooltip.js. v10 (rebuilt): positioned with transform (set by JS), fades with opacity only. No scale pop, no will-change, no backdrop-filter: a tip that pops in under a resting pointer made AE reset the cursor (hand -> arrow).
    Colors read the panel's CSS variables when they exist and fall back to a neutral dark glass,
    so it also looks right inside the Curve iframe (which has its own variables). */
 
@@ -26,27 +26,18 @@
   white-space: nowrap;
   overflow: visible;
 
-  /* hidden state */
+  /* hidden state: position comes from JS as transform: translate3d(x, y, 0) */
   opacity: 0;
   visibility: hidden;
-  transform: translate3d(0, 5px, 0) scale(0.86);
-  transform-origin: 50% 100%;
-  transition: opacity 0.11s ease, transform 0.12s ease-in, visibility 0s linear 0.12s;
-  will-change: transform, opacity;
+  transition: opacity 0.1s ease, visibility 0s linear 0.1s;
 }
 .mt-tip .mt-tip-text { display: block; overflow: hidden; text-overflow: ellipsis; }
 
-/* Where the pop comes from (the side that faces the element) */
-.mt-tip.is-top    { transform-origin: var(--mt-a) 100%; }
-.mt-tip.is-bottom { transform-origin: var(--mt-a) 0;    transform: translate3d(0, -5px, 0) scale(0.86); }
-.mt-tip.is-right  { transform-origin: 0 var(--mt-a);    transform: translate3d(-7px, 0, 0) scale(0.86); }
-
-/* Visible state: soft overshoot "pop" */
+/* Visible state: a plain fade (no transform animation) */
 .mt-tip.is-in {
   opacity: 1;
   visibility: visible;
-  transform: translate3d(0, 0, 0) scale(1);
-  transition: opacity 0.16s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
+  transition: opacity 0.12s ease, visibility 0s;
 }
 
 /* Little arrow pointing at the element */
@@ -70,7 +61,7 @@
 
 /* Reduce motion (same opt-in attribute the rest of the panel uses) */
 :root[data-reduce-motion="true"] .mt-tip,
-:root[data-reduce-motion="true"] .mt-tip.is-in { transition: none; transform: none; }
+:root[data-reduce-motion="true"] .mt-tip.is-in { transition: none; }
 
 /* ---------- Smoother sliding highlight behind the active sidebar tab ---------- */
 .tab-indicator { transition: transform 0.46s cubic-bezier(0.22, 1, 0.36, 1); }

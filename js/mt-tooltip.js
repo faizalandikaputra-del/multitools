@@ -1,27 +1,25 @@
 /**
- * mt-tooltip.js - custom tooltip (name only, smooth pop) that replaces the native browser tooltip.
- * Loaded by html/index.html (main panel) AND neucurve/index.html (Curve tab / its popup windows),
- * so every tab shows the same tooltip.
+ * mt-tooltip.js (v10, rebuilt) - custom tooltip (name only) that replaces the native browser tooltip.
+ * Loaded by html/index.html (main panel) AND neucurve/index.html (Curve tab / its popup windows).
  *
- * How it works
- * - On hover it takes the element's title="" text, removes the attribute (so the ugly native
- *   tooltip never shows) and gives the text back as soon as the cursor leaves. The original text
- *   stays readable as el.__mtTitle while it is borrowed.
- * - Only the NAME is shown: explanations after " - ", ":" or "(" are cut, and a few long
- *   sentences are mapped to short names (see RULES).
- * - Icon-only buttons without a title fall back to their aria-label.
- * - Appears when the cursor rests (~0.3s); moving to a neighbour button swaps instantly.
- * - Animation: transform + opacity only (GPU), no layout work. ES5 on purpose (old CEF).
- * - v8: watchdog only hit-tests after a mouse move or a re-render (no more elementFromPoint under a resting cursor).
- * - v7: tip position is calibrated against the tile's real on-screen edges (zoom-proof), and the title is only
- *   given back when the cursor really left the tile (a failed hit test used to give it back = native tooltip).
+ * Rebuilt for one reason: the mouse cursor flipped from the hand to the arrow ~0.3 s after the pointer rested on a button, exactly when
+ * the old tooltip appeared, and came back only when the mouse moved. The old script did ~40 hit tests (elementFromPoint) per show, polled
+ * every 120 / 250 ms, tracked the element every frame, animated transform with an overshoot, and blurred what is behind it. The tip is now
+ * as quiet as possible while it is on screen:
+ *   - ZERO hit tests (no elementFromPoint anywhere), no timers or requestAnimationFrame loop while shown, no watchdog interval;
+ *   - the tip element is created once at start-up, so showing it inserts nothing into the DOM;
+ *   - it is placed with transform only and fades with opacity only (no scale pop, no will-change, no backdrop-filter);
+ *   - the pointer position comes from mouse events only; a tip is dropped on mouse out / press / key / wheel / blur.
+ * How it works (unchanged): on hover it borrows the element's title="" (keeps the text in el.__mtTitle, gives it back on leave), shows only
+ * the NAME (explanations after " - ", ":" or "(" are cut, long sentences mapped by RULES), icon-only buttons fall back to aria-label.
+ * Appears when the pointer rests (~0.3 s); moving to a neighbour swaps instantly. The left navigation and the Curve pane never show a tip. ES5.
  */
 (function () {
   "use strict";
   if (window.__mtTipLoaded) { return; }
   window.__mtTipLoaded = true;
 
-  var DELAY = 300;        // ms the cursor must rest before the first tooltip shows
+  var DELAY = 300;        // ms the pointer must rest before the first tooltip shows
   var WARM = 450;         // ms after hiding during which the next tooltip shows instantly
   var GAP = 9;            // px between element and tooltip
   var EDGE = 5;           // px kept free at the viewport edge
@@ -56,15 +54,8 @@
 
   var tip = null, textEl = null;
   var cur = null;          // { el, text, suppressed }
-  var shown = false;
-  var showTimer = 0, aliveTimer = 0, hideStamp = 0;
+  var shown = false, showTimer = 0, hideStamp = 0;
   var mx = 0, my = 0, startX = 0, startY = 0;
-  var lastTarget = null;   // v7: e.target of the last mouseover / mousemove (null after the cursor left the document)
-  var mo = null;
-  var rafId = 0, lastR = null;
-
-  function raf(fn) { return (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(fn); }
-  function caf(id) { (window.cancelAnimationFrame || clearTimeout)(id); }
 
   /* Element rect in the SAME pixels as clientX/Y and as this tooltip (position:fixed, outside .app).
      css/style.css has ".app { zoom: var(--ui-scale) }". Older CEF (before ~Chrome 128) returns getBoundingClientRect()
@@ -102,81 +93,6 @@
     var r = el.getBoundingClientRect();
     var k = (el.closest && el.closest(".app")) ? convK() : 1;
     return { left: r.left * k, top: r.top * k, right: r.right * k, bottom: r.bottom * k, width: r.width * k, height: r.height * k };
-  }
-
-  /* v7: which rect convention is right (k = 1 or k = zoom) is decided from the REAL tile on screen.
-     Before, the cursor was only checked against the two candidate rects; near the middle of a tile both rects
-     contain the cursor, so a wrong probe result survived and the tip appeared beside its tile.
-     Now the tile's real left / right / top / bottom edges are found with elementFromPoint (same pixels as the
-     mouse events, so no zoom maths involved) and compared with both candidates. The closer one wins. If the two
-     candidates are nearly identical (tile close to the panel origin) the decision is skipped: the error is tiny. */
-  function hitEl(el, x, y) {
-    var h = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
-    return !!h && (h === el || el.contains(h));
-  }
-
-  function reach(el, dx, dy) {        // px from the cursor to el's edge in one direction (gallop, then bisect)
-    var lo = 0, step = 4, hi, mid, MAXD = 700;
-    while (step <= MAXD && hitEl(el, mx + dx * step, my + dy * step)) { lo = step; step *= 2; }
-    hi = Math.min(step, MAXD + 1);
-    while (hi - lo > 1) {
-      mid = (lo + hi) >> 1;
-      if (hitEl(el, mx + dx * mid, my + dy * mid)) { lo = mid; } else { hi = mid; }
-    }
-    return lo;
-  }
-
-  function calibrate(el) {
-    var r, L, R, T, B, c1, cz, z;
-    if (!(el.closest && el.closest(".app"))) { return; }
-    convK();
-    z = gk.z;
-    if (gk.cal || gk.tries >= 3 || Math.abs(z - 1) < 0.001 || !hitEl(el, mx, my)) { return; }
-    gk.tries++;     // v8 (fixCursor-D): ~40 elementFromPoint calls ran on EVERY tooltip show (0.3 s after the pointer rested) and the host reset the cursor to the arrow. Now once per --ui-scale (max 3 tries when the result is ambiguous)
-    r = el.getBoundingClientRect();
-    L = mx - reach(el, -1, 0); R = mx + reach(el, 1, 0);
-    T = my - reach(el, 0, -1); B = my + reach(el, 0, 1);
-    function cost(k) { return Math.abs(L - r.left * k) + Math.abs(R - r.right * k) + Math.abs(T - r.top * k) + Math.abs(B - r.bottom * k); }
-    c1 = cost(1); cz = cost(z);
-    if (Math.abs(c1 - cz) >= 8) { gk.k = (c1 < cz) ? 1 : z; gk.cal = true; }
-  }
-
-  /* Is the cursor really on el? Hit test = same pixels as the mouse events, independent of any zoom maths. */
-  function over(el) {
-    var hit = document.elementFromPoint ? document.elementFromPoint(mx, my) : null;
-    return !!hit && (hit === el || el.contains(hit));
-  }
-
-  /* Is the pointer on el according to the mouse EVENTS (e.target)? Does not depend on any hit-test maths. */
-  function pointerOn(el) {
-    return (!!lastTarget && (lastTarget === el || el.contains(lastTarget))) || over(el);
-  }
-
-  /* While the tooltip is visible, follow its element every frame. The sidebar list scrolls smoothly
-     when the tab changes (mouse wheel / click), so the icon can move after the tooltip was placed.
-     If the element slides out from under the cursor the tooltip is dropped instead of lingering. */
-  function track() {
-    rafId = 0;
-    if (!shown || !cur) { return; }
-    var r = box(cur.el);
-    if (!lastR || r.left !== lastR.left || r.top !== lastR.top || r.width !== lastR.width || r.height !== lastR.height) {
-      lastR = { left: r.left, top: r.top, width: r.width, height: r.height };
-      if (!over(cur.el)) { leave(); return; }
-      place(cur.el);
-    }
-    rafId = raf(track);
-  }
-
-  function ensure() {
-    if (tip || !document.body) { return !!tip; }
-    tip = document.createElement("div");
-    tip.className = "mt-tip";
-    tip.setAttribute("role", "tooltip");
-    textEl = document.createElement("span");
-    textEl.className = "mt-tip-text";
-    tip.appendChild(textEl);
-    document.body.appendChild(tip);
-    return true;
   }
 
   /* Walk up from the hovered node to the nearest element that has a name to show. */
@@ -225,27 +141,20 @@
     }
   }
 
-  function watch(on) {
-    if (!window.MutationObserver) { return; }
-    if (!on) { if (mo) { mo.disconnect(); } return; }
-    if (!mo) {
-      mo = new MutationObserver(function (list) {
-        var i, t, r;
-        for (i = 0; i < list.length; i++) {
-          t = list[i].target;
-          if (!cur || t !== cur.el || !t.hasAttribute("title")) { continue; }
-          r = t.getAttribute("title");
-          t.__mtTitle = r;
-          t.removeAttribute("title");               // app set a new title while hovered
-          cur.text = shorten(r);
-          if (!cur.text) { hide(); }
-          else if (shown) { textEl.firstChild.nodeValue = cur.text; place(cur.el); }
-        }
-      });
-    }
-    mo.observe(document, { attributes: true, attributeFilter: ["title"], subtree: true });
+  function ensure() {
+    if (tip || !document.body) { return !!tip; }
+    tip = document.createElement("div");
+    tip.className = "mt-tip";
+    tip.setAttribute("role", "tooltip");
+    textEl = document.createElement("span");
+    textEl.className = "mt-tip-text";
+    textEl.appendChild(document.createTextNode(""));
+    tip.appendChild(textEl);
+    document.body.appendChild(tip);
+    return true;
   }
 
+  /* Placed with transform only (the element sits at left:0 / top:0, position:fixed): nothing else on the page is touched. */
   function place(el) {
     var r = box(el);
     var vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
@@ -253,31 +162,27 @@
     var side = "top", x, y, ax, ay, anchorX;
     var inSidebar = !!(el.closest && el.closest(".sidebar"));
 
-    if (inSidebar && document.documentElement.getAttribute("data-nav") === "right" && r.left - GAP - w > EDGE) {       // Settings > Navigation: rail on the right -> tip opens to its left
+    if (inSidebar && document.documentElement.getAttribute("data-nav") === "right" && r.left - GAP - w > EDGE) {
       side = "left";
       x = r.left - GAP - w;
-      y = r.top + r.height / 2 - h / 2;
-      y = Math.max(EDGE, Math.min(vh - h - EDGE, y));
+      y = Math.max(EDGE, Math.min(vh - h - EDGE, r.top + r.height / 2 - h / 2));
       ay = Math.max(9, Math.min(h - 9, r.top + r.height / 2 - y));
       tip.style.setProperty("--mt-a", ay + "px");
     } else if (inSidebar && r.right + GAP + w < vw - EDGE) {
       side = "right";
       x = r.right + GAP;
-      y = r.top + r.height / 2 - h / 2;
-      y = Math.max(EDGE, Math.min(vh - h - EDGE, y));
+      y = Math.max(EDGE, Math.min(vh - h - EDGE, r.top + r.height / 2 - h / 2));
       ay = Math.max(9, Math.min(h - 9, r.top + r.height / 2 - y));
       tip.style.setProperty("--mt-a", ay + "px");
     } else {
       anchorX = r.width > 170 ? Math.max(r.left + 8, Math.min(r.right - 8, mx)) : r.left + r.width / 2;
-      x = anchorX - w / 2;
-      x = Math.max(EDGE, Math.min(vw - w - EDGE, x));
+      x = Math.max(EDGE, Math.min(vw - w - EDGE, anchorX - w / 2));
       if (r.top - GAP - h >= EDGE) { side = "top"; y = r.top - GAP - h; }
       else { side = "bottom"; y = r.bottom + GAP; }
       ax = Math.max(9, Math.min(w - 9, anchorX - x));
       tip.style.setProperty("--mt-a", ax + "px");
     }
-    tip.style.left = Math.round(x) + "px";
-    tip.style.top = Math.round(y) + "px";
+    tip.style.transform = "translate3d(" + Math.round(x) + "px," + Math.round(y) + "px,0)";
     tip.className = "mt-tip is-" + side + (shown ? " is-in" : "");
   }
 
@@ -285,44 +190,23 @@
     showTimer = 0;
     if (!cur || cur.suppressed || !cur.text || !ensure()) { return; }
     if (!document.documentElement.contains(cur.el)) { leave(); return; }
-    if (!pointerOn(cur.el)) { leave(); return; }
-    calibrate(cur.el);
-    if (!textEl.firstChild) { textEl.appendChild(document.createTextNode("")); }
     textEl.firstChild.nodeValue = cur.text;
-    // measure while hidden, then pop
     shown = false;
-    tip.className = "mt-tip is-top";
-    place(cur.el);
-    void tip.offsetWidth;                       // flush so the pop transition really runs
+    place(cur.el);                              // measured while still invisible
     shown = true;
     tip.className = tip.className + " is-in";
-    lastR = null;
-    if (rafId) { caf(rafId); }
-    rafId = raf(track);
-    clearInterval(aliveTimer);
-    aliveTimer = setInterval(function () {      // element re-rendered / removed while hovered
-      if (!cur || !document.documentElement.contains(cur.el)) { leave(); }
-    }, 250);
   }
 
   function hide() {
     if (showTimer) { clearTimeout(showTimer); showTimer = 0; }
-    clearInterval(aliveTimer);
-    if (rafId) { caf(rafId); rafId = 0; }
     if (shown && tip) { tip.className = tip.className.replace(/\s*is-in/g, ""); hideStamp = Date.now(); }
     shown = false;
   }
 
-  function leave(force) {     // force = a real mouseout / blur: the cursor IS gone (mx / my may still be the old spot), give the title back
+  function leave() {
     hide();
-    // Cursor still on the element (re-render, scroll, resize ...): keep the title OFF, otherwise the browser
-    // pops its native tooltip. Treat it like a click: hidden, comes back when the cursor moves.
-    if (!force && cur && inside && document.elementFromPoint && document.documentElement.contains(cur.el)) {
-      if (pointerOn(cur.el)) { cur.suppressed = true; startX = mx; startY = my; return; }
-    }
     if (cur) { restore(cur.el); }
     cur = null;
-    watch(false);
   }
 
   function enter(found, e) {
@@ -331,7 +215,6 @@
     if (!found.aria) { found.el.__mtTitle = found.raw; found.el.removeAttribute("title"); }
     cur = { el: found.el, text: shorten(found.raw), suppressed: false };
     startX = mx = e.clientX; startY = my = e.clientY;
-    watch(true);
     if (showTimer) { clearTimeout(showTimer); showTimer = 0; }
     if (!cur.text) { hide(); return; }
     if (wasShown || Date.now() - hideStamp < WARM) { show(); }
@@ -339,57 +222,41 @@
   }
 
   document.addEventListener("mouseover", function (e) {
-    var t = e.target, found;
-    lastTarget = t;
-    found = findTarget(t);
+    var t = e.target, found = findTarget(t);
     if (!found) { stripSidebar(t); if (cur) { leave(); } return; }
     if (cur && cur.el === found.el) { return; }
     enter(found, e);
   }, true);
 
   document.addEventListener("mouseout", function (e) {
-    lastTarget = e.relatedTarget || null;
-    if (!cur) { return; }
     var to = e.relatedTarget;
+    if (!cur) { return; }
     if (to && cur.el.contains(to)) { return; }
-    if (to && findTarget(to)) { return; }                 // next mouseover swaps the tooltip
-    leave(true);
+    if (to && findTarget(to)) { return; }                 // the next mouseover swaps the tooltip
+    leave();
   }, true);
 
   document.addEventListener("mousemove", function (e) {
+    var found, moved;
     mx = e.clientX; my = e.clientY;
-    lastTarget = e.target;
-    var found;
     if (!cur) {
-      // Self-heal: no mouseover arrives after a panel re-render, a tab switch or a window blur,
-      // so pick the element under the cursor up here (this was the "sometimes shows, sometimes not").
+      // self-heal: no mouseover arrives after a panel re-render or a tab switch
       found = findTarget(e.target);
       if (found) { enter(found, e); }
       return;
     }
-    if (shown) { return; }
-    var moved = Math.abs(mx - startX) + Math.abs(my - startY) > 4;
-    if (cur.suppressed) {
-      // hidden by a click / key press: come back as soon as the cursor really moves again
+    if (shown) {
+      if (!document.documentElement.contains(cur.el)) { leave(); }      // the app re-rendered the element under the pointer
+      return;
+    }
+    moved = Math.abs(mx - startX) + Math.abs(my - startY) > 4;
+    if (cur.suppressed) {                                  // hidden by a press / key: back as soon as the pointer really moves
       if (!moved) { return; }
       cur.suppressed = false;
-      startX = mx; startY = my;
-      if (showTimer) { clearTimeout(showTimer); }
-      showTimer = setTimeout(show, DELAY);
-      return;
-    }
-    if (!showTimer) {
-      // timer was lost (e.g. hide() from a resize): start again
-      startX = mx; startY = my;
-      showTimer = setTimeout(show, DELAY);
-      return;
-    }
-    // wait for the cursor to rest: restart the timer after a real move
-    if (moved) {
-      startX = mx; startY = my;
-      clearTimeout(showTimer);
-      showTimer = setTimeout(show, DELAY);
-    }
+    } else if (!moved && showTimer) { return; }
+    startX = mx; startY = my;
+    if (showTimer) { clearTimeout(showTimer); }
+    showTimer = setTimeout(show, DELAY);                   // wait for the pointer to rest
   }, true);
 
   function quiet() {
@@ -398,40 +265,13 @@
   }
   document.addEventListener("mousedown", quiet, true);
   document.addEventListener("keydown", quiet, true);
-  // wheel / scroll: not suppressed any more. While visible, track() follows the element each frame and drops
-  // the tooltip if it slides out from under the cursor; a pending one is re-checked in show().
-  window.addEventListener("blur", function () { inside = false; lastTarget = null; leave(true); });
+  document.addEventListener("wheel", quiet, true);
+  window.addEventListener("blur", leave);
+  document.addEventListener("mouseleave", leave);
   window.addEventListener("resize", function () { gk.key = null; quiet(); });
-  document.addEventListener("mouseleave", function () { inside = false; lastTarget = null; leave(true); });
 
-  /* Watchdog: the native tooltip used to slip through whenever no mouseover reached us - a node re-created by the
-     app under a resting cursor, a disabled button (browsers send it no mouse events), a titled child inside a
-     titled parent.
-     v8 (fixCursor-A): it used to run elementFromPoint every 120 ms even with the cursor resting. In CEF a hit test
-     under a resting pointer can make the host re-resolve the mouse cursor (hand -> arrow). Now it only looks when
-     something changed: the cursor moved since the last check, or the element last seen under it left the document
-     (panel re-render). A resting cursor over an unchanged panel costs nothing. */
-  var inside = false, dirty = true;
-  document.addEventListener("mousemove", function () { inside = true; dirty = true; }, true);
-  document.addEventListener("mouseover", function () { dirty = true; }, true);
-  window.addEventListener("blur", function () { inside = false; });
-  setInterval(function () {
-    var el, found;
-    if (!inside || !document.elementFromPoint) { return; }
-    if (!dirty && !(lastTarget && !document.documentElement.contains(lastTarget))) { return; }
-    dirty = false;
-    el = document.elementFromPoint(mx, my);
-    if (!el) { return; }
-    lastTarget = el;
-    found = findTarget(el);
-    if (!found) { stripSidebar(el); return; }
-    if (found.aria) { return; }
-    if (!cur || cur.el !== found.el) { enter(found, { clientX: mx, clientY: my }); return; }
-    if (found.el.hasAttribute("title")) {                   // same element, but the app put its title back
-      found.el.__mtTitle = found.el.getAttribute("title");
-      found.el.removeAttribute("title");
-      cur.text = shorten(found.el.__mtTitle);
-      if (shown && cur.text) { textEl.firstChild.nodeValue = cur.text; place(cur.el); }
-    }
-  }, 250);
+  /* Create the tip element and measure the zoom convention while nothing is hovered, so a tooltip never inserts DOM or probes at show time. */
+  function warmUp() { ensure(); try { convK(); } catch (e) { } }
+  if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", function () { setTimeout(warmUp, 600); }); }
+  else { setTimeout(warmUp, 600); }
 })();

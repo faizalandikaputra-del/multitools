@@ -189,7 +189,7 @@
     pollT = 0;
     /* fixCursor-H: every host call (FX_peek) makes After Effects reset the mouse cursor (hand -> arrow). No call while the pointer is in the panel;
        the poll resumes (with one immediate peek) when the pointer leaves it. */
-    if (window.__mtMoving || !chipOn() || !islandOn() || document.hidden || !cs || inflight) { schedule(); return; }
+    if (window.__mtMoving || (window.__mtSettingsOpen && window.__mtSettingsOpen()) || !chipOn() || !islandOn() || document.hidden || !cs || inflight) { schedule(); return; }
     inflight = true;
     call("FX_peek", []).then(function (res) {
       inflight = false;

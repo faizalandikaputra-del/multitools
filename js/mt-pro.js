@@ -183,7 +183,7 @@
     on("mtp-blur", "input", function (e) { applyBlur(e.target.value); });
     on("mtp-blur", "change", function (e) { var v = Math.round(clamp(e.target.value, 0, 100, 50)); if (v === 50) { del(K.blur); } else { set(K.blur, v); } applyBlur(v); });
     on("mtp-blur-reset", "click", function () { del(K.blur); applyBlur(50); syncControls(); });
-    on("mtp-toast-pos", "change", function (e) { var v = TOAST_POS[e.target.value] ? e.target.value : "bottom"; if (v === "bottom") { del(K.tpos); } else { set(K.tpos, v); } applyToastPos(v); toast("Toasts will appear here."); });
+    on("mtp-toast-pos", "change", function (e) { var v = TOAST_POS[e.target.value] ? e.target.value : "bottom"; if (v === "bottom") { del(K.tpos); } else { set(K.tpos, v); } applyToastPos(v); if (get("mtx.islandOn", "1") === "0") { toast("Toasts will appear here."); } });   /* island on = the position is not used, so no message */
     on("mtp-toast-dur", "change", function (e) { var v = String(Math.round(clamp(e.target.value, 800, 15000, 2400))); if (v === "2400") { del(K.tdur); } else { set(K.tdur, v); } toast("Toasts stay this long."); });
     on("mtp-toast-test", "click", function () { toast("This is how a toast looks."); });
     on("mtp-profile-export", "click", function (e) { exportProfile(e.currentTarget); });

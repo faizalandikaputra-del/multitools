@@ -9,6 +9,7 @@
   <!-- Settings survive Windows Temp cleanup: restore localStorage from a file outside Temp (js/mt-persist.js). Keep FIRST. -->
   <script>/* Node shim */try { if (typeof window.require !== "function" && window.cep_node && window.cep_node.require) { window.require = window.cep_node.require; } } catch (e) { }</script>
   <script src="../js/mt-persist.js?v=3"></script>
+  <script src="../js/mt-settings-open.js?v=1"></script>
   <script>try { var r = document.documentElement; r.setAttribute("data-ui-theme", "material"); r.setAttribute("data-theme", localStorage.getItem("mtx.mdScheme") === "light" ? "light" : "dark"); } catch (e) { }</script>
   <!-- Opening splash ("Multi Tool" / author zalfndk) - loaded first so it paints before the panel. Companion: js/splash.js -->
   <link rel="stylesheet" href="../css/splash.css?v=3">

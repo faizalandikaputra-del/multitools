@@ -237,7 +237,7 @@
     registerKeys(true);
   }, true);
   document.addEventListener("visibilitychange", function () { registerKeys(true); });
-  setInterval(function () { if (window.__mtMoving) { return; } registerKeys(true); }, 5000);
+  setInterval(function () { if (window.__mtMoving || (window.__mtSettingsOpen && window.__mtSettingsOpen())) { return; } registerKeys(true); }, 5000);
 
   // ---------- Command Palette ----------
   var pal = { open: false, el: null, input: null, list: null, items: [], sel: 0, all: [] };

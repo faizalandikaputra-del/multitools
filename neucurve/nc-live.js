@@ -110,6 +110,7 @@
     try {
       if (!cep || !window.CSInterface || !autoOn()) { return; }
       if (document.hidden || window.innerWidth === 0) { return; }
+      if ((window.__mtSettingsOpen && window.__mtSettingsOpen())) { return; }   // a Settings window is open: no host call
       if (L.busy || L.down || inFlight) { return; }
       var now = Date.now();
       if (now - lastSnap < 2000) { return; }

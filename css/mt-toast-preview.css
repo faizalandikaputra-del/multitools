@@ -1,0 +1,49 @@
+/* Multi Tool - mt-toast-preview.css  (Settings window > Appearance > Toast)
+   A small mock of the panel that shows where a toast lands and for how long. Colors come from the window's own tokens. */
+.mtp-tp { padding: 14px 18px 4px; }
+.mtp-tp-stage {
+  position: relative; height: 116px; max-width: 380px; overflow: hidden;
+  background-color: #0e0e0e; border: 1px solid var(--mtp-border-strong, #404040); border-radius: 10px;
+  /* faint 4 x 2 tile grid: reads as "the panel" without drawing a real UI */
+  background-image:
+    linear-gradient(#171717, #171717), linear-gradient(#171717, #171717), linear-gradient(#171717, #171717), linear-gradient(#171717, #171717),
+    linear-gradient(#171717, #171717), linear-gradient(#171717, #171717), linear-gradient(#171717, #171717), linear-gradient(#171717, #171717);
+  background-repeat: no-repeat;
+  background-size: 18% 22px;
+  background-position:
+    5% 38px, 29% 38px, 53% 38px, 77% 38px,
+    5% 70px, 29% 70px, 53% 70px, 77% 70px;
+}
+.mtp-tp-pill {
+  position: absolute; display: inline-flex; align-items: center; gap: 7px; max-width: calc(100% - 20px);
+  padding: 5px 11px 5px 7px; border-radius: 999px; white-space: nowrap;
+  background: var(--mtp-surface-hover, #262626); border: 1px solid var(--mtp-border-strong, #404040);
+  color: var(--mtp-text, #fafafa); font-size: 11px; font-style: normal; line-height: 1.2;
+  opacity: 0; pointer-events: none;
+  transition: opacity .16s linear, transform .26s cubic-bezier(.34, 1.45, .64, 1);
+}
+.mtp-tp-pill b { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%; background: #3ddc84; }
+.mtp-tp.is-on .mtp-tp-pill { opacity: 1; transform: translate(var(--tx, 0), 0); }
+
+/* position -> where the pill rests (hidden state sits 14px off toward the nearest edge) */
+.mtp-tp[data-pos="bottom"] .mtp-tp-pill { left: 50%; bottom: 10px; --tx: -50%; transform: translate(-50%, 14px); }
+.mtp-tp[data-pos="top"] .mtp-tp-pill { left: 50%; top: 10px; --tx: -50%; transform: translate(-50%, -14px); }
+.mtp-tp[data-pos="bottom-right"] .mtp-tp-pill { right: 10px; bottom: 10px; transform: translate(0, 14px); }
+.mtp-tp[data-pos="bottom-left"] .mtp-tp-pill { left: 10px; bottom: 10px; transform: translate(0, 14px); }
+.mtp-tp[data-pos="top-right"] .mtp-tp-pill { right: 10px; top: 10px; transform: translate(0, -14px); }
+.mtp-tp[data-pos="top-left"] .mtp-tp-pill { left: 10px; top: 10px; transform: translate(0, -14px); }
+.mtp-tp.is-on[data-pos] .mtp-tp-pill { transform: translate(var(--tx, 0), 0); }
+
+/* island on: the toast grows out of the island capsule, whatever Position says */
+.mtp-tp[data-mode="island"] .mtp-tp-pill { left: 50%; right: auto; top: 8px; bottom: auto; --tx: -50%; background: #000; border-color: #2c2c2c; transform: translate(-50%, 0) scale(.82); }
+.mtp-tp[data-mode="island"].is-on .mtp-tp-pill { transform: translate(-50%, 0) scale(1); }
+
+.mtp-tp-note { margin: 8px 0 0; color: var(--mtp-text-dim, #737373); font-size: 11px; line-height: 1.45; }
+
+/* Position row while the island is on: the value is kept, it just does nothing right now */
+#winToastPosRow.is-idle .settings-row-copy b, #winToastPosRow.is-idle .settings-row-ctrl { opacity: .45; }
+#winToastPosRow.is-idle .settings-row-copy small { color: var(--mtp-text-muted, #a3a3a3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mtp-tp-pill { transition: opacity .01s linear; }
+}

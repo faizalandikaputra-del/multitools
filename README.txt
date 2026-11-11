@@ -2591,3 +2591,23 @@ toast-island-b (ikon toast: cincin putih + tanda "!" hilang)
     Lingkaran ikon tidak punya stroke sendiri, jadi mewarisi stroke putih dari aturan itu. Gambar centang memakai pathLength + dasharray 1, yang membuat garisnya gampang tidak tampil.
   - Perbaikan: circle diberi stroke="none"; .mi-tic svg mengunci width / height / fill / stroke; animasi gambar centang pakai panjang dash tetap (10 untuk centang, 4,3 untuk "!") lewat --mi-len, tanpa pathLength.
   - Files: js/mt-island.js (?v=22), css/mt-island.css (?v=20), html/index.html, README.txt.
+
+settings-idle-calls (kursor berkedip di jendela Pengaturan Multi Tool dan NeuCurve)
+  - Gejala: saat jendela Pengaturan Multi Tool atau Pengaturan NeuCurve terbuka, kursor mouse berkedip (tangan <-> panah).
+  - Penyebab: kursor ada di luar panel, jadi gate "pointer di dalam panel" (__mtMoving) tidak aktif dan semua polling ke After Effects tetap jalan:
+    FX_peek (js/mt-fxcopy.js), QCE_autoRes dan refresh Quick Comp Edit (js/main.js), tick box di island (js/main.js), registerKeyEventsInterest tiap 5 detik (js/mt-hotkeys.js),
+    NC_liveStatus (neucurve/nc-live.js) dan polling playhead NeuCurve tiap 1 detik (neucurve/assets/index.js). Tiap evalScript membuat After Effects mereset kursor.
+  - Perbaikan: js/mt-settings-open.js (baru) - jendela Pengaturan menulis detak di localStorage "mtbus.settingsAlive" tiap 1 detik selama terbuka dan terlihat, lalu menghapusnya saat ditutup
+    (awalan mtbus. tidak di-mirror ke disk oleh mt-persist.js). Panel memanggil window.__mtSettingsOpen() dan semua polling di atas diam selama jendela terbuka.
+    Panggilan dari aksi nyata (tombol, perubahan pengaturan) tidak memakai gate ini, jadi tetap jalan. Detak mati sendiri setelah 3,5 detik bila jendela crash.
+  - Files: js/mt-settings-open.js (baru, ?v=1), js/main.js, js/mt-fxcopy.js, js/mt-hotkeys.js, neucurve/nc-live.js, neucurve/assets/index.js,
+    html/index.html, html/settings.html, neucurve/index.html, neucurve/settings.html.
+
+settings-toast-preview (pengaturan Toast tidak terasa bekerja)
+  - Gejala: mengubah Position / Time on screen di Pengaturan > Toast seperti tidak berefek.
+  - Penyebab: (1) Position hanya dipakai saat dynamic island mati, padahal island menyala secara default, jadi kontrolnya tidak berpengaruh dan hanya dijelaskan lewat teks kecil.
+    (2) Toast uji muncul di panel, yang bisa tidak terlihat saat jendela Pengaturan terbuka. (3) Mengganti Position memunculkan toast "Toasts will appear here." walau posisinya tidak dipakai.
+  - Perbaikan: html/settings.html grup Toast kini punya pratinjau panel mini (css/mt-toast-preview.css, js/mt-toast-preview.js) yang memutar toast di posisi dan durasi terpilih, dipicu tiap perubahan dan tombol "Show a test toast".
+    Saat island menyala, baris Position diredupkan dan pratinjau menampilkan kapsul island. js/mt-pro.js tidak lagi menampilkan toast palsu saat Position diganti dengan island menyala.
+  - Files: css/mt-toast-preview.css (baru, ?v=1), js/mt-toast-preview.js (baru, ?v=1), html/settings.html, js/mt-pro.js, README.txt.
+  - Belum diuji di After Effects / Chromium; syntax JS diperiksa dengan node --check.

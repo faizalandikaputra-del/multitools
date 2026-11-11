@@ -943,6 +943,7 @@
       // fixCursor-F: every evalScript makes After Effects reset the mouse cursor (hand -> arrow, stays until the pointer changes element).
       // No host call while the pointer is inside the panel; new comps are made in AE's own UI (pointer outside), and one tick runs on leave.
       if (window.__mtMoving) { return; }
+      if (window.__mtSettingsOpen && window.__mtSettingsOpen()) { return; }   // Settings window open: pointer is outside the panel but a host call would still make the cursor blink there
       self.busy = true;
       Bridge.call("QCE_autoRes", apply ? [pin.w, pin.h] : [0, 0]).then(function (res) {
         self.busy = false;
@@ -1200,6 +1201,7 @@
         if (!document.body.contains(wrap)) { clearInterval(pollHandle); return; }
         if (isBusy()) { return; }
         if (window.__mtMoving) { return; }   // fixCursor-H: no host call while the pointer is in the panel (it resets the cursor)
+        if (window.__mtSettingsOpen && window.__mtSettingsOpen()) { return; }   // same while a Settings window is open
         if (document.activeElement === startEl || document.activeElement === durEl) { return; } // don't clobber typing
         refresh();
       }, 700);
@@ -4129,6 +4131,7 @@
         away = 0;
         // fixCursor-H: no host call while the pointer is in the panel (each one resets the cursor); a drag in the box keeps full speed.
         if (window.__mtMoving && !document.documentElement.classList.contains("mt-scrubbing")) { return; }
+        if (window.__mtSettingsOpen && window.__mtSettingsOpen()) { return; }   // Settings window open: rest
         tick(false);
       }, self.POLL_MS);
       self.tick = tick;

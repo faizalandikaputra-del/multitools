@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ExtensionList>
-  <Extension Id="com.ogatt.multitool.panel"><HostList><Host Name="AEFT" Port="8088"/></HostList></Extension>
-  <Extension Id="com.ogatt.multitool.settings"><HostList><Host Name="AEFT" Port="8089"/></HostList></Extension>
-  <Extension Id="com.ogatt.multitool.curve.settings"><HostList><Host Name="AEFT" Port="8090"/></HostList></Extension>
-  <Extension Id="com.ogatt.multitool.curve.graph"><HostList><Host Name="AEFT" Port="8091"/></HostList></Extension>
-</ExtensionList>

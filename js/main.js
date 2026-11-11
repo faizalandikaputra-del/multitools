@@ -65,12 +65,6 @@
       tools: [],
       custom: "anchorAlign"
     },
-    "shape": {
-      title: "Shape",
-      hint: "Pick a shape or device, then add it as a layer, mask or track matte.",
-      tools: [],
-      custom: "shapeTab"
-    },
     "tools": {
       title: "Tools",
       hint: "Handy one-click utilities for editing and motion graphics.",
@@ -933,7 +927,6 @@
     tick: function () {
       var self = this, pin = this.get(), apply = !!(pin && this.isOn());
       if (self.busy || !cs) { return; }
-      if (window.__mtMoving) { return; }   // fixCursor-F: no host call while the pointer is on the panel (it resets the cursor to the arrow)
       self.busy = true;
       Bridge.call("QCE_autoRes", apply ? [pin.w, pin.h] : [0, 0]).then(function (res) {
         self.busy = false;
@@ -1188,7 +1181,6 @@
       // markup is no longer in the document (i.e. the user switched to another tab).
       var pollHandle = setInterval(function () {
         if (!document.body.contains(wrap)) { clearInterval(pollHandle); return; }
-        if (window.__mtMoving) { return; }   // fixCursor-F: no host call while the pointer is on the panel
         if (isBusy()) { return; }
         if (document.activeElement === startEl || document.activeElement === durEl) { return; } // don't clobber typing
         refresh();
@@ -4117,7 +4109,6 @@
         // Stops once the box has been gone for a few ticks (tab left). A box in the dynamic island stays connected and keeps updating.
         if (!el.apply.isConnected) { away++; if (away > 8) { stop(); } return; }
         away = 0;
-        if (window.__mtMoving) { return; }   // fixCursor-F: no host call while the pointer is on the panel
         tick(false);
       }, self.POLL_MS);
       self.tick = tick;
@@ -4636,8 +4627,6 @@
       built = ExprCode.render();
     } else if (cfg.custom === "presets") {
       built = Presets.render();
-    } else if (cfg.custom === "shapeTab") {
-      built = window.MTShape ? window.MTShape.render() : document.createElement("div");   // js/mt-shape.js
     } else if (cfg.custom === "utilityTools") {
       built = UtilityTools.render();
     } else if (cfg.custom === "textFlex") {

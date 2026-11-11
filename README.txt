@@ -2537,3 +2537,8 @@ Shape tab (new)
   Files: js/mt-shape-data.js (the 103 shapes), js/mt-shape.js (tab UI), css/mt-shape.css, jsx/host.jsx (SHAPE_insert), html/index.html, js/main.js (TABS "shape"),
          js/mt-backup.js (key mtx.shapeState).
   Note:  one undo step per insert. Fit and Repeater cannot be combined. Mask mode ignores Modifiers. Not yet run inside After Effects: test SHAPE_insert there first.
+
+Shape tab: floating button
+  The options under the shape list (Modifiers, preview, Style, Insert as, Size, Stroke, Add button) now live in a popover
+  opened by a round floating button. Nothing needs scrolling. Drag the button anywhere; it avoids the side navigation.
+  Click outside or press Escape to close. The position is saved in mtx.shapeFabPos (included in the backup).

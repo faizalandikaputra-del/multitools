@@ -13,7 +13,7 @@
     { id: "hotkeys", label: "Hotkeys", re: /^(mt\.hotkeys|neucurve_hotkeys)/ },
     { id: "curve", label: "Curve (NeuCurve) settings", re: /^(neucurve_|curveEditorPresets$)/ },
     { id: "palettes", label: "Color palettes", re: /^(mtRecentColors|mtx\.(cpSwatchTab|palette|cp))/ },
-    { id: "shape", label: "Shape tab", re: /^mtx\.shapeState$/ },
+    { id: "shape", label: "Shape tab", re: /^mtx\.shape(State|FabPos)$/ },
     { id: "background", label: "Background image, GIF and position", re: /^mtx\.bg(?!Color)/, heavy: true },
     { id: "toolimg", label: "Tool images", re: /^mtx\.toolImg\./, heavy: true },
     { id: "style", label: "Style, theme, layout and animation", re: /^(mtx\.(uiTheme|glassMode|mdScheme|mdBg|mdMode|themeColor|bgColor|navPos|taGroupAccent|tabOrder|pro\.|island|tooltipOn|anim|uiScale)|mt_theme_state)/ },

@@ -4599,6 +4599,7 @@
     FormState.watch(panel);
     scrollPending = null;
     CPWheel.dockOff();   // the floating color wheel belongs to the Color Palette tab only
+    if (window.MTShapeTab) { window.MTShapeTab.dockOff(); }   // so does the Shape tab button
     currentTab = tabId;
 
     var tabs = document.querySelectorAll(".tabs .tab");

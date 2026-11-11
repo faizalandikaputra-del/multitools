@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.186",
-    "changelog":  "- Update 1.8.186",
+    "latest_version":  "1.8.187",
+    "changelog":  "- Update 1.8.187",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -196,7 +196,7 @@
                   },
                   {
                       "path":  "css/mt-shape.css",
-                      "sha256":  "3832892284a56f4ae1f7e7e5782fab0c7458917892f85d88210bde716a7d3512"
+                      "sha256":  "7831d75c5664a92206ebfec70ead4ef5be1ccfd3539f1bbaf112d478395a3b76"
                   },
                   {
                       "path":  "css/mt-smooth.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "94ffcbc5ea9a679bf4f3d197f0f1623c60654c9c5fd913f4fe41d44dcc7da38c"
+                      "sha256":  "cf2a615af07cc2539b63f5e7dba402b8f4acd300e6283039f55b650c907c7d53"
                   },
                   {
                       "path":  "html/settings.html",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "0490de3718a4aa133fc8746292b6c756e8d2c274eb1dbfe925ea74f9dbc9f081"
+                      "sha256":  "132248a78c8d35dbefed96727aa9905d9e136db5ab4ddc4c542984aefe7ccef4"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -304,7 +304,7 @@
                   },
                   {
                       "path":  "js/mt-backup.js",
-                      "sha256":  "0ed17cab22fff3234d8335198a7371f1888ed87dc79125d49c2e659c9d374506"
+                      "sha256":  "6c1dcb4b0602ff90e621a5e29431cce0312e0d729c7ba8a3fc49677219f70536"
                   },
                   {
                       "path":  "js/mt-bg-preview.js",
@@ -408,7 +408,7 @@
                   },
                   {
                       "path":  "js/mt-shape.js",
-                      "sha256":  "ddc608302489cf0e613f329ab73c11ecc7b9e6ee210348cf923cc985e8970752"
+                      "sha256":  "b164772cf547510053d5773d11ff944455d67cd93ac64a586bd1df71264ec5fc"
                   },
                   {
                       "path":  "js/mt-shape-data.js",
@@ -776,7 +776,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "0ade293acf21d58a10f5bcd68738735ffb60c54cf773c352d9f82b7eef558e6b"
+                      "sha256":  "82dee4c8b4efabb2a34e04515aa5138c04168e58cb55f332928b81c5f5900728"
                   }
               ]
 }

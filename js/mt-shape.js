@@ -108,6 +108,7 @@
   }
 
   /* ---------------- the tab ---------------- */
+  var activeOff = null;   // removes the floating button of the tab that is currently shown
   function render() {
     var st = load(), M = mt(), Bridge = M.Bridge, Store = M.Store;
     var wrap = document.createElement("div");
@@ -117,38 +118,43 @@
     function save() { try { Store.set(KEY, JSON.stringify(st)); } catch (e) { } }
     function toast(m, err) { if (M.toast) { M.toast(m, !!err); } }
 
+    var pop = document.createElement("div");
     wrap.innerHTML =
       '<div class="sh-top">' +
         '<span class="sh-count" id="sh-count"></span>' +
         '<label class="sh-search">' + ICON_SEARCH + '<input type="text" id="sh-q" placeholder="Search shapes" spellcheck="false" autocomplete="off" aria-label="Search shapes"></label>' +
       "</div>" +
       '<div class="sh-chips" id="sh-chips" role="tablist" aria-label="Shape groups"></div>' +
-      '<div class="sh-list" id="sh-list"></div>' +
-      '<section class="sh-mods" id="sh-mods">' +
-        '<button type="button" class="sh-mods-head" id="sh-mods-head" aria-expanded="false"><b>Modifiers</b>' + ICON_CHEV + "</button>" +
-        '<div class="sh-mods-body" id="sh-mods-body"><div class="sh-mods-in">' +
-          '<div class="sh-lab">Animate in</div>' + seg("anim", [["none", "None"], ["pop", "Pop"], ["draw", "Draw"], ["fade", "Fade"]]) +
-          slider("dur", "Duration", 0.1, 3, 0.1, "s") +
-          '<div class="sh-lab">Repeater</div>' + seg("rep", [["off", "Off"], ["grid", "Grid"], ["radial", "Radial"], ["line", "Line"]]) +
-          '<div class="sh-two">' + slider("count", "Count", 2, 24, 1, "") + slider("spacing", "Spacing", 0, 600, 1, " px") + "</div>" +
-          slider("round", "Round corners", 0, 200, 1, " px") +
-          '<label class="sh-check"><input type="checkbox" id="sh-fit"><span class="sh-box"></span><span>Fit to text layer (box follows the text)</span></label>' +
-          '<label class="sh-check"><input type="checkbox" id="sh-pulse"><span class="sh-box"></span><span>Pulse on markers (beat sync)</span></label>' +
-          '<p class="sh-hint" id="sh-mods-hint"></p>' +
-        "</div></div>" +
-      "</section>" +
-      '<section class="sh-dock">' +
-        '<div class="sh-prev"><div class="sh-prev-ico" id="sh-prev-ico"></div>' +
-          '<div class="sh-prev-txt"><b id="sh-prev-name"></b><span id="sh-prev-sub"></span></div>' +
-          '<label class="sh-color" title="Shape color"><input type="color" id="sh-color" aria-label="Shape color"><span></span></label></div>' +
-        '<div class="sh-opts">' +
-          '<div><div class="sh-lab">Style</div>' + seg("style", [["fill", "Fill"], ["stroke", "Stroke"], ["both", "Both"]]) + "</div>" +
-          '<div><div class="sh-lab">Insert as</div>' + seg("mode", [["layer", "Layer"], ["mask", "Mask"], ["matte", "Matte"]]) + "</div>" +
-        "</div>" +
-        '<p class="sh-desc" id="sh-desc"></p>' +
-        '<div class="sh-two">' + slider("size", "Size", 10, 2000, 1, " px") + slider("stroke", "Stroke", 1, 80, 1, " px") + "</div>" +
-        '<button type="button" class="btn btn-primary sh-add" id="sh-add"></button>' +
-      "</section>";
+      '<div class="sh-list" id="sh-list"></div>';
+    pop.className = "sh-popbox";
+    pop.innerHTML =
+      '<div class="sh-pop-scroll">' +
+        '<section class="sh-mods" id="sh-mods">' +
+          '<button type="button" class="sh-mods-head" id="sh-mods-head" aria-expanded="false"><b>Modifiers</b>' + ICON_CHEV + "</button>" +
+          '<div class="sh-mods-body" id="sh-mods-body"><div class="sh-mods-in">' +
+            '<div class="sh-lab">Animate in</div>' + seg("anim", [["none", "None"], ["pop", "Pop"], ["draw", "Draw"], ["fade", "Fade"]]) +
+            slider("dur", "Duration", 0.1, 3, 0.1, "s") +
+            '<div class="sh-lab">Repeater</div>' + seg("rep", [["off", "Off"], ["grid", "Grid"], ["radial", "Radial"], ["line", "Line"]]) +
+            '<div class="sh-two">' + slider("count", "Count", 2, 24, 1, "") + slider("spacing", "Spacing", 0, 600, 1, " px") + "</div>" +
+            slider("round", "Round corners", 0, 200, 1, " px") +
+            '<label class="sh-check"><input type="checkbox" id="sh-fit"><span class="sh-box"></span><span>Fit to text layer (box follows the text)</span></label>' +
+            '<label class="sh-check"><input type="checkbox" id="sh-pulse"><span class="sh-box"></span><span>Pulse on markers (beat sync)</span></label>' +
+            '<p class="sh-hint" id="sh-mods-hint"></p>' +
+          "</div></div>" +
+        "</section>" +
+        '<section class="sh-dock">' +
+          '<div class="sh-prev"><div class="sh-prev-ico" id="sh-prev-ico"></div>' +
+            '<div class="sh-prev-txt"><b id="sh-prev-name"></b><span id="sh-prev-sub"></span></div>' +
+            '<label class="sh-color" title="Shape color"><input type="color" id="sh-color" aria-label="Shape color"><span></span></label></div>' +
+          '<div class="sh-opts">' +
+            '<div><div class="sh-lab">Style</div>' + seg("style", [["fill", "Fill"], ["stroke", "Stroke"], ["both", "Both"]]) + "</div>" +
+            '<div><div class="sh-lab">Insert as</div>' + seg("mode", [["layer", "Layer"], ["mask", "Mask"], ["matte", "Matte"]]) + "</div>" +
+          "</div>" +
+          '<p class="sh-desc" id="sh-desc"></p>' +
+          '<div class="sh-two">' + slider("size", "Size", 10, 2000, 1, " px") + slider("stroke", "Stroke", 1, 80, 1, " px") + "</div>" +
+        "</section>" +
+      "</div>" +
+      '<button type="button" class="btn btn-primary sh-add" id="sh-add"></button>';
 
     function seg(key, opts) {
       var i, h = '<div class="sh-seg" data-seg="' + key + '" role="radiogroup" style="--n:' + opts.length + '"><i class="sh-seg-ind" aria-hidden="true"></i>';
@@ -159,8 +165,8 @@
       return '<div class="sh-sl" data-sl="' + key + '"><div class="sh-sl-h"><label for="sh-r-' + key + '">' + label + '</label><output id="sh-o-' + key + '"></output></div>' +
         '<input type="range" id="sh-r-' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" data-unit="' + unit + '"></div>';
     }
-    function q(sel) { return wrap.querySelector(sel); }
-    function qa(sel) { return Array.prototype.slice.call(wrap.querySelectorAll(sel)); }
+    function q(sel) { return wrap.querySelector(sel) || pop.querySelector(sel); }
+    function qa(sel) { return Array.prototype.slice.call(wrap.querySelectorAll(sel)).concat(Array.prototype.slice.call(pop.querySelectorAll(sel))); }
 
     /* ----- chips + list ----- */
     var chips = q("#sh-chips"), list = q("#sh-list"), search = q("#sh-q"), query = "";
@@ -201,6 +207,7 @@
       q("#sh-prev-name").textContent = selSh.name;
       q("#sh-prev-sub").textContent = selSh.group + (parts > 1 ? " - " + parts + " parts" : "");
       q("#sh-add").textContent = "Add " + selSh.name;
+      fabPaint();
     }
     function fmt(key, v) { var u = q("#sh-r-" + key).getAttribute("data-unit"); return (key === "dur" ? f2(v) : Math.round(v)) + u; }
     function paintControls() {
@@ -247,7 +254,7 @@
         mbody.style.maxHeight = mbody.scrollHeight + "px"; void mbody.offsetWidth; mbody.style.maxHeight = "0px";
       }
     }
-    mhead.addEventListener("click", function () { st.mods = !mods.classList.contains("is-open"); save(); setMods(st.mods, false); });
+    mhead.addEventListener("click", function () { st.mods = !mods.classList.contains("is-open"); save(); setMods(st.mods, false); [60, 200, 440].forEach(function (ms) { setTimeout(fabOrient, ms); }); });
 
     /* ----- events ----- */
     chips.addEventListener("click", function (e) {
@@ -258,13 +265,14 @@
     search.addEventListener("input", function () { query = search.value.trim().toLowerCase(); renderList(); });
     list.addEventListener("click", function (e) { var t = e.target.closest ? e.target.closest(".sh-tile") : null; if (t) { select(t.getAttribute("data-id")); } });
     list.addEventListener("dblclick", function (e) { var t = e.target.closest ? e.target.closest(".sh-tile") : null; if (t) { select(t.getAttribute("data-id"), false); add(); } });
-    wrap.addEventListener("click", function (e) {
+    function onSeg(e) {
       var b = e.target.closest ? e.target.closest(".sh-seg-b") : null; if (!b || b.disabled) { return; }
       var key = b.parentNode.getAttribute("data-seg"), v = b.getAttribute("data-v");
       st[key] = v;
       if (key === "rep" && v !== "off") { st.fit = false; }
       save(); paintControls(); if (key === "style") { paintPreview(false); }
-    });
+    }
+    wrap.addEventListener("click", onSeg); pop.addEventListener("click", onSeg);
     ["dur", "count", "spacing", "round", "size", "stroke"].forEach(function (k) {
       var r = q("#sh-r-" + k);
       r.addEventListener("input", function () { st[k] = parseFloat(r.value); q("#sh-o-" + k).textContent = fmt(k, st[k]); if (k === "stroke" || k === "size") { paintPreview(false); } });
@@ -287,10 +295,112 @@
     }
     q("#sh-add").addEventListener("click", add);
 
+    /* ----- floating button: the options live in a popover, so nothing needs scrolling ----- */
+    var fabEl = null, fabOpen = false, fabOffs = [], FAB_KEY = "shapeFabPos";
+    function zoomK() { var v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale")); return v && v > 0 ? v : 1; }
+    function appEl() { return document.querySelector(".app"); }
+    function bounds() {
+      var app = appEl(), sb = document.querySelector(".sidebar"), fw = fabEl ? fabEl.offsetWidth : 48, L = 6, R = app.clientWidth - 6;
+      if (sb && sb.offsetWidth) { var sl = sb.offsetLeft; if (sl + sb.offsetWidth / 2 > app.clientWidth / 2) { R = Math.min(R, sl - 6); } else { L = Math.max(L, sl + sb.offsetWidth + 6); } }
+      R = Math.max(L, R);
+      return { minX: L, minY: 6, maxX: Math.max(L, R - fw), maxY: Math.max(6, app.clientHeight - fw - 6), right: R };
+    }
+    function savedPos() {
+      var o = null; try { o = JSON.parse(Store.get(FAB_KEY) || "null"); } catch (e) { o = null; }
+      return (o && typeof o.x === "number" && typeof o.y === "number") ? { x: clamp(o.x, 0, 1, 1), y: clamp(o.y, 0, 1, 1) } : { x: 1, y: 1 };
+    }
+    function fabPlace(fx, fy) {
+      if (!fabEl || !appEl()) { return; }
+      var bd = bounds();
+      fabEl.style.left = Math.round(bd.minX + (bd.maxX - bd.minX) * fx) + "px";
+      fabEl.style.top = Math.round(bd.minY + (bd.maxY - bd.minY) * fy) + "px";
+      fabOrient();
+    }
+    function fabOrient() {
+      if (!fabEl) { return; }
+      var app = appEl(), bd = bounds(), pp = fabEl.querySelector(".cw-pop"), fab = fabEl.querySelector(".cw-fab");
+      var x = parseFloat(fabEl.style.left) || 0, y = parseFloat(fabEl.style.top) || 0, f = fab.offsetWidth;
+      var up = (y + f / 2) > app.clientHeight / 2, right = (x + f / 2) > (bd.minX + bd.right) / 2;
+      fabEl.setAttribute("data-v", up ? "up" : "down"); fabEl.setAttribute("data-h", right ? "r" : "l");
+      var pw = Math.min(pp.offsetWidth || 285, bd.right - bd.minX), off = right ? (x + f) - pw : x;
+      off = clamp(off, bd.minX, bd.right - pw, bd.minX);
+      pp.style.left = Math.round(off - x) + "px"; pp.style.right = "auto";
+      pp.style.maxHeight = Math.max(180, (up ? (y - 16) : (app.clientHeight - (y + f) - 16))) + "px";
+    }
+    function fabSetOpen(on) {
+      if (!fabEl) { return; }
+      fabOpen = !!on;
+      if (fabOpen) { fabOrient(); }
+      fabEl.classList.toggle("is-open", fabOpen);
+      fabEl.querySelector(".cw-fab").setAttribute("aria-expanded", String(fabOpen));
+      fabEl.querySelector(".cw-pop").setAttribute("aria-hidden", String(!fabOpen));
+    }
+    function fabPaint() {
+      if (!fabEl) { return; }
+      var ico = fabEl.querySelector(".sh-fab-ico");
+      ico.innerHTML = shapeSvg(selSh, "color", st);
+      ico.classList.remove("sh-pop"); void ico.offsetWidth; ico.classList.add("sh-pop");
+      fabEl.style.setProperty("--sh-cur", st.color);
+    }
+    function fabOff() {
+      fabOffs.forEach(function (fn) { try { fn(); } catch (e) { } }); fabOffs = [];
+      if (fabEl && fabEl.parentNode) { fabEl.parentNode.removeChild(fabEl); }
+      fabEl = null; fabOpen = false;
+    }
+    function fabOn() {
+      var app = appEl(); if (!app) { return; }
+      fabEl = document.createElement("div");
+      fabEl.className = "cw-dock sh-fabdock";
+      fabEl.innerHTML =
+        '<div class="cw-pop sh-fabpop" aria-hidden="true" role="dialog" aria-label="Shape options"></div>' +
+        '<button type="button" class="cw-fab sh-fab" aria-label="Shape options. Drag to move" aria-expanded="false" title="Shape options (drag to move)"><span class="sh-fab-ring"></span><span class="sh-fab-ico"></span></button>';
+      fabEl.querySelector(".cw-pop").appendChild(pop);
+      app.appendChild(fabEl);
+      var sp = savedPos(); fabPlace(sp.x, sp.y);
+      var fab = fabEl.querySelector(".cw-fab"), drag = null, justDragged = false;
+      fab.addEventListener("pointerdown", function (e) {
+        if (e.button !== undefined && e.button !== 0) { return; }
+        drag = { cx: e.clientX, cy: e.clientY, x: parseFloat(fabEl.style.left) || 0, y: parseFloat(fabEl.style.top) || 0, moved: false, k: zoomK() };
+        try { fab.setPointerCapture(e.pointerId); } catch (e1) { }
+      });
+      fab.addEventListener("pointermove", function (e) {
+        if (!drag) { return; }
+        var dx = e.clientX - drag.cx, dy = e.clientY - drag.cy;
+        if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) { return; }
+        if (!drag.moved) { drag.moved = true; fabEl.classList.add("is-dragging"); if (fabOpen) { fabSetOpen(false); } }
+        var bd = bounds();
+        fabEl.style.left = Math.round(clamp(drag.x + dx / drag.k, bd.minX, bd.maxX, bd.minX)) + "px";
+        fabEl.style.top = Math.round(clamp(drag.y + dy / drag.k, bd.minY, bd.maxY, bd.minY)) + "px";
+      });
+      function endDrag() {
+        if (!drag) { return; }
+        var was = drag.moved; drag = null; fabEl.classList.remove("is-dragging");
+        if (!was) { return; }
+        justDragged = true; setTimeout(function () { justDragged = false; }, 60);
+        var bd = bounds(), x = parseFloat(fabEl.style.left) || 0, y = parseFloat(fabEl.style.top) || 0;
+        var fx = clamp(bd.maxX > bd.minX ? (x - bd.minX) / (bd.maxX - bd.minX) : 1, 0, 1, 1), fy = clamp(bd.maxY > bd.minY ? (y - bd.minY) / (bd.maxY - bd.minY) : 1, 0, 1, 1);
+        Store.set(FAB_KEY, JSON.stringify({ x: Math.round(fx * 1000) / 1000, y: Math.round(fy * 1000) / 1000 }));
+        fabPlace(fx, fy);
+      }
+      fab.addEventListener("pointerup", endDrag); fab.addEventListener("pointercancel", endDrag); fab.addEventListener("lostpointercapture", endDrag);
+      fab.addEventListener("click", function () { if (!justDragged) { fabSetOpen(!fabOpen); } });
+      function onDown(e) {
+        if (!fabOpen || fabEl.contains(e.target)) { return; }
+        if (e.target.closest && e.target.closest(".sh-tile") && false) { return; }
+        fabSetOpen(false);
+      }
+      function onKey(e) { if (e.key === "Escape" && fabOpen) { fabSetOpen(false); fab.focus(); } }
+      function onResize() { var p2 = savedPos(); fabPlace(p2.x, p2.y); }
+      document.addEventListener("pointerdown", onDown, true); document.addEventListener("keydown", onKey, true); window.addEventListener("resize", onResize);
+      fabOffs.push(function () { document.removeEventListener("pointerdown", onDown, true); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize); });
+    }
+    if (activeOff) { activeOff(); }
+    activeOff = fabOff;
+
     /* ----- first paint ----- */
-    paintChips(); renderList(); paintControls(); paintPreview(true); setMods(!!st.mods, true);
+    paintChips(); renderList(); paintControls(); setMods(!!st.mods, true); fabOn(); paintPreview(true);
     return wrap;
   }
 
-  w.MTShapeTab = { render: render, buildPayload: buildPayload, shapeSvg: shapeSvg };
+  w.MTShapeTab = { dockOff: function () { if (activeOff) { activeOff(); activeOff = null; } }, render: render, buildPayload: buildPayload, shapeSvg: shapeSvg };
 })(window);

@@ -2568,3 +2568,19 @@ fixCursor-H (penyebab cursor berganti DIKONFIRMASI: panggilan ke After Effects)
     FX_peek langsung jalan sekali saat pointer keluar (event mt-motion-state).
   - Catatan: titik ungu Copy Effects dan field Quick Comp Edit / Keyframe Timing tidak ter-update selama pointer berada di panel; ter-update lagi begitu pointer keluar.
   - Files: js/mt-fxcopy.js (?v=6), js/main.js (?v=81), html/index.html, README.txt.
+
+toast-island (toast digabung ke Dynamic Island)
+  - Toast tidak lagi berupa pil terpisah di bawah panel. Pesan muncul DI DALAM Dynamic Island: kapsul melebar (lebar, tinggi, radius morph satu kurva dengan panel island) sesuai isi pesan,
+    ikon centang (sukses, garisnya menggambar sendiri) atau "!" (error, kapsul bergetar sedikit + cincin merah tipis), lalu mengecil kembali ke jam / timer / stopwatch.
+  - Pesan baru saat pesan lama masih tampil: teks diganti di tempat, timer diulang. Pesan panjang membungkus sampai 4 baris (lebar maks = lebar panel - 16 px).
+  - Island sedang terbuka: pesan sama tampil sebagai strip di bawah panel island (island tumbuh setinggi strip). Pointer di atas island menahan pesan; hilang 0,9 detik setelah pointer pergi.
+  - Island dimatikan (Settings > Dynamic island) atau belum termuat: main.js memakai pil #toast lama (fallback). Settings > Toast > Position hanya berlaku untuk fallback itu (teks Settings diperbarui).
+    Settings > Toast > Time on screen tetap dipakai island. Mode idle: island tersembunyi, jadi toast juga tidak tampil (sama seperti sebelumnya).
+  - #toast tetap ada hanya sebagai live region screen reader (teks diisi, tidak ditampilkan saat island memegang pesan).
+  - Pemanggil yang menyentuh #toast langsung sekarang lewat window.__MT.toast: js/mt-updater.js (say, 3,2 detik) dan js/mt-idle-focus.js (toast, 3,2 detik). js/mt-smooth.js failed() ikut membaca
+    status error island (.mt-island.is-toast.is-err).
+  - API baru: MTIsland.toast(message, isError, ms) -> true bila island mengambil pesan. main.js toast(message, isError, ms) menerima ms opsional.
+  - Tidak tercakup: toast di dalam iframe NeuCurve (neucurve/nc-pro.js, nc-light.js) dan jendela Settings terpisah; keduanya dokumen lain dan masih memakai toast sendiri.
+  - Belum diuji di After Effects / Chromium (tidak ada browser di lingkungan pembuatan); syntax JS diperiksa dengan node --check.
+  - Files: js/mt-island.js (v22), css/mt-island.css (blok v22 di akhir), js/main.js (?v=82), js/mt-updater.js (?v=18), js/mt-idle-focus.js (?v=19), js/mt-smooth.js (?v=4),
+    html/index.html, html/settings.html, README.txt.

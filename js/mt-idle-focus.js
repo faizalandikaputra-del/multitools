@@ -32,6 +32,7 @@
   function split(ms) { var s = Math.max(0, Math.floor(ms / 1000)); return { h: Math.floor(s / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 }; }
   function clock(ms) { var t = split(ms); return pad(t.h) + ":" + pad(t.m) + ":" + pad(t.s); }
   function toast(msg) {
+    if (window.__MT && window.__MT.toast) { window.__MT.toast(msg, false, 3200); return; }       // the dynamic island shows it (main.js toast -> MTIsland.toast)
     var el = $("toast"); if (!el) { return; }
     el.textContent = msg; el.classList.remove("is-error"); el.classList.add("is-show");
     clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove("is-show"); }, 3200);

@@ -300,3 +300,40 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 :root:not([data-island="off"]) .curve-pane { top: 50px; }
 
 :root[data-reduce-motion="true"] .mi-ftile, :root[data-reduce-motion="true"] .mi-fgrid.is-stag .mi-ftile { animation: none; }
+
+/* ---------- v22: toast inside the island (js/mt-island.js showToast) ----------
+   COLLAPSED  .mi-t is a second centred layer (like .mi-c). While .is-toast the clock / timer layer steps back (fade + 0.88 scale) and the message layer comes in;
+              JS sizes the capsule to the message (collapsedSize), so width, height and radius morph on the island's own curve (0.46 s).
+   OPEN       the same message is a strip (.mi-tx) at the bottom of the panel; the island grows by its height.
+   ERROR      .is-err adds a thin red ring (::after, opacity only) and the icon is a "!" instead of a check: not colour alone.
+   Chromium-74 safe: no inset shorthand. Only opacity / transform move. */
+.mi-t {
+  position: absolute; left: 50%; top: 50%; display: flex; align-items: flex-start; width: max-content;
+  transform: translate(-50%, -50%) scale(0.9); opacity: 0; pointer-events: none; will-change: transform, opacity;
+  transition: opacity 0.14s linear, transform 0.2s var(--mi-ease);
+}
+.mt-island.is-toast:not(.is-open) .mi-t { opacity: 1; transform: translate(-50%, -50%); transition: opacity 0.22s linear 0.1s, transform 0.46s var(--mi-ease) 0.06s; }
+.mt-island.is-toast:not(.is-open) .mi-c { opacity: 0; transform: translate(-50%, -50%) scale(0.88); pointer-events: none; transition: opacity 0.12s linear, transform 0.2s var(--mi-ease); }
+.mi-tic { flex: 0 0 auto; display: block; width: 16px; height: 16px; margin-top: 1px; }
+.mi-tic svg { display: block; }
+.mi-ttx {
+  min-width: 0; margin-left: 9px; font-size: 0.8rem; line-height: 18px; font-weight: 500; letter-spacing: 0.005em; color: #fff; text-align: left;
+  white-space: normal; overflow-wrap: break-word; word-break: break-word;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+}
+.mi-tic circle { transform-box: fill-box; transform-origin: 50% 50%; animation: mi-tpop 0.42s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
+.mi-tic .mi-tmk { stroke-dasharray: 1; stroke-dashoffset: 0; animation: mi-tdraw 0.34s cubic-bezier(0.4, 0, 0.2, 1) 0.16s both; }
+@keyframes mi-tpop { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes mi-tdraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+.mi-tx { display: flex; align-items: flex-start; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.mi-tx .mi-ttx { flex: 1 1 auto; }
+.mt-island.is-open .mi-tx { animation: mi-txin 0.3s var(--mi-ease) 0.12s both; }
+@keyframes mi-txin { from { opacity: 0; transform: translate3d(0, 6px, 0); } to { opacity: 1; transform: none; } }
+
+.mt-island::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(255, 107, 107, 0.65); opacity: 0; transition: opacity 0.25s linear; }
+.mt-island.is-toast.is-err::after { opacity: 1; }
+
+:root[data-reduce-motion="true"] .mi-t, :root[data-reduce-motion="true"] .mt-island.is-toast:not(.is-open) .mi-t, :root[data-reduce-motion="true"] .mt-island.is-toast:not(.is-open) .mi-c,
+:root[data-reduce-motion="true"] .mt-island::after { transition: none; }
+:root[data-reduce-motion="true"] .mi-tic circle, :root[data-reduce-motion="true"] .mi-tic .mi-tmk, :root[data-reduce-motion="true"] .mt-island.is-open .mi-tx { animation: none; }

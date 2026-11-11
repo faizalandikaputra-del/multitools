@@ -220,6 +220,7 @@
   var state = { busy: false, latest: null };
   var toastTimer = null;
   function say(msg, isErr) {
+    if (window.__MT && window.__MT.toast) { window.__MT.toast(msg, !!isErr, 3200); return; }      // the dynamic island shows it (main.js toast -> MTIsland.toast)
     var t = $("toast"); if (!t) { return; }
     t.textContent = msg; t.classList.toggle("is-error", !!isErr); t.classList.add("is-show");
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("is-show"); }, 3200);

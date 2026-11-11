@@ -66,7 +66,7 @@
   }
 
   /* ---------- 2. finished flash ---------- */
-  function failed() { return !!document.querySelector(".toast.is-error.is-show"); }
+  function failed() { return !!document.querySelector(".toast.is-error.is-show, .mt-island.is-toast.is-err"); }
 
   function flash(el) {
     var i, kids = el.children;

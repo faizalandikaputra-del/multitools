@@ -1,4 +1,11 @@
-/* Multi Tool - mt-island.js (v21: PRESET PINS)
+/* Multi Tool - mt-island.js (v22: TOAST IN THE ISLAND)
+   v22: the toast (main.js toast()) now lives in the island. A message grows the capsule (width, height, radius morph on the same curve as the open panel) to fit one icon + the text
+   (check = done, "!" = error, the check draws itself), the capsule gives one small kick (an error shakes instead), then it shrinks back to the clock / timer / stopwatch.
+   A new message while one shows swaps the text in place and restarts the timer. While the island is OPEN the same message shows as a strip at the bottom of the panel (the island grows by that strip).
+   The pointer on the island holds the message; it leaves 0.9 s after the pointer does. Island off in Settings, or no island yet = main.js falls back to the old #toast pill.
+   API: MTIsland.toast(message, isError, ms) returns true when the island took the message. Time: Settings > Toast > Time on screen (MTPro.toastMs) unless ms is given.
+   Styles: the last block of css/mt-island.css.
+   v21: PRESET PINS
    v21: an Animation Presets row can be dragged onto the island (drag type "text/mt-preset"). The Pin view got a "Presets" grid (2 columns, under the tool tiles, above the boxes)
    filled by js/mt-island-presets.js through MTIsland.presetHost() / presetsChanged(n). Click a pinned preset = apply it to the selected layer(s), x = unpin.
    v20: the ONE switch button is gone. An open island shows a row of tab icons (Timer, Stopwatch, Clock, Pin, + Effects while its dot shows, + Update while an update waits) above the
@@ -39,7 +46,7 @@
    Digits use MTRoll (js/mt-idle-roll.js) when it is loaded. Styles: css/mt-island.css. Chromium-74 safe (no flex gap, no inset). */
 (function () {
   "use strict";
-  var PAD = 16, PAD_C = 13, COL_H = 36, X_MAX = 288, SEL_KEY = "mtx.islandSel", H12_KEY = "mtx.islandClock12";
+  var PAD = 16, PAD_C = 13, COL_H = 36, T_PAD = 16, T_PV = 9, X_MAX = 288, SEL_KEY = "mtx.islandSel", H12_KEY = "mtx.islandClock12";
   var PLAY = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></svg>';
   var PAUSE = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>';
   var RESET = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M5 4.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -60,6 +67,7 @@
   var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, fPreWrap, fPre, preN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
+  var tl, tlIco, tlTxt, tx, txIco, txTxt, toastOn = false, toastErr = false, toastT = 0, toastRev = 0;      // v22: toast layer (collapsed capsule) + toast strip (open panel)
   // Settings > Appearance > Show dynamic island (checkbox #island-enabled, key mtx.islandOn, "0" = off). Off: the capsule never shows for the timer / stopwatch
   // (html[data-island="off"]: the live idle widgets then fade with the others instead of flying up). An update notice STILL uses the capsule, so an update is never missed.
   var ON_KEY = "mtx.islandOn";
@@ -92,6 +100,8 @@
     cUtx = el("span", "mi-utxt"); var badge = el("i", "mi-badge");
     cTw = el("span", "mi-tw"); cTw.appendChild(cTime); cTw.appendChild(cUtx);        // digits live in a wrapper that is closed until the pointer is on the island
     cEl.appendChild(cIco); cEl.appendChild(cTw); cEl.appendChild(badge);
+    tl = el("div", "mi-t"); tl.setAttribute("aria-hidden", "true");            // v22: toast layer, centred like .mi-c; the live region for screen readers stays #toast (main.js)
+    tlIco = el("span", "mi-tic"); tlTxt = el("span", "mi-ttx"); tl.appendChild(tlIco); tl.appendChild(tlTxt);
 
     // ---- expanded ----
     xEl = el("div", "mi-x");
@@ -206,9 +216,11 @@
     }
     views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vX); views.appendChild(vU);
     xEl.appendChild(bar); xEl.appendChild(views);
+    tx = el("div", "mi-tx"); tx.hidden = true; tx.setAttribute("aria-hidden", "true");      // v22: toast strip at the bottom of the open panel
+    txIco = el("span", "mi-tic"); txTxt = el("span", "mi-ttx"); tx.appendChild(txIco); tx.appendChild(txTxt); xEl.appendChild(tx);
 
     fxDotEl = el("i", "mi-fxdot"); fxDotEl.setAttribute("aria-hidden", "true");
-    root.appendChild(cEl); root.appendChild(xEl); root.appendChild(fxDotEl); body().appendChild(root);
+    root.appendChild(cEl); root.appendChild(tl); root.appendChild(xEl); root.appendChild(fxDotEl); body().appendChild(root);
 
     root.addEventListener("click", function (e) { if (!open) { setOpen(true); } e.stopPropagation(); });
     root.addEventListener("mouseenter", function () { setHover(true); });
@@ -372,6 +384,11 @@
 
   // ---------- geometry ----------
   function collapsedSize() {
+    if (toastOn) {                                              // v22: a toast shows: the capsule fits the message (wraps to a few lines on a narrow panel)
+      var maxW = Math.max(160, window.innerWidth - 16);
+      tl.style.maxWidth = (maxW - 2 * T_PAD) + "px";
+      return { w: Math.min(maxW, tl.offsetWidth + 2 * T_PAD), h: Math.max(COL_H, tl.offsetHeight + 2 * T_PV) };
+    }
     var hov = cEl.classList.contains("is-hov"), base = cEl.offsetWidth - cTw.offsetWidth;      // everything but the wrapper (its width is animating)
     var w = base + (hov ? cTw.scrollWidth : 0) + 2 * (hov ? PAD : PAD_C);   // the time (clock too) opens only while the pointer is on the island
     return { w: Math.max(COL_H, w), h: COL_H };
@@ -384,19 +401,20 @@
   var sizeKey = "";
   function applySize(force) {
     if (!root) { return; }
-    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN + "|" + preN : "") + "|" + (tSet.hidden ? 1 : 0) + (view === "fx" ? "|" + fxRev : "") + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : ""))
-                   : ("c|" + (cEl.className) + "|" + cTime.textContent.length + "|" + cUtx.textContent.length);
+    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN + "|" + preN : "") + "|" + (tSet.hidden ? 1 : 0) + (view === "fx" ? "|" + fxRev : "") + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : "") + (toastOn ? "|t" + toastRev : ""))
+                   : ("c|" + (cEl.className) + "|" + cTime.textContent.length + "|" + cUtx.textContent.length + (toastOn ? "|t" + toastRev : ""));
     if (!force && key === sizeKey) { return; }                  // no layout read when nothing changed (the 1 s tick)
     sizeKey = key;
     var s = open ? expandedSize() : collapsedSize();
     root.style.width = s.w + "px"; root.style.height = s.h + "px";
-    root.style.borderRadius = (open ? 26 : Math.round(s.h / 2)) + "px";
+    root.style.borderRadius = (open ? 26 : Math.min(22, Math.round(s.h / 2))) + "px";
   }
 
   function setHover(h) {                                      // pointer on the island -> the time opens; pointer away -> icon only
     hover = h; if (!cEl) { return; }
     cEl.classList.toggle("is-hov", h);
     if (!open) { applySize(); }
+    if (toastOn) { clearTimeout(toastT); if (!h) { toastT = setTimeout(endToast, 900); } }       // v22: pointer on the island holds the message
     if (fxT) { clearTimeout(fxT); fxT = 0; }
     if (!h && open && view === "fx") {                         // the Effects tab closes itself when the pointer leaves (to pick a layer in the timeline)
       fxT = setTimeout(function () { fxT = 0; if (open && view === "fx" && !hover) { setOpen(false); } }, 420);
@@ -645,6 +663,7 @@
 
   function applyEnabled() {
     markEnabled();
+    if (!enabled()) { endToast(); }                              // v22: island off = no toast in it
     if (window.MTBoxes) { try { window.MTBoxes.sync(); } catch (eB) { } }          // off: the boxes go back to their tab; on: remembered boxes on screen move in again
     if (!enabled() && open && view !== "u") { setOpen(false); }   // an open timer / stopwatch panel closes with it
     paint(false);
@@ -677,6 +696,46 @@
   function fxChanged() { fxRev++; if (open && view === "fx") { applySize(true); } }
   function fxClose() { if (open && view === "fx") { setOpen(false); } }
   function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }
-  window.MTIsland = { fxHost: function () { build(); return vX; }, fxDot: fxDot, fxChanged: fxChanged, fxClose: fxClose, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, presetHost: function () { build(); return fPre; }, presetsChanged: presetsChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
+  // ---------- toast (v22) ----------
+  var TIC_OK = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#3ddc84"/><path class="mi-tmk" pathLength="1" d="M4.6 8.4l2.3 2.3 4.5-5" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var TIC_ERR = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#ff6b6b"/><path class="mi-tmk" pathLength="1" d="M8 4.4v4.2M8 11.5h.01" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  function toastMs(ms) {
+    var n = parseInt(ms, 10); if (isFinite(n) && n > 0) { return n; }
+    try { if (window.MTPro && window.MTPro.toastMs) { return window.MTPro.toastMs(); } } catch (e) { }
+    return 2400;
+  }
+  function toastKick(swap, err) {                              // one-shot motion: first message kicks the capsule (error: shake), a swap only dips the text
+    if (reduce() || !root.animate) { return; }
+    try {
+      if (swap) { tl.animate([{ opacity: 0.3 }, { opacity: 1 }], { duration: 200, easing: "ease-out" }); }
+      else if (open) { return; }
+      else if (err) { root.animate([{ transform: "translateX(0)" }, { transform: "translateX(-4px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "translateX(0)" }], { duration: 340, easing: "ease-out" }); }
+      else { root.animate([{ transform: "scale(1)" }, { transform: "scale(1.07)", offset: 0.4 }, { transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(0.34, 1.45, 0.64, 1)" }); }
+    } catch (e) { }
+  }
+  function endToast() {
+    clearTimeout(toastT); toastT = 0;
+    if (!toastOn) { return; }
+    toastOn = false; toastErr = false;
+    if (!root) { return; }
+    root.classList.remove("is-toast", "is-err"); tx.hidden = true;
+    applySize(true);
+  }
+  function showToast(msg, err, ms) {
+    msg = String(msg == null ? "" : msg);
+    if (!msg || !enabled()) { return false; }
+    build();
+    var was = toastOn, e = !!err;
+    toastOn = true; toastErr = e; toastRev++;
+    tlTxt.textContent = msg; txTxt.textContent = msg;
+    tlIco.innerHTML = e ? TIC_ERR : TIC_OK; txIco.innerHTML = e ? TIC_ERR : TIC_OK;      // new nodes = the check draws again on every message
+    root.classList.add("is-toast"); root.classList.toggle("is-err", e); tx.hidden = false;
+    clearTimeout(toastT); toastT = hover ? 0 : setTimeout(endToast, toastMs(ms));
+    applySize(true);
+    toastKick(was, e);
+    return true;
+  }
+
+  window.MTIsland = { toast: showToast, fxHost: function () { build(); return vX; }, fxDot: fxDot, fxChanged: fxChanged, fxClose: fxClose, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, presetHost: function () { build(); return fPre; }, presetsChanged: presetsChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

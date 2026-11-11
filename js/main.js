@@ -540,13 +540,20 @@
     setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) { } }, 30);
   }
 
-  function toast(message, isError) {
+  // toast(message, isError, ms): ms is optional (default = Settings > Toast > Time, js/mt-pro.js).
+  // The dynamic island shows the message (js/mt-island.js, MTIsland.toast). The old #toast pill is only the fallback while the island is off / not loaded yet;
+  // while the island shows it, #toast stays hidden and only keeps the text as the screen-reader live region.
+  function toast(message, isError, ms) {
     var el = $("toast");
+    clearTimeout(toastTimer);
+    if (window.MTIsland && window.MTIsland.toast && window.MTIsland.toast(message, !!isError, ms)) {
+      el.textContent = message; el.classList.remove("is-show", "is-error");
+      return;
+    }
     el.textContent = message;
     el.classList.toggle("is-error", !!isError);
     el.classList.add("is-show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove("is-show"); }, (window.MTPro && window.MTPro.toastMs ? window.MTPro.toastMs() : 2400));   // Settings > Toast > Time (js/mt-pro.js)
+    toastTimer = setTimeout(function () { el.classList.remove("is-show"); }, (ms || (window.MTPro && window.MTPro.toastMs ? window.MTPro.toastMs() : 2400)));   // Settings > Toast > Time (js/mt-pro.js)
   }
   // Small bridge for js/mt-pro.js (Settings profile): the tool table, the tile builder and the current tab.
   window.__MT = {

@@ -2529,3 +2529,11 @@ Color Palette redesign (Multi_Tool_15 -> next)
   Note:  a swatch click no longer recolors the selected Fill effect / Solid / color property by itself; the menu decides the target.
          The wheel's own live Fill update is unchanged.
   Color Palette tabs: Curated / Saved / Image / Labels all use the same palette strips (rows of 6, Labels rows of 4). Layer Label Colors moved into the Labels tab.
+
+Shape tab (new)
+  What: tab "Shape" with 103 shapes in 7 groups (Basic 24, Mograph 17, Typography 15, AMV 15, Device 14, UI 11, Frames 7). Insert as Layer / Mask / Matte,
+        Style Fill / Stroke / Both, Size, Stroke, double-click a tile to add. Every device/UI part is its own group (Body, Screen, Island...).
+        Modifiers: Animate in (Pop / Draw / Fade + Duration), Repeater (Grid / Radial / Line), Round corners, Fit to text layer, Pulse on markers.
+  Files: js/mt-shape-data.js (the 103 shapes), js/mt-shape.js (tab UI), css/mt-shape.css, jsx/host.jsx (SHAPE_insert), html/index.html, js/main.js (TABS "shape"),
+         js/mt-backup.js (key mtx.shapeState).
+  Note:  one undo step per insert. Fit and Repeater cannot be combined. Mask mode ignores Modifiers. Not yet run inside After Effects: test SHAPE_insert there first.

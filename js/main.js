@@ -65,6 +65,12 @@
       tools: [],
       custom: "anchorAlign"
     },
+    "shape": {
+      title: "Shape",
+      hint: "Pick a shape or device, then add it as a layer, mask or track matte.",
+      tools: [],
+      custom: "shapeTab"
+    },
     "tools": {
       title: "Tools",
       hint: "Handy one-click utilities for editing and motion graphics.",
@@ -544,7 +550,7 @@
   }
   // Small bridge for js/mt-pro.js (Settings profile): the tool table, the tile builder and the current tab.
   window.__MT = {
-    TABS: TABS, buildTool: buildTool, toast: toast, runTool: runTool,
+    TABS: TABS, buildTool: buildTool, toast: toast, runTool: runTool, Bridge: Bridge, Store: Store,
     toolImg: function (tabId, toolId) { return Store.get(imgKey(tabId, toolId)); },
     current: function () { return currentTab; },
     panel: function () { return panel; },
@@ -4623,6 +4629,8 @@
       built = QuickCompEdit.render();
     } else if (cfg.custom === "colorPalette") {
       built = ColorPalette.render();
+    } else if (cfg.custom === "shapeTab") {
+      built = window.MTShapeTab ? window.MTShapeTab.render() : renderInfo();   // js/mt-shape.js
     } else if (cfg.custom === "exprCode") {
       built = ExprCode.render();
     } else if (cfg.custom === "presets") {

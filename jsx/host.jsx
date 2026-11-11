@@ -3145,6 +3145,311 @@ function COLOR_applyTarget(hex, kind) {
   }
 }
 
+// ---------- Shape tab ----------
+// SHAPE_insert(payloadJson)   payload built by js/mt-shape.js (px units, shape centered on 0,0):
+//   { name, w, h, mode: "layer"|"mask"|"matte", strokeW, parts: [ { n, t: "r"|"e"|"p", ..., fill: "#hex"|null, stroke: "#hex"|null } ],
+//     anim: "none"|"pop"|"draw"|"fade", dur, rep: "off"|"grid"|"radial"|"line", count, spacing, round, fit, pulse }
+// Everything runs inside ONE undo group. Each part is its own group in the shape layer ("Body", "Screen", ...).
+
+function _shRgba(hex) { var c = _hexToUnit(hex); return [c[0], c[1], c[2], 1]; }
+
+function _shShapeObj(c) {
+  var sh = new Shape();
+  sh.vertices = c.v; sh.inTangents = c.i; sh.outTangents = c.o; sh.closed = !!c.c;
+  return sh;
+}
+
+function _shArea(c) {
+  var a = 0, i, j, n = c.v.length;
+  for (i = 0; i < n; i++) { j = (i + 1) % n; a += c.v[i][0] * c.v[j][1] - c.v[j][0] * c.v[i][1]; }
+  return a / 2;
+}
+
+// Adds the part's path(s) (Rectangle / Ellipse / Path) to a group's contents.
+function _shAddPaths(contents, part) {
+  var p, i;
+  if (part.t === "r") {
+    p = contents.addProperty("ADBE Vector Shape - Rect");
+    p.property("ADBE Vector Rect Size").setValue([part.w, part.h]);
+    p.property("ADBE Vector Rect Position").setValue([part.x, part.y]);
+    if (part.r > 0) { p.property("ADBE Vector Rect Roundness").setValue(part.r); }
+  } else if (part.t === "e") {
+    p = contents.addProperty("ADBE Vector Shape - Ellipse");
+    p.property("ADBE Vector Ellipse Size").setValue([part.w, part.h]);
+    p.property("ADBE Vector Ellipse Position").setValue([part.x, part.y]);
+  } else {
+    for (i = 0; i < part.paths.length; i++) {
+      p = contents.addProperty("ADBE Vector Shape - Group");
+      p.property("ADBE Vector Shape").setValue(_shShapeObj(part.paths[i]));
+    }
+  }
+}
+
+function _shEase(prop, keyIdx) {
+  var e = new KeyframeEase(0, 33.33), dim = 1;
+  try { dim = (prop.value instanceof Array) ? prop.value.length : 1; } catch (e0) { dim = 1; }
+  var arr = [], i;
+  for (i = 0; i < dim; i++) { arr.push(e); }
+  try { prop.setTemporalEaseAtKey(keyIdx, arr, arr); } catch (e1) { }
+}
+
+function _shKeys(prop, times, vals) {
+  var i;
+  for (i = 0; i < times.length; i++) { prop.setValueAtTime(times[i], vals[i]); }
+  for (i = 1; i <= prop.numKeys; i++) { _shEase(prop, i); }
+}
+
+function _shScaleVal(prop, v) { var n = 2; try { n = prop.value.length; } catch (e) { } return n > 2 ? [v, v, 100] : [v, v]; }
+
+function _shQuote(s) { return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"'); }
+
+function _shSlider(layer, name, val) {
+  var fx = layer.property("ADBE Effect Parade").addProperty("ADBE Slider Control");
+  fx.name = name;
+  fx.property("ADBE Slider Control-0001").setValue(val);
+  return fx;
+}
+
+// Builds one shape layer from the payload. opts: { center: [x, y], t0, fitLayer, markerLayer }
+function _shBuildLayer(comp, o, opts) {
+  var layer = comp.layers.addShape(), root = layer.property("ADBE Root Vectors Group"), tg = layer.property("ADBE Transform Group");
+  var i, g, c, fl, sk, tp, rc, part, groups = [], rp, rt, n, r;
+  layer.name = o.name;
+  tg.property("ADBE Position").setValue(opts.center);
+
+  for (i = 0; i < o.parts.length; i++) {
+    part = o.parts[i];
+    g = root.addProperty("ADBE Vector Group");
+    g.name = part.n;
+    c = g.property("ADBE Vectors Group");
+    _shAddPaths(c, part);
+    if (o.round > 0 && part.t !== "e") {
+      rc = c.addProperty("ADBE Vector Filter - RC");
+      rc.property("ADBE Vector RoundCorner Radius").setValue(o.round);
+    }
+    if (o.anim === "draw") {
+      tp = c.addProperty("ADBE Vector Filter - Trim");
+      tp.property("ADBE Vector Trim End").setValue(100);
+    }
+    if (part.fill) {
+      fl = c.addProperty("ADBE Vector Graphic - Fill");
+      fl.property("ADBE Vector Fill Color").setValue(_shRgba(part.fill));
+    }
+    if (part.stroke) {
+      sk = c.addProperty("ADBE Vector Graphic - Stroke");
+      sk.property("ADBE Vector Stroke Color").setValue(_shRgba(part.stroke));
+      sk.property("ADBE Vector Stroke Width").setValue(o.strokeW);
+      try { sk.property("ADBE Vector Stroke Line Cap").setValue(2); sk.property("ADBE Vector Stroke Line Join").setValue(2); } catch (eCap) { }
+    }
+    g.moveTo(1);                       // parts are listed bottom to top: the last one ends on top
+    groups.push(g);
+  }
+
+  // Repeater(s): one in the layer's Contents above every part group
+  if (o.rep !== "off") {
+    n = Math.max(2, Math.round(o.count));
+    if (o.rep === "radial") {
+      for (i = 0; i < groups.length; i++) {
+        try { groups[i].property("ADBE Vector Transform Group").property("ADBE Vector Position").setValue([0, -o.spacing]); } catch (eP) { }
+      }
+    }
+    for (r = 0; r < (o.rep === "grid" ? 2 : 1); r++) {
+      rp = root.addProperty("ADBE Vector Filter - Repeater");
+      rp.property("ADBE Vector Repeater Copies").setValue(n);
+      rt = rp.property("ADBE Vector Repeater Transform");
+      if (o.rep === "radial") {
+        rt.property("ADBE Vector Repeater Position").setValue([0, 0]);
+        rt.property("ADBE Vector Repeater Rotation").setValue(360 / n);
+      } else {
+        rt.property("ADBE Vector Repeater Position").setValue(r === 0 ? [o.spacing, 0] : [0, o.spacing]);
+        rp.property("ADBE Vector Repeater Offset").setValue(-(n - 1) / 2);   // centers the row / column on the layer
+      }
+      rp.moveTo(1);                    // the row repeater (second) ends above the column repeater
+    }
+  }
+
+  // ----- animate in -----
+  var t0 = opts.t0, dur = o.dur, scaleP = tg.property("ADBE Scale");
+  if (o.anim === "pop") {
+    _shKeys(scaleP, [t0, t0 + dur * 0.65, t0 + dur], [_shScaleVal(scaleP, 0), _shScaleVal(scaleP, 112), _shScaleVal(scaleP, 100)]);
+  } else if (o.anim === "fade") {
+    _shKeys(tg.property("ADBE Opacity"), [t0, t0 + dur], [0, 100]);
+  } else if (o.anim === "draw") {
+    for (i = 0; i < groups.length; i++) {
+      c = groups[i].property("ADBE Vectors Group");
+      tp = c.property("ADBE Vector Filter - Trim");
+      if (tp) { _shKeys(tp.property("ADBE Vector Trim End"), [t0, t0 + dur], [0, 100]); }
+    }
+  }
+
+  // ----- Fit to text layer + Pulse on markers: expressions (Scale / Position / Rotation) -----
+  var hasFit = !!opts.fitLayer, scaleExpr = "", q;
+  if (hasFit) {
+    q = _shQuote(opts.fitLayer.name);
+    _shSlider(layer, "Padding", 24);
+    tg.property("ADBE Position").expression =
+      'var t = thisComp.layer("' + q + '");\n' +
+      'var r = t.sourceRectAtTime(time, false);\n' +
+      'var c = t.toComp([r.left + r.width / 2, r.top + r.height / 2]);\n' +
+      '[c[0], c[1]]';
+    tg.property("ADBE Rotate Z").expression = 'thisComp.layer("' + q + '").transform.rotation';
+    scaleExpr =
+      'var t = thisComp.layer("' + q + '");\n' +
+      'var r = t.sourceRectAtTime(time, false);\n' +
+      'var pad = effect("Padding")("Slider");\n' +
+      'var ts = t.transform.scale;\n' +
+      'var w = r.width * Math.abs(ts[0]) / 100 + pad * 2;\n' +
+      'var h = r.height * Math.abs(ts[1]) / 100 + pad * 2;\n' +
+      'var base = [Math.max(w, 0.001) / ' + (o.w > 0.001 ? o.w : 1) + ' * 100, Math.max(h, 0.001) / ' + (o.h > 0.001 ? o.h : 1) + ' * 100];\n';
+  } else if (o.pulse) {
+    scaleExpr = 'var base = value;\n';
+  }
+  if (o.pulse) {
+    _shSlider(layer, "Pulse Amount", 20);
+    _shSlider(layer, "Pulse Decay", 5);
+    var src = opts.markerLayer ? 'thisComp.layer("' + _shQuote(opts.markerLayer.name) + '").marker' : "marker";
+    scaleExpr +=
+      'var m = ' + src + ';\n' +
+      'var amt = effect("Pulse Amount")("Slider");\n' +
+      'var dec = effect("Pulse Decay")("Slider");\n' +
+      'var n = 0;\n' +
+      'if (m.numKeys > 0) { n = m.nearestKey(time).index; if (m.key(n).time > time) { n--; } }\n' +
+      'var s = 1;\n' +
+      'if (n > 0) { s = 1 + amt / 100 * Math.exp(-dec * (time - m.key(n).time)); }\n' +
+      'var out = [];\n' +
+      'for (var i = 0; i < base.length; i++) { out[i] = (i < 2) ? base[i] * s : base[i]; }\n' +
+      'out';
+  } else if (hasFit) {
+    scaleExpr += 'base';
+  }
+  if (scaleExpr) { scaleP.expression = scaleExpr; }
+  return layer;
+}
+
+function _shLayerCenter(layer, comp) {
+  var c = [comp.width / 2, comp.height / 2];
+  try {
+    var p = layer.property("ADBE Transform Group").property("ADBE Position").value;
+    if (p && p.length >= 2) { c = [p[0], p[1]]; }
+  } catch (e) { }
+  return c;
+}
+
+// Mask coordinates: origin of the layer's own space. Footage / solids: top-left, so the middle is width / height / 2.
+function _shMaskCenter(layer, comp) {
+  try {
+    if (layer.source && layer.width > 0 && !(layer instanceof ShapeLayer) && !(layer instanceof TextLayer)) { return [layer.width / 2, layer.height / 2]; }
+  } catch (e0) { }
+  try {
+    var rct = layer.sourceRectAtTime(comp.time, false);
+    return [rct.left + rct.width / 2, rct.top + rct.height / 2];
+  } catch (e1) { }
+  return [0, 0];
+}
+
+function _shAddMasks(layer, comp, o) {
+  var parade = layer.property("ADBE Mask Parade"), ctr = _shMaskCenter(layer, comp), i, j, k, part, ph, c, mk, shp, outline = [], fillable = [], list, count = 0, ref, nm, v, ins, outs, a;
+  if (!parade) { return 0; }
+  for (i = 0; i < o.parts.length; i++) { if (o.parts[i].fill) { fillable.push(o.parts[i]); } else { outline.push(o.parts[i]); } }
+  list = fillable.length ? fillable : o.parts;
+  for (i = 0; i < list.length; i++) {
+    part = list[i];
+    ph = _shPartContours(part);
+    ref = 0;
+    for (j = 0; j < ph.length; j++) {
+      c = ph[j];
+      v = [], ins = [], outs = [];
+      for (k = 0; k < c.v.length; k++) { v.push([c.v[k][0] + ctr[0], c.v[k][1] + ctr[1]]); ins.push(c.i[k]); outs.push(c.o[k]); }
+      shp = _shShapeObj({ v: v, i: ins, o: outs, c: c.c });
+      mk = parade.addProperty("ADBE Mask Atom");
+      nm = o.name + (o.parts.length > 1 ? " - " + part.n : "");
+      try { mk.name = nm; } catch (eN) { }
+      mk.property("ADBE Mask Shape").setValue(shp);
+      a = _shArea(c);
+      if (j === 0) { ref = a; } else if (a * ref < 0) { try { mk.maskMode = MaskMode.SUBTRACT; } catch (eM) { } }   // a hole (reverse winding), like the donut of Ring
+      count++;
+    }
+  }
+  return count;
+}
+
+// A part as a list of contours (rect / ellipse become 4 vertex paths, so they can be masks).
+function _shPartContours(part) {
+  var out = [], hw, hh, r, k = 0.5522847498, x, y, w, h, e;
+  if (part.t === "p") { return part.paths; }
+  x = part.x; y = part.y; w = part.w; h = part.h; hw = w / 2; hh = h / 2;
+  if (part.t === "e") {
+    out.push({ c: true,
+      v: [[x, y - hh], [x + hw, y], [x, y + hh], [x - hw, y]],
+      i: [[-hw * k, 0], [0, -hh * k], [hw * k, 0], [0, hh * k]],
+      o: [[hw * k, 0], [0, hh * k], [-hw * k, 0], [0, -hh * k]] });
+    return out;
+  }
+  r = Math.min(part.r || 0, hw, hh);
+  if (r <= 0.001) {
+    out.push({ c: true, v: [[x - hw, y - hh], [x + hw, y - hh], [x + hw, y + hh], [x - hw, y + hh]], i: [[0, 0], [0, 0], [0, 0], [0, 0]], o: [[0, 0], [0, 0], [0, 0], [0, 0]] });
+    return out;
+  }
+  var L = x - hw, R = x + hw, T = y - hh, B = y + hh, z = [0, 0], kk = r * k;
+  out.push({ c: true,
+    v: [[L + r, T], [R - r, T], [R, T + r], [R, B - r], [R - r, B], [L + r, B], [L, B - r], [L, T + r]],
+    i: [[-kk, 0], z, [0, -kk], z, [kk, 0], z, [0, kk], z],
+    o: [z, [kk, 0], z, [0, kk], z, [-kk, 0], z, [0, -kk]] });
+  return out;
+}
+
+function SHAPE_insert(payloadJson) {
+  try {
+    var o = JSON.parse(payloadJson), comp = _activeComp(), sel = comp.selectedLayers, i, layer, made = 0, k, t0 = comp.time, text = null, marker = null, targets = [];
+    if (!o || !o.parts || !o.parts.length) { throw new Error("Pick a shape first."); }
+    if (o.rep !== "off" && o.fit) { o.fit = false; }
+    if (o.mode === "mask" || o.mode === "matte") { o.fit = false; }
+    if (o.mode === "mask") { o.rep = "off"; }
+    o.dur = Math.max(0.1, Math.min(3, o.dur || 0.6));
+
+    for (i = 0; i < (sel ? sel.length : 0); i++) {
+      if (!text && sel[i] instanceof TextLayer) { text = sel[i]; }
+      if (!marker) { try { if (sel[i].property("ADBE Marker") && sel[i].property("ADBE Marker").numKeys > 0) { marker = sel[i]; } } catch (eMk) { } }
+      if (o.mode === "mask") { if (sel[i].property("ADBE Mask Parade")) { targets.push(sel[i]); } }
+      else if (o.mode === "matte") { if (sel[i] instanceof AVLayer) { targets.push(sel[i]); } }
+    }
+    if (o.mode === "mask" && !targets.length) { throw new Error("Select a layer first, then add the shape as a mask."); }
+    if (o.mode === "matte" && !targets.length) { throw new Error("Select a layer first, then add the shape as a matte."); }
+    if (o.fit && !text) { throw new Error("Select a text layer first. The box follows its size."); }
+
+    app.beginUndoGroup("Insert Shape: " + o.name);
+    try {
+      if (o.mode === "mask") {
+        for (i = 0; i < targets.length; i++) { made += _shAddMasks(targets[i], comp, o) ? 1 : 0; }
+      } else if (o.mode === "matte") {
+        for (i = 0; i < targets.length; i++) {
+          layer = _shBuildLayer(comp, o, { center: _shLayerCenter(targets[i], comp), t0: t0, fitLayer: null, markerLayer: (marker && marker !== targets[i]) ? marker : (targets[i].property("ADBE Marker") && targets[i].property("ADBE Marker").numKeys > 0 ? targets[i] : null) });
+          layer.moveBefore(targets[i]);
+          layer.name = o.name + " Matte";
+          try { targets[i].setTrackMatte(layer, TrackMatteType.ALPHA); }
+          catch (eTm) { targets[i].trackMatteType = TrackMatteType.ALPHA; }
+          made++;
+        }
+      } else {
+        layer = _shBuildLayer(comp, o, { center: [comp.width / 2, comp.height / 2], t0: t0, fitLayer: o.fit ? text : null, markerLayer: marker });
+        if (o.fit) { layer.moveAfter(text); }
+        else {
+          for (k = 0; k < (sel ? sel.length : 0); k++) { try { sel[k].selected = false; } catch (eS) { } }
+          layer.selected = true;
+        }
+        made = 1;
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    if (o.mode === "mask") { return _ok(o.name + " mask added to " + made + " layer" + (made === 1 ? "" : "s") + "."); }
+    if (o.mode === "matte") { return _ok(o.name + " matte added above " + made + " layer" + (made === 1 ? "" : "s") + "."); }
+    return _ok(o.name + " shape layer added.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
 // ---------- Expression Code (snippet manager) ----------
 
 // Applies raw expression code (as text) to every selected property.

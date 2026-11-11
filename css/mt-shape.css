@@ -1,0 +1,177 @@
+/* Multi Tool - mt-shape.css
+   Shape tab: search + group chips, 4-column tile grid, collapsible Modifiers card, preview + options dock.
+   JS: js/mt-shape.js (data: js/mt-shape-data.js). Glass is the base; light and Material You override at the end.
+   Animated properties: transform, opacity, box-shadow (the Modifiers card also tweens its height). html[data-reduce-motion] switches every
+   animation off. CEF 74 safe: no flex-gap, inset shorthand, aspect-ratio or :is(). */
+
+.sh-root { --sh-spring: cubic-bezier(0.2, 1.15, 0.3, 1); --sh-soft: cubic-bezier(0.22, 0.8, 0.3, 1); position: relative; padding-bottom: var(--space-3, 12px); }
+
+/* ---------- header: count + search ---------- */
+.sh-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; }
+.sh-count { font-size: var(--fs-hint, 0.72rem); color: var(--text-dim); white-space: nowrap; margin-right: 0.6rem; font-variant-numeric: tabular-nums; }
+.sh-search {
+  position: relative; flex: 1 1 auto; min-width: 0; max-width: 13rem; display: block;
+}
+.sh-search svg { position: absolute; left: 0.7rem; top: 50%; width: 0.9rem; height: 0.9rem; margin-top: -0.45rem; fill: none; stroke: var(--text-dim); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.sh-root .sh-search input {
+  width: 100%; box-sizing: border-box; height: 2rem; margin: 0; padding: 0 0.8rem 0 2rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05); color: var(--text); font: inherit; font-size: 0.78rem; outline: 0;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.sh-root .sh-search input::placeholder { color: var(--text-dim); }
+.sh-root .sh-search input:focus { background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 255, 255, 255), 0.35); }
+
+/* ---------- group chips ---------- */
+.sh-chips { display: flex; overflow-x: auto; overflow-y: hidden; margin: 0 -2px 0.8rem; padding: 3px 2px; -ms-overflow-style: none; scrollbar-width: none; }
+.sh-chips::-webkit-scrollbar { display: none; }
+.sh-chip {
+  flex: 0 0 auto; margin-right: 6px; padding: 0.38rem 0.85rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14); background: transparent;
+  color: var(--text-dim); font: inherit; font-size: 0.76rem; font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.3s var(--sh-spring);
+}
+.sh-chip:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.3); }
+.sh-chip:active { transform: scale(0.94); }
+.sh-chip.is-active { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.62); color: var(--text); font-weight: 600; }
+
+/* ---------- list + tiles ---------- */
+.sh-gh { display: flex; align-items: baseline; margin: 0.35rem 0 0.5rem; font-size: 0.74rem; }
+.sh-gh b { color: var(--text); font-weight: 700; margin-right: 0.55rem; white-space: nowrap; }
+.sh-gh span { color: var(--text-dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-gap: 8px; margin-bottom: 0.9rem; }
+.sh-swap { animation: sh-swap 0.3s var(--sh-soft) both; }
+@keyframes sh-swap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.sh-empty { margin: 1.4rem 0; text-align: center; color: var(--text-dim); font-size: 0.8rem; }
+
+.sh-tile {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; height: 4.7rem; padding: 0.4rem 0.2rem 0.35rem;
+  border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.09); cursor: pointer; color: var(--text); font: inherit;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 10px rgba(var(--accent-rgb, 255, 255, 255), 0.05);
+  animation: sh-in 0.38s var(--sh-soft) both; animation-delay: var(--d, 0ms);
+  transition: transform 0.3s var(--sh-spring), box-shadow 0.25s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+@keyframes sh-in { from { opacity: 0; transform: translateY(8px) scale(0.94); } to { opacity: 1; transform: none; } }
+.sh-tile-ico { display: block; width: 1.7rem; height: 1.7rem; margin-bottom: 0.32rem; pointer-events: none; }
+.sh-tile-ico svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sh-tile-n { max-width: 100%; font-size: 0.64rem; line-height: 1.15; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 0.2s ease; pointer-events: none; }
+.sh-tile:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.26); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 20px rgba(var(--accent-rgb, 255, 255, 255), 0.2); }
+.sh-tile:hover .sh-tile-n { color: var(--text); }
+.sh-tile:active { transform: scale(0.96); transition-duration: 0.12s; }
+.sh-tile:focus-visible { outline: 2px solid rgba(var(--accent-rgb, 255, 255, 255), 0.7); outline-offset: 2px; }
+.sh-tile.is-sel { border-color: rgba(255, 255, 255, 0.85); background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 0 22px rgba(var(--accent-rgb, 255, 255, 255), 0.25); }
+.sh-tile.is-sel .sh-tile-n { color: var(--text); font-weight: 600; }
+.sh-flash { animation: sh-flash 0.55s ease-out; }
+@keyframes sh-flash { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.35); } 100% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0), 0 0 22px rgba(var(--accent-rgb, 255, 255, 255), 0.25); } }
+
+/* ---------- Modifiers card ---------- */
+.sh-mods { margin-bottom: 0.8rem; border-radius: 16px; background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(255, 255, 255, 0.09); overflow: hidden; }
+.sh-mods-head {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border: 0; background: transparent;
+  color: var(--text); font: inherit; font-size: 0.9rem; cursor: pointer; text-align: left; transition: background-color 0.2s ease;
+}
+.sh-mods-head:hover { background: rgba(255, 255, 255, 0.04); }
+.sh-mods-head b { font-weight: 700; }
+.sh-mods-head svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.4s var(--sh-spring); }
+.sh-mods.is-open .sh-mods-head svg { transform: rotate(180deg); }
+.sh-mods-body { max-height: 0; overflow: hidden; transition: max-height 0.4s var(--sh-soft); }
+.sh-mods-in { padding: 0 1rem 1rem; opacity: 0; transform: translateY(-6px); transition: opacity 0.25s ease, transform 0.4s var(--sh-soft); }
+.sh-mods.is-open .sh-mods-in { opacity: 1; transform: none; transition-delay: 0.08s; }
+.sh-mods.is-ignored .sh-mods-in > *:not(.sh-hint) { opacity: 0.45; }
+.sh-hint { margin: 0.5rem 0 0; min-height: 0; font-size: 0.68rem; line-height: 1.35; color: var(--text-dim); }
+.sh-hint:empty { display: none; }
+
+/* ---------- shared controls ---------- */
+.sh-lab { margin: 0.7rem 0 0.35rem; font-size: 0.72rem; color: var(--text-dim); }
+.sh-opts .sh-lab { margin-top: 0; }
+.sh-seg { position: relative; display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); padding: 3px; border-radius: 12px; background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
+.sh-seg-ind {
+  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n, 3)); border-radius: 9px; pointer-events: none;
+  background: rgba(255, 255, 255, 0.15); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.42s var(--sh-spring);
+}
+.sh-seg-b { position: relative; z-index: 1; padding: 0.46rem 0.2rem; border: 0; background: transparent; color: var(--text-dim); font: inherit; font-size: 0.76rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color 0.2s ease, opacity 0.2s ease; }
+.sh-seg-b:hover { color: var(--text); }
+.sh-seg-b.is-active { color: var(--text); font-weight: 600; }
+.sh-seg-b:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.sh-sl { margin-top: 0.75rem; min-width: 0; transition: opacity 0.25s ease; }
+.sh-sl.is-off { opacity: 0.38; pointer-events: none; }
+.sh-sl-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.72rem; color: var(--text-dim); }
+.sh-sl-h output { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; margin-left: 0.4rem; white-space: nowrap; }
+.sh-sl input[type="range"] { width: 100%; }
+.sh-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column-gap: 1rem; }
+
+.sh-check { display: flex; align-items: center; margin-top: 0.75rem; font-size: 0.78rem; color: var(--text); cursor: pointer; transition: opacity 0.25s ease; }
+.sh-check.is-off { opacity: 0.38; cursor: not-allowed; }
+.sh-check input { position: absolute; opacity: 0; pointer-events: none; }
+.sh-box { flex: 0 0 auto; position: relative; width: 1.05rem; height: 1.05rem; margin-right: 0.6rem; border-radius: 5px; border: 1.5px solid rgba(255, 255, 255, 0.35); transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.3s var(--sh-spring); }
+.sh-box::after { content: ""; position: absolute; left: 0.28rem; top: 0.06rem; width: 0.3rem; height: 0.58rem; border: solid var(--bg, #111); border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform 0.3s var(--sh-spring); }
+.sh-check:hover .sh-box { border-color: rgba(255, 255, 255, 0.7); }
+.sh-check input:checked + .sh-box { background: var(--text, #fff); border-color: var(--text, #fff); transform: scale(1.06); }
+.sh-check input:checked + .sh-box::after { transform: rotate(45deg) scale(1); }
+.sh-check input:focus-visible + .sh-box { box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 255, 255, 255), 0.4); }
+
+/* ---------- dock: preview + options + add ---------- */
+.sh-dock { padding-top: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+.sh-prev { display: flex; align-items: center; margin-bottom: 0.9rem; }
+.sh-prev-ico { flex: 0 0 auto; width: 3.4rem; height: 3.4rem; box-sizing: border-box; padding: 0.55rem; margin-right: 0.85rem; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); }
+.sh-prev-ico svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sh-pop { animation: sh-pop 0.5s var(--sh-spring) both; }
+@keyframes sh-pop { 0% { opacity: 0; transform: scale(0.55); } 60% { opacity: 1; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+.sh-prev-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.sh-prev-txt b { font-size: 0.95rem; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-prev-txt span { font-size: 0.72rem; color: var(--text-dim); }
+.sh-color { position: relative; flex: 0 0 auto; width: 2.3rem; height: 2.3rem; margin-left: 0.6rem; border-radius: 50%; cursor: pointer; transition: transform 0.3s var(--sh-spring); }
+.sh-color:hover { transform: scale(1.1); }
+.sh-color:active { transform: scale(0.92); }
+.sh-color span { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12), 0 0 16px rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.sh-color input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+.sh-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column-gap: 0.9rem; }
+.sh-desc { margin: 0.7rem 0 0.1rem; min-height: 2.1em; font-size: 0.72rem; line-height: 1.4; color: var(--text-dim); }
+.sh-add {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 0.9rem; padding: 0.8rem 1rem;
+  border-radius: 12px; font-size: 0.9rem; font-weight: 700; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s var(--sh-spring), box-shadow 0.25s ease, filter 0.2s ease;
+}
+.sh-add:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), 0 0 20px rgba(var(--accent-rgb, 255, 255, 255), 0.25); }
+.sh-add:active { transform: scale(0.97); }
+.sh-add.sh-done { animation: sh-done 0.5s var(--sh-spring); }
+@keyframes sh-done { 0% { transform: scale(0.96); } 50% { transform: scale(1.025); } 100% { transform: scale(1); } }
+
+/* ---------- light ---------- */
+:root[data-theme="light"] .sh-root .sh-search input { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.08); }
+:root[data-theme="light"] .sh-chip { border-color: rgba(0, 0, 0, 0.16); }
+:root[data-theme="light"] .sh-chip.is-active { background: rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.55); }
+:root[data-theme="light"] .sh-tile { border-color: rgba(0, 0, 0, 0.09); background: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+:root[data-theme="light"] .sh-tile:hover { border-color: rgba(0, 0, 0, 0.28); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
+:root[data-theme="light"] .sh-tile.is-sel { border-color: rgba(0, 0, 0, 0.8); background: rgba(0, 0, 0, 0.07); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3); }
+:root[data-theme="light"] .sh-mods { background: rgba(0, 0, 0, 0.035); border-color: rgba(0, 0, 0, 0.09); }
+:root[data-theme="light"] .sh-seg { background: rgba(0, 0, 0, 0.06); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07); }
+:root[data-theme="light"] .sh-seg-ind { background: #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2); }
+:root[data-theme="light"] .sh-prev-ico { background: rgba(0, 0, 0, 0.04); border-color: rgba(0, 0, 0, 0.1); }
+:root[data-theme="light"] .sh-box { border-color: rgba(0, 0, 0, 0.4); }
+:root[data-theme="light"] .sh-dock { border-top-color: rgba(0, 0, 0, 0.1); }
+
+/* ---------- Material You ---------- */
+:root[data-ui-theme="material"][data-theme] body .sh-root .sh-search input { background: var(--md-surface-high); border: 0; color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body .sh-chip { border-color: rgba(var(--md-outline-rgb, 128, 128, 128), 0.5); color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] body .sh-chip.is-active { background: var(--md-secondary-container); border-color: transparent; color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .sh-tile { background: var(--md-surface-low); border: 0; border-radius: 20px; box-shadow: none; color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body .sh-tile-n { color: var(--md-on-surface-variant); }
+:root[data-ui-theme="material"][data-theme] body .sh-tile:hover { background: var(--md-surface-high); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+:root[data-ui-theme="material"][data-theme] body .sh-tile.is-sel { background: var(--md-secondary-container); box-shadow: 0 0 0 2px var(--md-primary); color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .sh-tile.is-sel .sh-tile-n { color: var(--md-on-secondary-container); }
+:root[data-ui-theme="material"][data-theme] body .sh-mods { background: var(--md-surface-low); border: 0; border-radius: 28px; }
+:root[data-ui-theme="material"][data-theme] body .sh-mods-head { color: var(--md-on-surface); }
+:root[data-ui-theme="material"][data-theme] body .sh-seg { background: var(--md-surface-high); box-shadow: none; border-radius: 999px; }
+:root[data-ui-theme="material"][data-theme] body .sh-seg-ind { background: var(--md-primary); box-shadow: none; border-radius: 999px; }
+:root[data-ui-theme="material"][data-theme] body .sh-seg-b.is-active { color: var(--md-on-primary); }
+:root[data-ui-theme="material"][data-theme] body .sh-prev-ico { background: var(--md-surface-low); border: 0; border-radius: 20px; }
+:root[data-ui-theme="material"][data-theme] body .sh-check input:checked + .sh-box { background: var(--md-primary); border-color: var(--md-primary); }
+:root[data-ui-theme="material"][data-theme] body .sh-box::after { border-color: var(--md-on-primary); }
+:root[data-ui-theme="material"][data-theme] body .sh-add { border-radius: 999px; }
+:root[data-ui-theme="material"][data-theme] body .sh-dock { border-top-color: rgba(var(--md-outline-rgb, 128, 128, 128), 0.3); }
+
+/* ---------- motion off ---------- */
+:root[data-reduce-motion="true"] .sh-tile, :root[data-reduce-motion="true"] .sh-swap, :root[data-reduce-motion="true"] .sh-pop,
+:root[data-reduce-motion="true"] .sh-flash, :root[data-reduce-motion="true"] .sh-add.sh-done { animation: none; }

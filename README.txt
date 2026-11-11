@@ -2575,3 +2575,7 @@ fixCursor-F (pointer blinks hand <-> arrow on ALL buttons, found from two screen
     the pointer leaves the panel, which is when comps / layers are changed in After Effects anyway. Nothing else changes; opening a tab still refreshes once.
   - Files: js/main.js (?v=79), html/index.html, README.txt.
   - If the pointer STILL blinks: run in the panel's DevTools (localhost:PORT) `window.__mtMoving` while resting on a button; it must say true. Tell me what it says.
+
+fixDebug-file
+  - The package had no .debug file, so http://localhost:8088 (see DEBUG line above) never opened. Added .debug (hidden file in the extension root).
+  - Ports: panel 8088, settings 8089, curve.settings 8090, curve.graph 8091. Restart After Effects after installing, open the panel, then browse to http://localhost:8088 in Chrome.

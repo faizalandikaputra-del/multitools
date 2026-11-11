@@ -2057,11 +2057,19 @@
       var v = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
       return v && v > 0 ? v : 1;
     }
-    // Free area for the button: everything right of the navigation sidebar, 6px from every edge (layout px of .app).
+    // Free area for the button: the panel minus the navigation sidebar, 6px from every edge (layout px of .app).
+    // The sidebar can sit left or right (data-nav), so the free area is measured from the sidebar's real position.
+    function freeX() {
+      var app = appEl(), sb = document.querySelector(".sidebar"), L = 6, R = app.clientWidth - 6;
+      if (sb && sb.offsetWidth) {
+        var sl = sb.offsetLeft, sr = sl + sb.offsetWidth;
+        if (sl + sb.offsetWidth / 2 > app.clientWidth / 2) { R = Math.min(R, sl - 6); } else { L = Math.max(L, sr + 6); }
+      }
+      return { L: L, R: Math.max(L, R) };
+    }
     function bounds() {
-      var app = appEl(), sb = document.querySelector(".sidebar"), f = dock ? dock.offsetWidth : FAB_PX;
-      var minX = (sb ? sb.offsetWidth : 0) + 6, minY = 6;
-      return { minX: minX, minY: minY, maxX: Math.max(minX, app.clientWidth - f - 6), maxY: Math.max(minY, app.clientHeight - f - 6) };
+      var app = appEl(), f = dock ? dock.offsetWidth : FAB_PX, fx = freeX();
+      return { minX: fx.L, minY: 6, maxX: Math.max(fx.L, fx.R - f), maxY: Math.max(6, app.clientHeight - f - 6), right: fx.R };
     }
     function savedPos() {
       var o = null; try { o = JSON.parse(Store.get(POS_KEY) || "null"); } catch (e) { o = null; }
@@ -2081,11 +2089,11 @@
       if (!dock) { return; }
       var app = appEl(), bd = bounds(), pop = dock.querySelector(".cw-pop"), fab = dock.querySelector(".cw-fab");
       var x = parseFloat(dock.style.left) || 0, y = parseFloat(dock.style.top) || 0, f = fab.offsetWidth;
-      var up = (y + f / 2) > app.clientHeight / 2, right = (x + f / 2) > (bd.minX + app.clientWidth) / 2;
+      var up = (y + f / 2) > app.clientHeight / 2, right = (x + f / 2) > (bd.minX + bd.right) / 2;
       dock.setAttribute("data-v", up ? "up" : "down"); dock.setAttribute("data-h", right ? "r" : "l");
-      var pw = Math.min(pop.offsetWidth || 285, app.clientWidth - bd.minX - 6);
+      var pw = Math.min(pop.offsetWidth || 285, bd.right - bd.minX);
       var off = right ? (x + f) - pw : x;                           // pop left edge in .app coordinates
-      off = clamp(off, bd.minX, app.clientWidth - pw - 6);
+      off = clamp(off, bd.minX, bd.right - pw);
       pop.style.left = Math.round(off - x) + "px"; pop.style.right = "auto";
       var room = up ? (y - 6 - 10) : (app.clientHeight - (y + f) - 6 - 10);
       pop.style.maxHeight = Math.max(160, room) + "px";
@@ -2220,23 +2228,48 @@
         var n = parseInt(hex.replace("#", ""), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, bl = n & 255;
         return (0.299 * r + 0.587 * g + 0.114 * bl) > 150 ? "dark" : "light";
       }
-      function chipHtml(hex) {
-        var sel = (hex.toUpperCase() === ActivePalette.get()) ? " is-selected" : "";
+      function chipHtml(hex, action) {
+        var sel = (hex.toUpperCase() === ActivePalette.get()) ? " is-selected" : "", overlay = "";
+        if (action === "remove") { overlay = '<span class="swatch-remove" data-remove-hex="' + hex + '" title="Remove">&times;</span>'; }
+        else if (action === "add") { overlay = '<span class="swatch-add" data-add-hex="' + hex + '" title="Save to Saved">+</span>'; }
         return '<button class="swatch cp-chip' + sel + '" data-hex="' + hex + '" data-ink="' + inkOf(hex) + '" style="background:' + hex + '" title="' + hex + '" aria-label="' + hex + '">' +
-          '<span class="cp-chip-hex">' + hex.slice(1) + "</span></button>";
+          '<span class="cp-chip-hex">' + hex.slice(1) + "</span>" + overlay + "</button>";
       }
+      // Same strip layout as Curated for every source: rows of PER chips. extra = one more tile (the "+" slot); short rows are padded with ghosts.
+      var PER = 6;
+      function stripsHtml(hexes, action, extra) {
+        var cells = hexes.map(function (h) { return chipHtml(h, action); });
+        if (extra) { cells.push(extra); }
+        var rows = [], i, j, row;
+        for (i = 0; i < cells.length; i += PER) {
+          row = cells.slice(i, i + PER);
+          for (j = row.length; j < PER; j++) { row.push('<span class="cp-chip-ghost" aria-hidden="true"></span>'); }
+          rows.push('<div class="cp-strip">' + row.join("") + "</div>");
+        }
+        return rows.join("");
+      }
+      var ADD_TILE = '<button type="button" class="cp-chip cp-add-chip" data-cp-addcur title="Save the current color here" aria-label="Save the current color"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>';
       var presetHtml = CURATED_PALETTES.map(function (pal) {
         return '<div class="cp-pal"><span class="cp-pal-name">' + pal.name + '</span><div class="cp-strip">' + pal.colors.map(chipHtml).join("") + "</div></div>";
       }).join("");
       var floatMode = CPWheel.mode() === "float";
-      var labelHtml = LAYER_LABELS.map(function (l) {
-        return '<button class="label-swatch" data-label="' + l.index + '" style="background:' + l.hex + '" title="' + l.name + '" aria-label="' + l.name + '">' +
-          '<span class="label-name">' + l.name + "</span></button>";
-      }).join("");
+      var labelHtml = (function () {
+        var rows = [], i, j, row, l, LP = 4;
+        for (i = 0; i < LAYER_LABELS.length; i += LP) {
+          row = [];
+          for (j = i; j < Math.min(LAYER_LABELS.length, i + LP); j++) {
+            l = LAYER_LABELS[j];
+            row.push('<button type="button" class="cp-chip cp-label-chip" data-label="' + l.index + '" data-ink="' + inkOf(l.hex) + '" style="background:' + l.hex + '" title="' + l.name + '" aria-label="Label color ' + l.name + '">' +
+              '<span class="cp-chip-hex">' + l.name + "</span></button>");
+          }
+          rows.push('<div class="cp-strip">' + row.join("") + "</div>");
+        }
+        return rows.join("");
+      })();
 
       // One "Swatches" card, three sources: Curated (fixed palette), Saved (categories) and From image (extracted colors).
       var activeTab = Store.get("cpSwatchTab");
-      if (activeTab !== "cur" && activeTab !== "sav" && activeTab !== "img") { activeTab = "cur"; }
+      if (activeTab !== "cur" && activeTab !== "sav" && activeTab !== "img" && activeTab !== "lab") { activeTab = "cur"; }
       function segBtn(key, label) {
         var on = key === activeTab;
         return '<button type="button" class="cp-seg-btn' + (on ? " is-active" : "") + '" role="tab" aria-selected="' + on + '" data-cp-tab="' + key + '">' + label + "</button>";
@@ -2256,22 +2289,18 @@
             '</div>'
           : '<div id="palette-wheel-mount"></div>') +
         '<div class="cp-card">' +
-          '<div class="cp-seg" role="tablist" aria-label="Swatch source"><i class="cp-seg-ind" aria-hidden="true"></i>' + segBtn("cur", "Curated") + segBtn("sav", "Saved") + segBtn("img", "From image") + "</div>" +
+          '<div class="cp-seg" role="tablist" aria-label="Swatch source" style="--cp-n:4"><i class="cp-seg-ind" aria-hidden="true"></i>' + segBtn("cur", "Curated") + segBtn("sav", "Saved") + segBtn("img", "Image") + segBtn("lab", "Labels") + "</div>" +
           pane("cur", '<div class="cp-pals">' + presetHtml + "</div>") +
-          pane("sav", '<div id="palette-cat-controls"></div><div class="cp-grid" id="palette-custom-grid"></div>') +
+          pane("sav", '<div id="palette-cat-controls"></div><div class="cp-pals" id="palette-custom-grid"></div>') +
           pane("img",
             '<div class="cp-drop">' +
               '<div class="cp-thumb" id="palette-image-thumb"></div>' +
               '<div class="cp-drop-text"><b id="palette-image-name">No image selected</b><small id="palette-image-count">JPG or PNG</small></div>' +
               '<button class="btn" id="palette-image-choose">Choose image</button>' +
             "</div>" +
-            '<div class="cp-grid" id="palette-extracted-grid" hidden></div>' +
+            '<div class="cp-pals" id="palette-extracted-grid" hidden></div>' +
             '<p class="field-note" id="palette-extract-hint" hidden>Click + on a color to save it to Saved.</p>') +
-        "</div>" +
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Layer Label Colors</h2>' +
-          '<div class="label-grid">' + labelHtml + "</div>" +
-          '<p class="field-note">Click a color to set it as the Layer Label of the currently selected layer(s) in After Effects.</p>' +
+          pane("lab", '<div class="cp-pals">' + labelHtml + '</div><p class="field-note">Click a color to set it as the Layer Label of the selected layer(s) in After Effects.</p>') +
         "</div>";
 
       var customGrid = wrap.querySelector("#palette-custom-grid");
@@ -2324,8 +2353,7 @@
 
       function renderCustomGrid() {
         var cat = colorCatStore.activeCat(catData);
-        customGrid.innerHTML = cat.items.map(function (hex) { return self.swatchHtml(hex, "remove"); }).join("") +
-          '<button type="button" class="swatch cp-add-tile" data-cp-addcur title="Save the current color here" aria-label="Save the current color">+</button>';
+        customGrid.innerHTML = stripsHtml(cat.items, "remove", ADD_TILE);
       }
 
       function renderCats() {
@@ -2456,7 +2484,7 @@
           var cat = colorCatStore.activeCat(catData);
           cat.items = cat.items.filter(function (h) { return h !== hexToRemove; });
           colorCatStore.save(catData);
-          removeBtn.parentElement.remove();
+          renderCustomGrid();
           return;
         }
 
@@ -2519,7 +2547,7 @@
             countEl.textContent = colors.length + " colors found";
             extractedGrid.hidden = false;
             extractHint.hidden = false;
-            extractedGrid.innerHTML = colors.map(function (hex) { return self.swatchHtml(hex, "add"); }).join("");
+            extractedGrid.innerHTML = stripsHtml(colors, "add");
           };
           img.src = reader.result;
         };

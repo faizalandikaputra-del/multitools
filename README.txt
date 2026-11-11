@@ -2528,3 +2528,4 @@ Color Palette redesign (Multi_Tool_15 -> next)
   Files: js/main.js (ColorPalette, CPWheel, menu), css/mt-palette-ui.css (new), jsx/host.jsx (COLOR_applyTarget), html/index.html (link).
   Note:  a swatch click no longer recolors the selected Fill effect / Solid / color property by itself; the menu decides the target.
          The wheel's own live Fill update is unchanged.
+  Color Palette tabs: Curated / Saved / Image / Labels all use the same palette strips (rows of 6, Labels rows of 4). Layer Label Colors moved into the Labels tab.

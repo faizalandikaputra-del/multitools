@@ -2542,3 +2542,13 @@ Shape tab: floating button
   The options under the shape list (Modifiers, preview, Style, Insert as, Size, Stroke, Add button) now live in a popover
   opened by a round floating button. Nothing needs scrolling. Drag the button anywhere; it avoids the side navigation.
   Click outside or press Escape to close. The position is saved in mtx.shapeFabPos (included in the backup).
+
+fixCursor-F (cursor tangan berubah jadi panah, bertahan beberapa detik, di semua tab)
+  - Masalah: cursor berganti hand <-> panah saat mouse digerakkan di sidebar dan semua tab. Hover tetap menyala, tapi cursor panah bertahan sampai pointer pindah elemen.
+  - Penyebab (dugaan kuat, dari kode; belum diuji di After Effects): ResPin.init() (js/main.js) memanggil QCE_autoRes ke AE lewat evalScript tiap 900 ms di SEMUA tab,
+    walau tidak ada resolusi yang di-pin. Tiap evalScript membuat AE mereset cursor; Blink tidak mengirim ulang karena cursor menurutnya tidak berubah.
+    Perbaikan A-E sebelumnya tidak menyentuh polling ini. KeyframeTiming juga polling 500 ms ke host selama boxnya tampil.
+  - Perbaikan: ResPin.tick() tidak memanggil host selama pointer di dalam panel (window.__mtMoving); satu tick langsung saat pointer keluar (event mt-motion-state).
+    KeyframeTiming: saat pointer di panel, host hanya ditanya maks tiap 3 detik (saat drag di box tetap penuh).
+  - Catatan: komp baru dibuat dari UI AE (pointer di luar panel), jadi fitur resolusi tersimpan tetap jalan.
+  - Files: js/main.js, html/index.html (main.js ?v=80), README.txt.

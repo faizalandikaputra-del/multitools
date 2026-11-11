@@ -933,6 +933,9 @@
     tick: function () {
       var self = this, pin = this.get(), apply = !!(pin && this.isOn());
       if (self.busy || !cs) { return; }
+      // fixCursor-F: every evalScript makes After Effects reset the mouse cursor (hand -> arrow, stays until the pointer changes element).
+      // No host call while the pointer is inside the panel; new comps are made in AE's own UI (pointer outside), and one tick runs on leave.
+      if (window.__mtMoving) { return; }
       self.busy = true;
       Bridge.call("QCE_autoRes", apply ? [pin.w, pin.h] : [0, 0]).then(function (res) {
         self.busy = false;
@@ -945,6 +948,7 @@
     init: function () {
       var self = this;
       setInterval(function () { self.tick(); }, this.POLL_MS);
+      window.addEventListener("mt-motion-state", function () { if (!window.__mtMoving) { self.tick(); } });   // pointer left the panel: catch up at once
     }
   };
 
@@ -4115,6 +4119,9 @@
         // Stops once the box has been gone for a few ticks (tab left). A box in the dynamic island stays connected and keeps updating.
         if (!el.apply.isConnected) { away++; if (away > 8) { stop(); } return; }
         away = 0;
+        // fixCursor-F: while the pointer is in the panel, ask AE at most every 3 s (each host call resets the cursor); a drag in the box keeps full speed.
+        if (window.__mtMoving && !document.documentElement.classList.contains("mt-scrubbing") && Date.now() - (self._lastHost || 0) < 3000) { return; }
+        self._lastHost = Date.now();
         tick(false);
       }, self.POLL_MS);
       self.tick = tick;

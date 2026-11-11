@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.187",
-    "changelog":  "- Update 1.8.187",
+    "latest_version":  "1.8.188",
+    "changelog":  "- Update 1.8.188",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "cf2a615af07cc2539b63f5e7dba402b8f4acd300e6283039f55b650c907c7d53"
+                      "sha256":  "659013271745ac583321d9270e867c698249b8077abc096f87ba95a0924cd673"
                   },
                   {
                       "path":  "html/settings.html",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "132248a78c8d35dbefed96727aa9905d9e136db5ab4ddc4c542984aefe7ccef4"
+                      "sha256":  "4a7671ab161859ea10162f4ac4877a6c68af3b5640c095f088cadde78f507362"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -776,7 +776,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "82dee4c8b4efabb2a34e04515aa5138c04168e58cb55f332928b81c5f5900728"
+                      "sha256":  "1182c7d5817571e8d0db6d0320b93ce9fb9cfcbdfc16da0781c9a549be31311d"
                   }
               ]
 }

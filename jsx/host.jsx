@@ -3081,10 +3081,77 @@ function _textSetColor(layer, comp, rgb, stroke) {
   }
 }
 
+// Color Palette > "Solid Fill": sets the color of the selected SOLID layers (the solid's own source color, same as Layer > Solid Settings).
+// AE shares one solid source between layers made from it, so every layer using that solid changes too.
+function _colorSolidFill(comp, rgb, up) {
+  var sel = comp.selectedLayers, li, src, done = [], seen = [], k, dup, layers = 0;
+  for (li = 0; li < (sel ? sel.length : 0); li++) {
+    src = null;
+    try { if (sel[li].source && sel[li].source.mainSource instanceof SolidSource) { src = sel[li].source; } } catch (e0) { }
+    if (!src) { continue; }
+    layers++;
+    dup = false;
+    for (k = 0; k < seen.length; k++) { if (seen[k] === src) { dup = true; break; } }
+    if (!dup) { seen.push(src); }
+  }
+  if (!layers) { throw new Error("Select a solid layer first."); }
+  app.beginUndoGroup("Solid Fill " + up);
+  try {
+    for (k = 0; k < seen.length; k++) {
+      try { seen[k].mainSource.color = [rgb[0], rgb[1], rgb[2]]; done.push(seen[k]); } catch (e1) { /* locked / not editable */ }
+    }
+  } finally {
+    app.endUndoGroup();
+  }
+  if (!done.length) { throw new Error("The solid could not be changed."); }
+  return _ok("Solid Fill " + up + " on " + done.length + " solid" + (done.length === 1 ? "" : "s") + ".");
+}
+
+// Color Palette > "Solid Stroke": sets the color of the Stroke effect (Effect > Generate > Stroke) on the selected layers.
+// The effect strokes masks, so a layer without a Stroke effect gets one only when it has a mask; otherwise it is skipped.
+function _colorSolidStroke(comp, rgb, up) {
+  var sel = comp.selectedLayers, li, ei, pi, fxs, fx, cp, targets = [], skipped = 0, masks, has;
+  for (li = 0; li < (sel ? sel.length : 0); li++) {
+    fxs = sel[li].property("ADBE Effect Parade");
+    if (!fxs) { continue; }
+    has = false;
+    for (ei = 1; ei <= fxs.numProperties; ei++) {
+      fx = fxs.property(ei);
+      if (fx && fx.matchName === "ADBE Stroke") { has = true; targets.push(fx); }
+    }
+    if (has) { continue; }
+    masks = null;
+    try { masks = sel[li].property("ADBE Mask Parade"); } catch (e0) { }
+    if (masks && masks.numProperties > 0) {
+      try { targets.push(fxs.addProperty("ADBE Stroke")); } catch (e1) { skipped++; }
+    } else { skipped++; }
+  }
+  if (!sel || !sel.length) { throw new Error("Select a layer first."); }
+  if (!targets.length) { throw new Error("Solid Stroke needs a mask on the layer, or a Stroke effect. Add one first."); }
+  var applied = 0;
+  app.beginUndoGroup("Solid Stroke " + up);
+  try {
+    for (ei = 0; ei < targets.length; ei++) {
+      cp = null;
+      for (pi = 1; pi <= targets[ei].numProperties; pi++) {      // the Color property is found by type, not by match name
+        try { if (targets[ei].property(pi).propertyValueType === PropertyValueType.COLOR) { cp = targets[ei].property(pi); break; } } catch (e2) { }
+      }
+      if (!cp) { continue; }
+      try { cp.setValue([rgb[0], rgb[1], rgb[2], 1]); applied++; } catch (e3) { /* locked / expression-driven */ }
+    }
+  } finally {
+    app.endUndoGroup();
+  }
+  if (!applied) { throw new Error("No Stroke color could be changed. The layer may be locked."); }
+  return _ok("Solid Stroke " + up + " on " + applied + " effect" + (applied === 1 ? "" : "s") + (skipped ? " (" + skipped + " layer" + (skipped === 1 ? "" : "s") + " skipped: no mask)." : "."));
+}
+
 function COLOR_applyTarget(hex, kind) {
   try {
     var comp = _activeComp(), rgb = _hexToUnit(hex), up = String(hex).toUpperCase();
     if (up.charAt(0) !== "#") { up = "#" + up; }
+    if (kind === "solidFill") { return _colorSolidFill(comp, rgb, up); }
+    if (kind === "solidStroke") { return _colorSolidStroke(comp, rgb, up); }
     var isShape = (kind === "shapeFill" || kind === "shapeStroke"), isStroke = (kind === "shapeStroke" || kind === "textStroke");
     var label = { shapeFill: "Shape Fill", shapeStroke: "Shape Stroke", textFill: "Text Fill", textStroke: "Text Stroke" }[kind];
     if (!label) { throw new Error("Unknown color target."); }

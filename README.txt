@@ -2616,3 +2616,12 @@ settings-toast-island (grup Toast di Pengaturan)
     Nilai posisi lama di localStorage tetap dibaca js/mt-pro.js untuk fallback saat island dimatikan.
   - js/mt-pro.js: mengganti Position tidak lagi menampilkan toast palsu saat island menyala.
   - Files: html/settings.html, js/mt-pro.js, README.txt.
+
+palette-solid-targets (Color Palette: target warna Solid Fill dan Solid Stroke)
+  - Permintaan: di menu "terapkan warna ke mana" (klik swatch) tambahkan target Solid Fill dan Solid Stroke.
+  - Perubahan: js/main.js MENU_ITEMS dapat 2 item baru (solidFill, solidStroke). jsx/host.jsx COLOR_applyTarget memanggil _colorSolidFill dan _colorSolidStroke.
+    Solid Fill mengubah warna source solid layer terpilih (seperti Layer > Solid Settings; layer lain yang memakai solid yang sama ikut berubah).
+    Solid Stroke mengubah warna efek Stroke (ADBE Stroke) di layer terpilih; bila belum ada efeknya dan layer punya mask, efek ditambahkan, bila tidak ada mask layer dilewati.
+    Properti warna efek dicari lewat tipe (COLOR), bukan lewat match name. Satu undo group per aksi.
+  - Files: js/main.js (?v=83), jsx/host.jsx, html/index.html, README.txt.
+  - Belum diuji di After Effects; syntax diperiksa dengan node --check.

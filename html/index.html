@@ -103,6 +103,7 @@
   <link rel="stylesheet" href="../css/mt-preset-actions.css?v=1">
   <link rel="stylesheet" href="../css/mt-presets-tidy.css?v=1">
   <!-- hover-stable.css must stay the LAST stylesheet: removes the hover lift that made the cursor flicker on button edges -->
+  <link rel="stylesheet" href="../css/mt-shape.css?v=1">
   <link rel="stylesheet" href="../css/hover-stable.css?v=2">
   <!-- Compatibility shim for old CEP hosts (CEP 10 / Chromium 74, i.e. AE 2021).
        Feature-detects and does nothing at all on newer hosts (AE 2022+). -->
@@ -174,6 +175,9 @@
             <circle cx="12" cy="12" r="2.8"/>
             <path d="M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2"/>
           </svg>
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="shape" aria-label="Shape">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a5 5 0 1 0 0 10a5 5 0 1 0 0-10ZM13 10h7v7h-7ZM6 20l3-5 3 5Z"/></svg>
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="tools" aria-label="Tools">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -779,7 +783,9 @@
   <script src="../js/mt-island-presets.js?v=1"></script>
   <script src="../js/mt-fxcopy.js?v=5"></script>
   <script src="../js/mt-pro.js?v=3"></script>
-  <script src="../js/main.js?v=77"></script>
+  <script src="../js/mt-shape-data.js?v=1"></script>
+  <script src="../js/mt-shape.js?v=1"></script>
+  <script src="../js/main.js?v=78"></script>
   <script src="../js/mt-loader.js?v=1"></script>
   <script src="../js/mt-curve-top.js?v=1"></script>
   <script src="../js/mt-smooth.js?v=3"></script>

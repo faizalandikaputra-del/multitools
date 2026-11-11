@@ -2529,3 +2529,18 @@ Color Palette redesign (Multi_Tool_15 -> next)
   Note:  a swatch click no longer recolors the selected Fill effect / Solid / color property by itself; the menu decides the target.
          The wheel's own live Fill update is unchanged.
   Color Palette tabs: Curated / Saved / Image / Labels all use the same palette strips (rows of 6, Labels rows of 4). Layer Label Colors moved into the Labels tab.
+
+fixShape-tab (new sidebar tab "Shape": 103 shapes and devices built as real After Effects shape groups)
+  What: tab "Shape" between Anchor Point & Align and Tools. Groups: Basic, Mograph, Typography, AMV, Device (phone island / notch / punch hole /
+        home button / wide, foldable, tablet, laptop, monitor, TV, smartwatch, camera, browser), UI (cursor, button, toggle, slider, progress bar,
+        input, notification, card, chat, play button, avatar), Frames (16:9, 9:16, 1:1, 4:5, 4:3, 21:9, safe zone). Search + category chips.
+        Double click a tile = add it at once. Device parts become separate groups (Body, Screen, ...) so each part can be recolored.
+  Insert as: Layer = new shape layer at comp center | Mask = mask on every selected layer | Matte = shape above the selected layer, alpha track matte.
+  Style: Fill / Stroke / Both, Size, Stroke width, color picker.
+  Modifiers: Animate in (Pop = scale with overshoot, Draw = Trim Paths End 0 -> 100, Fade = opacity) + Duration; Repeater (Grid = two repeaters,
+        Radial = one repeater rotating 360/N, Line); Round corners; Fit to text layer (expressions on sourceRectAtTime + toComp, "Padding" slider,
+        box sits behind the text, not combined with Repeater); Pulse on markers (Scale expression, sliders "Pulse Amount" / "Pulse Decay").
+  Undo: one undo step per insert ("Shape: <name>"). State: localStorage mtx.shape.state.
+  Files: html/index.html, js/main.js (TABS "shape" + custom "shapeTab"), js/mt-shape-data.js (new), js/mt-shape.js (new), css/mt-shape.css (new),
+         jsx/host.jsx (SHAPE_insert + _shp* helpers), README.txt.
+  Test: Chromium headless (no After Effects): tab opens without console errors; SHAPE_insert run against a mocked AE API for all modes.

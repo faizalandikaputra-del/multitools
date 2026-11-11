@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.179",
-    "changelog":  "- Update 1.8.179",
+    "latest_version":  "1.8.180",
+    "changelog":  "- Update 1.8.180",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -195,6 +195,10 @@
                       "sha256":  "89a37004b2d5efeb904fec2192c259f1d7e9bb0f393e541ca5c0629b6087317a"
                   },
                   {
+                      "path":  "css/mt-shape.css",
+                      "sha256":  "56af4484c613838a5571544dc3bf93d676084e0a4d9a7b6a9f14453d31694fef"
+                  },
+                  {
                       "path":  "css/mt-smooth.css",
                       "sha256":  "e655b6e53530e50ca86abd24968f7cdfd2c5ae4e764ee9c96f714d9a2f248c3b"
                   },
@@ -268,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "bbf594df2c36039bdaaa9c603075bafebed7df0bc3866c0176cce994d3145759"
+                      "sha256":  "7dfb86c4246e29d38d707dc93960551b9d5471c237d95ee960d751f5351dd58b"
                   },
                   {
                       "path":  "html/settings.html",
@@ -288,7 +292,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "7b225da38099f19195e5c41ee65dc9c775e8430dca11c87a3ffaf8b5c33710da"
+                      "sha256":  "e829bf2d4316be2eeb0824c138bbb1f7ce0b41407f4c2ae4fb24e02feec262cf"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -403,6 +407,14 @@
                       "sha256":  "976cec61c50d1d95b897accf7cbd21ae7d705ba9da82c9572902845865576783"
                   },
                   {
+                      "path":  "js/mt-shape.js",
+                      "sha256":  "a3bb5e5680e97291da00c7d62f15bbb7ca596d35b4f865222282b07255f9de22"
+                  },
+                  {
+                      "path":  "js/mt-shape-data.js",
+                      "sha256":  "57f6013ddd18edd20151d26a3377abd289bdcc2e44ff2c2801f48c520121a3bd"
+                  },
+                  {
                       "path":  "js/mt-smooth.js",
                       "sha256":  "bf3aada72e9f6fecef675eabfaa397b3fff8368dc1784cd5a2d678e086b97798"
                   },
@@ -452,7 +464,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "7d507ad63e2f977436024cd85634d061c5f46a8d0c9614c58ba90621270f56c7"
+                      "sha256":  "1a1f86ec26af925f1a266253d26e054b3b991e0f8b84f65853021c50dc6ea98a"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -764,7 +776,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "85639ae561054880be6f68cc6a14e743cb837faca730359b3caa31ba179368cf"
+                      "sha256":  "8f95f48357898690b1ef59103e8034fe6d6c1bf312e9b3406d498cf4f13b2668"
                   }
               ]
 }

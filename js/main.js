@@ -65,6 +65,12 @@
       tools: [],
       custom: "anchorAlign"
     },
+    "shape": {
+      title: "Shape",
+      hint: "Pick a shape or device, then add it as a layer, mask or track matte.",
+      tools: [],
+      custom: "shapeTab"
+    },
     "tools": {
       title: "Tools",
       hint: "Handy one-click utilities for editing and motion graphics.",
@@ -4627,6 +4633,8 @@
       built = ExprCode.render();
     } else if (cfg.custom === "presets") {
       built = Presets.render();
+    } else if (cfg.custom === "shapeTab") {
+      built = window.MTShape ? window.MTShape.render() : document.createElement("div");   // js/mt-shape.js
     } else if (cfg.custom === "utilityTools") {
       built = UtilityTools.render();
     } else if (cfg.custom === "textFlex") {

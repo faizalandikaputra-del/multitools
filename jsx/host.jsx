@@ -9485,3 +9485,246 @@ function KT_apply(cfg) {
     if (touched && comp && selSnap) { try { _ktSelRestore(comp, selSnap); } catch (eSel) { } }
   }
 }
+
+// =====================================================================================================
+// Shape tab (js/mt-shape.js + js/mt-shape-data.js)
+// SHAPE_insert(P) builds REAL shape groups from plain numbers (vertices + tangents in px, centered on 0,0).
+//   P.mode   Layer | Mask | Matte          P.style  Fill | Stroke | Both
+//   P.anim   None | Pop | Draw | Fade      P.rep    {kind: Off|Grid|Radial|Line, count, spacing}
+//   P.round  corner radius px              P.fit    follow a text layer with expressions
+//   P.pulse  scale pulse on layer markers
+// Everything is one undo step. ES3 only (no JSON, no let/const, no forEach).
+// =====================================================================================================
+function _shpHex(h) {
+  var n;
+  h = String(h || "#ffffff").replace("#", "");
+  if (h.length === 3) { h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2); }
+  n = parseInt(h, 16);
+  if (isNaN(n)) { n = 16777215; }
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255, 1];
+}
+function _shpRoleColor(P, role) {
+  if (role === "b" || !P.roles || !P.roles[role]) { return _shpHex(P.color); }
+  return _shpHex(P.roles[role]);
+}
+// text that is safe inside a double quoted expression string
+function _shpQ(s) { return String(s).replace(/\\/g, "\\\\").replace(/"/g, "\\\"").replace(/\r|\n/g, " "); }
+
+function _shpMakeShape(sp) {
+  var s = new Shape();
+  s.vertices = sp.v; s.inTangents = sp.i; s.outTangents = sp.o; s.closed = !!sp.c;
+  return s;
+}
+function _shpSet(prop, value) { try { prop.setValue(value); return true; } catch (e) { return false; } }
+function _shpEase(prop, t0, t1, v0, v1, mid) {
+  // keyframes with easy ease in and out; value arrays work for 1D / 2D / 3D props
+  var kf = [[t0, v0]], i, dims, ease;
+  if (mid) { kf.push([t0 + (t1 - t0) * 0.6, mid]); }
+  kf.push([t1, v1]);
+  for (i = 0; i < kf.length; i++) { prop.setValueAtTime(kf[i][0], kf[i][1]); }
+  try {
+    dims = (prop.value instanceof Array) ? prop.value.length : 1;
+    ease = [];
+    for (i = 0; i < dims; i++) { ease.push(new KeyframeEase(0, 60)); }
+    for (i = 1; i <= kf.length; i++) { prop.setTemporalEaseAtKey(i, ease, ease); }
+  } catch (e) { }
+}
+
+// One shape group per part: paths, optional corner rounding / trim, then fill and / or stroke.
+function _shpBuildGroup(contents, part, kind, P, sh) {
+  var grp = contents.addProperty("ADBE Vector Group"), gc, i, pg, fill, stroke, col, isLine, dots, wantFill, wantStroke, tf, rc, trim, dash;
+  grp.name = part.n;
+  gc = grp.property("ADBE Vectors Group");
+  for (i = 0; i < part.sp.length; i++) {
+    pg = gc.addProperty("ADBE Vector Shape - Group");
+    pg.property("ADBE Vector Shape").setValue(_shpMakeShape(part.sp[i]));
+  }
+  if (P.round > 0) {
+    try { rc = gc.addProperty("ADBE Vector Filter - RC"); rc.property("ADBE Vector RoundCorner Radius").setValue(P.round); } catch (eRC) { }
+  }
+  if (P.anim === "Draw") {
+    try {
+      trim = gc.addProperty("ADBE Vector Filter - Trim");
+      _shpEase(trim.property("ADBE Vector Trim End"), P.t0, P.t0 + P.dur, 0, 100, null);
+    } catch (eT) { }
+  }
+  isLine = (kind === "s" || kind === "d");
+  dots = (kind === "d");
+  col = _shpRoleColor(P, part.r);
+  wantFill = !isLine && P.style !== "Stroke";
+  wantStroke = isLine || P.style !== "Fill";
+  if (wantFill) {
+    fill = gc.addProperty("ADBE Vector Graphic - Fill");
+    fill.property("ADBE Vector Fill Color").setValue(col);
+    try { fill.property("ADBE Vector Fill Rule").setValue(2); } catch (eFR) { }   // even-odd keeps screens and holes open
+    if (P.style === "Both" && part.r === "b") { try { fill.property("ADBE Vector Fill Opacity").setValue(33); } catch (eFO) { } }
+  }
+  if (wantStroke) {
+    stroke = gc.addProperty("ADBE Vector Graphic - Stroke");
+    stroke.property("ADBE Vector Stroke Color").setValue(col);
+    stroke.property("ADBE Vector Stroke Width").setValue(dots ? sh.dot : Math.max(1, P.sw));
+    _shpSet(stroke.property("ADBE Vector Stroke Line Cap"), 2);
+    _shpSet(stroke.property("ADBE Vector Stroke Line Join"), 2);
+    if (sh.dash && !dots) {
+      try {
+        dash = stroke.property("ADBE Vector Stroke Dashes");
+        dash.addProperty("ADBE Vector Stroke Dash 1").setValue(sh.dash[0]);
+        dash.addProperty("ADBE Vector Stroke Gap 1").setValue(sh.dash[1]);
+      } catch (eD) { }
+    }
+  }
+  return grp;
+}
+
+function _shpAddRepeater(contents, copies, pos, rot) {
+  var rep = contents.addProperty("ADBE Vector Filter - Repeater"), tr;
+  rep.property("ADBE Vector Repeater Copies").setValue(copies);
+  tr = rep.property("ADBE Vector Repeater Transform");
+  _shpSet(tr.property("ADBE Vector Repeater Position"), pos);
+  _shpSet(tr.property("ADBE Vector Repeater Rotation"), rot);
+  return rep;
+}
+
+function _shpSlider(layer, name, value) {
+  var fx = layer.property("ADBE Effect Parade").addProperty("ADBE Slider Control");
+  fx.name = name;
+  fx.property(1).setValue(value);
+  return fx;
+}
+
+// Shape layer in the comp (Layer and Matte mode).
+function _shpMakeLayer(comp, P, ref) {
+  var sh = P.shape, layer = comp.layers.addShape(), contents, grps = [], i, p, rp = P.rep || { kind: "Off" };
+  var n, cols, rows, sp, rad, off, tg, pos, sExpr, pExpr, src, pulseSrc, hasMarks;
+  layer.name = P.name;
+  contents = layer.property("ADBE Root Vectors Group");
+  for (i = 0; i < sh.parts.length; i++) { grps.push(_shpBuildGroup(contents, sh.parts[i], sh.kind, P, sh)); }
+
+  layer.property("ADBE Transform Group").property("ADBE Position").setValue([comp.width / 2, comp.height / 2]);
+
+  // repeater (not combined with Fit: Fit keeps one box that follows the text)
+  if (!P.fit && rp.kind !== "Off") {
+    n = Math.max(2, Math.round(rp.count)); sp = rp.spacing;
+    for (i = 0; i < grps.length; i++) {
+      tg = grps[i].property("ADBE Vector Transform Group");
+      if (rp.kind === "Line") { off = [-(n - 1) * sp / 2, 0]; }
+      else if (rp.kind === "Radial") { off = [0, -sp]; }
+      else { cols = Math.max(1, Math.round(Math.sqrt(n))); rows = Math.ceil(n / cols); off = [-(cols - 1) * sp / 2, -(rows - 1) * sp / 2]; }
+      tg.property("ADBE Vector Position").setValue(off);
+    }
+    if (rp.kind === "Line") { _shpAddRepeater(contents, n, [sp, 0], 0); }
+    else if (rp.kind === "Radial") { _shpAddRepeater(contents, n, [0, 0], 360 / n); }
+    else {
+      _shpAddRepeater(contents, cols, [sp, 0], 0);
+      if (rows > 1) { _shpAddRepeater(contents, rows, [0, sp], 0); }
+    }
+  }
+
+  // Fit to text: group scale + layer position follow the reference layer's text box
+  if (P.fit && ref) {
+    _shpSlider(layer, "Padding", P.pad);
+    src = 'thisComp.layer("' + _shpQ(ref.name) + '")';
+    sExpr = "var L=" + src + ";var r=L.sourceRectAtTime(time,false);var pd=thisLayer.effect(\"Padding\")(\"Slider\");" +
+      "var s=L.transform.scale/100;var w=r.width*Math.abs(s[0])+2*pd;var h=r.height*Math.abs(s[1])+2*pd;" +
+      "[w/" + sh.bw + "*100,h/" + sh.bh + "*100];";
+    pExpr = "var L=" + src + ";var r=L.sourceRectAtTime(time,false);var c=L.toComp([r.left+r.width/2,r.top+r.height/2]);[c[0],c[1]];";
+    for (i = 0; i < grps.length; i++) {
+      try { grps[i].property("ADBE Vector Transform Group").property("ADBE Vector Scale").expression = sExpr; } catch (eS) { }
+    }
+    try { layer.property("ADBE Transform Group").property("ADBE Position").expression = pExpr; } catch (eP) { }
+  }
+
+  // Animate in on the layer: Pop (scale with overshoot) or Fade. Draw is built into each group.
+  if (P.anim === "Pop") {
+    _shpEase(layer.property("ADBE Transform Group").property("ADBE Scale"), P.t0, P.t0 + P.dur, [0, 0, 100], [100, 100, 100], [112, 112, 100]);
+  } else if (P.anim === "Fade") {
+    _shpEase(layer.property("ADBE Transform Group").property("ADBE Opacity"), P.t0, P.t0 + P.dur, 0, 100, null);
+  }
+
+  // Pulse on markers: the source is the reference layer when it has markers, otherwise this layer
+  if (P.pulse) {
+    _shpSlider(layer, "Pulse Amount", P.amt);
+    _shpSlider(layer, "Pulse Decay", 8);
+    hasMarks = false;
+    try { hasMarks = !!(ref && ref.property("ADBE Marker") && ref.property("ADBE Marker").numKeys > 0); } catch (eM) { }
+    pulseSrc = hasMarks ? 'thisComp.layer("' + _shpQ(ref.name) + '")' : "thisLayer";
+    layer.property("ADBE Transform Group").property("ADBE Scale").expression =
+      "var amt=effect(\"Pulse Amount\")(\"Slider\")/100;var dk=effect(\"Pulse Decay\")(\"Slider\");var m=" + pulseSrc + ".marker;var n=0;" +
+      "if(m.numKeys>0){n=m.nearestKey(time).index;if(m.key(n).time>time){n--;}}" +
+      "var s=value;if(n>0){var t=time-m.key(n).time;var k=1+amt*Math.exp(-dk*t);[s[0]*k,s[1]*k,s[2]];}else{s;}";
+    return { layer: layer, hasMarks: hasMarks };
+  }
+  return { layer: layer, hasMarks: true };
+}
+
+// Mask mode: the first part of the shape becomes a mask on a layer (layer space, centered on the layer)
+function _shpAddMask(layer, P, t) {
+  var sh = P.shape, part = sh.parts[0], i, j, r, cx, cy, sx = 1, sy = 1, sp, pts, v, mask, count = 0, w, h;
+  try { r = layer.sourceRectAtTime(t, false); } catch (e) { r = null; }
+  if (!r || !r.width) { r = { left: 0, top: 0, width: layer.width || 100, height: layer.height || 100 }; }
+  cx = r.left + r.width / 2; cy = r.top + r.height / 2;
+  if (P.fit) {
+    sx = (r.width + 2 * P.pad) / sh.bw; sy = (r.height + 2 * P.pad) / sh.bh;
+  }
+  for (i = 0; i < part.sp.length; i++) {
+    sp = part.sp[i];
+    v = []; pts = [];
+    for (j = 0; j < sp.v.length; j++) { v.push([sp.v[j][0] * sx + cx, sp.v[j][1] * sy + cy]); }
+    var ins = [], outs = [];
+    for (j = 0; j < sp.v.length; j++) { ins.push([sp.i[j][0] * sx, sp.i[j][1] * sy]); outs.push([sp.o[j][0] * sx, sp.o[j][1] * sy]); }
+    mask = layer.property("ADBE Mask Parade").addProperty("ADBE Mask Atom");
+    mask.name = P.name + (part.sp.length > 1 ? " " + (i + 1) : "");
+    mask.property("ADBE Mask Shape").setValue(_shpMakeShape({ v: v, i: ins, o: outs, c: sp.c }));
+    count++;
+  }
+  return count;
+}
+
+function SHAPE_insert(P) {
+  try {
+    var comp = _activeComp(), sel = comp.selectedLayers, ref = null, made, i, n, msg;
+    P.t0 = comp.time;
+    P.dur = Math.max(0.1, Number(P.dur) || 0.6);
+    P.round = Number(P.round) || 0;
+    if (sel && sel.length) { ref = sel[0]; }
+
+    if ((P.mode === "Mask" || P.mode === "Matte") && !ref) {
+      return _notice("Select a layer first, then add the shape as a " + (P.mode === "Mask" ? "mask." : "matte."));
+    }
+
+    app.beginUndoGroup("Shape: " + P.name + (P.mode === "Layer" ? "" : " (" + P.mode + ")"));
+    try {
+      if (P.mode === "Mask") {
+        n = 0;
+        for (i = 0; i < sel.length; i++) {
+          if (sel[i].locked) { continue; }
+          n += _shpAddMask(sel[i], P, comp.time);
+        }
+        msg = n ? (P.name + " added as " + n + " mask" + (n > 1 ? "s" : "") + " on " + sel.length + " layer" + (sel.length > 1 ? "s" : "") + ".") : "Selected layers are locked.";
+      } else {
+        made = _shpMakeLayer(comp, P, ref);
+        if (ref) {
+          if (P.mode === "Matte") {
+            made.layer.moveBefore(ref);
+            if (typeof ref.setTrackMatte === "function") { ref.setTrackMatte(made.layer, TrackMatteType.ALPHA); }
+            else { ref.trackMatteType = TrackMatteType.ALPHA; }
+          } else if (P.fit) {
+            made.layer.moveAfter(ref);          // text box sits behind the text
+          } else {
+            made.layer.moveBefore(ref);
+          }
+        }
+        made.layer.selected = true;
+        msg = P.name + (P.mode === "Matte" ? " added as an alpha matte for " + ref.name + "." : " added.");
+        if (P.pulse && !made.hasMarks) { msg += " Add markers (M) to a layer: the shape pulses on them."; }
+        if (P.fit && !ref) { msg += " Select a text layer first to use Fit."; }
+        if (P.anim === "Draw" && P.style === "Fill") { msg += " Draw-on shows best with Stroke or Both."; }
+      }
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok(msg, null);
+  } catch (e) {
+    return _err(e);
+  }
+}

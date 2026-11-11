@@ -2564,3 +2564,14 @@ fixShape-cursor-2 (Shape tab: pointer still blinked between hand and arrow over 
     panel, chips wrap to a second line instead of scrolling). Press feedback uses filter: brightness(.9) instead of scale, hover only changes border / glow.
     js/mt-shape.js: the Add button has no title attribute any more (the tooltip layer is not needed for a text button).
   - Files: css/mt-shape.css (?v=3), js/mt-shape.js (?v=3), html/index.html, README.txt.
+
+fixCursor-F (pointer blinks hand <-> arrow on ALL buttons, found from two screen recordings of the owner)
+  - Clue: recordings show the pointer resting on sidebar tabs, Tools tiles and Shape tiles: the cursor stays an arrow or flips arrow / hand every ~0.2-0.9 s while the
+    pointer is still. Happens in every tab, so it is not caused by one tab's CSS (fixShape-cursor and fixShape-cursor-2 already removed every forced layer from the Shape tab).
+  - Cause (same family as fixCursor-C): host calls made by timers while the pointer rests on the panel. After Effects recomputes the cursor on every evalScript.
+    Three timers kept calling the host in the background: Quick Comp Edit "auto resolution" (QCE_autoRes, every 900 ms, ALWAYS, any tab), the Quick Comp Edit selection
+    poll (every 700 ms) and the dynamic island range poll (every 500 ms).
+  - Fix: those three timers skip their tick while window.__mtMoving is true (js/mt-away.js keeps it true the whole time the pointer is inside the panel). They resume as soon as
+    the pointer leaves the panel, which is when comps / layers are changed in After Effects anyway. Nothing else changes; opening a tab still refreshes once.
+  - Files: js/main.js (?v=79), html/index.html, README.txt.
+  - If the pointer STILL blinks: run in the panel's DevTools (localhost:PORT) `window.__mtMoving` while resting on a button; it must say true. Tell me what it says.

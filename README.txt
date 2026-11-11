@@ -2553,7 +2553,9 @@ fixCursor-F (cursor tangan berubah jadi panah, bertahan beberapa detik, di semua
   - Catatan: komp baru dibuat dari UI AE (pointer di luar panel), jadi fitur resolusi tersimpan tetap jalan.
   - Files: js/main.js, html/index.html (main.js ?v=80), README.txt.
 
-fixCursor-G (alat uji "Cursor test" dihapus)
-  - Alat uji sementara js/mt-cursor-diag.js (tombol "Cursor test" kiri-bawah) sudah dihapus beserta tag <script>-nya di html/index.html.
-  - Owner melaporkan cursor sudah normal; yang tetap berlaku adalah fixCursor-F (ResPin / KeyframeTiming tidak memanggil host berlebihan saat pointer di panel).
-  - Files: html/index.html, README.txt (js/mt-cursor-diag.js dihapus).
+fixCursor-G (alat uji sementara: tombol "Cursor test" kiri-bawah panel)
+  - fixCursor-F (hentikan polling host saat pointer di panel) belum menghentikan cursor berganti. Penyebab belum diketahui pasti, jadi ditambah js/mt-cursor-diag.js.
+  - Tombol "Cursor test" membuka daftar saklar; tiap saklar mematikan SATU tersangka secara langsung (panggilan ke AE, blur/filter, animasi, background+orb, island, pane Curve,
+    UI scale zoom, sidebar melebar, hover lift, will-change). Saklar yang menghentikan cursor berganti = penyebabnya. Tidak ada yang disimpan; reload = semua kembali normal.
+  - Hapus js/mt-cursor-diag.js dan tag <script>-nya di html/index.html setelah penyebab ketemu.
+  - Files: js/mt-cursor-diag.js (baru), html/index.html, README.txt.

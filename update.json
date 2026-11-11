@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.190",
-    "changelog":  "- Update 1.8.190",
+    "latest_version":  "1.8.191",
+    "changelog":  "- Update 1.8.191",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "659013271745ac583321d9270e867c698249b8077abc096f87ba95a0924cd673"
+                      "sha256":  "3c62e7bf9b1e61352b99429a16d64f2bc9804056bce38deb87d9d152fe39e528"
                   },
                   {
                       "path":  "html/settings.html",
@@ -313,6 +313,10 @@
                   {
                       "path":  "js/mt-colorpicker.js",
                       "sha256":  "8cd013cf087260c723d52782a1b378a7a69f9ec0ac3b8c1a29b3c9fd05fa8033"
+                  },
+                  {
+                      "path":  "js/mt-cursor-diag.js",
+                      "sha256":  "7623b991fba8fb9a22319c4843e0c20511fc0e9c6236adb538306eefbcdcc796"
                   },
                   {
                       "path":  "js/mt-curve-top.js",
@@ -776,7 +780,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "c869a19327fb4cc3e196c1f7071e74b0dd639bb997964d87906adb05309e610e"
+                      "sha256":  "34cf692673b0f5a6a55610e26fde526dc8b1d9ad9bbc06a47b0c980e0341eb72"
                   }
               ]
 }

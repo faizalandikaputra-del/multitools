@@ -2406,9 +2406,9 @@
       var MENU_ITEMS = [
         { kind: "shapeFill",   label: "Shape Fill",   icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" class="f"/></svg>' },
         { kind: "textFill",    label: "Text Fill",    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6" class="s"/></svg>' },
+        { kind: "solidFill",   label: "Solid Fill",   icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1" class="f"/></svg>' },
         { kind: "shapeStroke", label: "Shape Stroke", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4" class="s"/></svg>' },
         { kind: "textStroke",  label: "Text Stroke",  icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6" class="s"/><path d="M3 22h18" class="s"/></svg>' },
-        { kind: "solidFill",   label: "Solid Fill",   icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1" class="f"/></svg>' },
         { kind: "solidStroke", label: "Solid Stroke", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="1" stroke-dasharray="3 2.4" class="s"/></svg>' }
       ];
       var menuEl = null, menuSw = null, menuOff = [], menuTimer = 0;

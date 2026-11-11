@@ -2625,3 +2625,7 @@ palette-solid-targets (Color Palette: target warna Solid Fill dan Solid Stroke)
     Properti warna efek dicari lewat tipe (COLOR), bukan lewat match name. Satu undo group per aksi.
   - Files: js/main.js (?v=83), jsx/host.jsx, html/index.html, README.txt.
   - Belum diuji di After Effects; syntax diperiksa dengan node --check.
+
+palette-solid-order (urutan menu target warna)
+  - Solid Fill dipindah ke bawah Text Fill. Urutan menu: Shape Fill, Text Fill, Solid Fill, Shape Stroke, Text Stroke, Solid Stroke.
+  - Files: js/main.js (?v=84), html/index.html, README.txt.

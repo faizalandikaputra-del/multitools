@@ -13,19 +13,17 @@
 .shp-search:focus { border-color: rgba(var(--accent-rgb), 0.6); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15); }
 
 /* category chips */
-.shp-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-.shp-chips::-webkit-scrollbar { display: none; }
+.shp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .shp-chip {
   flex: 0 0 auto; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: transparent;
   color: var(--text-dim); font: inherit; font-size: 12px; cursor: pointer;
-  transition: background .15s, border-color .15s, color .15s, transform .12s;
+  transition: background .15s, border-color .15s, color .15s;
 }
 .shp-chip:hover { color: var(--text); }
-.shp-chip:active { transform: scale(.96); }
+.shp-chip:active { filter: brightness(.9); }
 .shp-chip[aria-selected="true"] { color: var(--text); border-color: rgba(var(--accent-rgb), 0.6); background: rgba(var(--accent-rgb), 0.14); }
 
 /* tile grid */
-.shp-grid { max-height: clamp(200px, 44vh, 440px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) transparent; margin: 0 -2px; padding: 2px; }
 .shp-group { margin-bottom: 12px; }
 .shp-group:last-child { margin-bottom: 0; }
 .shp-group-head { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 8px; }
@@ -37,12 +35,12 @@
   height: 74px; min-width: 0; padding: 0 4px; border-radius: 10px; font: inherit; cursor: pointer;
   background: var(--surface); color: var(--text-dim);
   border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.12);
-  transition: border-color .15s, box-shadow .15s, background .15s, transform .12s, color .15s;
+  transition: border-color .15s, box-shadow .15s, background .15s, color .15s;
 }
 .shp-tile svg { width: 28px; height: 28px; flex: 0 0 auto; color: var(--text); }
 .shp-tile span { max-width: 100%; font-size: 11px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shp-tile:hover { border-color: rgba(255, 255, 255, 0.28); box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.4); }
-.shp-tile:active { transform: scale(.96); }
+.shp-tile:active { filter: brightness(.9); }
 .shp-tile[aria-pressed="true"] { border-color: rgba(var(--accent-rgb), 0.9); background: rgba(var(--accent-rgb), 0.12); color: var(--text); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.45); }
 .shp-tile[aria-pressed="true"] svg { color: var(--accent); }
 .shp-empty { margin: 20px 0; font-size: 12px; line-height: 1.5; color: var(--text-dim); }
@@ -61,14 +59,10 @@
 .shp-mods[data-open="true"] .shp-mods-inner { padding: 2px 14px 14px; visibility: visible; opacity: 1; transition: opacity .2s .05s, visibility 0s; }
 .shp-mods-inner [hidden] { display: none !important; }
 
-/* settings card (preview, style, insert mode, size). In flow, same card look as Modifiers.
-   It gets its own compositor layer so the animated background behind it never repaints the layer under the pointer
-   (same fix as css/cursor-fix.css for the code editor). */
-.shp-dock {
-  display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px;
-  background: var(--surface); box-shadow: var(--shadow-card);
-  transform: translateZ(0); will-change: transform; backface-visibility: hidden; contain: layout paint;
-}
+/* settings card (preview, style, insert mode, size): a plain in-flow card, same look as Modifiers.
+   NO sticky, NO will-change / translateZ / contain, NO nested scroll box anywhere in this tab: each of those makes CEF composite the
+   layer under the pointer separately, and it then resets the pointer from hand to arrow on every repaint (same family as fixCursor-A..E). */
+.shp-dock { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); }
 .shp-pv { display: flex; align-items: center; gap: 12px; }
 .shp-pv-box { width: 52px; height: 52px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
 .shp-pv-box svg { width: 34px; height: 34px; }
@@ -108,10 +102,10 @@
 .shp-add {
   flex: 0 0 auto; padding: 8px 16px; border: 0; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   color: var(--on-accent); background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.25);
-  transition: transform .12s, filter .15s, box-shadow .15s, opacity .15s;
+  transition: filter .15s, box-shadow .15s, opacity .15s;
 }
 .shp-add:hover { filter: brightness(1.08); box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.4); }
-.shp-add:active { transform: scale(.98); }
+.shp-add:active { filter: brightness(.9); }
 .shp-add.is-pending { opacity: .65; }
 .shp-add.is-success { box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.75); }
 

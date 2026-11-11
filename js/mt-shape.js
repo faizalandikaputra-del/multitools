@@ -170,7 +170,6 @@
     els.pvName.textContent = c.item.name;
     els.pvGroup.textContent = c.group.label + (c.item.parts.length > 1 ? " - " + c.item.parts.length + " parts" : "");
     els.add.setAttribute("aria-label", "Add " + c.item.name);
-    els.add.title = "Add " + c.item.name;
     var hints = {
       Layer: "Creates a new shape layer at the center of the comp.",
       Mask: "Adds the shape as a mask on every selected layer.",
@@ -250,8 +249,7 @@
     });
     root.appendChild(chips);
 
-    // order: search, chips, settings card, scrolling grid, modifiers. The card is NOT sticky: a sticky layer over the animated
-    // background made the pointer flicker, and it hid tiles behind a solid band.
+    // order: search, chips, settings card, grid, modifiers. Plain in-flow blocks only (no sticky / own layer / inner scroller): those made the pointer flicker.
     var dockSlot = mk("div", "shp-dock-slot");
     root.appendChild(dockSlot);
     els.grid = mk("div", "shp-grid");

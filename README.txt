@@ -2554,3 +2554,13 @@ fixShape-cursor (Shape tab: pointer flickered between hand and arrow over the St
            The grid scrolls inside its own box (max-height clamp(200px, 44vh, 440px)) so the card stays in view. cursor: pointer is now set on the segmented
            control, sliders and check rows too, so the gaps between buttons no longer show an arrow.
   Files:   js/mt-shape.js, css/mt-shape.css, html/index.html (cache-buster ?v=2 for both), README.txt.
+
+fixShape-cursor-2 (Shape tab: pointer still blinked between hand and arrow over the tiles and the Style panel; found from the owner's screen recording)
+  - Clue: in the recording the pointer rests on a tile (the tile keeps its hover glow) and the cursor flips hand -> arrow -> hand every ~0.2-0.3 s.
+  - Cause: fixShape-cursor still left forced compositor layers in the tab. The settings card had will-change / translateZ / contain, the grid was a nested scroll
+    box (max-height + overflow), and the chip row was a horizontal scroller. Every one of them makes CEF composite the layer under the pointer on its own,
+    and each repaint resets the cursor (same family as fixCursor-A..E). The press rules scale(.96) also shrank the box under a resting pointer.
+  - Fix: css/mt-shape.css now has plain in-flow blocks only: no sticky, no will-change, no translateZ, no contain, no inner scroller (the grid scrolls with the
+    panel, chips wrap to a second line instead of scrolling). Press feedback uses filter: brightness(.9) instead of scale, hover only changes border / glow.
+    js/mt-shape.js: the Add button has no title attribute any more (the tooltip layer is not needed for a text button).
+  - Files: css/mt-shape.css (?v=3), js/mt-shape.js (?v=3), html/index.html, README.txt.

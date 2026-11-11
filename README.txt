@@ -2584,3 +2584,10 @@ toast-island (toast digabung ke Dynamic Island)
   - Belum diuji di After Effects / Chromium (tidak ada browser di lingkungan pembuatan); syntax JS diperiksa dengan node --check.
   - Files: js/mt-island.js (v22), css/mt-island.css (blok v22 di akhir), js/main.js (?v=82), js/mt-updater.js (?v=18), js/mt-idle-focus.js (?v=19), js/mt-smooth.js (?v=4),
     html/index.html, html/settings.html, README.txt.
+
+toast-island-b (ikon toast: cincin putih + tanda "!" hilang)
+  - Gejala: ikon toast punya cincin putih di sekeliling lingkaran, dan "!" / centang tidak terlihat jelas.
+  - Penyebab: css/style.css baris 123 punya aturan global  svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.75 }.
+    Lingkaran ikon tidak punya stroke sendiri, jadi mewarisi stroke putih dari aturan itu. Gambar centang memakai pathLength + dasharray 1, yang membuat garisnya gampang tidak tampil.
+  - Perbaikan: circle diberi stroke="none"; .mi-tic svg mengunci width / height / fill / stroke; animasi gambar centang pakai panjang dash tetap (10 untuk centang, 4,3 untuk "!") lewat --mi-len, tanpa pathLength.
+  - Files: js/mt-island.js (?v=22), css/mt-island.css (?v=20), html/index.html, README.txt.

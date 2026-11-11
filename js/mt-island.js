@@ -1,4 +1,6 @@
 /* Multi Tool - mt-island.js (v22: TOAST IN THE ISLAND)
+   v22b: bug - a white ring around the toast icon (and a missing "!"): css/style.css has a global  svg { stroke: currentColor; width: 1.15rem }  rule, so the icon circle inherited a white stroke.
+         Fix: circles say stroke="none", .mi-tic svg pins width / height / stroke; the check / "!" draw uses fixed dash lengths (no pathLength).
    v22: the toast (main.js toast()) now lives in the island. A message grows the capsule (width, height, radius morph on the same curve as the open panel) to fit one icon + the text
    (check = done, "!" = error, the check draws itself), the capsule gives one small kick (an error shakes instead), then it shrinks back to the clock / timer / stopwatch.
    A new message while one shows swaps the text in place and restarts the timer. While the island is OPEN the same message shows as a strip at the bottom of the panel (the island grows by that strip).
@@ -697,8 +699,8 @@
   function fxClose() { if (open && view === "fx") { setOpen(false); } }
   function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }
   // ---------- toast (v22) ----------
-  var TIC_OK = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#3ddc84"/><path class="mi-tmk" pathLength="1" d="M4.6 8.4l2.3 2.3 4.5-5" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  var TIC_ERR = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#ff6b6b"/><path class="mi-tmk" pathLength="1" d="M8 4.4v4.2M8 11.5h.01" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  var TIC_OK = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#3ddc84" stroke="none"/><path class="mi-tmk" d="M4.6 8.4l2.3 2.3 4.5-5" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var TIC_ERR = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#ff6b6b" stroke="none"/><path class="mi-tmk mi-ter" d="M8 4.4v4.2M8 11.5h.01" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round"/></svg>';
   function toastMs(ms) {
     var n = parseInt(ms, 10); if (isFinite(n) && n > 0) { return n; }
     try { if (window.MTPro && window.MTPro.toastMs) { return window.MTPro.toastMs(); } } catch (e) { }

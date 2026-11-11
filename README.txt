@@ -2629,3 +2629,8 @@ palette-solid-targets (Color Palette: target warna Solid Fill dan Solid Stroke)
 palette-solid-order (urutan menu target warna)
   - Solid Fill dipindah ke bawah Text Fill. Urutan menu: Shape Fill, Text Fill, Solid Fill, Shape Stroke, Text Stroke, Solid Stroke.
   - Files: js/main.js (?v=84), html/index.html, README.txt.
+
+palette-solid-fill-effect (Solid Fill juga mengubah efek Fill)
+  - jsx/host.jsx _colorSolidFill: pada layer terpilih mengubah (1) warna source solid layer dan (2) warna semua efek Fill (ADBE Fill, properti ADBE Fill-0002). Salah satu sudah cukup; layer yang punya keduanya ikut dua-duanya.
+    Satu undo group. Pesan: "Solid Fill #HEX on N solids and M Fill effects." Error bila tidak ada solid dan tidak ada efek Fill di layer terpilih.
+  - Files: jsx/host.jsx, README.txt.

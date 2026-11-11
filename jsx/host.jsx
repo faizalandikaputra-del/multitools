@@ -3081,30 +3081,52 @@ function _textSetColor(layer, comp, rgb, stroke) {
   }
 }
 
-// Color Palette > "Solid Fill": sets the color of the selected SOLID layers (the solid's own source color, same as Layer > Solid Settings).
+// Color Palette > "Solid Fill": on the selected layers it sets (1) the color of a SOLID layer's own source (same as Layer > Solid Settings) and
+// (2) the color of every Fill effect (Effect > Generate > Fill) on the layer. Either one is enough; a layer may have both.
 // AE shares one solid source between layers made from it, so every layer using that solid changes too.
 function _colorSolidFill(comp, rgb, up) {
-  var sel = comp.selectedLayers, li, src, done = [], seen = [], k, dup, layers = 0;
+  var sel = comp.selectedLayers, li, ei, fxs, fx, cp, src, k, dup;
+  var sources = [], fills = [], solidLayers = 0, fillLayers = 0, hasFill;
   for (li = 0; li < (sel ? sel.length : 0); li++) {
     src = null;
     try { if (sel[li].source && sel[li].source.mainSource instanceof SolidSource) { src = sel[li].source; } } catch (e0) { }
-    if (!src) { continue; }
-    layers++;
-    dup = false;
-    for (k = 0; k < seen.length; k++) { if (seen[k] === src) { dup = true; break; } }
-    if (!dup) { seen.push(src); }
+    if (src) {
+      solidLayers++;
+      dup = false;
+      for (k = 0; k < sources.length; k++) { if (sources[k] === src) { dup = true; break; } }
+      if (!dup) { sources.push(src); }
+    }
+    fxs = null;
+    try { fxs = sel[li].property("ADBE Effect Parade"); } catch (e1) { }
+    if (!fxs) { continue; }
+    hasFill = false;
+    for (ei = 1; ei <= fxs.numProperties; ei++) {
+      fx = fxs.property(ei);
+      if (fx && fx.matchName === "ADBE Fill") {
+        cp = fx.property("ADBE Fill-0002");
+        if (cp) { fills.push(cp); hasFill = true; }
+      }
+    }
+    if (hasFill) { fillLayers++; }
   }
-  if (!layers) { throw new Error("Select a solid layer first."); }
+  if (!sources.length && !fills.length) { throw new Error("Select a solid layer or a layer with a Fill effect first."); }
+  var nSolid = 0, nFill = 0;
   app.beginUndoGroup("Solid Fill " + up);
   try {
-    for (k = 0; k < seen.length; k++) {
-      try { seen[k].mainSource.color = [rgb[0], rgb[1], rgb[2]]; done.push(seen[k]); } catch (e1) { /* locked / not editable */ }
+    for (k = 0; k < sources.length; k++) {
+      try { sources[k].mainSource.color = [rgb[0], rgb[1], rgb[2]]; nSolid++; } catch (e2) { /* locked / not editable */ }
+    }
+    for (k = 0; k < fills.length; k++) {
+      try { fills[k].setValue([rgb[0], rgb[1], rgb[2], 1]); nFill++; } catch (e3) { /* locked / expression-driven */ }
     }
   } finally {
     app.endUndoGroup();
   }
-  if (!done.length) { throw new Error("The solid could not be changed."); }
-  return _ok("Solid Fill " + up + " on " + done.length + " solid" + (done.length === 1 ? "" : "s") + ".");
+  if (!nSolid && !nFill) { throw new Error("Nothing could be changed. The layer or effect may be locked."); }
+  var parts = [];
+  if (nSolid) { parts.push(nSolid + " solid" + (nSolid === 1 ? "" : "s")); }
+  if (nFill) { parts.push(nFill + " Fill effect" + (nFill === 1 ? "" : "s")); }
+  return _ok("Solid Fill " + up + " on " + parts.join(" and ") + ".");
 }
 
 // Color Palette > "Solid Stroke": sets the color of the Stroke effect (Effect > Generate > Stroke) on the selected layers.

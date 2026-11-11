@@ -184,9 +184,12 @@
     sync();
   }
   function schedule() { if (!pollT) { pollT = setTimeout(tick, fails > 3 ? 4000 : POLL_MS); } }
+  window.addEventListener("mt-motion-state", function () { if (!window.__mtMoving && pollT) { clearTimeout(pollT); pollT = 0; tick(); } });   // pointer left the panel: peek now
   function tick() {
     pollT = 0;
-    if (!chipOn() || !islandOn() || document.hidden || !cs || inflight) { schedule(); return; }
+    /* fixCursor-H: every host call (FX_peek) makes After Effects reset the mouse cursor (hand -> arrow). No call while the pointer is in the panel;
+       the poll resumes (with one immediate peek) when the pointer leaves it. */
+    if (window.__mtMoving || !chipOn() || !islandOn() || document.hidden || !cs || inflight) { schedule(); return; }
     inflight = true;
     call("FX_peek", []).then(function (res) {
       inflight = false;

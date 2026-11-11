@@ -2553,9 +2553,18 @@ fixCursor-F (cursor tangan berubah jadi panah, bertahan beberapa detik, di semua
   - Catatan: komp baru dibuat dari UI AE (pointer di luar panel), jadi fitur resolusi tersimpan tetap jalan.
   - Files: js/main.js, html/index.html (main.js ?v=80), README.txt.
 
-fixCursor-G (alat uji sementara: tombol "Cursor test" kiri-bawah panel)
-  - fixCursor-F (hentikan polling host saat pointer di panel) belum menghentikan cursor berganti. Penyebab belum diketahui pasti, jadi ditambah js/mt-cursor-diag.js.
-  - Tombol "Cursor test" membuka daftar saklar; tiap saklar mematikan SATU tersangka secara langsung (panggilan ke AE, blur/filter, animasi, background+orb, island, pane Curve,
-    UI scale zoom, sidebar melebar, hover lift, will-change). Saklar yang menghentikan cursor berganti = penyebabnya. Tidak ada yang disimpan; reload = semua kembali normal.
-  - Hapus js/mt-cursor-diag.js dan tag <script>-nya di html/index.html setelah penyebab ketemu.
-  - Files: js/mt-cursor-diag.js (baru), html/index.html, README.txt.
+fixCursor-G (alat uji "Cursor test" dihapus)
+  - Alat uji sementara js/mt-cursor-diag.js (tombol "Cursor test" kiri-bawah) sudah dihapus beserta tag <script>-nya di html/index.html.
+  - Owner melaporkan cursor sudah normal; yang tetap berlaku adalah fixCursor-F (ResPin / KeyframeTiming tidak memanggil host berlebihan saat pointer di panel).
+  - Files: html/index.html, README.txt (js/mt-cursor-diag.js dihapus).
+
+fixCursor-H (penyebab cursor berganti DIKONFIRMASI: panggilan ke After Effects)
+  - Hasil uji owner: saklar "Stop all calls to After Effects" di alat uji menghentikan cursor berganti. Jadi penyebabnya adalah panggilan host (evalScript) yang berulang; tiap panggilan
+    membuat AE mereset cursor (hand -> panah, bertahan sampai pointer pindah elemen).
+  - Polling yang tersisa dan ikut diperbaiki: (1) js/mt-fxcopy.js FX_peek tiap 0,7 detik selama Dynamic Island + chip Copy Effects aktif (di SEMUA tab; ini sumber utama);
+    (2) Quick Comp Edit refresh tiap 0,7 detik (js/main.js); (3) KeyframeTiming (sebelumnya fixCursor-F hanya memperlambat ke 3 detik, sekarang berhenti total saat pointer di panel,
+    kecuali saat drag).
+  - Aturan sama untuk semuanya: tidak ada panggilan host selama pointer di dalam panel (window.__mtMoving dari js/mt-away.js); polling lanjut saat pointer keluar panel.
+    FX_peek langsung jalan sekali saat pointer keluar (event mt-motion-state).
+  - Catatan: titik ungu Copy Effects dan field Quick Comp Edit / Keyframe Timing tidak ter-update selama pointer berada di panel; ter-update lagi begitu pointer keluar.
+  - Files: js/mt-fxcopy.js (?v=6), js/main.js (?v=81), html/index.html, README.txt.

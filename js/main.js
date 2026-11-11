@@ -1192,6 +1192,7 @@
       var pollHandle = setInterval(function () {
         if (!document.body.contains(wrap)) { clearInterval(pollHandle); return; }
         if (isBusy()) { return; }
+        if (window.__mtMoving) { return; }   // fixCursor-H: no host call while the pointer is in the panel (it resets the cursor)
         if (document.activeElement === startEl || document.activeElement === durEl) { return; } // don't clobber typing
         refresh();
       }, 700);
@@ -4119,9 +4120,8 @@
         // Stops once the box has been gone for a few ticks (tab left). A box in the dynamic island stays connected and keeps updating.
         if (!el.apply.isConnected) { away++; if (away > 8) { stop(); } return; }
         away = 0;
-        // fixCursor-F: while the pointer is in the panel, ask AE at most every 3 s (each host call resets the cursor); a drag in the box keeps full speed.
-        if (window.__mtMoving && !document.documentElement.classList.contains("mt-scrubbing") && Date.now() - (self._lastHost || 0) < 3000) { return; }
-        self._lastHost = Date.now();
+        // fixCursor-H: no host call while the pointer is in the panel (each one resets the cursor); a drag in the box keeps full speed.
+        if (window.__mtMoving && !document.documentElement.classList.contains("mt-scrubbing")) { return; }
         tick(false);
       }, self.POLL_MS);
       self.tick = tick;

@@ -2603,11 +2603,16 @@ settings-idle-calls (kursor berkedip di jendela Pengaturan Multi Tool dan NeuCur
   - Files: js/mt-settings-open.js (baru, ?v=1), js/main.js, js/mt-fxcopy.js, js/mt-hotkeys.js, neucurve/nc-live.js, neucurve/assets/index.js,
     html/index.html, html/settings.html, neucurve/index.html, neucurve/settings.html.
 
-settings-toast-preview (pengaturan Toast tidak terasa bekerja)
-  - Gejala: mengubah Position / Time on screen di Pengaturan > Toast seperti tidak berefek.
-  - Penyebab: (1) Position hanya dipakai saat dynamic island mati, padahal island menyala secara default, jadi kontrolnya tidak berpengaruh dan hanya dijelaskan lewat teks kecil.
-    (2) Toast uji muncul di panel, yang bisa tidak terlihat saat jendela Pengaturan terbuka. (3) Mengganti Position memunculkan toast "Toasts will appear here." walau posisinya tidak dipakai.
-  - Perbaikan: html/settings.html grup Toast kini punya pratinjau panel mini (css/mt-toast-preview.css, js/mt-toast-preview.js) yang memutar toast di posisi dan durasi terpilih, dipicu tiap perubahan dan tombol "Show a test toast".
-    Saat island menyala, baris Position diredupkan dan pratinjau menampilkan kapsul island. js/mt-pro.js tidak lagi menampilkan toast palsu saat Position diganti dengan island menyala.
-  - Files: css/mt-toast-preview.css (baru, ?v=1), js/mt-toast-preview.js (baru, ?v=1), html/settings.html, js/mt-pro.js, README.txt.
-  - Belum diuji di After Effects / Chromium; syntax JS diperiksa dengan node --check.
+settings-bus-lite (kursor masih berkedip di jendela Pengaturan setelah polling AE dihentikan)
+  - Gejala: kursor tetap berkedip (tangan <-> panah) di jendela Pengaturan Multi Tool dan NeuCurve.
+  - Penyebab: js/mt-settings-bus.js mengirim SETIAP pesan juga sebagai CEP event (cep.dispatchEvent, scope APPLICATION), dan event itu dirutekan lewat After Effects,
+    yang mereset kursor. Pesan keep-alive jalan terus: hello dari jendela tiap 2 detik + alive dari panel balasannya, dan hkreq tiap 10 detik (Shortcuts).
+  - Perbaikan: send(type, obj, opts) menerima opts.lite = hanya lewat localStorage mailbox (+ BroadcastChannel), tanpa CEP event. hello / alive / hkreq / hkstate (balasan 10 detik) memakai lite
+    selama jendela sudah terhubung (state terakhir kurang dari 5 detik). Hello pertama, hello saat koneksi putus, dan semua pesan perubahan nyata (act, state, bgview, hkset) tetap lewat dua kanal.
+  - Files: js/mt-settings-bus.js (?v=5), js/mt-settings-window.js (?v=6), js/mt-settings-remote.js (?v=7), js/mt-hotkeys-settings.js (?v=2), js/mt-hotkeys.js (?v=6), html/index.html, html/settings.html.
+
+settings-toast-island (grup Toast di Pengaturan)
+  - Toast sudah dipindah ke dynamic island, jadi baris Position (tidak berpengaruh saat island menyala) dihapus dari html/settings.html. Sisa: Time on screen dan "Show a test toast".
+    Nilai posisi lama di localStorage tetap dibaca js/mt-pro.js untuk fallback saat island dimatikan.
+  - js/mt-pro.js: mengganti Position tidak lagi menampilkan toast palsu saat island menyala.
+  - Files: html/settings.html, js/mt-pro.js, README.txt.

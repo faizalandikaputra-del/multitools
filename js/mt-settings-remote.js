@@ -145,7 +145,7 @@
   bus.on("hello", function (m) {
     var fresh = !timer || !!(m && m.first);
     alive = Date.now();
-    if (fresh) { lastJson = ""; lastBgJson = ""; push(true); } else { push(false); bus.send("alive", {}); }   // nothing changed = no state message: tell the window the panel is still here
+    if (fresh) { lastJson = ""; lastBgJson = ""; push(true); } else { push(false); bus.send("alive", {}, { lite: !!(m && m.lite) }); }   // nothing changed = no state message: tell the window the panel is still here
     if (!timer) { timer = setInterval(tick, 500); }
   });
 

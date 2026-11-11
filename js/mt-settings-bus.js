@@ -72,9 +72,11 @@
 
   w.MTSettingsBus = {
     inCep: !!cep,
-    send: function (type, obj) {
+    send: function (type, obj, opts) {
       var env = { o: uid, i: ++seq, t: Date.now(), d: obj || {} }, json = JSON.stringify(env);
-      if (cep && cep.dispatchEvent) {
+      /* opts.lite: keep-alive traffic goes over the localStorage mailbox only. A CEP event is routed through After Effects, and every one
+         of them made AE reset the mouse cursor (blinking over the Settings window). Real changes (act / state / bgview) still use both channels. */
+      if (cep && cep.dispatchEvent && !(opts && opts.lite)) {
         try { cep.dispatchEvent({ type: PREFIX + type, scope: "APPLICATION", appId: host, extensionId: extId, data: json }); } catch (e) { }
       }
       if (bc) { try { bc.postMessage({ t: type, d: json }); } catch (e1) { } }

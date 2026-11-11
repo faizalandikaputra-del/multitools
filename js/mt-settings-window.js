@@ -174,7 +174,8 @@
   }
   bus.on("state", apply);
   bus.on("alive", function () { setStatus(true); });          // keep-alive: the panel only sends a state when something changed, so a quiet panel used to flip the header text to "waiting for the panel" every few seconds
-  function hello(first) { bus.send("hello", { first: first === true }); if (Date.now() - lastState > 7000) { setStatus(false); } }
+  function hello(first) { var lite = first !== true && Date.now() - lastState < 5000;   /* connected: keep-alive over localStorage only, no event through After Effects */
+    bus.send("hello", { first: first === true, lite: lite }, { lite: lite }); if (Date.now() - lastState > 7000) { setStatus(false); } }
   hello(true); helloTimer = setInterval(hello, 2000);
   setTimeout(function () { if (!lastState) { hello(true); } }, 400);   // retry only when the panel has not answered yet (a 2nd forced hello made the panel rebuild + re-send the whole state and the window re-apply it)
   window.addEventListener("focus", function () { hello(); });

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.195",
-    "changelog":  "- Update 1.8.195",
+    "latest_version":  "1.8.196",
+    "changelog":  "- Update 1.8.196",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -211,10 +211,6 @@
                       "sha256":  "0d1b57066dc98c6e3c463a4aa7907c523d7fa61dab45594da4693295a5520d62"
                   },
                   {
-                      "path":  "css/mt-toast-preview.css",
-                      "sha256":  "b3e97fc6b42f36355babdefa7ff92ed6c8e33a9475a5bdc9a641d056846d39e8"
-                  },
-                  {
                       "path":  "css/mt-tools-layout.css",
                       "sha256":  "aa902efdbecd29053d2950410e6c298ee857d273f219615d1f4c13d2b85eaaf8"
                   },
@@ -276,11 +272,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "b383dd0be221ae1da021335adf70e0b72e2f6308a19ecb2597e00f7065517f6a"
+                      "sha256":  "742b1dfaf7092dea37cc2a232fcabe76fb779edcb19d24877ff54ae71801dc2f"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "c0a23d0c5d57e70bec3042348fc6dfeeac60fc78c4387890219fe9c39c7c4fc7"
+                      "sha256":  "c690951fab0c48cdcb4c51c1adc26b325f2e859d19e3ea87290910e077456768"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -332,11 +328,11 @@
                   },
                   {
                       "path":  "js/mt-hotkeys.js",
-                      "sha256":  "ad0d338cc312f5b8ca6221b3a475e28eb41f872da944ce8269a3ca3b808a8f61"
+                      "sha256":  "565e7c57019ccf6f9c32525f997fa472f66bfced83f9cf7570c9d3a233fcdf86"
                   },
                   {
                       "path":  "js/mt-hotkeys-settings.js",
-                      "sha256":  "4fbf5df4755af13f66943ea59e61f62e18a09c9f4649f8219730069cac36ed9a"
+                      "sha256":  "85d3172fe42b815cc4dd609dccf181a6365df2275ee60b2c2c0b1302cf908408"
                   },
                   {
                       "path":  "js/mt-idle-adjust.js",
@@ -396,7 +392,7 @@
                   },
                   {
                       "path":  "js/mt-settings-bus.js",
-                      "sha256":  "1100c3beb75f1bc3eeca1345166066b0be536b0f6d415340e9d4a5aa16a546bc"
+                      "sha256":  "61d7031d27bfb997163fbefbd11243a87e8a0998cc8c8c75d9eb7c84cfe429a7"
                   },
                   {
                       "path":  "js/mt-settings-open.js",
@@ -408,11 +404,11 @@
                   },
                   {
                       "path":  "js/mt-settings-remote.js",
-                      "sha256":  "3e5289cd1f568ef604b9d9cac17b9b57cf437b9e69983f186a187611a0730c33"
+                      "sha256":  "8379fd0a5f2392fb133d96387ec799d777986363d45889825bfe91393ba0a118"
                   },
                   {
                       "path":  "js/mt-settings-window.js",
-                      "sha256":  "976cec61c50d1d95b897accf7cbd21ae7d705ba9da82c9572902845865576783"
+                      "sha256":  "fd11916a163d54e4658c5adde79ade6c0abcaa92c93c50a8c77b102dd7ff9740"
                   },
                   {
                       "path":  "js/mt-shape.js",
@@ -429,10 +425,6 @@
                   {
                       "path":  "js/mt-spinbox.js",
                       "sha256":  "20b325a3f3a1b763558148e827cb4d7300527a79d73fddd9fd614b0aa56e550d"
-                  },
-                  {
-                      "path":  "js/mt-toast-preview.js",
-                      "sha256":  "4aba2ba9dcb74ca26b3f48cd7c54c08ca8faa606ae222c3f5c8bd88ae156bf50"
                   },
                   {
                       "path":  "js/mt-tools-layout.js",
@@ -788,7 +780,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "78f9ac4dde3f9523b3d15bf6fc71fa090857a87bc73fc7706662fe8f04d01995"
+                      "sha256":  "a2fd22d5d07e45800b2e32800b4e8b7d94f80443431fead26be0513af598c105"
                   }
               ]
 }

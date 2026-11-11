@@ -156,7 +156,7 @@
     var s = q("status"); if (s && s.getAttribute("data-wait")) { s.removeAttribute("data-wait"); s.textContent = ""; }
     render();
   });
-  function ask() { bus.send("hkreq", {}); }
+  function ask(lite) { bus.send("hkreq", { lite: !!lite }, { lite: !!lite }); }
   ask();
   var tries = 0, tick = 0;
   setInterval(function () {
@@ -164,6 +164,6 @@
       tries++;
       ask();
       if (tries === 3) { var s = q("status"); if (s) { s.setAttribute("data-wait", "1"); s.textContent = "Waiting for the Multi Tool panel. Open the panel in After Effects."; } }
-    } else if (!cap && (++tick % 4) === 0) { ask(); }     // every 10 s: picks up shortcuts added in the panel meanwhile
+    } else if (!cap && (++tick % 4) === 0) { ask(true); }     // every 10 s: picks up shortcuts added in the panel meanwhile
   }, 2500);
 })();

@@ -342,13 +342,13 @@
   }
 
   // ---------- Settings window sync ----------
-  function sendState() {
+  function sendState(lite) {
     if (!bus) { return; }
     var cmds = buildCommands().map(function (c) { return { id: c.id, g: c.g, t: c.t }; });
-    bus.send("hkstate", { on: state.on, palette: state.palette, defPalette: DEFAULT_PALETTE, map: state.map, cmds: cmds, reserved: neucurveCombos(), mac: IS_MAC });
+    bus.send("hkstate", { on: state.on, palette: state.palette, defPalette: DEFAULT_PALETTE, map: state.map, cmds: cmds, reserved: neucurveCombos(), mac: IS_MAC }, { lite: !!lite });
   }
   if (bus) {
-    bus.on("hkreq", function () { sendState(); });
+    bus.on("hkreq", function (m) { sendState(!!(m && m.lite)); });
     bus.on("hkset", function (d) {
       if (!d || typeof d !== "object") { return; }
       state.on = d.on !== false;

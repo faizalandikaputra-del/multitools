@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.180",
-    "changelog":  "- Update 1.8.180",
+    "latest_version":  "1.8.181",
+    "changelog":  "- Update 1.8.181",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -196,7 +196,7 @@
                   },
                   {
                       "path":  "css/mt-shape.css",
-                      "sha256":  "56af4484c613838a5571544dc3bf93d676084e0a4d9a7b6a9f14453d31694fef"
+                      "sha256":  "fef8432834fff9165f7a833fcd91d0949e684b51b49c7b7ae520e0265c833657"
                   },
                   {
                       "path":  "css/mt-smooth.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "7dfb86c4246e29d38d707dc93960551b9d5471c237d95ee960d751f5351dd58b"
+                      "sha256":  "d526970d81b365fa33ff688eaf67429b0e3f2064cdb077eb9dc89d706fe78a9d"
                   },
                   {
                       "path":  "html/settings.html",
@@ -408,7 +408,7 @@
                   },
                   {
                       "path":  "js/mt-shape.js",
-                      "sha256":  "a3bb5e5680e97291da00c7d62f15bbb7ca596d35b4f865222282b07255f9de22"
+                      "sha256":  "851010409b04ff7c6554267afccd216e749ea4dbf53b0c8b3f95b57f7dae7159"
                   },
                   {
                       "path":  "js/mt-shape-data.js",
@@ -776,7 +776,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "8f95f48357898690b1ef59103e8034fe6d6c1bf312e9b3406d498cf4f13b2668"
+                      "sha256":  "fe0e2f9e7e751ec863d09fc0a752ca823d4bc802618bedbc04b5e6e6a374fa8c"
                   }
               ]
 }

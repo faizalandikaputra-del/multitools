@@ -169,7 +169,8 @@
     els.pvBox.innerHTML = previewSvg(c.item);
     els.pvName.textContent = c.item.name;
     els.pvGroup.textContent = c.group.label + (c.item.parts.length > 1 ? " - " + c.item.parts.length + " parts" : "");
-    els.add.querySelector("span").textContent = "Add " + c.item.name;
+    els.add.setAttribute("aria-label", "Add " + c.item.name);
+    els.add.title = "Add " + c.item.name;
     var hints = {
       Layer: "Creates a new shape layer at the center of the comp.",
       Mask: "Adds the shape as a mask on every selected layer.",
@@ -249,6 +250,10 @@
     });
     root.appendChild(chips);
 
+    // order: search, chips, settings card, scrolling grid, modifiers. The card is NOT sticky: a sticky layer over the animated
+    // background made the pointer flicker, and it hid tiles behind a solid band.
+    var dockSlot = mk("div", "shp-dock-slot");
+    root.appendChild(dockSlot);
     els.grid = mk("div", "shp-grid");
     root.appendChild(els.grid);
 
@@ -280,7 +285,7 @@
     mods.appendChild(body);
     root.appendChild(mods);
 
-    // dock (sticks to the bottom of the panel)
+    // settings card: preview + Add, style, insert mode, size
     var dock = mk("section", "shp-dock");
     dock.setAttribute("aria-label", "Insert settings");
     var pv = mk("div", "shp-pv");
@@ -293,7 +298,10 @@
     colorIn.type = "color"; colorIn.value = st.color; colorIn.setAttribute("aria-label", "Shape color");
     colorIn.addEventListener("input", function () { st.color = colorIn.value; save(); updateDock(false); });
     colorWrap.appendChild(colorIn);
-    pv.appendChild(els.pvBox); pv.appendChild(info); pv.appendChild(colorWrap);
+    els.add = mk("button", "shp-add", "Add");
+    els.add.type = "button";
+    els.add.addEventListener("click", insert);
+    pv.appendChild(els.pvBox); pv.appendChild(info); pv.appendChild(colorWrap); pv.appendChild(els.add);
     dock.appendChild(pv);
 
     var two = mk("div", "shp-row2");
@@ -308,11 +316,7 @@
     sl.appendChild(slider("Stroke", "sw", 0, 60, 1, " px", function () { updateDock(false); }));
     dock.appendChild(sl);
 
-    els.add = mk("button", "shp-add", "<span></span>");
-    els.add.type = "button";
-    els.add.addEventListener("click", insert);
-    dock.appendChild(els.add);
-    root.appendChild(dock);
+    dockSlot.appendChild(dock);
 
     buildGrid();
     updateDock(false);

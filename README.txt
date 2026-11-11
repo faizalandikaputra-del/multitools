@@ -2544,3 +2544,13 @@ fixShape-tab (new sidebar tab "Shape": 103 shapes and devices built as real Afte
   Files: html/index.html, js/main.js (TABS "shape" + custom "shapeTab"), js/mt-shape-data.js (new), js/mt-shape.js (new), css/mt-shape.css (new),
          jsx/host.jsx (SHAPE_insert + _shp* helpers), README.txt.
   Test: Chromium headless (no After Effects): tab opens without console errors; SHAPE_insert run against a mocked AE API for all modes.
+
+fixShape-cursor (Shape tab: pointer flickered between hand and arrow over the Style panel, and the bottom of the tab looked broken)
+  Problem: over the Style / Insert as panel the pointer kept blinking between hand and arrow. The panel was a sticky layer with a solid band over the
+           animated background; every background frame repainted the layer under the pointer (same cause as fixCursor-B and css/cursor-fix.css), and the solid
+           band looked like a dark box on top of a background image.
+  Fix:     the settings card is no longer sticky and no longer has a band. It sits between the category chips and the grid, with the same card look as Modifiers,
+           and has its own compositor layer (transform: translateZ(0), will-change: transform, contain: layout paint). The Add button moved into the preview row.
+           The grid scrolls inside its own box (max-height clamp(200px, 44vh, 440px)) so the card stays in view. cursor: pointer is now set on the segmented
+           control, sliders and check rows too, so the gaps between buttons no longer show an arrow.
+  Files:   js/mt-shape.js, css/mt-shape.css, html/index.html (cache-buster ?v=2 for both), README.txt.

@@ -25,7 +25,9 @@
 .shp-chip[aria-selected="true"] { color: var(--text); border-color: rgba(var(--accent-rgb), 0.6); background: rgba(var(--accent-rgb), 0.14); }
 
 /* tile grid */
+.shp-grid { max-height: clamp(200px, 44vh, 440px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) transparent; margin: 0 -2px; padding: 2px; }
 .shp-group { margin-bottom: 12px; }
+.shp-group:last-child { margin-bottom: 0; }
 .shp-group-head { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 8px; }
 .shp-group-head h3 { margin: 0; font-size: 12px; font-weight: 600; color: var(--text); }
 .shp-group-head span { font-size: 11px; color: var(--text-dim); }
@@ -59,11 +61,13 @@
 .shp-mods[data-open="true"] .shp-mods-inner { padding: 2px 14px 14px; visibility: visible; opacity: 1; transition: opacity .2s .05s, visibility 0s; }
 .shp-mods-inner [hidden] { display: none !important; }
 
-/* dock: preview + insert settings, stays at the bottom while the grid scrolls */
+/* settings card (preview, style, insert mode, size). In flow, same card look as Modifiers.
+   It gets its own compositor layer so the animated background behind it never repaints the layer under the pointer
+   (same fix as css/cursor-fix.css for the code editor). */
 .shp-dock {
-  position: sticky; bottom: 0; z-index: 4; display: flex; flex-direction: column; gap: 10px;
-  margin-top: 2px; padding: 12px 0 4px; background: var(--bg); border-top: 1px solid var(--border-soft);
-  box-shadow: 0 24px 0 var(--bg);   /* solid band under the dock so nothing peeks out below it */
+  display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px;
+  background: var(--surface); box-shadow: var(--shadow-card);
+  transform: translateZ(0); will-change: transform; backface-visibility: hidden; contain: layout paint;
 }
 .shp-pv { display: flex; align-items: center; gap: 12px; }
 .shp-pv-box { width: 52px; height: 52px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
@@ -75,6 +79,7 @@
 .shp-pv-info span { font-size: 11px; color: var(--text-dim); }
 .shp-color { position: relative; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; border: 2px solid var(--border); cursor: pointer; }
 .shp-color input { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); border: 0; padding: 0; cursor: pointer; background: none; }
+.shp-seg, .shp-range, .shp-color, .shp-color input, .shp-check, .shp-mods-head, .shp-tile, .shp-chip, .shp-add { cursor: pointer; }   /* explicit: no arrow in the gaps */
 .shp-color:hover { border-color: rgba(var(--accent-rgb), 0.7); }
 
 .shp-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -101,7 +106,7 @@
 .shp-check input:focus-visible + .shp-check-box { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .shp-add {
-  width: 100%; padding: 10px 0; border: 0; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  flex: 0 0 auto; padding: 8px 16px; border: 0; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   color: var(--on-accent); background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.25);
   transition: transform .12s, filter .15s, box-shadow .15s, opacity .15s;
 }

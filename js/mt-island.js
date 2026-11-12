@@ -10,14 +10,12 @@
    v21: PRESET PINS
    v21: an Animation Presets row can be dragged onto the island (drag type "text/mt-preset"). The Pin view got a "Presets" grid (2 columns, under the tool tiles, above the boxes)
    filled by js/mt-island-presets.js through MTIsland.presetHost() / presetsChanged(n). Click a pinned preset = apply it to the selected layer(s), x = unpin.
-   v20: the ONE switch button is gone. An open island shows a row of tab icons (Timer, Stopwatch, Clock, Pin, + Effects while its dot shows, + Update while an update waits) above the
+   v20: the ONE switch button is gone. An open island shows a row of tab icons (Timer, Stopwatch, Clock, Pin, + Update while an update waits) above the
    content; one click = straight to that tab. Only the active tab has a label, inside ONE white pill that stretches and slides to the new tab (WAAPI, 320 ms). Open: bar icons drop in 6 px
    with a 30 ms stagger (140 - 420 ms), the label opens 300 - 420 ms, the content fades in 260 - 520 ms. Switch: old content leaves toward the old tab, new content comes from the new tab,
-   the island height follows in 460 ms (class .is-sw). The Effects slot is empty while there is no dot; the Update slot is reserved at the right end, so nothing else moves when it grows in.
+   the island height follows in 460 ms (class .is-sw). The Update slot is reserved at the right end, so nothing else moves when it grows in.
    Wheel / Esc as before; ArrowLeft / ArrowRight (not inside an input) step through the tabs. Animations switch off (data-reduce-motion) = no motion at all.
-   v19: Copy Effects lives here now (js/mt-fxcopy.js drives it; the wide chip under the island is gone). A 7 px violet dot sits in the collapsed capsule while effects are
-   selected / saved effects wait for a Paste (the capsule never changes size). A click on the island opens it straight on the new "Effects" tab (the tab is part of the switch cycle only
-   while the dot shows). That tab auto-closes 420 ms after the pointer leaves. API for mt-fxcopy.js: MTIsland.fxHost() (the tab's container), fxDot(on), fxChanged() (re-measure), fxClose().
+   v19: the Effects tab (Copy Effects) and its violet dot were removed completely.
    v18: PIN TILES BACK   v18: tool tiles can be dragged onto the island again (they were lost in v16). The "Pin" view = pinned tool tiles (click = run the tool, x = unpin, Unpin all)
    + boxes. No star on tiles, no favorites bar, no Settings group (those stay removed). Motion: tiles stagger in, a new pin pops, an unpinned tile shrinks out.
    v17: bug - the collapsed   v17: bug - the collapsed capsule showed the clock time ALL the time (class .is-k forced the time wrapper open, css/mt-island.css + collapsedSize()). Now the time of day opens
@@ -55,18 +53,17 @@
   var UP = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var ORDER = ["timer", "sw", "clock", "fav", "fx", "u"], NAMES = { timer: "Timer", sw: "Stopwatch", clock: "Clock", fav: "Pin", fx: "Effects", u: "Update" }, IW = 28, GAP = 2;
+  var ORDER = ["timer", "sw", "clock", "fav", "u"], NAMES = { timer: "Timer", sw: "Stopwatch", clock: "Clock", fav: "Pin", u: "Update" }, IW = 28, GAP = 2;
   var SV = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
   var ICONS = {
     timer: SV + '<path d="M7 3.5h10M7 20.5h10M8 3.5v3.6c0 1.6 1.7 2.8 4 4.9-2.3 2.1-4 3.3-4 4.9v3.6M16 3.5v3.6c0 1.6-1.7 2.8-4 4.9 2.3 2.1 4 3.3 4 4.9v3.6"/></svg>',
     sw: SV + '<circle cx="12" cy="13.5" r="7"/><path d="M10 3h4M12 3v3.5M12 13.5l2.6-3"/></svg>',
     clock: SV + '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
     fav: SV + '<path d="M9 4h6l-1 5 3 3.2v1.3H7v-1.3L10 9 9 4zM12 13.5V20.5"/></svg>',
-    fx: '<span class="mi-fxt">fx</span>',
     u: SV + '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>'
   };
   var bar, track, pill, pillIn, tb = {}, trackW = 0, slotW = IW, pillGeo = null, pillAnim = null, barKey = "", enT = 0, swT = 0, outing = [], lastEl = null;
-  var vX, tabX, fxDotEl, fxOn = false, fxRev = 0, fxT = 0, fBoxWrap, fBoxes, boxN = 0, fPreWrap, fPre, preN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
+  var fBoxWrap, fBoxes, boxN = 0, fPreWrap, fPre, preN = 0, boxRO, vF, tabF, fGrid, fHead, fCount, fClear, fEmpty, fPrev = [], fKey = "\u0000", dropDepth = 0, cTw, sHide, lastHid, lastEff, hover = false, banner, bEl = {}, upd = false, updBusy = false, updWas = false, spin = 0, tabU, vU, cUtx, root, cEl, xEl, cIco, cTime, sw, tabT, tabS, vT, vS, tSet, tRun, hIn, mIn, tGo, tBig, tRing, tRst, tPlay, sBig, sPlay, sRst, tName, pager, tabK, vK, kDial, kBig, kSec, kMer, kDate, k24, k12, kTick = 0, kTurn = 0, kLastS = -1;
   var data = { timer: null, sw: null }, shown = false, open = false, wasDone = false, sel = "clock", view = "clock", lastVis = false;
   var cfg = { h: 1, m: 0 };
   var tl, tlIco, tlTxt, tx, txIco, txTxt, toastOn = false, toastErr = false, toastT = 0, toastRev = 0;      // v22: toast layer (collapsed capsule) + toast strip (open panel)
@@ -113,7 +110,7 @@
       var b = btn("mi-tb mi-tb-" + k, '<span class="mi-tbi"><span class="mi-ti">' + ICONS[k] + '<i class="mi-live"></i></span><span class="mi-tl"><span class="mi-tl-in">' + NAMES[k] + '</span></span></span>', NAMES[k]);
       b.setAttribute("role", "tab"); b.setAttribute("data-k", k); b.querySelector(".mi-tbi").style.setProperty("--i", String(i));
       b.addEventListener("click", function () { pick(k); });
-      tb[k] = { el: b, lab: b.querySelector(".mi-tl-in"), lw: 0, vis: k !== "fx" && k !== "u" }; track.appendChild(b);
+      tb[k] = { el: b, lab: b.querySelector(".mi-tl-in"), lw: 0, vis: k !== "u" }; track.appendChild(b);
     });
     bar.appendChild(track);
     var views = el("div", "mi-views");
@@ -199,8 +196,6 @@
     vF.appendChild(fHead); vF.appendChild(fGrid); vF.appendChild(fEmpty); vF.appendChild(fPreWrap); vF.appendChild(fBoxWrap);
     try { if (window.ResizeObserver) { var rq = 0; boxRO = new ResizeObserver(function () { if (!rq) { rq = requestAnimationFrame(function () { rq = 0; if (open && view === "fav") { applySize(true); } }); } }); boxRO.observe(fBoxes); } } catch (eR) { }
 
-    vX = el("div", "mi-view mi-view-x");                       // Copy Effects (filled by js/mt-fxcopy.js through MTIsland.fxHost())
-
     vU = el("div", "mi-view mi-view-u");
     banner = $("mt-update");
     if (banner) {                                              // js/mt-updater.js keeps working: same element, same ids, same classes - it just lives in the island now
@@ -216,13 +211,12 @@
           .observe(banner, { attributes: true, attributeFilter: ["class"], subtree: true, childList: true, characterData: true });
       } catch (e) { }
     }
-    views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vX); views.appendChild(vU);
+    views.appendChild(vT); views.appendChild(vS); views.appendChild(vK); views.appendChild(vF); views.appendChild(vU);
     xEl.appendChild(bar); xEl.appendChild(views);
     tx = el("div", "mi-tx"); tx.hidden = true; tx.setAttribute("aria-hidden", "true");      // v22: toast strip at the bottom of the open panel
     txIco = el("span", "mi-tic"); txTxt = el("span", "mi-ttx"); tx.appendChild(txIco); tx.appendChild(txTxt); xEl.appendChild(tx);
 
-    fxDotEl = el("i", "mi-fxdot"); fxDotEl.setAttribute("aria-hidden", "true");
-    root.appendChild(cEl); root.appendChild(tl); root.appendChild(xEl); root.appendChild(fxDotEl); body().appendChild(root);
+    root.appendChild(cEl); root.appendChild(tl); root.appendChild(xEl); body().appendChild(root);
 
     root.addEventListener("click", function (e) { if (!open) { setOpen(true); } e.stopPropagation(); });
     root.addEventListener("mouseenter", function () { setHover(true); });
@@ -285,7 +279,7 @@
     }
     return "clock";
   }
-  function cycle() { var c = ["timer", "sw", "clock", "fav"]; if (fxOn || view === "fx") { c.push("fx"); } if (upd) { c.push("u"); } return c; }
+  function cycle() { var c = ["timer", "sw", "clock", "fav"]; if (upd) { c.push("u"); } return c; }
   // The Start / Update Now buttons are painted with the theme accent, their label with --theme-on-accent. Some themes (Material You, custom colours)
   // give an accent and an on-accent that are both light (or both dark), so the label melted into the button. Read the colour the button is REALLY painted with
   // and pick a dark or white label from its luminance.
@@ -316,7 +310,7 @@
   function tickClock() { if (clockShown() && !document.hidden) { paint(false); } }
   function pick(k) {
     if (view === k) { return; }
-    if (k !== "u" && k !== "fx") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
+    if (k !== "u") { sel = k; try { localStorage.setItem(SEL_KEY, k); } catch (e) { } }
     root.setAttribute("data-dir", ORDER.indexOf(k) > ORDER.indexOf(view) ? "next" : "prev");     // the direction of the tabs themselves: old content leaves toward the old tab
     rollReset(k === "timer" ? tBig : (k === "clock" ? kBig : sBig));   // (fav has no digits)
     if (k === "clock") { rollReset(kSec); }
@@ -376,13 +370,13 @@
     bar.classList.add("is-enter"); bar.classList.remove("is-l0"); pill.style.width = g.w + "px";
     enT = setTimeout(function () { bar.classList.remove("is-enter"); }, 480);
   }
-  function viewEl(k) { return k === "timer" ? vT : (k === "sw" ? vS : (k === "clock" ? vK : (k === "fav" ? vF : (k === "fx" ? vX : vU)))); }
+  function viewEl(k) { return k === "timer" ? vT : (k === "sw" ? vS : (k === "clock" ? vK : (k === "fav" ? vF : vU))); }
   function endOuts() { var e; while (outing.length) { e = outing.pop(); e.classList.remove("is-out"); if (e !== viewEl(view)) { e.hidden = true; } } }
   function startOut(e) {                                       // the old content stays 240 ms, leaving toward the old tab (absolute, so the island height already follows the NEW content)
     endOuts(); e.hidden = false; e.classList.remove("is-in", "is-fade"); void e.offsetWidth; e.classList.add("is-out"); outing.push(e);
     setTimeout(function () { var i = outing.indexOf(e); if (i >= 0) { outing.splice(i, 1); e.classList.remove("is-out"); if (e !== viewEl(view)) { e.hidden = true; } } }, 260);
   }
-  function fadeView() { var e = viewEl(view); [vT, vS, vK, vF, vX, vU].forEach(function (v) { v.classList.remove("is-in", "is-fade", "is-out"); }); void e.offsetWidth; e.classList.add("is-fade"); }   // open: content fades in 260 - 520 ms
+  function fadeView() { var e = viewEl(view); [vT, vS, vK, vF, vU].forEach(function (v) { v.classList.remove("is-in", "is-fade", "is-out"); }); void e.offsetWidth; e.classList.add("is-fade"); }   // open: content fades in 260 - 520 ms
 
   // ---------- geometry ----------
   function collapsedSize() {
@@ -403,7 +397,7 @@
   var sizeKey = "";
   function applySize(force) {
     if (!root) { return; }
-    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN + "|" + preN : "") + "|" + (tSet.hidden ? 1 : 0) + (view === "fx" ? "|" + fxRev : "") + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : "") + (toastOn ? "|t" + toastRev : ""))
+    var key = open ? ("x|" + view + "|" + (view === "fav" ? fKey + "|" + boxN + "|" + preN : "") + "|" + (tSet.hidden ? 1 : 0) + "|" + window.innerWidth + (view === "u" && banner ? "|" + banner.className + "|" + (bEl.sub ? bEl.sub.textContent.length : 0) : "") + (toastOn ? "|t" + toastRev : ""))
                    : ("c|" + (cEl.className) + "|" + cTime.textContent.length + "|" + cUtx.textContent.length + (toastOn ? "|t" + toastRev : ""));
     if (!force && key === sizeKey) { return; }                  // no layout read when nothing changed (the 1 s tick)
     sizeKey = key;
@@ -417,17 +411,13 @@
     cEl.classList.toggle("is-hov", h);
     if (!open) { applySize(); }
     if (toastOn) { clearTimeout(toastT); if (!h) { toastT = setTimeout(endToast, 900); } }       // v22: pointer on the island holds the message
-    if (fxT) { clearTimeout(fxT); fxT = 0; }
-    if (!h && open && view === "fx") {                         // the Effects tab closes itself when the pointer leaves (to pick a layer in the timeline)
-      fxT = setTimeout(function () { fxT = 0; if (open && view === "fx" && !hover) { setOpen(false); } }, 420);
-    }
   }
   function setOpen(o) {
     if (o === open) { return; }
     build(); open = o;
     root.classList.toggle("is-open", o); root.setAttribute("aria-expanded", o ? "true" : "false");
     rollReset(tBig); rollReset(sBig); rollReset(cTime); rollReset(kBig); rollReset(kSec);          // the node that comes into view draws plain once (no roll through old digits)
-    if (o) { view = upd ? "u" : (fxOn ? "fx" : ((activeOf("timer") || activeOf("sw")) ? effective() : sel)); if (view !== "u" && view !== "fx") { sel = view; } root.setAttribute("data-dir", "next"); }
+    if (o) { view = upd ? "u" : ((activeOf("timer") || activeOf("sw")) ? effective() : sel); if (view !== "u") { sel = view; } root.setAttribute("data-dir", "next"); }
     barKey = ""; fixOn(); paint(false);
     if (o) { endOuts(); enterBar(); fadeView(); } else { root.classList.remove("is-sw"); }
     if (!o) {
@@ -562,16 +552,15 @@
       }
     } else {
       // expanded: tab bar (v20)
-      var fxVis = fxOn || view === "fx";
-      tb.timer.el.classList.toggle("is-live", !!(t && t.active)); tb.sw.el.classList.toggle("is-live", !!(s && s.active)); tb.fx.el.classList.toggle("is-live", fxOn);
-      tb.fx.vis = fxVis; tb.u.vis = upd; tb.fx.el.classList.toggle("is-vis", fxVis); tb.u.el.classList.toggle("is-vis", upd);
+      tb.timer.el.classList.toggle("is-live", !!(t && t.active)); tb.sw.el.classList.toggle("is-live", !!(s && s.active));
+      tb.u.vis = upd; tb.u.el.classList.toggle("is-vis", upd);
       ORDER.forEach(function (k) { var on = view === k; tb[k].el.classList.toggle("is-on", on); tb[k].el.setAttribute("aria-selected", on ? "true" : "false"); tb[k].el.tabIndex = tb[k].vis ? (on ? 0 : -1) : -1; tb[k].el.setAttribute("aria-hidden", tb[k].vis ? "false" : "true"); });
       var cur = viewEl(view);
       if (viewChanged && lastEl && lastEl !== cur && !reduce()) { startOut(lastEl); }
-      [vT, vS, vK, vF, vX, vU].forEach(function (v) { v.hidden = v !== cur && !v.classList.contains("is-out"); });
+      [vT, vS, vK, vF, vU].forEach(function (v) { v.hidden = v !== cur && !v.classList.contains("is-out"); });
       if (viewChanged) { cur.classList.remove("is-in", "is-fade"); void cur.offsetWidth; cur.classList.add("is-in"); }
       lastEl = cur;
-      var bk = view + "|" + (fxVis ? 1 : 0) + "|" + (upd ? 1 : 0);
+      var bk = view + "|" + (upd ? 1 : 0);
       if (viewChanged || bk !== barKey) { var kchg = bk !== barKey, hadKey = barKey !== ""; barKey = bk; if (kchg) { measure(); } placePill(viewChanged || (kchg && hadKey)); }      // a tab that comes or goes re-spreads the slots: the pill follows (animated)
 
       if (view === "timer" && t) {
@@ -689,14 +678,6 @@
     fPreWrap.hidden = !preN; fKey = "\u0001";
     if (open && view === "fav") { paint(false); } else if (open) { applySize(true); }
   }
-  function fxDot(on) {
-    on = !!on; if (on === fxOn) { return; }
-    fxOn = on; if (!root) { return; }
-    root.classList.toggle("is-fx", on);
-    if (open) { paint(false); }
-  }
-  function fxChanged() { fxRev++; if (open && view === "fx") { applySize(true); } }
-  function fxClose() { if (open && view === "fx") { setOpen(false); } }
   function focusBoxes() { build(); if (!open) { setOpen(true); } if (view !== "fav") { pick("fav"); } }
   // ---------- toast (v22) ----------
   var TIC_OK = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#3ddc84" stroke="none"/><path class="mi-tmk" d="M4.6 8.4l2.3 2.3 4.5-5" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -738,6 +719,6 @@
     return true;
   }
 
-  window.MTIsland = { toast: showToast, fxHost: function () { build(); return vX; }, fxDot: fxDot, fxChanged: fxChanged, fxClose: fxClose, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, presetHost: function () { build(); return fPre; }, presetsChanged: presetsChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
+  window.MTIsland = { toast: showToast, boxHost: function () { build(); return fBoxes; }, boxesChanged: boxesChanged, presetHost: function () { build(); return fPre; }, presetsChanged: presetsChanged, focusBoxes: focusBoxes, isEnabled: enabled, update: update, aim: aim, refresh: applyEnabled, onToggle: null, onReset: null, onSetTime: null, onToggleHide: null };
   if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

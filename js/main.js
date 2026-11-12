@@ -1015,13 +1015,11 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 12h8M8 12l2-2M8 12l2 2M16 12l-2-2M16 12l-2 2"/></svg><span>Fit to Composition</span></h2>' +
-          '<p class="field-note">Adjusts Scale on the selected layer(s) without distorting their aspect ratio.</p>' +
           '<div class="fit-grid">' + fitBtns + '</div>' +
         '</div>' +
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>Match Comp to Layer</span></h2>' +
-          '<p class="field-note">Select a footage, image or pre-comp layer. FPS and Resolution are matched to its source. Duration matches the layer\'s trimmed in/out span (not the full source length): the layer is moved to the start of the comp and the work area is set to that span.</p>' +
           '<div class="chips chips-3">' +
             '<label class="chip"><input type="checkbox" id="qce-match-fps" checked><span>FPS</span></label>' +
             '<label class="chip"><input type="checkbox" id="qce-match-duration" checked><span>Duration</span></label>' +
@@ -2318,9 +2316,8 @@
               '<div class="cp-drop-text"><b id="palette-image-name">No image selected</b><small id="palette-image-count">JPG or PNG</small></div>' +
               '<button class="btn" id="palette-image-choose">Choose image</button>' +
             "</div>" +
-            '<div class="cp-pals" id="palette-extracted-grid" hidden></div>' +
-            '<p class="field-note" id="palette-extract-hint" hidden>Click + on a color to save it to Saved.</p>') +
-          pane("lab", '<div class="cp-pals">' + labelHtml + '</div><p class="field-note">Click a color to set it as the Layer Label of the selected layer(s) in After Effects.</p>') +
+            '<div class="cp-pals" id="palette-extracted-grid" hidden></div>') +
+          pane("lab", '<div class="cp-pals">' + labelHtml + '</div>') +
         "</div>";
 
       var customGrid = wrap.querySelector("#palette-custom-grid");
@@ -2535,7 +2532,6 @@
       var countEl = wrap.querySelector("#palette-image-count");
       var thumbEl = wrap.querySelector("#palette-image-thumb");
       var extractedGrid = wrap.querySelector("#palette-extracted-grid");
-      var extractHint = wrap.querySelector("#palette-extract-hint");
 
       chooseBtn.addEventListener("click", function () { imgFileInput.click(); });
 
@@ -2568,7 +2564,6 @@
             if (!colors.length) { countEl.textContent = "No usable colors found."; toast("No usable colors found in that image.", true); return; }
             countEl.textContent = colors.length + " colors found";
             extractedGrid.hidden = false;
-            extractHint.hidden = false;
             extractedGrid.innerHTML = stripsHtml(colors, "add");
           };
           img.src = reader.result;
@@ -2797,7 +2792,7 @@
       function renderList() {
         var items = exprCatStore.activeCat(catData).items;
         if (!items.length) {
-          listEl.innerHTML = '<p class="field-note">No saved snippets in this category yet - write one above and hit Save.</p>';
+          listEl.innerHTML = '<p class="field-note">No saved snippets yet.</p>';
           return;
         }
         listEl.innerHTML = orderedItems(items).map(function (it, idx) {
@@ -3079,7 +3074,6 @@
       wrap.innerHTML =
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 4.5-4.5 3.5 3.5 2.5-2.5L20 17"/></svg><span>Save Frame as Image</span></h2>' +
-          '<p class="field-note">Saves the frame at the current time indicator as a still image, without asking. The folder icon sets where files go; you are asked once, then it is remembered.</p>' +
           '<div class="split-row">' + splitButton("png", "PNG") + splitButton("jpg", "JPG") + '</div>' +
           '<p class="field-note save-dir" id="save-dir"></p>' +
         '</div>' +
@@ -3088,7 +3082,6 @@
         // Settings -> js/mt-gif.js (PNG sequence rendered by host.jsx TOOLS_gifRender, encoded to .gif in the panel).
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4-2.5z"/></svg><span>Export GIF</span></h2>' +
-          '<p class="field-note">Renders the active composition as an animated GIF. After Effects is busy while it renders, then the panel encodes the file. The save folder is shared with Save Frame.</p>' +
           '<span class="gif-label">Range</span>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="gif-range" value="work" checked><span>Work Area</span></label>' +
@@ -3117,7 +3110,6 @@
           '<label class="switch-row" for="gif-loop"><span>Loop forever</span><input type="checkbox" id="gif-loop" checked><span class="switch-track"></span></label>' +
           '<label class="switch-row" for="gif-dither"><span>Dither (smoother gradients, bigger file)</span><input type="checkbox" id="gif-dither"><span class="switch-track"></span></label>' +
           '<label class="switch-row" for="gif-optimize"><span>Optimize file size</span><input type="checkbox" id="gif-optimize" checked><span class="switch-track"></span></label>' +
-          '<p class="field-note">Transparent GIFs only support fully on/off pixels (no soft edges), and "Optimize file size" is skipped for them.</p>' +
           '<div class="gif-progress" id="gif-progress" hidden>' +
             '<div class="gif-progress-bar"><span class="gif-progress-fill" id="gif-progress-fill"></span></div>' +
             '<p class="field-note gif-progress-text" id="gif-progress-text"></p>' +
@@ -3133,7 +3125,6 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12M12 5v7M5 17h5M14 17h5"/></svg><span>Split Text</span></h2>' +
-          '<p class="field-note">Splits the selected text layer(s) into separate layers, one per character or word, keeping their on-screen position. The original layer is disabled, not deleted.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="split-mode" value="char" checked><span>Character</span></label>' +
             '<label class="chip"><input type="radio" name="split-mode" value="word"><span>Word</span></label>' +
@@ -3143,7 +3134,6 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M7 12h9M10 18h9"/></svg><span>Stagger / Sequence Layers</span></h2>' +
-          '<p class="field-note">Offsets each selected layer\'s start time sequentially by a set number of frames.</p>' +
           '<div class="param">' +
             '<label for="stagger-offset">Offset (frames)</label>' +
             '<input class="num" type="number" id="stagger-offset" min="0" max="240" step="1" value="2">' +
@@ -3157,7 +3147,6 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="12" r="3.5"/><rect x="13" y="8.5" width="7" height="7" rx="2"/></svg><span>Auto Morph</span></h2>' +
-          '<p class="field-note">Select two shape layers. The upper one morphs into the lower one: its path (and fill / stroke colors) are keyframed from the playhead. Paths with different vertex counts are matched automatically. Rectangle, Ellipse and Star shapes need Convert to Bezier Path first.</p>' +
           '<div class="param">' +
             '<label for="morph-frames">Duration (frames)</label>' +
             '<input class="num" type="number" id="morph-frames" min="1" max="600" step="1" value="20">' +
@@ -3169,7 +3158,6 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><rect x="8" y="8" width="8" height="8" rx="2"/></svg><span>Pre-compose</span></h2>' +
-          '<p class="field-note"><strong>Each Layer:</strong> wraps every selected layer into its own new composition, one by one. <strong>Together:</strong> wraps all selected layers into ONE composition. Each new comp is trimmed to the time span of its layers, like the native "Adjust composition duration" option.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="precomp-move-attrs" checked><span>Move all attributes</span></label>' +
           '<div class="btn-pair">' +
             '<button class="btn-apply" data-tool-action="precompose" title="Each selected layer becomes its own pre-comp">Each Layer</button>' +
@@ -3179,25 +3167,21 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H7a3 3 0 0 0-3 3v2M4 15v2a3 3 0 0 0 3 3h2M15 20h2a3 3 0 0 0 3-3v-2M20 9V7a3 3 0 0 0-3-3h-2"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg><span>Unprecompose</span></h2>' +
-          '<p class="field-note">Extracts every layer inside the selected pre-comp back into this composition, timed to where the pre-comp sat. The pre-comp layer is disabled, not deleted.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="unpre-mode" value="copy" checked><span>Copy Attributes</span></label>' +
             '<label class="chip"><input type="radio" name="unpre-mode" value="delete"><span>Delete Attributes</span></label>' +
           '</div>' +
-          '<p class="field-note"><strong>Copy:</strong> the pre-comp\'s transform is merged into each extracted layer and its effects are copied onto them. <strong>Delete:</strong> the pre-comp\'s effects, masks and transform are discarded, so the layers come out raw. (2D transforms only; Stretch %/time remap isn\'t compensated for.)</p>' +
           '<button class="btn-apply" data-tool-action="unprecompose">Unprecompose Selected Layer</button>' +
         '</div>' +
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="3"/><path d="M16 8V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h1"/></svg><span>Duplicate Precomp (Deep)</span></h2>' +
-          '<p class="field-note">Duplicates each selected pre-comp layer as a new layer on the timeline (effects, masks and transform are copied too). The new layer uses its own copy of the pre-comp <strong>and every pre-comp inside it</strong>, so you can edit the inside without changing the original. The original layer and comps stay untouched. Footage is still shared. Expressions like comp("Name") still point to the old comp.</p>' +
           '<label class="chip chip-solo"><input type="checkbox" id="dupdeep-folder" checked><span>Put copies in a "Deep Copies" folder</span></label>' +
           '<button class="btn-apply" data-tool-action="duplicate-precomp-deep">Duplicate Pre-comp Layer</button>' +
         '</div>' +
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v4l-3 3-3-3zM12 10v10M4 20h16"/></svg><span>Trim to Playhead</span></h2>' +
-          '<p class="field-note">Trims the In or Out point of selected layers to the current time indicator.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="trim-edge" value="in" checked><span>In Point</span></label>' +
             '<label class="chip"><input type="radio" name="trim-edge" value="out"><span>Out Point</span></label>' +
@@ -3207,7 +3191,7 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg><span>Optimize AE</span></h2>' +
-          '<p class="field-note">Purges all memory and disk cache and can lower the active comp\'s preview resolution, so the project feels lighter. Purging may also clear the undo history, so save first.</p>' +
+          '<p class="field-note">Purging may also clear the undo history, so save first.</p>' +
           '<div class="chips chips-3">' +
             '<label class="chip"><input type="radio" name="optimize-res" value="keep"><span>Keep</span></label>' +
             '<label class="chip"><input type="radio" name="optimize-res" value="half"><span>Half</span></label>' +
@@ -3220,7 +3204,6 @@
         // Backend: host.jsx TOOLS_batchRename(opts) and TOOLS_autoColorCode(scope).
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M4 12h5M4 17h6"/><path d="m13 19 1-3.5 5-5 2.5 2.5-5 5z"/></svg><span>Batch Rename Layers</span></h2>' +
-          '<p class="field-note">Renames the selected layers, top to bottom. Find &amp; Replace is literal text (no regex). Numbering replaces the name with Base + number.</p>' +
           '<div class="param"><label for="br-find">Find</label><input class="text-input" type="text" id="br-find" autocomplete="off" spellcheck="false"></div>' +
           '<div class="param"><label for="br-replace">Replace</label><input class="text-input" type="text" id="br-replace" autocomplete="off" spellcheck="false"></div>' +
           '<div class="param"><label for="br-prefix">Prefix</label><input class="text-input" type="text" id="br-prefix" autocomplete="off" spellcheck="false"></div>' +
@@ -3236,7 +3219,6 @@
 
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></svg><span>Smart Layer Color Coder</span></h2>' +
-          '<p class="field-note">Sets the layer label color by type: Shape = Blue, Text = Yellow, Audio only = Green, Adjustment = Purple. Other layers are left as they are.</p>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="acc-scope" value="selected" checked><span>Selected</span></label>' +
             '<label class="chip"><input type="radio" name="acc-scope" value="all"><span>Whole Comp</span></label>' +
@@ -3248,7 +3230,6 @@
         // Backend: host.jsx SHTZ_randomize(what, a, b). Static values only (layers whose property has keyframes are skipped).
         '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/></svg><span>Randomize Transform</span></h2>' +
-          '<p class="field-note" id="rnd-note">Offsets each selected layer by a random amount, so copies do not look identical. Layers whose value is animated are skipped.</p>' +
           '<div class="chips chips-4">' +
             '<label class="chip"><input type="radio" name="rnd-what" value="position" checked><span>Position</span></label>' +
             '<label class="chip"><input type="radio" name="rnd-what" value="rotation"><span>Rotation</span></label>' +
@@ -3283,7 +3264,6 @@
               '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' +
               '<span>Beat Marker</span>' +
             '</h2>' +
-            '<p class="beat-card-note">Note: Markers rely on audio waveform peaks and may not perfectly match the beat.</p>' +
             '<div class="param">' +
               '<label for="beat-threshold">Threshold</label>' +
               '<input class="num" type="number" id="beat-threshold" min="1" max="100" step="1" value="25">' +
@@ -4404,7 +4384,7 @@
   // content (~110ms), then renderTab() swaps the content and plays the staggered card entrance.
   var MT_LEAVE_MS = 110;
   var MT_STAGGER_SEL = ".tool, .ta-group, .beat-card, .snippet-card, .info, .empty, .expr-item, " +
-    ".preset-folder, .preset-item, .qce-res-tile, .switch-row, .flip-btn, .el-fx, .cw, .cp-card";   // .cw / .cp-card: Color Palette wheel card + swatch card   // .flip-btn: Easy Layer Flip row sits outside any .ta-group; .el-fx: Copy Effects box (js/mt-fxcopy.js), Easy Layer + Animation Presets
+    ".preset-folder, .preset-item, .qce-res-tile, .switch-row, .flip-btn, .cw, .cp-card";   // .cw / .cp-card: Color Palette wheel card + swatch card   // .flip-btn: Easy Layer Flip row sits outside any .ta-group
   var MT_STAGGER_MAX = 14;
   var leaveTimer = null;
   var staggerTimer = null;
@@ -4672,9 +4652,7 @@
       built = grid;
     }
     panel.appendChild(built);
-    // Animation Presets: no Copy Effects box here any more (it stays in Easy Layer and in the island's Effects tab)
     if (tabId === "easy-layer") { panel.appendChild(EasyLayerFlip.render()); }   // Flip Horizontal/Vertical beneath the grid
-    if (tabId === "easy-layer" && window.MTFx) { panel.appendChild(window.MTFx.renderSection({ toast: toast, flash: flashButtonResult, key: "easy-layer", collapsed: false })); }   // Copy Effects section (js/mt-fxcopy.js) beneath Flip
 
     // Feature B: grouped capsule cards, applied panel-wide. groupifyTaSections() only wraps
     // DIRECT ".ta-section" children of the node it's given, so calling it once here on `built`
@@ -5736,8 +5714,7 @@
             '<input type="checkbox" id="el-auto-parent"' + (onNow ? " checked" : "") + ">" +
             '<span class="switch-track"></span>' +
           "</label>" +
-        "</div>" +
-        '<p class="field-note">When on, a new layer goes above the selected layer(s), matches their duration and becomes their parent.</p>';
+        "</div>";
       wrap.querySelector("input").addEventListener("change", function (e) {
         AutoParent.set(e.target.checked);
         e.target.closest(".saber-wrap").classList.toggle("is-active", e.target.checked);
@@ -5867,7 +5844,6 @@
             "</div>" +
             '<p class="field-note psup-note" id="psup-note" aria-live="polite"></p>' +
           "</div>" +
-          '<p class="field-note preset-help">Drop .ffx files or folders on this tab to import them. Save as Preset stores the selected layer&rsquo;s effects. Subfolders show as Categorized, loose files as Ungrouped.</p>' +
         "</div>" +
         '<div class="ta-section">' +
           '<h2 class="ta-title">Presets <span id="preset-count"></span></h2>' +

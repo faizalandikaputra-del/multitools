@@ -88,7 +88,6 @@
   }
   function upgradeStagger(group) {
     var box = setBody(group,
-      '<p class="field-note">Moves each selected layer, or its selected keyframes, one step after the other. The curve shapes the spacing.</p>' +
       '<div class="mtn-label">Apply to</div>' + chipsRadio("mtn-st-target", [["layers", "Layers"], ["keys", "Keyframes"]], "layers") +
       '<div class="mtn-label">Order</div>' + chipsRadio("mtn-st-order", [["top-down", "Top down"], ["bottom-up", "Bottom up"], ["center", "From center"], ["random", "Random"]], "top-down", "chips-4") +
       '<div class="param"><label for="mtn-st-offset">Offset</label><input class="num" type="number" id="mtn-st-offset" min="0" max="2400" step="0.5" value="2"></div>' +
@@ -140,7 +139,6 @@
   }
   function upgradeRename(group) {
     var box = setBody(group,
-      '<p class="field-note">Renames the selected layers, top to bottom, with a live preview. One Undo step covers the whole batch.</p>' +
       '<div class="param"><label for="mtn-rn-pattern">Name pattern</label><input class="text-input" type="text" id="mtn-rn-pattern" placeholder="{name}" value="{name}" autocomplete="off" spellcheck="false"></div>' +
       '<div class="mtn-tokens">' + ["{name}", "{n}", "{n:02}", "{type}", "{comp}", "{date}"].map(function (t) { return '<button type="button" class="mtn-chip" data-token="' + t + '">' + t + "</button>"; }).join("") + "</div>" +
       '<div class="param"><label for="mtn-rn-find">Find</label><input class="text-input" type="text" id="mtn-rn-find" autocomplete="off" spellcheck="false"></div>' +
@@ -216,7 +214,6 @@
     var wrap = document.createElement("div");
     wrap.className = "mtn-body";
     wrap.innerHTML =
-      '<p class="field-note">Scan first to see exactly what would go. Nothing is removed until you press Remove.</p>' +
       '<button class="btn-apply" id="mtn-pc-scan" type="button">Scan project</button>' +
       '<div class="mtn-report" id="mtn-pc-report" hidden></div>';
     var card = q(inner, ".beat-card");
@@ -295,7 +292,6 @@
     box.className = "mtn-body mtn-sub";
     box.innerHTML =
       '<div class="mtn-label">Pre-comp Smart</div>' +
-      '<p class="field-note">All selected layers go into one new comp with a name you choose. It lands in a project folder that is created if missing.</p>' +
       '<div class="param"><label for="mtn-pre-name">Name</label><input class="text-input" type="text" id="mtn-pre-name" value="{top}_pre" autocomplete="off" spellcheck="false"></div>' +
       '<div class="mtn-tokens"><button type="button" class="mtn-chip" data-token="{top}">{top}</button><button type="button" class="mtn-chip" data-token="{n}">{n}</button><button type="button" class="mtn-chip" data-token="{comp}">{comp}</button></div>' +
       '<div class="param"><label for="mtn-pre-folder">Folder</label><input class="text-input" type="text" id="mtn-pre-folder" value="Precomps" placeholder="Leave empty to skip" autocomplete="off" spellcheck="false"></div>' +

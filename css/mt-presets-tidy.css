@@ -9,4 +9,3 @@
 .preset-toolbar > #preset-select { flex: 2 1 55%; }
 .preset-toolbar > #preset-refresh { flex: 1 1 30%; }
 .preset-path { margin-bottom: 0; }
-.preset-help { margin: 0.55rem 0 0; line-height: 1.4; }

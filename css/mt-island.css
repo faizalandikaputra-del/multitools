@@ -56,9 +56,6 @@
 @keyframes mi-breathe { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.35); opacity: 0; } }
 @keyframes mi-done { 50% { transform: scale(1.25); opacity: 0.6; } }
 
-/* ---------- Copy Effects dot: 7 px, inside the collapsed capsule (top right, like a badge). Only opacity moves (150 ms); the capsule keeps its size. Hidden while the island is open (the Effects tab says it all). ---------- */
-.mi-fxdot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: #8b7cff; box-shadow: 0 0 6px rgba(139, 124, 255, 0.75); opacity: 0; pointer-events: none; transition: opacity 0.15s linear; }
-.mt-island.is-fx:not(.is-open) .mi-fxdot { opacity: 1; }
 
 /* ---------- pin ---------- */
 .mi-fempty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 96px; margin: 0; padding: 0 12px; box-sizing: border-box; border: 1.5px dashed rgba(255, 255, 255, 0.22); border-radius: 16px; text-align: center; }
@@ -151,21 +148,18 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 .mi-tb.is-on, .mi-tb.is-on:hover { color: #0b0b0d; }
 .mi-tb:active .mi-ti { transform: scale(0.9); }
 .mi-tb:focus, .mi-tb:focus-visible, .mi-tb:active { outline: none !important; box-shadow: none; }      /* no square focus ring on click (glass-theme.css button:focus-visible); the white pill already marks the tab */
-.mi-tb-fx:not(.is-vis) { display: none; }
 .mi-tb-u:not(.is-vis) { display: none; }
-.mi-tb-fx.is-vis, .mi-tb-u.is-vis { animation: mi-tb-pop 0.18s var(--mi-ease) both; }
+.mi-tb-u.is-vis { animation: mi-tb-pop 0.18s var(--mi-ease) both; }
 @keyframes mi-tb-pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
 .mi-tbi { display: flex; align-items: center; height: 28px; }
 .mi-ti { position: relative; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: var(--sw, 28px); height: 28px; transition: width 0.32s var(--mi-ease), transform 0.12s var(--mi-ease); }
 .mi-ti svg { display: block; }
-.mi-fxt { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
 .mi-tl { display: block; width: 0; height: 28px; overflow: hidden; transition: width 0.32s var(--mi-ease); }
 .mi-tb.is-on .mi-tl { width: var(--lw, 0px); }
 .mi-tl-in { display: inline-block; vertical-align: top; padding-right: 10px; white-space: nowrap; line-height: 28px; opacity: 0; transition: opacity 0.1s linear; }
 .mi-tb.is-on .mi-tl-in { opacity: 1; transition: opacity 0.14s linear 0.1s; }
 .mi-live { display: none; position: absolute; top: 4px; left: 50%; margin-left: 5px; width: 5px; height: 5px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 5px rgba(61, 220, 132, 0.8); }
 .mi-tb.is-live .mi-live { display: block; }
-.mi-tb-fx .mi-live { background: #8b7cff; box-shadow: 0 0 5px rgba(139, 124, 255, 0.85); }
 /* open: icons drop 6 px + fade, 30 ms apart, all done at 420 ms; the label opens 300 - 420 ms (JS: .is-l0 holds it shut for one frame, then .is-enter runs the transition) */
 .mi-tabbar.is-enter .mi-tbi, .mi-tabbar.is-enter .mi-pill-in { --d: calc(140ms + var(--i, 0) * 30ms); animation: mi-tb-in calc(420ms - var(--d)) var(--mi-ease) var(--d) both; }
 .mi-tabbar.is-enter .mi-pill-in { --i: var(--pi, 0); }
@@ -287,10 +281,9 @@ html.mt-dragging-tool .mt-island.is-on:not(.is-open) { transform: scale(1.18); b
 /* the app's own Animations switch (NOT prefers-reduced-motion, see top) */
 :root[data-reduce-motion="true"] .mi-fempty, :root[data-reduce-motion="true"] .mi-fbtn, :root[data-reduce-motion="true"] .mi-frm,
 :root[data-reduce-motion="true"] .mt-island, :root[data-reduce-motion="true"] .mt-island.is-on, :root[data-reduce-motion="true"] .mt-island.is-open,
-:root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-view, :root[data-reduce-motion="true"] .mi-tb, :root[data-reduce-motion="true"] .mi-ti, :root[data-reduce-motion="true"] .mi-tl, :root[data-reduce-motion="true"] .mi-tl-in, :root[data-reduce-motion="true"] .mi-tbi, :root[data-reduce-motion="true"] .mi-pill, :root[data-reduce-motion="true"] .mi-pill-in, :root[data-reduce-motion="true"] .mi-tb-fx, :root[data-reduce-motion="true"] .mi-tb-u { transition: none !important; animation: none !important; }
+:root[data-reduce-motion="true"] .mi-tw, :root[data-reduce-motion="true"] .mi-c, :root[data-reduce-motion="true"] .mi-x, :root[data-reduce-motion="true"] .mi-view, :root[data-reduce-motion="true"] .mi-tb, :root[data-reduce-motion="true"] .mi-ti, :root[data-reduce-motion="true"] .mi-tl, :root[data-reduce-motion="true"] .mi-tl-in, :root[data-reduce-motion="true"] .mi-tbi, :root[data-reduce-motion="true"] .mi-pill, :root[data-reduce-motion="true"] .mi-pill-in, :root[data-reduce-motion="true"] .mi-tb-u { transition: none !important; animation: none !important; }
 :root[data-reduce-motion="true"] .mi-go svg, :root[data-reduce-motion="true"] .mi-round svg, :root[data-reduce-motion="true"] .mi-fill { transition: none; animation: none; }
 :root[data-reduce-motion="true"] .mi-hh, :root[data-reduce-motion="true"] .mi-hm, :root[data-reduce-motion="true"] .mi-hs { transition: none; }
-:root[data-reduce-motion="true"] .mi-fxdot { transition: none; }
 :root[data-reduce-motion="true"] .mi-badge, :root[data-reduce-motion="true"] .mi-c.is-u .mi-ico, :root[data-reduce-motion="true"] .mt-island .mi-view-u #mt-update .mt-update-dot { animation: none; }
 :root[data-reduce-motion="true"] .mi-c.is-s.is-running .mi-ico::after, :root[data-reduce-motion="true"] .mi-c.is-t.is-done .mi-ico, :root[data-reduce-motion="true"] .mi-run.is-done .mi-big { animation: none; }
 

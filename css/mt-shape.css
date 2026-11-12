@@ -6,36 +6,37 @@
 
 .sh-root { --sh-spring: cubic-bezier(0.2, 1.15, 0.3, 1); --sh-soft: cubic-bezier(0.22, 0.8, 0.3, 1); position: relative; padding-bottom: var(--space-3, 12px); }
 
-/* ---------- header: count + search ---------- */
-.sh-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; }
-.sh-count { font-size: var(--fs-hint, 0.72rem); color: var(--text-dim); white-space: nowrap; margin-right: 0.6rem; font-variant-numeric: tabular-nums; }
-.sh-search {
-  position: relative; flex: 1 1 auto; min-width: 0; max-width: 13rem; display: block;
+/* ---------- header: type dropdown + save button, then search (count inside it) ---------- */
+.sh-top { display: flex; align-items: center; margin-bottom: 0.55rem; }
+
+/* type dropdown (a real <select>: js/mt-select.js gives it the themed animated menu) */
+.sh-sel { position: relative; flex: 1 1 auto; min-width: 0; }
+.sh-root .sh-select {
+  display: block; width: 100%; box-sizing: border-box; height: 2.2rem; margin: 0; padding: 0 2.1rem 0 0.95rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 600; text-overflow: ellipsis; cursor: pointer; outline: 0; -webkit-appearance: none; appearance: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.sh-search svg { position: absolute; left: 0.7rem; top: 50%; width: 0.9rem; height: 0.9rem; margin-top: -0.45rem; fill: none; stroke: var(--text-dim); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.sh-root .sh-select:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.3); }
+.sh-root .sh-select:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 255, 255, 255), 0.4); }
+.sh-sel-chev { position: absolute; top: 50%; right: 0.8rem; width: 0.85rem; height: 0.85rem; margin-top: -0.425rem; color: var(--text-dim); pointer-events: none; }
+.sh-sel-chev svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+/* search: full width under the dropdown, the shape count sits inside it on the right */
+.sh-search { position: relative; display: block; margin: 0 0 0.75rem; }
+.sh-search svg { position: absolute; left: 0.75rem; top: 50%; width: 0.9rem; height: 0.9rem; margin-top: -0.45rem; fill: none; stroke: var(--text-dim); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.sh-count { position: absolute; top: 50%; right: 0.85rem; margin-top: -0.5em; font-size: 0.7rem; line-height: 1; color: var(--text-dim); white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
 .sh-root .sh-search input {
-  width: 100%; box-sizing: border-box; height: 2rem; margin: 0; padding: 0 0.8rem 0 2rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%; box-sizing: border-box; height: 2.2rem; margin: 0; padding: 0 3.4rem 0 2.15rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.05); color: var(--text); font: inherit; font-size: 0.78rem; outline: 0;
   transition: box-shadow 0.2s ease, background-color 0.2s ease;
 }
 .sh-root .sh-search input::placeholder { color: var(--text-dim); }
 .sh-root .sh-search input:focus { background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 255, 255, 255), 0.35); }
 
-/* ---------- group chips ---------- */
-.sh-chips { display: flex; flex-wrap: wrap; margin: 0 0 0.6rem; padding: 3px 0 0; }   /* wraps: every group is visible, no sideways scrolling */
-.sh-chip {
-  flex: 0 0 auto; margin: 0 6px 6px 0; padding: 0.38rem 0.85rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14); background: transparent;
-  color: var(--text-dim); font: inherit; font-size: 0.76rem; font-weight: 500; cursor: pointer; white-space: nowrap;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.3s var(--sh-spring);
-}
-.sh-chip:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.3); }
-.sh-chip:active { transform: scale(0.94); }
-.sh-chip.is-active { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.62); color: var(--text); font-weight: 600; }
 
 /* ---------- list + tiles ---------- */
 .sh-gh { display: flex; align-items: baseline; margin: 0.35rem 0 0.5rem; font-size: 0.74rem; }
-.sh-gh b { color: var(--text); font-weight: 700; margin-right: 0.55rem; white-space: nowrap; }
-.sh-gh span { color: var(--text-dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-gh b { color: var(--text); font-weight: 700; white-space: nowrap; }
 .sh-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-gap: 8px; margin-bottom: 0.9rem; }
 .sh-swap { animation: sh-swap 0.3s var(--sh-soft) both; }
 @keyframes sh-swap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -126,7 +127,6 @@
 .sh-color span { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12), 0 0 16px rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
 .sh-color input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .sh-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column-gap: 0.9rem; }
-.sh-desc { margin: 0.7rem 0 0.1rem; min-height: 2.1em; font-size: 0.72rem; line-height: 1.4; color: var(--text-dim); }
 .sh-add {
   display: block; width: 100%; box-sizing: border-box; margin-top: 0.9rem; padding: 0.8rem 1rem;
   border-radius: 12px; font-size: 0.9rem; font-weight: 700; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
@@ -139,8 +139,6 @@
 
 /* ---------- light ---------- */
 :root[data-theme="light"] .sh-root .sh-search input { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.08); }
-:root[data-theme="light"] .sh-chip { border-color: rgba(0, 0, 0, 0.16); }
-:root[data-theme="light"] .sh-chip.is-active { background: rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.55); }
 :root[data-theme="light"] .sh-tile { border-color: rgba(0, 0, 0, 0.09); background: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
 :root[data-theme="light"] .sh-tile:hover { border-color: rgba(0, 0, 0, 0.28); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
 :root[data-theme="light"] .sh-tile.is-sel { border-color: rgba(0, 0, 0, 0.8); background: rgba(0, 0, 0, 0.07); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3); }
@@ -153,8 +151,6 @@
 
 /* ---------- Material You ---------- */
 :root[data-ui-theme="material"][data-theme] body .sh-root .sh-search input { background: var(--md-surface-high); border: 0; color: var(--md-on-surface); }
-:root[data-ui-theme="material"][data-theme] body .sh-chip { border-color: rgba(var(--md-outline-rgb, 128, 128, 128), 0.5); color: var(--md-on-surface-variant); }
-:root[data-ui-theme="material"][data-theme] body .sh-chip.is-active { background: var(--md-secondary-container); border-color: transparent; color: var(--md-on-secondary-container); }
 :root[data-ui-theme="material"][data-theme] body .sh-tile { background: var(--md-surface-low); border: 0; border-radius: 20px; box-shadow: none; color: var(--md-on-surface); }
 :root[data-ui-theme="material"][data-theme] body .sh-tile-n { color: var(--md-on-surface-variant); }
 :root[data-ui-theme="material"][data-theme] body .sh-tile:hover { background: var(--md-surface-high); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
@@ -205,3 +201,61 @@
 :root[data-ui-theme="material"][data-theme] body .sh-fab-ring { border-color: var(--md-on-primary-container, var(--sh-cur, #22E5F2)); opacity: 0.5; }
 :root[data-reduce-motion="true"] .sh-fab-ring { transition: none; }
 .sh-fabpop .sh-opts { grid-template-columns: minmax(0, 1fr); grid-row-gap: 0.65rem; }
+
+/* ---------- Mine: save my own shape (group chip "Mine", "+" button, save bar, delete cross, empty card) ---------- */
+.sh-mine-add {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; margin: 0 0 0 0.5rem; padding: 0; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); color: var(--text-dim); cursor: pointer;
+  transition: transform 0.3s var(--sh-spring), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.sh-mine-add svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; transition: transform 0.3s var(--sh-spring); }
+.sh-mine-add:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.34); }
+.sh-mine-add:active { transform: scale(0.92); }
+.sh-mine-add.is-on { color: var(--text); background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.62); }
+.sh-mine-add.is-on svg { transform: rotate(45deg); }
+.sh-mine-add:focus-visible, .sh-root .sh-save input:focus-visible { outline: 2px solid rgba(var(--accent-rgb, 255, 255, 255), 0.7); outline-offset: 2px; }
+
+.sh-save { margin: 0 0 0.7rem; padding: 0.7rem 0.8rem 0.8rem; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.035); }
+.sh-save[hidden] { display: none; }
+.sh-save-t { margin: 0 0 0.55rem; }
+.sh-save-t b { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text); }
+.sh-save-r { display: flex; align-items: center; }
+.sh-root .sh-save input {
+  flex: 1 1 auto; min-width: 0; box-sizing: border-box; height: 2rem; margin: 0 0.5rem 0 0; padding: 0 0.8rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05); color: var(--text); font: inherit; font-size: 0.78rem; outline: 0; transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.sh-root .sh-save input::placeholder { color: var(--text-dim); }
+.sh-root .sh-save input:focus { background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 255, 255, 255), 0.35); }
+.sh-save-go { flex: 0 0 auto; height: 2rem; padding: 0 1.1rem; border-radius: 999px; }
+
+/* delete cross on a saved tile: shows on hover / focus, press twice (first press arms it, red) */
+.sh-tile-x {
+  position: absolute; top: 4px; right: 4px; display: flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5); color: var(--text); opacity: 0; transform: scale(0.8); cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.25s var(--sh-spring), background-color 0.2s ease;
+}
+.sh-tile-x svg { width: 0.62rem; height: 0.62rem; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; pointer-events: none; }
+.sh-tile:hover .sh-tile-x, .sh-tile:focus .sh-tile-x { opacity: 1; transform: none; }
+.sh-tile-x:hover { background: rgba(0, 0, 0, 0.75); }
+.sh-tile-x.is-confirm { opacity: 1; transform: scale(1.18); background: #e5484d; color: #fff; }
+
+.sh-mine-empty { display: flex; flex-direction: column; align-items: center; margin: 0.4rem 0 1rem; padding: 1.2rem 1rem 1.1rem; text-align: center; border-radius: 14px; border: 1px dashed rgba(255, 255, 255, 0.2); }
+.sh-mine-empty b { margin-bottom: 0.7rem; font-size: 0.8rem; color: var(--text); }
+.sh-mine-empty i { font-style: normal; font-weight: 700; color: var(--text); }
+.sh-mine-open { height: 2rem; padding: 0 1.1rem; border-radius: 999px; }
+
+:root[data-theme="light"] .sh-mine-add { border-color: rgba(0, 0, 0, 0.16); background: rgba(0, 0, 0, 0.04); }
+:root[data-theme="light"] .sh-mine-add.is-on { background: rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.55); }
+:root[data-theme="light"] .sh-save { background: rgba(0, 0, 0, 0.035); border-color: rgba(0, 0, 0, 0.09); }
+:root[data-theme="light"] .sh-root .sh-save input { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.08); }
+:root[data-theme="light"] .sh-tile-x { background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); }
+:root[data-theme="light"] .sh-tile-x.is-confirm { background: #e5484d; box-shadow: none; }
+:root[data-theme="light"] .sh-mine-empty { border-color: rgba(0, 0, 0, 0.2); }
+:root[data-ui-theme="material"][data-theme] body .sh-mine-add { border-color: rgba(var(--md-outline-rgb, 128, 128, 128), 0.5); background: transparent; }
+:root[data-ui-theme="material"][data-theme] body .sh-mine-add.is-on { background: var(--md-secondary-container); border-color: transparent; color: var(--md-on-secondary-container, var(--text)); }
+:root[data-reduce-motion="true"] .sh-mine-add, :root[data-reduce-motion="true"] .sh-mine-add svg, :root[data-reduce-motion="true"] .sh-tile-x { transition: none; }
+
+:root[data-theme="light"] .sh-root .sh-select { background: rgba(0, 0, 0, 0.045); border-color: rgba(0, 0, 0, 0.16); }
+:root[data-theme="light"] .sh-root .sh-select:hover { background: rgba(0, 0, 0, 0.07); border-color: rgba(0, 0, 0, 0.32); }
+:root[data-ui-theme="material"][data-theme] body .sh-root .sh-select { background: var(--md-surface-high); border-color: transparent; color: var(--md-on-surface, var(--text)); }
+:root[data-reduce-motion="true"] .sh-root .sh-select { transition: none; }

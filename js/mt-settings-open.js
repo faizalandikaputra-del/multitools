@@ -1,7 +1,7 @@
 /* Multi Tool - mt-settings-open.js
    One small gate shared by the panel, NeuCurve and both Settings windows (all load from file:// = one shared localStorage).
    Problem: while a Settings window is open the pointer is outside the panel, so every background poll that talks to After Effects
-   (FX_peek, QCE_autoRes, the Quick Comp Edit refresh, the NeuCurve playhead poll, registerKeyEventsInterest ...) kept running.
+   (QCE_autoRes, the Quick Comp Edit refresh, the NeuCurve playhead poll, registerKeyEventsInterest ...) kept running.
    Each host call makes After Effects reset the mouse cursor, so the cursor blinked (hand <-> arrow) over the Settings window.
    Fix: a Settings window writes a heartbeat key while it is open and visible; the polls ask window.__mtSettingsOpen() and rest.
    Calls that come from a real action (a button, a changed setting) never ask this gate, so they still run.

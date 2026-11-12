@@ -5,6 +5,8 @@
                layer(s), set as alpha track matte.
    Modifiers (Layer + Matte): Animate in (Pop / Draw / Fade) + Duration, Repeater (Grid / Radial / Line, Count, Spacing), Round corners,
                Fit to text layer, Pulse on markers. Fit and Repeater cannot be combined.
+   Group "Mine" = your own shapes: the "+" button next to the search opens a Save bar; "Save" reads the shape you selected in After Effects
+   (host.jsx SHAPE_capture) and keeps it in localStorage mtx.shapeMine (max 60). A saved tile has a delete cross (press twice).
    Storage: localStorage mtx.shapeState (JSON). Look: css/mt-shape.css. Needs window.__MT.Bridge / Store (js/main.js). ES5, Chromium-74 safe.
    Only transform, opacity and box-shadow are animated (plus the Modifiers card height); html[data-reduce-motion] turns every animation off. */
 (function (w) {
@@ -14,12 +16,9 @@
   var KEY = "shapeState";
   var DEF = { sel: "basic-hexagon", group: "All", style: "fill", mode: "layer", size: 240, stroke: 6, color: "#22E5F2",
               anim: "none", dur: 0.6, rep: "off", count: 6, spacing: 60, round: 0, fit: false, pulse: false, mods: false };
-  var NOTE = {
-    layer: "Creates a new shape layer at the center of the comp.",
-    mask: "Adds the shape as a mask on every selected layer.",
-    matte: "Creates the shape above the selected layer and sets it as the track matte."
-  };
   var ICON_CHEV = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var ICON_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+  var ICON_PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   var ICON_SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>';
 
   function mt() { return w.__MT || {}; }
@@ -107,9 +106,80 @@
     };
   }
 
+  /* ---------------- Mine: the user's own shapes ---------------- */
+  var MINE_KEY = "shapeMine", MINE_ID = "Mine", MINE_MAX = 60, MINE_NOTE = "Shapes you saved from After Effects";
+  function mineList() {
+    var raw = null, out = [], i, sh;
+    try { raw = JSON.parse((mt().Store && mt().Store.get(MINE_KEY)) || "[]"); } catch (e) { raw = []; }
+    if (!(raw instanceof Array)) { return out; }
+    for (i = 0; i < raw.length && out.length < MINE_MAX; i++) {
+      sh = raw[i];
+      if (sh && typeof sh.id === "string" && typeof sh.name === "string" && sh.w > 0 && sh.h > 0 && sh.parts instanceof Array && sh.parts.length) { sh.group = MINE_ID; out.push(sh); }
+    }
+    return out;
+  }
+  function mineSync(list) {      // DATA.shapes / byId always mirror the saved list (called on start and after every save / delete)
+    var i, keep = [];
+    for (i = 0; i < DATA.shapes.length; i++) { if (DATA.shapes[i].group === MINE_ID) { delete DATA.byId[DATA.shapes[i].id]; } else { keep.push(DATA.shapes[i]); } }
+    DATA.shapes.length = 0;
+    for (i = 0; i < keep.length; i++) { DATA.shapes.push(keep[i]); }
+    for (i = 0; i < list.length; i++) { DATA.shapes.push(list[i]); DATA.byId[list[i].id] = list[i]; }
+  }
+  function mineEnsure() {
+    var has = false, i;
+    for (i = 0; i < DATA.groups.length; i++) { if (DATA.groups[i].id === MINE_ID) { has = true; } }
+    if (!has) { DATA.groups.push({ id: MINE_ID, note: MINE_NOTE }); }
+    mineSync(mineList());
+  }
+  function mineStore(list) { try { return !!(mt().Store && mt().Store.set(MINE_KEY, JSON.stringify(list))); } catch (e) { return false; } }
+  function nz(a) { return Math.abs(a[0]) > 0.001 || Math.abs(a[1]) > 0.001; }
+  function contourD(c, dx, dy) {      // nodes -> "M L C Z" (what MTShapes.toNodes reads back)
+    var n = c.v.length, k, d, a, b, e;
+    function pt(x, y) { return f2(x - dx) + " " + f2(y - dy); }
+    d = "M" + pt(c.v[0][0], c.v[0][1]);
+    for (k = 1; k < n; k++) {
+      a = c.o[k - 1]; b = c.i[k]; e = c.v[k];
+      d += (nz(a) || nz(b)) ? "C" + pt(c.v[k - 1][0] + a[0], c.v[k - 1][1] + a[1]) + " " + pt(e[0] + b[0], e[1] + b[1]) + " " + pt(e[0], e[1]) : "L" + pt(e[0], e[1]);
+    }
+    if (c.c) {
+      a = c.o[n - 1]; b = c.i[0];
+      if (nz(a) || nz(b)) { d += "C" + pt(c.v[n - 1][0] + a[0], c.v[n - 1][1] + a[1]) + " " + pt(c.v[0][0] + b[0], c.v[0][1] + b[1]) + " " + pt(c.v[0][0], c.v[0][1]); }
+      d += "Z";
+    }
+    return d;
+  }
+  // SHAPE_capture data (AE px) -> a shape of the Shape tab: moved so its top-left is 0,0, w x h = its size
+  function mineBuild(cap, name) {
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, i, j, k, p, c, parts = [], d, closedAll, W, H, np;
+    function ext(x, y) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    for (i = 0; i < cap.parts.length; i++) {
+      p = cap.parts[i];
+      if (p.t === "p") { for (j = 0; j < p.paths.length; j++) { for (k = 0; k < p.paths[j].v.length; k++) { ext(p.paths[j].v[k][0], p.paths[j].v[k][1]); } } }
+      else if (p.t === "r") { ext(p.x, p.y); ext(p.x + p.w, p.y + p.h); }
+      else if (p.t === "e") { ext(p.x - p.w / 2, p.y - p.h / 2); ext(p.x + p.w / 2, p.y + p.h / 2); }
+    }
+    if (!(x1 >= x0 && y1 >= y0)) { return null; }
+    W = Math.max(1, f2(x1 - x0)); H = Math.max(1, f2(y1 - y0));
+    for (i = 0; i < cap.parts.length; i++) {
+      p = cap.parts[i]; np = { n: String(p.n || "Part").slice(0, 40), f: p.fill ? "c" : "n" };
+      if (p.t === "p") {
+        d = ""; closedAll = true;
+        for (j = 0; j < p.paths.length; j++) { c = p.paths[j]; if (c.v.length < 2) { continue; } d += contourD(c, x0, y0); if (!c.c) { closedAll = false; } }
+        if (!d) { continue; }
+        np.t = "p"; np.d = d; if (!closedAll) { np.f = "n"; }
+      } else if (p.t === "r") { np.t = "r"; np.x = f2(p.x - x0); np.y = f2(p.y - y0); np.w = f2(p.w); np.h = f2(p.h); np.r = f2(p.r || 0); }
+      else if (p.t === "e") { np.t = "e"; np.x = f2(p.x - x0); np.y = f2(p.y - y0); np.w = f2(p.w); np.h = f2(p.h); }
+      else { continue; }
+      parts.push(np);
+    }
+    if (!parts.length) { return null; }
+    return { id: "mine-" + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36), name: name, group: MINE_ID, w: W, h: H, parts: parts };
+  }
+
   /* ---------------- the tab ---------------- */
   var activeOff = null;   // removes the floating button of the tab that is currently shown
   function render() {
+    mineEnsure();
     var st = load(), M = mt(), Bridge = M.Bridge, Store = M.Store;
     var wrap = document.createElement("div");
     wrap.className = "ta sh-root";
@@ -121,10 +191,14 @@
     var pop = document.createElement("div");
     wrap.innerHTML =
       '<div class="sh-top">' +
-        '<span class="sh-count" id="sh-count"></span>' +
-        '<label class="sh-search">' + ICON_SEARCH + '<input type="text" id="sh-q" placeholder="Search shapes" spellcheck="false" autocomplete="off" aria-label="Search shapes"></label>' +
+        '<div class="sh-sel"><select id="sh-group" class="sh-select" aria-label="Shape type"></select><span class="sh-sel-chev" aria-hidden="true">' + ICON_CHEV + "</span></div>" +
+        '<button type="button" class="sh-mine-add" id="sh-mine-add" aria-expanded="false" aria-controls="sh-save" title="Save my own shape" aria-label="Save my own shape">' + ICON_PLUS + "</button>" +
       "</div>" +
-      '<div class="sh-chips" id="sh-chips" role="tablist" aria-label="Shape groups"></div>' +
+      '<div class="sh-save" id="sh-save" hidden>' +
+        '<p class="sh-save-t"><b>Save my shape</b></p>' +
+        '<div class="sh-save-r"><input type="text" id="sh-save-name" maxlength="40" placeholder="Name (optional)" spellcheck="false" autocomplete="off" aria-label="Shape name"><button type="button" class="btn btn-primary sh-save-go" id="sh-save-go">Save</button></div>' +
+      "</div>" +
+      '<label class="sh-search">' + ICON_SEARCH + '<input type="text" id="sh-q" placeholder="Search shapes" spellcheck="false" autocomplete="off" aria-label="Search shapes"><span class="sh-count" id="sh-count"></span></label>' +
       '<div class="sh-list" id="sh-list"></div>';
     pop.className = "sh-popbox";
     pop.innerHTML =
@@ -150,7 +224,6 @@
             '<div><div class="sh-lab">Style</div>' + seg("style", [["fill", "Fill"], ["stroke", "Stroke"], ["both", "Both"]]) + "</div>" +
             '<div><div class="sh-lab">Insert as</div>' + seg("mode", [["layer", "Layer"], ["mask", "Mask"], ["matte", "Matte"]]) + "</div>" +
           "</div>" +
-          '<p class="sh-desc" id="sh-desc"></p>' +
           '<div class="sh-two">' + slider("size", "Size", 10, 2000, 1, " px") + slider("stroke", "Stroke", 1, 80, 1, " px") + "</div>" +
         "</section>" +
       "</div>" +
@@ -168,15 +241,14 @@
     function q(sel) { return wrap.querySelector(sel) || pop.querySelector(sel); }
     function qa(sel) { return Array.prototype.slice.call(wrap.querySelectorAll(sel)).concat(Array.prototype.slice.call(pop.querySelectorAll(sel))); }
 
-    /* ----- chips + list ----- */
-    var chips = q("#sh-chips"), list = q("#sh-list"), search = q("#sh-q"), query = "";
-    (function () {
-      var h = '<button type="button" role="tab" class="sh-chip" data-g="All">All</button>', i;
-      for (i = 0; i < DATA.groups.length; i++) { h += '<button type="button" role="tab" class="sh-chip" data-g="' + DATA.groups[i].id + '">' + DATA.groups[i].id + "</button>"; }
-      chips.innerHTML = h;
-    })();
-    function paintChips() {
-      qa(".sh-chip").forEach(function (b) { var on = b.getAttribute("data-g") === st.group; b.classList.toggle("is-active", on); b.setAttribute("aria-selected", String(on)); });
+    /* ----- type dropdown + list ----- */
+    var gsel = q("#sh-group"), list = q("#sh-list"), search = q("#sh-q"), query = "";
+    function groupCount(id) { var i, n = 0; for (i = 0; i < DATA.shapes.length; i++) { if (id === "All" || DATA.shapes[i].group === id) { n++; } } return n; }
+    function paintChips() {      // (name kept) rebuilds the type options with their counts and shows the current one
+      var h = '<option value="All">All types (' + groupCount("All") + ")</option>", i, id;
+      for (i = 0; i < DATA.groups.length; i++) { id = DATA.groups[i].id; h += '<option value="' + id + '">' + id + " (" + groupCount(id) + ")</option>"; }
+      gsel.innerHTML = h; gsel.value = st.group;
+      if (gsel.value !== st.group) { st.group = "All"; gsel.value = "All"; }
     }
     function matches(sh) { return !query || sh.name.toLowerCase().indexOf(query) >= 0 || sh.group.toLowerCase().indexOf(query) >= 0; }
     function renderList() {
@@ -187,16 +259,21 @@
         items = DATA.shapes.filter(function (s) { return s.group === g.id && matches(s); });
         if (!items.length) { continue; }
         total += items.length;
-        h += '<div class="sh-gh"><b>' + g.id + "</b><span>" + esc(g.note) + '</span></div><div class="sh-grid">';
+        h += '<div class="sh-gh"><b>' + g.id + '</b></div><div class="sh-grid">';
         for (si = 0; si < items.length; si++) {
           sh = items[si];
           h += '<button type="button" class="sh-tile' + (sh.id === st.sel ? " is-sel" : "") + '" data-id="' + sh.id + '" style="--d:' + (Math.min(n++, 20) * 16) + 'ms" title="' + esc(sh.name) + '" aria-label="' + esc(sh.name) + '">' +
-            '<span class="sh-tile-ico">' + shapeSvg(sh, "icon") + "</span><span class='sh-tile-n'>" + esc(sh.name) + "</span></button>";
+            '<span class="sh-tile-ico">' + shapeSvg(sh, "icon") + "</span><span class='sh-tile-n'>" + esc(sh.name) + "</span>" +
+            (sh.group === MINE_ID ? '<span class="sh-tile-x" role="button" tabindex="-1" data-del="' + sh.id + '" title="Delete this shape" aria-label="Delete ' + esc(sh.name) + '">' + ICON_X + "</span>" : "") + "</button>";
         }
         h += "</div>";
       }
+      if (!h && st.group === MINE_ID && !query) {
+        h = '<div class="sh-mine-empty"><b>No shapes of your own yet</b><button type="button" class="btn sh-mine-open" id="sh-mine-open">Save a shape</button></div>';
+      }
       list.innerHTML = h || '<p class="sh-empty">No shapes match "' + esc(query) + '".</p>';
-      q("#sh-count").textContent = (query || st.group !== "All" ? total + " of " : "") + DATA.shapes.length + " shapes";
+      q("#sh-count").textContent = query || st.group !== "All" ? total + "/" + DATA.shapes.length : String(DATA.shapes.length);
+      q("#sh-count").title = DATA.shapes.length + " shapes in total";
     }
 
     /* ----- preview + controls ----- */
@@ -219,7 +296,6 @@
       ["dur", "count", "spacing", "round", "size", "stroke"].forEach(function (k) { var r = q("#sh-r-" + k); r.value = st[k]; q("#sh-o-" + k).textContent = fmt(k, st[k]); });
       q("#sh-color").value = st.color; q(".sh-color span").style.background = st.color;
       q("#sh-fit").checked = !!st.fit; q("#sh-pulse").checked = !!st.pulse;
-      q("#sh-desc").textContent = NOTE[st.mode];
       var repOn = st.rep !== "off";
       q('[data-sl="count"]').classList.toggle("is-off", !repOn);
       q('[data-sl="spacing"]').classList.toggle("is-off", !repOn);
@@ -257,14 +333,65 @@
     mhead.addEventListener("click", function () { st.mods = !mods.classList.contains("is-open"); save(); setMods(st.mods, false); [60, 200, 440].forEach(function (ms) { setTimeout(fabOrient, ms); }); });
 
     /* ----- events ----- */
-    chips.addEventListener("click", function (e) {
-      var b = e.target.closest ? e.target.closest(".sh-chip") : null; if (!b) { return; }
-      st.group = b.getAttribute("data-g"); save(); paintChips(); renderList();
+    gsel.addEventListener("change", function () {
+      st.group = gsel.value; save(); renderList();
       list.classList.remove("sh-swap"); void list.offsetWidth; list.classList.add("sh-swap");
     });
     search.addEventListener("input", function () { query = search.value.trim().toLowerCase(); renderList(); });
-    list.addEventListener("click", function (e) { var t = e.target.closest ? e.target.closest(".sh-tile") : null; if (t) { select(t.getAttribute("data-id")); } });
-    list.addEventListener("dblclick", function (e) { var t = e.target.closest ? e.target.closest(".sh-tile") : null; if (t) { select(t.getAttribute("data-id"), false); add(); } });
+    list.addEventListener("click", function (e) {
+      var x = e.target.closest ? e.target.closest(".sh-tile-x") : null, t;
+      if (x) { e.stopPropagation(); mineDelete(x); return; }
+      if (e.target.closest && e.target.closest("#sh-mine-open")) { setSave(true); return; }
+      t = e.target.closest ? e.target.closest(".sh-tile") : null; if (t) { select(t.getAttribute("data-id")); }
+    });
+    list.addEventListener("dblclick", function (e) {
+      if (e.target.closest && e.target.closest(".sh-tile-x")) { return; }
+      var t = e.target.closest ? e.target.closest(".sh-tile") : null; if (t) { select(t.getAttribute("data-id"), false); add(); }
+    });
+
+    /* ----- Mine: save bar, save, delete ----- */
+    var saveBar = q("#sh-save"), saveBtn = q("#sh-save-go"), saveName = q("#sh-save-name"), plusBtn = q("#sh-mine-add"), saving = false, delTimer = 0;
+    function setSave(on) {
+      saveBar.hidden = !on; plusBtn.classList.toggle("is-on", on); plusBtn.setAttribute("aria-expanded", String(on));
+      if (on) { saveBar.classList.remove("sh-swap"); void saveBar.offsetWidth; saveBar.classList.add("sh-swap"); try { saveName.focus(); } catch (e) { } }
+    }
+    function afterMineChange(pickId) {
+      if (pickId) { st.group = MINE_ID; st.sel = pickId; selSh = DATA.byId[pickId]; save(); }
+      else if (!DATA.byId[st.sel]) { st.sel = DEF.sel; selSh = DATA.byId[st.sel]; save(); }
+      paintChips(); renderList(); paintPreview(!!pickId);
+    }
+    function mineSave() {
+      if (saving) { return; }
+      saving = true; saveBtn.classList.add("is-pending");
+      Bridge.call("SHAPE_capture", []).then(function (res) {
+        saving = false; saveBtn.classList.remove("is-pending");
+        if (!res || !res.ok || !res.data || !res.data.parts) { toast((res && res.message) || "Could not read the shape.", true); return; }
+        var list = mineList(), name = (saveName.value || "").replace(/^\s+|\s+$/g, "") || String(res.data.name || "").replace(/^\s+|\s+$/g, "") || ("My shape " + (list.length + 1)), sh;
+        if (list.length >= MINE_MAX) { toast("Mine is full (" + MINE_MAX + " shapes). Delete one first.", true); return; }
+        sh = mineBuild(res.data, name.slice(0, 40));
+        if (!sh) { toast("That selection has no usable path.", true); return; }
+        list.push(sh);
+        if (!mineStore(list)) { toast("Could not save the shape.", true); return; }
+        mineSync(list); saveName.value = ""; setSave(false); afterMineChange(sh.id);
+        toast("Saved \"" + sh.name + "\" to Mine." + (res.data.skipped ? " (" + res.data.skipped + " star shape" + (res.data.skipped === 1 ? "" : "s") + " skipped)" : ""));
+      });
+    }
+    function mineDelete(x) {
+      var id = x.getAttribute("data-del"), list, name = "";
+      if (!x.classList.contains("is-confirm")) {      // first press arms it, second press deletes
+        qa(".sh-tile-x.is-confirm").forEach(function (o) { o.classList.remove("is-confirm"); });
+        x.classList.add("is-confirm"); clearTimeout(delTimer);
+        delTimer = setTimeout(function () { x.classList.remove("is-confirm"); }, 2400);
+        return;
+      }
+      clearTimeout(delTimer);
+      list = mineList().filter(function (sh) { if (sh.id === id) { name = sh.name; } return sh.id !== id; });
+      if (!mineStore(list)) { toast("Could not delete the shape.", true); return; }
+      mineSync(list); afterMineChange(null); toast("Deleted \"" + name + "\".");
+    }
+    plusBtn.addEventListener("click", function () { setSave(saveBar.hidden); });
+    saveBtn.addEventListener("click", mineSave);
+    saveName.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); mineSave(); } else if (e.key === "Escape") { setSave(false); } });
     function onSeg(e) {
       var b = e.target.closest ? e.target.closest(".sh-seg-b") : null; if (!b || b.disabled) { return; }
       var key = b.parentNode.getAttribute("data-seg"), v = b.getAttribute("data-v");

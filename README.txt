@@ -2634,3 +2634,64 @@ palette-solid-fill-effect (Solid Fill juga mengubah efek Fill)
   - jsx/host.jsx _colorSolidFill: pada layer terpilih mengubah (1) warna source solid layer dan (2) warna semua efek Fill (ADBE Fill, properti ADBE Fill-0002). Salah satu sudah cukup; layer yang punya keduanya ikut dua-duanya.
     Satu undo group. Pesan: "Solid Fill #HEX on N solids and M Fill effects." Error bila tidak ada solid dan tidak ada efek Fill di layer terpilih.
   - Files: jsx/host.jsx, README.txt.
+
+shape-follow-layer-duration (tab Shape: shape baru mengikuti durasi layer terpilih)
+  - Permintaan: saat menambah shape dan ada layer terpilih di timeline, shape otomatis memakai durasi layer itu.
+  - Perubahan: jsx/host.jsx SHAPE_insert membaca layer terpilih SEBELUM shape dibuat (layer baru mengambil alih seleksi), lalu _shSpan menghitung In paling awal dan Out paling akhir
+    (beberapa layer terpilih = gabungan), dan _shApplySpan mengatur inPoint / outPoint shape. Waktu animasi masuk (pop / fade / draw) dimulai di In layer itu, bukan di posisi playhead.
+    Berlaku di mode Layer (termasuk Fit to text) dan Matte (mengikuti layer yang dipotong). Mode Mask tidak berubah. Tanpa layer terpilih: perilaku lama (mulai di playhead).
+  - Files: jsx/host.jsx, README.txt.
+  - Belum diuji di After Effects; syntax diperiksa dengan node --check.
+
+easy-layer-playhead (tab Easy Layer: tanpa layer terpilih, layer baru mulai di playhead)
+  - Permintaan: bila tidak ada layer terpilih, layer baru dimulai dari posisi playhead, bukan dari awal durasi comp.
+  - Perubahan: jsx/host.jsx EL_create membaca comp.time SEBELUM layer dibuat; _placeAtPlayhead mengatur inPoint = playhead dan outPoint = akhir comp.
+    Berlaku untuk ADJ, SOL, TXT, NUL, SHP, LGT, CRV, dan CAM (lewat dialog). Playhead di 0 atau di luar durasi: tidak ada perubahan.
+    Background (BG) dikecualikan: tetap penuh dari awal comp dan di bawah tumpukan. Dengan layer terpilih perilaku lama (di atas layer itu, In/Out sama) tidak berubah.
+  - Files: jsx/host.jsx, README.txt.
+  - Belum diuji di After Effects; syntax diperiksa dengan node --check.
+
+remove-copy-effects (fitur Copy Effects dihapus total dari tab Easy Layer dan dynamic island)
+  - Permintaan: hapus semua fitur Copy Effects di tab Easy Layer dan di dynamic island, tanpa sisa.
+  - Dihapus: js/mt-fxcopy.js dan css/mt-fxcopy.css (file + tag di html/index.html); bagian Copy Effects di tab Easy Layer (js/main.js: pemasangan MTFx.renderSection, selector .el-fx);
+    tab "Effects" di island (js/mt-island.js: tab fx, view vX, titik ungu, API fxHost / fxDot / fxChanged / fxClose, siklus tab, auto-close 420 ms) dan aturan CSS-nya (css/mt-island.css: .mi-fxdot, .is-fx, .mi-tb-fx, .mi-fxt);
+    fungsi host FX_peek, FX_copy, FX_paste dan helper _fx* di jsx/host.jsx (polling FX_peek tiap 0,7 detik ikut hilang).
+  - Tidak disentuh: _unpreCopyEffects (menyalin efek saat Un-precompose, fitur lain), Flip Horizontal / Vertical di Easy Layer, tab Keyframe Timing (KT_*).
+  - Dicek: grep seluruh proyek untuk fxcopy, MTFx, FX_*, el-fx, mi-fxdot, is-fx tidak menemukan sisa selain catatan sejarah di header mt-island.js dan README ini.
+  - Files: js/mt-island.js, css/mt-island.css, js/main.js, jsx/host.jsx, html/index.html, js/mt-settings-open.js (komentar), README.txt; js/mt-fxcopy.js dan css/mt-fxcopy.css dihapus.
+  - Belum diuji di After Effects; syntax diperiksa dengan node --check.
+
+shape-mine (tab Shape: menu untuk menyimpan bentuk shape sendiri, grup "Mine")
+  - Permintaan: menu di tab Shape supaya user bisa menambah / menyimpan bentuk shape miliknya.
+  - Cara pakai: pilih shape layer (atau path, atau layer yang punya mask) di After Effects, tekan tombol "+" di sebelah kolom Search, isi nama (opsional), tekan Save.
+    Shape masuk ke grup baru "Mine" (chip paling kanan), langsung terpilih, dan dipakai seperti shape bawaan: Style, Insert as (Layer / Mask / Matte), Size, Stroke, Modifiers, klik dua kali = Add.
+    Tile di Mine punya tanda silang (muncul saat hover): tekan sekali = siap hapus (merah), tekan lagi = hapus. Grup Mine yang masih kosong menampilkan kartu petunjuk.
+  - Yang dibaca (jsx/host.jsx SHAPE_capture, hanya membaca): (1) path yang dipilih di Contents / mask path, (2) shape layer terpilih pertama: semua group (juga yang bersarang), Path, Rectangle (termasuk roundness), Ellipse,
+    dengan Fill / Stroke menentukan isi atau outline, (3) mask dari layer terpilih pertama. Hanya translasi group (Position - Anchor) yang ikut; scale / rotasi group dan layer tidak. Star / Polystar dilewati (ada pesan).
+    Batas: 60 parts / 5000 titik per shape; 60 shape di Mine; nama maksimal 40 karakter.
+  - Penyimpanan: localStorage mtx.shapeMine (JSON), ikut di-mirror ke disk oleh mt-persist.js seperti pengaturan lain. Kurva disimpan sebagai path SVG (M L C Z) yang dibaca balik oleh MTShapes.toNodes
+    (diuji: simpul, tangen, tertutup / terbuka kembali sama).
+  - Files: js/mt-shape.js (?v=3), css/mt-shape.css (?v=6), jsx/host.jsx, html/index.html, README.txt.
+  - Belum diuji di After Effects; syntax diperiksa dengan node --check dan round-trip data diuji di node.
+
+shape-type-dropdown (tab Shape: pilihan tipe shape jadi dropdown + layout header dirapikan)
+  - Permintaan: menu tipe shape (All, Basic, Mograph, Typography, AMV, Device, UI, Frames, Mine) jadi dropdown, dengan layout yang lebih rapi.
+  - Perubahan: js/mt-shape.js - chip tipe (3 baris) diganti <select id="sh-group"> yang otomatis memakai menu tema dari js/mt-select.js; tiap opsi menampilkan jumlah shape ("Basic (24)").
+    Header sekarang: baris 1 = dropdown tipe + tombol "+" (simpan shape sendiri), baris 2 = kolom Search penuh dengan jumlah shape di dalamnya ("103", atau "3/103" saat terfilter).
+    Kartu Save my shape muncul di antara baris 1 dan Search. Tinggi header turun dari sekitar 190 px menjadi sekitar 95 px, jadi daftar shape naik.
+  - css/mt-shape.css: aturan chip (.sh-chips, .sh-chip dan override tema light / Material-nya) dihapus; ditambah .sh-sel / .sh-select / .sh-sel-chev, .sh-search dan .sh-count baru, override light + Material You + reduce-motion untuk dropdown.
+  - Tidak diubah: Style (Fill / Stroke / Both) dan Insert as (Layer / Mask / Matte) di dock bawah tetap segmented control.
+  - Files: js/mt-shape.js (?v=4), css/mt-shape.css (?v=7), html/index.html, README.txt.
+  - Dicek di Chromium (screenshot): dropdown tertutup / terbuka, filter + count, save bar, grup Mine. Belum diuji di After Effects.
+
+remove-description-text (hapus teks keterangan statis di semua tab panel)
+  - Permintaan: hapus teks keterangan seperti kartu "Save my shape ... In After Effects select a shape layer ..." dan cek semua tab.
+  - Aturan: teks penjelasan statis ("fitur ini melakukan X, lakukan Y dulu") dihapus. Teks yang tetap: label dan judul, tombol, status yang berubah sesuai kondisi (Loading..., path folder, progres GIF, hasil Scan, pesan kosong, hint peringatan Modifiers di Shape),
+    dan 2 peringatan kehilangan data (Purge: "Purging may also clear the undo history, so save first." dan kartu Beat: "This edits the Project panel itself - save your project first.").
+  - js/mt-shape.js: deskripsi di kartu Save my shape, teks di kartu Mine kosong, catatan grup di header ("Building blocks" dst), deskripsi mode Insert as (NOTE + #sh-desc) dihapus.
+  - js/main.js: Fit to Composition, Match Comp to Layer, Save Frame as Image, Export GIF (+ catatan Transparent), Text Split, Stagger (offset), Shape Morph, Pre-compose (Each Layer/Together), Un-precompose (+ Copy/Delete), Duplicate Pre-comp, Trim to Playhead,
+    Rename, Layer Label by type, Random Offset (#rnd-note), Auto-parent, Color Palette (hint extract + hint Layer Label; JS extractHint ikut dihapus), Animation Presets (#preset-help), catatan Beat Markers; Purge dipersingkat jadi peringatan saja; pesan kosong Expression disingkat.
+  - js/mt-newtools.js: Stagger Pro, Batch Rename, Cleaner (Scan first...), Pre-compose ke satu comp. css/mt-presets-tidy.css: .preset-help dihapus. css/mt-shape.css: .sh-desc, .sh-gh span, .sh-save-t span, .sh-mine-empty span dihapus.
+  - Tidak disentuh: tab Info (About), jendela Pengaturan dan modal pengaturan lama di html/index.html (catatan di sana masih ada), tooltip (atribut title).
+  - Files: js/main.js (?v=85), js/mt-newtools.js (?v=3), js/mt-shape.js (?v=5), css/mt-shape.css (?v=8), css/mt-presets-tidy.css (?v=2), html/index.html, README.txt.
+  - Dicek di Chromium (screenshot Shape); tab lain hanya diperiksa lewat node --check dan grep sisa kelas keterangan. Belum diuji di After Effects.

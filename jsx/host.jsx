@@ -70,6 +70,14 @@ function _smartPlace(newLayer, snap, useSpan) {
   else { newLayer.inPoint = a; newLayer.outPoint = b; }
 }
 
+// Nothing selected: a new layer starts at the playhead and runs to the end of the comp (scripted add* calls would
+// start it at the very beginning of the comp). The playhead is read BEFORE the layer is created. Must run inside an undo group.
+function _placeAtPlayhead(layer, comp, t) {
+  if (!layer || !(t > 0) || t >= comp.duration) { return; }       // playhead at 0 (or past the end): nothing to move
+  try { layer.inPoint = t; } catch (e0) { }
+  try { if (layer.outPoint < comp.duration) { layer.outPoint = comp.duration; } } catch (e1) { }
+}
+
 // Creates one layer of the given type at the top of the comp with default settings.
 // Returns { layer, label }. Used by Easy Layer (Auto Parent is just an option of it).
 // Comp-size Solid in colorHex plus a Fill effect (ADBE Fill > ADBE Fill-0002) set to the same color.
@@ -159,7 +167,7 @@ function _makeLayer(comp, type, colorHex) {
 //
 // Smart placement: if a layer is selected, the new layer is moved directly above it
 // (newLayer.moveBefore(selected)) and given the same in/out points. With several layers selected the topmost
-// one is used. With nothing selected the layer stays at the top of the comp with default settings.
+// one is used. With nothing selected the layer goes to the top of the comp and starts at the PLAYHEAD (runs to the comp end).
 // The Background tool (BG) is exempt: it always belongs at the bottom of the stack, and is never auto-parented.
 //
 // Auto Parent ON (and something selected): the new layer covers the in/out range of ALL selected layers, then
@@ -172,12 +180,13 @@ function EL_create(type, labelIndex, autoParent, colorHex) {
   try {
     var comp = _activeComp();
     var snap = _smartSnapshot(comp);          // selection BEFORE anything is created
+    var playT = comp.time;                    // playhead BEFORE anything is created (used when nothing is selected)
     var wantParent = _isTrue(autoParent) && type !== "BG";
     var parentMode = wantParent && !!snap;
     var made, layer, above = "", pr = null;
 
     // Camera: AE's own "New Camera" dialog does the creating (see _EL_createCameraViaDialog).
-    if (type === "CAM") { return _EL_createCameraViaDialog(comp, snap, labelIndex, parentMode); }
+    if (type === "CAM") { return _EL_createCameraViaDialog(comp, snap, labelIndex, parentMode, playT); }
 
     app.beginUndoGroup("Easy Layer: " + type + (parentMode ? " + Auto Parent" : ""));
     try {
@@ -187,6 +196,8 @@ function EL_create(type, labelIndex, autoParent, colorHex) {
       if (snap && type !== "BG") {
         _smartPlace(layer, snap, parentMode);               // parentMode: range covers every selected layer
         above = snap.top.name;
+      } else if (!snap && type !== "BG") {
+        _placeAtPlayhead(layer, comp, playT);               // no selection: start at the playhead, not at the comp start
       }
       _applyLabel(layer, labelIndex);
       if (parentMode) { pr = _parentSelection(layer, snap); }
@@ -258,7 +269,7 @@ function _cameraCommandId() {
 //   Cancel -> nothing is created; returns ok:true with data.cancelled = true (not an error).
 // `snap` was captured BEFORE the dialog, because the new camera replaces the selection.
 // Everything runs in ONE undo group, so a single Ctrl+Z removes the camera and its placement together.
-function _EL_createCameraViaDialog(comp, snap, labelIndex, parentMode) {
+function _EL_createCameraViaDialog(comp, snap, labelIndex, parentMode, playT) {
   var before = comp.numLayers, sel, cam = null, above = "", pr = null;
 
   app.beginUndoGroup("Easy Layer: CAM" + (parentMode ? " + Auto Parent" : ""));
@@ -280,6 +291,8 @@ function _EL_createCameraViaDialog(comp, snap, labelIndex, parentMode) {
     if (snap) {
       _smartPlace(cam, snap, parentMode);                 // directly above the selected layer, same in/out
       above = snap.top.name;
+    } else {
+      _placeAtPlayhead(cam, comp, playT);                 // no selection: start at the playhead
     }
     _applyLabel(cam, labelIndex);
     if (parentMode) { pr = _parentSelection(cam, snap); }
@@ -3487,6 +3500,24 @@ function _shPartContours(part) {
   return out;
 }
 
+// Shape tab: a new shape follows the time span of the layer(s) selected in the Timeline (earliest In to latest Out).
+// Returns null when nothing is selected. Read BEFORE the shape is added, because the new layer takes over the selection.
+function _shSpan(layers) {
+  var i, a = null, b = null;
+  for (i = 0; i < (layers ? layers.length : 0); i++) {
+    try {
+      if (a === null || layers[i].inPoint < a) { a = layers[i].inPoint; }
+      if (b === null || layers[i].outPoint > b) { b = layers[i].outPoint; }
+    } catch (e0) { }
+  }
+  return (a === null || b === null || b <= a) ? null : { a: a, b: b };
+}
+function _shApplySpan(layer, span) {
+  if (!span) { return; }
+  try { layer.inPoint = span.a; } catch (e0) { }
+  try { layer.outPoint = span.b; } catch (e1) { }
+}
+
 function SHAPE_insert(payloadJson) {
   try {
     var o = JSON.parse(payloadJson), comp = _activeComp(), sel = comp.selectedLayers, i, layer, made = 0, k, t0 = comp.time, text = null, marker = null, targets = [];
@@ -3505,6 +3536,7 @@ function SHAPE_insert(payloadJson) {
     if (o.mode === "mask" && !targets.length) { throw new Error("Select a layer first, then add the shape as a mask."); }
     if (o.mode === "matte" && !targets.length) { throw new Error("Select a layer first, then add the shape as a matte."); }
     if (o.fit && !text) { throw new Error("Select a text layer first. The box follows its size."); }
+    var span = (o.mode === "mask" || o.mode === "matte") ? null : _shSpan(sel);   // layer mode: follow the selected layer(s) duration
 
     app.beginUndoGroup("Insert Shape: " + o.name);
     try {
@@ -3512,15 +3544,17 @@ function SHAPE_insert(payloadJson) {
         for (i = 0; i < targets.length; i++) { made += _shAddMasks(targets[i], comp, o) ? 1 : 0; }
       } else if (o.mode === "matte") {
         for (i = 0; i < targets.length; i++) {
-          layer = _shBuildLayer(comp, o, { center: _shLayerCenter(targets[i], comp), t0: t0, fitLayer: null, markerLayer: (marker && marker !== targets[i]) ? marker : (targets[i].property("ADBE Marker") && targets[i].property("ADBE Marker").numKeys > 0 ? targets[i] : null) });
+          layer = _shBuildLayer(comp, o, { center: _shLayerCenter(targets[i], comp), t0: (_shSpan([targets[i]]) || { a: t0 }).a, fitLayer: null, markerLayer: (marker && marker !== targets[i]) ? marker : (targets[i].property("ADBE Marker") && targets[i].property("ADBE Marker").numKeys > 0 ? targets[i] : null) });
           layer.moveBefore(targets[i]);
+          _shApplySpan(layer, _shSpan([targets[i]]));   // the matte lasts as long as the layer it cuts
           layer.name = o.name + " Matte";
           try { targets[i].setTrackMatte(layer, TrackMatteType.ALPHA); }
           catch (eTm) { targets[i].trackMatteType = TrackMatteType.ALPHA; }
           made++;
         }
       } else {
-        layer = _shBuildLayer(comp, o, { center: [comp.width / 2, comp.height / 2], t0: t0, fitLayer: o.fit ? text : null, markerLayer: marker });
+        layer = _shBuildLayer(comp, o, { center: [comp.width / 2, comp.height / 2], t0: span ? span.a : t0, fitLayer: o.fit ? text : null, markerLayer: marker });
+        _shApplySpan(layer, span);
         if (o.fit) { layer.moveAfter(text); }
         else {
           for (k = 0; k < (sel ? sel.length : 0); k++) { try { sel[k].selected = false; } catch (eS) { } }
@@ -3534,6 +3568,117 @@ function SHAPE_insert(payloadJson) {
     if (o.mode === "mask") { return _ok(o.name + " mask added to " + made + " layer" + (made === 1 ? "" : "s") + "."); }
     if (o.mode === "matte") { return _ok(o.name + " matte added above " + made + " layer" + (made === 1 ? "" : "s") + "."); }
     return _ok(o.name + " shape layer added.");
+  } catch (e) {
+    return _err(e);
+  }
+}
+
+// ---------- Shape tab: My shapes (js/mt-shape.js "Mine" group) ----------
+// SHAPE_capture() reads the shape the user selected in After Effects and returns it as plain data (px, AE coordinates), bottom part first:
+//   1) selected path properties (a Path in Contents, or a mask path)     2) the first selected shape layer (groups, paths, rectangles, ellipses)
+//   3) the masks of the first selected layer
+// part = { n, fill, t:"p", paths:[{ c, v:[[x,y]], i:[[dx,dy]], o:[[dx,dy]] }] } | { n, fill, t:"r", x, y, w, h, r } (x, y = top-left) | { n, fill, t:"e", x, y, w, h } (x, y = center)
+// Only the translation of a group (Position - Anchor) is baked in; scale / rotation of groups and of the layer are not. Stars and polystars are skipped.
+function _shcContour(sh, ox, oy) {
+  var v = [], ti = [], to = [], k, n = sh.vertices.length;
+  for (k = 0; k < n; k++) {
+    v.push([sh.vertices[k][0] + ox, sh.vertices[k][1] + oy]);
+    ti.push([sh.inTangents[k][0], sh.inTangents[k][1]]);
+    to.push([sh.outTangents[k][0], sh.outTangents[k][1]]);
+  }
+  return { c: !!sh.closed, v: v, i: ti, o: to };
+}
+
+function _shcGroupOffset(grp) {
+  var tg = null, p, a;
+  try { tg = grp.property("ADBE Vector Transform Group"); } catch (e0) { }
+  if (!tg) { return [0, 0]; }
+  try { p = tg.property("ADBE Vector Position").value; a = tg.property("ADBE Vector Anchor").value; return [p[0] - a[0], p[1] - a[1]]; } catch (e1) { return [0, 0]; }
+}
+
+// Walks one Contents group (bottom item first) and pushes parts onto out. st = { count, verts, skipped }.
+function _shcContents(cont, ox, oy, out, st, inheritFill, baseName) {
+  var i, it, mn, hasFill = false, hasStroke = false, paths = [], prims = [], nested = [], pos, sz, rd, fill, k, nm, part;
+  for (i = cont.numProperties; i >= 1; i--) {
+    it = cont.property(i);
+    try { if (it.enabled === false) { continue; } } catch (e0) { }
+    mn = it.matchName;
+    if (mn === "ADBE Vector Shape - Group") {
+      try { paths.push(_shcContour(it.property("ADBE Vector Shape").value, ox, oy)); } catch (e1) { }
+    } else if (mn === "ADBE Vector Shape - Rect") {
+      try {
+        pos = it.property("ADBE Vector Rect Position").value; sz = it.property("ADBE Vector Rect Size").value; rd = it.property("ADBE Vector Rect Roundness").value;
+        prims.push({ t: "r", x: pos[0] - sz[0] / 2 + ox, y: pos[1] - sz[1] / 2 + oy, w: sz[0], h: sz[1], r: rd });
+      } catch (e2) { }
+    } else if (mn === "ADBE Vector Shape - Ellipse") {
+      try {
+        pos = it.property("ADBE Vector Ellipse Position").value; sz = it.property("ADBE Vector Ellipse Size").value;
+        prims.push({ t: "e", x: pos[0] + ox, y: pos[1] + oy, w: sz[0], h: sz[1] });
+      } catch (e3) { }
+    } else if (mn === "ADBE Vector Graphic - Fill") { hasFill = true; }
+    else if (mn === "ADBE Vector Graphic - Stroke") { hasStroke = true; }
+    else if (mn === "ADBE Vector Group") { nested.push(it); }
+    else if (mn === "ADBE Vector Shape - Star") { st.skipped++; }
+  }
+  fill = hasFill ? true : (hasStroke ? false : inheritFill);
+  nm = baseName || "Shape";
+  if (paths.length) {
+    for (k = 0; k < paths.length; k++) { st.verts += paths[k].v.length; }
+    out.push({ n: nm, fill: fill, t: "p", paths: paths });
+  }
+  for (k = 0; k < prims.length; k++) {
+    part = prims[k]; part.n = (paths.length || k) ? nm + " " + (k + 1 + (paths.length ? 1 : 0)) : nm; part.fill = fill;
+    out.push(part);
+  }
+  for (k = nested.length - 1; k >= 0; k--) {          // nested groups: bottom one first, own translation added
+    var off = _shcGroupOffset(nested[k]);
+    _shcContents(nested[k].property("ADBE Vectors Group"), ox + off[0], oy + off[1], out, st, fill, nested[k].name);
+  }
+}
+
+function SHAPE_capture() {
+  try {
+    var comp = _activeComp(), out = [], st = { skipped: 0, verts: 0 }, name = "", i, j, p, pp, off, sel, layer, cont, fillFlag, root, masks, m;
+
+    // 1) selected path properties
+    var props = comp.selectedProperties;
+    for (i = 0; i < (props ? props.length : 0); i++) {
+      p = props[i];
+      try { if (p.propertyValueType !== PropertyValueType.SHAPE) { continue; } } catch (e0) { continue; }
+      off = [0, 0]; pp = p.parentProperty;
+      while (pp) { if (pp.matchName === "ADBE Vector Group") { var go = _shcGroupOffset(pp); off[0] += go[0]; off[1] += go[1]; } pp = pp.parentProperty; }
+      cont = _shcContour(p.value, off[0], off[1]);
+      st.verts += cont.v.length;
+      out.push({ n: "Path " + (out.length + 1), fill: cont.c, t: "p", paths: [cont] });
+      if (!name) { name = p.parentProperty && p.parentProperty.name ? String(p.parentProperty.name) : ""; }
+    }
+
+    // 2) the first selected shape layer, 3) masks of the first selected layer
+    if (!out.length) {
+      sel = comp.selectedLayers;
+      for (i = 0; i < (sel ? sel.length : 0) && !out.length; i++) {
+        layer = sel[i];
+        if (layer instanceof ShapeLayer) {
+          root = layer.property("ADBE Root Vectors Group");
+          if (root) { _shcContents(root, 0, 0, out, st, true, layer.name); }
+        }
+        if (!out.length) {
+          masks = null; try { masks = layer.property("ADBE Mask Parade"); } catch (e1) { }
+          for (j = 1; masks && j <= masks.numProperties; j++) {
+            try {
+              m = masks.property(j).property("ADBE Mask Shape").value;
+              cont = _shcContour(m, 0, 0); st.verts += cont.v.length;
+              out.push({ n: "Mask " + j, fill: true, t: "p", paths: [cont] });
+            } catch (e2) { }
+          }
+        }
+        if (out.length) { name = layer.name; }
+      }
+    }
+
+    if (!out.length) { throw new Error("Select a shape layer (or a path, or a layer with masks) in the Timeline first."); }
+    if (out.length > 60 || st.verts > 5000) { throw new Error("That shape is too complex to save (" + out.length + " parts, " + st.verts + " points)."); }
+    return _ok("Shape read.", { name: name, parts: out, skipped: st.skipped });
   } catch (e) {
     return _err(e);
   }
@@ -9272,280 +9417,6 @@ function NT_compInfo() {
     return _err(e);
   }
 }
-
-// ---------- Copy Effects (Easy Layer section + the chip under the island, js/mt-fxcopy.js) ----------
-// After Effects offers no way to read its own clipboard, so the panel never holds the effect data itself.
-// Copy / Paste go through AE's native Edit > Copy / Paste commands (the same ones as Ctrl+C / Ctrl+V), which
-// carry EVERYTHING: Curves points, Levels, keyframes, expressions, masks inside effects. The panel only keeps a
-// small record (comp id, layer, effect names + indices) so an older saved entry can be re-copied later.
-//   FX_peek()                    cheap, called by the chip every ~0.7 s: which effects are selected right now?
-//   FX_copy("sel" | "layer")     "sel": copy the selected effects exactly as Ctrl+C would. "layer": same, but when no
-//                                effect is selected copy EVERY effect of the first selected layer.
-//   FX_paste(entry, mode, newest, pick)  paste the ticked effects (pick = indices into entry.fx) onto the selected layers.
-//                                mode "add" | "replace" (removes the old effects first). Effects are REBUILT BY SCRIPT from the
-//                                source layer (addProperty + values, keyframes, ease, expressions), so no clipboard and no panel
-//                                focus is needed. Effects a script cannot rebuild (Curves) go through AE Copy / Paste, which
-//                                needs the source comp open; the result says honestly when that did nothing.
-function _fxSelected(comp) {
-  var sl = comp.selectedLayers, i, j, props, p, q, effs, seen, key;
-  for (i = 0; i < sl.length; i++) {
-    props = sl[i].selectedProperties;
-    effs = []; seen = {};
-    for (j = 0; j < props.length; j++) {
-      q = props[j];
-      while (q && q.parentProperty && q.parentProperty.matchName !== "ADBE Effect Parade") { q = q.parentProperty; }
-      if (!q || !q.parentProperty || q.parentProperty.matchName !== "ADBE Effect Parade") { continue; }
-      key = String(q.propertyIndex);
-      if (seen[key]) { continue; }
-      seen[key] = true;
-      effs.push(q);
-    }
-    if (effs.length) {
-      effs.sort(function (a, b) { return a.propertyIndex - b.propertyIndex; });
-      return { layer: sl[i], effects: effs };
-    }
-  }
-  return { layer: null, effects: [] };
-}
-
-function FX_peek() {
-  try {
-    var comp = app.project.activeItem;
-    if (!(comp && comp instanceof CompItem)) { return _ok("", { count: 0, layers: 0 }); }
-    var found = _fxSelected(comp), names = [], i, sl = comp.selectedLayers, layers = 0;
-    for (i = 0; i < found.effects.length; i++) { names.push(found.effects[i].name); }
-    for (i = 0; i < sl.length; i++) { if (sl[i] instanceof AVLayer && !sl[i].locked) { layers++; } }
-    return _ok("", { count: names.length, names: names, layer: found.layer ? found.layer.name : "", layers: layers });
-  } catch (e) {
-    return _ok("", { count: 0, layers: 0 });
-  }
-}
-
-function _fxEntry(comp, layer, effs) {
-  var fx = [], i, id = null;
-  for (i = 0; i < effs.length; i++) { fx.push({ i: effs[i].propertyIndex, n: effs[i].name, m: effs[i].matchName }); }
-  try { if (typeof layer.id !== "undefined") { id = layer.id; } } catch (e0) { id = null; }
-  return { compId: comp.id, compName: comp.name, layerIndex: layer.index, layerName: layer.name, layerId: id, fx: fx, t: (new Date()).getTime() };
-}
-
-function _fxCmd(name) {
-  var id = 0;
-  try { id = app.findMenuCommandId(name); } catch (e) { id = 0; }
-  if (!id) { throw new Error("Could not find the \"" + name + "\" menu command in this After Effects."); }
-  return id;
-}
-
-function FX_copy(mode) {
-  try {
-    var comp = _activeComp(), found = _fxSelected(comp), layer, effs, i, fx;
-    var copyCmd = _fxCmd("Copy");
-    if (found.layer) {
-      // Effects are already selected: copy exactly what the user selected, like Ctrl+C.
-      layer = found.layer; effs = found.effects;
-      app.executeCommand(copyCmd);
-    } else if (mode === "layer") {
-      var sl = comp.selectedLayers, keep = [];
-      if (!sl || sl.length === 0) { throw new Error("Select a layer or an effect first."); }
-      layer = sl[0];
-      fx = layer.property("ADBE Effect Parade");
-      if (!fx || fx.numProperties === 0) { throw new Error("\"" + layer.name + "\" has no effects."); }
-      for (i = 0; i < sl.length; i++) { keep.push(sl[i]); }
-      effs = [];
-      for (i = 1; i <= fx.numProperties; i++) { effs.push(fx.property(i)); }
-      _unpreClearSelection(comp);
-      layer.selected = true;
-      for (i = 0; i < effs.length; i++) { effs[i].selected = true; }
-      app.executeCommand(copyCmd);
-      _unpreClearSelection(comp);
-      for (i = 0; i < keep.length; i++) { keep[i].selected = true; }
-    } else {
-      throw new Error("Select an effect first.");
-    }
-    return _ok(effs.length + " effect" + (effs.length === 1 ? "" : "s") + " copied.", _fxEntry(comp, layer, effs));
-  } catch (e) {
-    return _err(e);
-  }
-}
-
-function _fxFindLayer(comp, entry) {
-  var i, l;
-  if (entry.layerId !== null && typeof entry.layerId !== "undefined") {
-    for (i = 1; i <= comp.numLayers; i++) {
-      l = comp.layer(i);
-      try { if (typeof l.id !== "undefined" && l.id === entry.layerId) { return l; } } catch (e0) {}
-    }
-  }
-  if (entry.layerIndex >= 1 && entry.layerIndex <= comp.numLayers) {
-    l = comp.layer(entry.layerIndex);
-    if (l.name === entry.layerName) { return l; }
-  }
-  return null;
-}
-
-function _fxResolveEffects(layer, entry) {
-  var fx = layer.property("ADBE Effect Parade"), out = [], i, k, e, p, found;
-  if (!fx) { return null; }
-  for (i = 0; i < entry.fx.length; i++) {
-    e = entry.fx[i]; p = null;
-    if (e.i >= 1 && e.i <= fx.numProperties) {
-      p = fx.property(e.i);
-      if (p.matchName !== e.m || p.name !== e.n) { p = null; }
-    }
-    if (!p) {
-      found = null;
-      for (k = 1; k <= fx.numProperties; k++) {
-        if (fx.property(k).matchName === e.m && fx.property(k).name === e.n) { found = fx.property(k); break; }
-      }
-      p = found;
-    }
-    if (!p) { return null; }
-    out.push(p);
-  }
-  return out;
-}
-
-var FX_NATIVE_ONLY = { "ADBE CurvesCustom": true };
-
-// off = seconds added to every keyframe time, so pasted keyframes start at the playhead (like AE's own paste).
-function _fxCopyProps(src, dst, off) {
-  var i, k, s, d, n = src.numProperties;
-  for (i = 1; i <= n; i++) {
-    s = src.property(i);
-    d = null;
-    try { d = dst.property(i); } catch (e0) { d = null; }
-    if (!d) { continue; }
-    try {
-      if (s.propertyType === PropertyType.INDEXED_GROUP || s.propertyType === PropertyType.NAMED_GROUP) { _fxCopyProps(s, d, off); continue; }
-      if (s.propertyValueType === PropertyValueType.NO_VALUE || s.propertyValueType === PropertyValueType.CUSTOM_VALUE) { continue; }
-      if (s.numKeys > 0) {
-        for (k = 1; k <= s.numKeys; k++) { d.setValueAtTime(s.keyTime(k) + off, s.keyValue(k)); }
-        for (k = 1; k <= s.numKeys; k++) {
-          try { d.setInterpolationTypeAtKey(k, s.keyInInterpolationType(k), s.keyOutInterpolationType(k)); } catch (e1) {}
-          try { d.setTemporalEaseAtKey(k, s.keyInTemporalEase(k), s.keyOutTemporalEase(k)); } catch (e2) {}
-        }
-      } else {
-        d.setValue(s.value);
-      }
-      if (s.expressionEnabled) { d.expression = s.expression; }
-    } catch (e3) {}
-  }
-}
-
-function _fxMinKey(g) {
-  var i, p, t, m = null, n = g.numProperties;
-  for (i = 1; i <= n; i++) {
-    p = g.property(i);
-    try {
-      if (p.propertyType === PropertyType.INDEXED_GROUP || p.propertyType === PropertyType.NAMED_GROUP) { t = _fxMinKey(p); }
-      else if (p.numKeys > 0) { t = p.keyTime(1); }
-      else { t = null; }
-    } catch (e0) { t = null; }
-    if (t !== null && (m === null || t < m)) { m = t; }
-  }
-  return m;
-}
-
-function FX_paste(entry, mode, newest, pick) {
-  var undoOpen = false;
-  try {
-    var comp = _activeComp(), sl = comp.selectedLayers, targets = [], i, j, k, fx, tgt, se, ne;
-    for (i = 0; i < sl.length; i++) {
-      if (sl[i] instanceof AVLayer && !sl[i].locked) { targets.push(sl[i]); }
-    }
-    if (targets.length === 0) { throw new Error("Select the layer(s) to paste onto."); }
-    if (!entry || !entry.fx || entry.fx.length === 0) { throw new Error("Nothing saved yet."); }
-
-    var picked = [];
-    if (pick && pick.length) {
-      for (i = 0; i < pick.length; i++) { if (pick[i] >= 0 && pick[i] < entry.fx.length) { picked.push(pick[i]); } }
-    } else {
-      for (i = 0; i < entry.fx.length; i++) { picked.push(i); }
-    }
-    if (picked.length === 0) { throw new Error("Tick at least one effect to paste."); }
-
-    var srcComp = null, srcLayer = null, srcEffs = null;
-    try { srcComp = app.project.itemByID(entry.compId); } catch (e0) { srcComp = null; }
-    if (srcComp && srcComp instanceof CompItem) { srcLayer = _fxFindLayer(srcComp, entry); }
-    if (!srcLayer) { throw new Error("The source layer \"" + entry.layerName + "\" is gone. Copy the effects again."); }
-    srcEffs = _fxResolveEffects(srcLayer, entry);
-    if (!srcEffs) { throw new Error("The source effects changed. Copy them again."); }
-
-    var sameComp = (srcComp.id === comp.id), cloneIdx = [], nativeIdx = [], keepSet = {}, notes = [], added = 0, nativeTargets = [], minKey = null, mk;
-    for (j = 0; j < picked.length; j++) {
-      keepSet[srcEffs[picked[j]].propertyIndex] = true;
-      if (FX_NATIVE_ONLY[entry.fx[picked[j]].m]) { nativeIdx.push(picked[j]); } else { cloneIdx.push(picked[j]); }
-    }
-
-    for (j = 0; j < cloneIdx.length; j++) {
-      mk = _fxMinKey(srcEffs[cloneIdx[j]]);
-      if (mk !== null && (minKey === null || mk < minKey)) { minKey = mk; }
-    }
-
-    app.beginUndoGroup("Copy Effects");
-    undoOpen = true;
-    for (i = 0; i < targets.length; i++) {
-      tgt = targets[i];
-      var lt = comp.time - tgt.startTime;                         // playhead in this layer's own time
-      if (tgt.stretch && tgt.stretch > 0) { lt = lt * 100 / tgt.stretch; }
-      var off = (minKey === null) ? 0 : lt - minKey;              // first keyframe lands on the playhead
-      fx = tgt.property("ADBE Effect Parade");
-      if (!fx) { continue; }
-      var isSrc = sameComp && tgt.index === srcLayer.index;
-      if (mode === "replace") {
-        for (k = fx.numProperties; k >= 1; k--) {
-          if (isSrc && keepSet[k]) { continue; }
-          try { fx.property(k).remove(); } catch (e1) {}
-        }
-        if (isSrc) { continue; }
-      }
-      nativeTargets.push(tgt);
-      for (j = 0; j < cloneIdx.length; j++) {
-        se = srcEffs[cloneIdx[j]];
-        try {
-          ne = fx.addProperty(se.matchName);
-          try { ne.name = se.name; } catch (e2) {}
-          try { ne.enabled = se.enabled; } catch (e3) {}
-          _fxCopyProps(se, ne, off);
-          added++;
-        } catch (e4) {
-          notes.push("\"" + se.name + "\" could not be rebuilt.");
-        }
-      }
-    }
-
-    if (nativeIdx.length && nativeTargets.length) {
-      if (!sameComp) {
-        notes.push("Curves needs its source comp (\"" + entry.compName + "\") open.");
-      } else {
-        var copyCmd = _fxCmd("Copy"), pasteCmd = _fxCmd("Paste"), before = 0, after = 0;
-        _unpreClearSelection(comp);
-        srcLayer.selected = true;
-        for (j = 0; j < nativeIdx.length; j++) { srcEffs[nativeIdx[j]].selected = true; }
-        app.executeCommand(copyCmd);
-        _unpreClearSelection(comp);
-        for (i = 0; i < nativeTargets.length; i++) {
-          nativeTargets[i].selected = true;
-          before += nativeTargets[i].property("ADBE Effect Parade").numProperties;
-        }
-        app.executeCommand(pasteCmd);
-        for (i = 0; i < nativeTargets.length; i++) { after += nativeTargets[i].property("ADBE Effect Parade").numProperties; }
-        if (after > before) { added += (after - before); }
-        else { notes.push("After Effects ignored the Paste for Curves (click the timeline once, then try again)."); }
-      }
-    }
-    app.endUndoGroup();
-    undoOpen = false;
-
-    _unpreClearSelection(comp);
-    for (i = 0; i < targets.length; i++) { targets[i].selected = true; }
-    if (added === 0) { throw new Error("Nothing was pasted. " + notes.join(" ")); }
-    return _ok("Pasted " + added + " effect" + (added === 1 ? "" : "s") + (targets.length > 1 ? " (" + targets.length + " layers)" : "") + "." + (minKey !== null ? " Keyframes start at the playhead." : "") + (notes.length ? " " + notes.join(" ") : ""));
-  } catch (e) {
-    if (undoOpen) { app.endUndoGroup(); }
-    return _err(e);
-  }
-}
-
 
 // =====================================================================================================
 // Keyframe Timing tab (js/main.js KeyframeTiming): move / stretch the SELECTED keyframes.

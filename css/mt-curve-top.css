@@ -11,3 +11,10 @@
 }
 /* Island off (Settings > Appearance): no band, NeuCurve is back to its default layout (see css/mt-island.css). */
 :root[data-island="off"] .main.is-curve::before { display: none; }
+
+/* v5: ONE continuous backdrop. The solid band above is retired: the pane now starts at the very top (so NeuCurve's own background -
+   colour, gradient, image, effects - runs behind the island) and js/mt-curve-top.js hands the frame a 50px top inset
+   (--mt-top-inset, applied in neucurve/nc-theme-sync.css) so NeuCurve's toolbar still starts below the island. Island off: inset 0. */
+:root:not([data-island="off"]) .curve-pane { top: 0; }
+.main.is-curve::before { display: none; }
+

@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.208",
-    "changelog":  "- Update 1.8.208",
+    "latest_version":  "1.8.209",
+    "changelog":  "- Update 1.8.209",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -56,7 +56,7 @@
                   },
                   {
                       "path":  "css/mt-curve-top.css",
-                      "sha256":  "da7e340572ed5d81dac18af1eb0cccbe69bd2dec219dcb81d7261299c02cfa87"
+                      "sha256":  "14fc46efbe4fbb5d41356f8faedc2ab696c7396f7802af62eb22c71d90f055dd"
                   },
                   {
                       "path":  "css/mt-dialog.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "71be6f7fa3e02f8fb99f386654ff9a35965cf9d0ef0cacc0edabd548b12b05b6"
+                      "sha256":  "b3aed0a69eb44b5dcc5a128fdd9bc45424d5c67fdbb84114cf3c0022a1025386"
                   },
                   {
                       "path":  "html/settings.html",
@@ -316,7 +316,7 @@
                   },
                   {
                       "path":  "js/mt-curve-top.js",
-                      "sha256":  "39f35a5b850287a01114dc9be244e09482ce38e1dc2eb0ef1323d686102bd49c"
+                      "sha256":  "8b267fe1b01a027d67687dd52cadf28dd00e4a505b98fde232c45843b8c7720d"
                   },
                   {
                       "path":  "js/mt-gif.js",
@@ -476,7 +476,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "db6b38aad3cdda17b2d65df4ca4a3e98977e3410ffd4da26e39f1a128f4d13a0"
+                      "sha256":  "030d646a7a2a6a32cb4fc27668281b41b69b9d208c26fb42f5182d3ea4ad0c07"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -748,11 +748,11 @@
                   },
                   {
                       "path":  "neucurve/nc-theme-sync.css",
-                      "sha256":  "10243f0e07b2222cbdd03c3ad1534f8cb44251102e65b20913bf2b9367f97b79"
+                      "sha256":  "109413fdcb9f42ccab2d4107f2f97ac933dc23c8b79b6c27e365c12210d7b918"
                   },
                   {
                       "path":  "neucurve/nc-theme-sync.js",
-                      "sha256":  "a690b3b1525ead4d2c9196fc12ce8195ec5d576858b75d464390f9a21dd8174d"
+                      "sha256":  "c35bd799af32326dce2c9ab2fabe3449be925815bc75791fdc18cd7db6874e3a"
                   },
                   {
                       "path":  "neucurve/nc-view.css",
@@ -776,7 +776,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "a441d01bd73ece66c57515f932d6d8caf875980cda3158aa870949d3188a8db7"
+                      "sha256":  "c1315d9e9a41049ae7ab527261b0a97b26ccd43cd9a2784fc1ec3712bfc96c38"
                   }
               ]
 }

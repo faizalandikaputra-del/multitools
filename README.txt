@@ -2737,3 +2737,13 @@ expression-code-follow-bg (tab Expression Code: warna kotak solid mengikuti Sett
   - Permintaan: kalau Background color di pengaturan diubah, warna solid tab Expression Code ikut berubah.
   - Fix: css/mt-expr-layout.css (?v=7): warna hardcode diganti token yang diturunkan main.js applyCardSurfaces dari warna pilihan - search/chip/tombol/editor/preview = --surface-sunken (dasar -6), baris + dock = --surface-solid (+12), hover/terpilih = --surface-hover-solid (+20), garis = --border. Token yang sama otomatis ikut light theme dan Material You.
   - Files: css/mt-expr-layout.css, html/index.html, README.txt.
+
+neucurve-mode-pill-follow-bg (tab NeuCurve: plate di belakang tombol mode grafik solid/line/... mengikuti Settings > Background color)
+  - Penyebab: nc-flow.css memberi .model-tabs-horizontal warna hardcode #202020 (+ garis #2c2c2c, chip aktif #262626) dengan !important, mengalahkan aturan sync generik di nc-theme-sync.js.
+  - Fix: nc-theme-sync.js menambah variabel --mt-bg-pill-rgb / -line-rgb / -act-rgb / -actline-rgb dari bgRgb panel; nc-theme-sync.css (?v=2) memakainya dengan selector lebih spesifik: plate = warna Background, garis +14, chip aktif +8 (garis +24), garis pemisah .fl-gtools ikut. Light style tidak diubah (tetap nc-light.css).
+  - Files: neucurve/nc-theme-sync.js (?v=4), neucurve/nc-theme-sync.css, neucurve/index.html, README.txt.
+
+neucurve-island-backdrop-continuous (tab NeuCurve: latar belakang dynamic island tidak lagi band hitam, menyambung dengan background NeuCurve)
+  - Penyebab: css/mt-curve-top.css melukis band solid 50px di atas pane (pane NeuCurve mulai 50px di bawah), jadi gradient / gambar / efek background NeuCurve tidak sampai ke belakang island dan band terlihat hitam.
+  - Fix: pane NeuCurve mulai dari paling atas lagi (css/mt-curve-top.css ?v=5, band dimatikan); js/mt-curve-top.js (?v=2) memberi frame variabel --mt-top-inset (50px, 0px kalau island off); neucurve/nc-theme-sync.css (?v=3) memakainya sebagai padding-top body, jadi toolbar tetap mulai di bawah island sementara background NeuCurve memanjang sampai ke belakang island.
+  - Files: css/mt-curve-top.css, js/mt-curve-top.js, neucurve/nc-theme-sync.css, neucurve/index.html, html/index.html, README.txt.

@@ -149,6 +149,11 @@
         root.style.setProperty("--mt-bg-side-rgb", offset(rgb, -4));
         root.style.setProperty("--mt-bg-rail-rgb", offset(rgb, -10));
         root.style.setProperty("--mt-bg-canvas-rgb", offset(rgb, -20));
+        // Graph-mode pill (the solid/line/... tab bar): plate = the panel Background color itself, hairline + active chip a touch lighter.
+        root.style.setProperty("--mt-bg-pill-rgb", offset(rgb, 0));
+        root.style.setProperty("--mt-bg-pill-line-rgb", offset(rgb, 14));
+        root.style.setProperty("--mt-bg-pill-act-rgb", offset(rgb, 8));
+        root.style.setProperty("--mt-bg-pill-actline-rgb", offset(rgb, 24));
         root.classList.add("mt-bg-themed");
         rebuildDynamicBgCss(rgb);
       }
@@ -159,6 +164,10 @@
       root.style.removeProperty("--mt-bg-side-rgb");
       root.style.removeProperty("--mt-bg-rail-rgb");
       root.style.removeProperty("--mt-bg-canvas-rgb");
+      root.style.removeProperty("--mt-bg-pill-rgb");
+      root.style.removeProperty("--mt-bg-pill-line-rgb");
+      root.style.removeProperty("--mt-bg-pill-act-rgb");
+      root.style.removeProperty("--mt-bg-pill-actline-rgb");
       root.classList.remove("mt-bg-themed");
       rebuildDynamicBgCss(null);
     }

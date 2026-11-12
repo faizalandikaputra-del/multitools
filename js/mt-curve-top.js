@@ -24,6 +24,15 @@
       if (col) { break; }
     }
     if (col && col !== last) { last = col; root.style.setProperty("--curve-top-bg", col); }
+    inset(doc);
+  }
+  /* v5: tell NeuCurve how much room the island needs at the top (50px = 8 + 36 + 6, same as css/mt-island.css); 0 when the island is off. */
+  var lastInset = "";
+  function inset(doc) {
+    var v = root.getAttribute("data-island") === "off" ? "0px" : "50px";
+    if (v === lastInset && doc.documentElement.style.getPropertyValue("--mt-top-inset") === v) { return; }
+    lastInset = v;
+    try { doc.documentElement.style.setProperty("--mt-top-inset", v); } catch (e4) { }
   }
 
   frame.addEventListener("load", function () { paint(); setTimeout(paint, 600); setTimeout(paint, 2500); });
@@ -32,7 +41,7 @@
   });
   try {
     new MutationObserver(function () { if (root.classList.contains("mt-curve-open")) { paint(); } })
-      .observe(root, { attributes: true, attributeFilter: ["class"] });
+      .observe(root, { attributes: true, attributeFilter: ["class", "data-island"] });
   } catch (e3) { }
   setInterval(function () { if (!document.hidden && root.classList.contains("mt-curve-open")) { paint(); } }, 1000);
 })();

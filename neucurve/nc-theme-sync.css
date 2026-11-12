@@ -89,3 +89,27 @@ html.mt-bg-themed .curve-svg {
 html.mt-bg-themed svg.curve-svg > rect[x="0"][y="0"] {
   fill: rgb(var(--mt-bg-canvas-rgb)) !important;
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Graph-mode pill (solid / line / ... tab bar + the expand icon beside it).
+   nc-flow.css hardcodes it (#202020 plate, #2c2c2c hairline, #262626 active chip) with !important, which beat the generic
+   BASE_TONES rule above, so the plate stayed grey whatever Settings > Background color was. These selectors are one step
+   more specific than nc-flow.css, so they win. Dark styles only: html.mt-light keeps nc-light.css's own colors.
+   --------------------------------------------------------------------------------------------- */
+html.mt-bg-themed:not(.mt-light) body .shell.shell .model-tabs-horizontal {
+  background: rgb(var(--mt-bg-pill-rgb)) !important;
+  border-color: rgb(var(--mt-bg-pill-line-rgb)) !important;
+}
+html.mt-bg-themed:not(.mt-light) body .shell.shell .mtab.active.active {
+  background: rgb(var(--mt-bg-pill-act-rgb));
+  border-color: rgb(var(--mt-bg-pill-actline-rgb)) !important;
+}
+html.mt-bg-themed:not(.mt-light) body .shell.shell .fl-gtools {
+  border-left-color: rgb(var(--mt-bg-pill-line-rgb));
+}
+
+/* Room for the panel's dynamic island. The panel (js/mt-curve-top.js) sets --mt-top-inset on <html> (50px, 0px when the island is off) and
+   lets this frame start at the very top of the panel, so NeuCurve's own background (colour / gradient / image / effects) runs behind the
+   island instead of a separate black band. Standalone windows never get the variable: 0px = no change. */
+html body { padding-top: var(--mt-top-inset, 0px); box-sizing: border-box; }
+

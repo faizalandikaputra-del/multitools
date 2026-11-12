@@ -91,25 +91,25 @@ html.mt-bg-themed svg.curve-svg > rect[x="0"][y="0"] {
 }
 
 /* ---------------------------------------------------------------------------------------------
-   Graph-mode pill (solid / line / ... tab bar + the grip and expand icons beside it).
+   Graph-mode pill (solid / line / ... tab bar + the expand icon beside it).
    nc-flow.css hardcodes it (#202020 plate, #2c2c2c hairline, #262626 active chip) with !important, which beat the generic
-   BASE_TONES rule above, so the plate stayed grey whatever Settings > Background color was.
-   fix27: the plate now ALWAYS follows the Multi Tool Background color. Before, these rules only ran under html.mt-bg-themed
-   (a custom color was picked); with the default color the pill stayed #202020 grey next to the #16161a graph. The var()
-   fallbacks below are Multi Tool's default Background (#16161a = 22,22,26) with the same offsets nc-theme-sync.js uses, so
-   default and custom colors look the same way. Covers the portrait bar (.model-tabs-horizontal) and the landscape bar
-   (.model-nav-strip.fl-modes). Dark styles only: html.mt-light keeps nc-light.css's own colors.
+   BASE_TONES rule above, so the plate stayed grey whatever Settings > Background color was. These selectors are one step
+   more specific than nc-flow.css, so they win. Dark styles only: html.mt-light keeps nc-light.css's own colors.
    --------------------------------------------------------------------------------------------- */
-html:not(.mt-light) body .shell.shell .model-tabs-horizontal,
-html:not(.mt-light) body .shell.shell .fixed-section > .model-nav-strip.fl-modes {
-  background: rgb(var(--mt-bg-pill-rgb, 22, 22, 26)) !important;
-  border-color: rgb(var(--mt-bg-pill-line-rgb, 36, 36, 40)) !important;
+html.mt-bg-themed:not(.mt-light) body .shell.shell .model-tabs-horizontal {
+  background: rgb(var(--mt-bg-pill-rgb)) !important;
+  border-color: rgb(var(--mt-bg-pill-line-rgb)) !important;
 }
-html:not(.mt-light) body .shell.shell .mtab.active.active,
-html:not(.mt-light) body .shell.shell .fl-modes .nav-tab.active {
-  background: rgb(var(--mt-bg-pill-act-rgb, 30, 30, 34));
-  border-color: rgb(var(--mt-bg-pill-actline-rgb, 46, 46, 50)) !important;
+html.mt-bg-themed:not(.mt-light) body .shell.shell .mtab.active.active {
+  background: rgb(var(--mt-bg-pill-act-rgb));
+  border-color: rgb(var(--mt-bg-pill-actline-rgb)) !important;
 }
-html:not(.mt-light) body .shell.shell .fl-gtools {
-  border-left-color: rgb(var(--mt-bg-pill-line-rgb, 36, 36, 40));
+html.mt-bg-themed:not(.mt-light) body .shell.shell .fl-gtools {
+  border-left-color: rgb(var(--mt-bg-pill-line-rgb));
 }
+
+/* Room for the panel's dynamic island. The panel (js/mt-curve-top.js) sets --mt-top-inset on <html> (50px, 0px when the island is off) and
+   lets this frame start at the very top of the panel, so NeuCurve's own background (colour / gradient / image / effects) runs behind the
+   island instead of a separate black band. Standalone windows never get the variable: 0px = no change. */
+html body { padding-top: var(--mt-top-inset, 0px); box-sizing: border-box; }
+

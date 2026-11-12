@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.210",
-    "changelog":  "- Update 1.8.210",
+    "latest_version":  "1.8.211",
+    "changelog":  "- Update 1.8.211",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -476,7 +476,7 @@
                   },
                   {
                       "path":  "neucurve/index.html",
-                      "sha256":  "6db75ecfaee20693557f08a5698492e1babb28742a754392a0392e4bff0dc6dd"
+                      "sha256":  "030d646a7a2a6a32cb4fc27668281b41b69b9d208c26fb42f5182d3ea4ad0c07"
                   },
                   {
                       "path":  "neucurve/nc-apply-glow.css",
@@ -748,7 +748,7 @@
                   },
                   {
                       "path":  "neucurve/nc-theme-sync.css",
-                      "sha256":  "6ec6b87846d8ff476bedd95c1aa68d79b0c7b7470115bc9263634bdefcafd689"
+                      "sha256":  "109413fdcb9f42ccab2d4107f2f97ac933dc23c8b79b6c27e365c12210d7b918"
                   },
                   {
                       "path":  "neucurve/nc-theme-sync.js",
@@ -776,7 +776,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "0ad6b2af313db0e2595219ef35138c76a47c0903c85448f0e90983fe396c86b6"
+                      "sha256":  "c1315d9e9a41049ae7ab527261b0a97b26ccd43cd9a2784fc1ec3712bfc96c38"
                   }
               ]
 }

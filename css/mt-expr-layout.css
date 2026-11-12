@@ -238,22 +238,27 @@
 .xc .xc-ta:focus, .xc .xc-ta:hover { background: transparent !important; }
 
 /* Solid (non-transparent) surfaces: the dock, editor and code preview must not show the panel background image through them. */
-.xc { --xc-solid: #1f1f24; --xc-solid-code: #111114; }
+.xc { --xc-solid: #171717; --xc-solid-code: #0a0a0a; }
 :root[data-theme="light"] .xc { --xc-solid: #f4f4f7; --xc-solid-code: #e9e9ee; }
-.xc .xc-dock { background: var(--xc-solid) !important; -webkit-backdrop-filter: none; backdrop-filter: none; opacity: 1; }
+.xc .xc-dock { background: var(--xc-solid-row) !important; border-top: 1px solid var(--xc-line); -webkit-backdrop-filter: none; backdrop-filter: none; opacity: 1; }
 .xc .xc-editor, .xc .xc-row-pre { background: var(--xc-solid-code) !important; }
 
 /* Page stays see-through (the panel background photo shows). Only the boxes below are solid. */
-.xc { --xc-solid-field: #2a2a31; --xc-solid-row: #1d1d22; }
-:root[data-theme="light"] .xc { --xc-solid-field: #dcdce3; --xc-solid-row: #f1f1f5; }
+/* Same neutral palette as the Settings window (css/mt-settings-window.css): content #171717, surface #111111, hover #262626, border #262626, deepest #0a0a0a. */
+.xc { --xc-solid-field: #111111; --xc-solid-row: #171717; --xc-solid-hover: #262626; --xc-line: #262626; }
+:root[data-theme="light"] .xc { --xc-solid-field: #e6e6ec; --xc-solid-row: #f4f4f7; --xc-solid-hover: #dcdce3; --xc-line: #cfcfd8; }
 .xc .xc-search, .xc .xc-new + *, .xc .xc-chip:not(.is-active):not(.xc-chip-add) { background: var(--xc-solid-field) !important; }
 .xc .xc-chip.is-active { background: var(--accent-strong) !important; }
 .xc .xc-chip-add { background: var(--xc-solid-row) !important; }
 .xc .xc-addrow-in input { background: var(--xc-solid-field) !important; }
 .xc .xc-row { background: var(--xc-solid-row) !important; margin-bottom: 6px; }
-.xc .xc-row.is-selected { background: var(--xc-solid-field) !important; }
-.xc .xc-row:not(.is-selected) .xc-row-main:hover { background: var(--xc-solid-field) !important; }
-.xc .xc-btn:not(.xc-btn-main):not(.xc-btn-ghost) { background: var(--xc-solid-field) !important; }
+.xc .xc-row.is-selected { background: var(--xc-solid-hover) !important; }
+.xc .xc-row:not(.is-selected) .xc-row-main:hover { background: var(--xc-solid-hover) !important; }
+.xc .xc-btn:not(.xc-btn-main):not(.xc-btn-ghost) { background: var(--xc-solid-field) !important; box-shadow: 0 0 0 1px var(--xc-line) inset; }
+.xc .xc-btn:not(.xc-btn-main):not(.xc-btn-ghost):hover { background: var(--xc-solid-hover) !important; }
+.xc .xc-search, .xc .xc-chip:not(.is-active), .xc .xc-row, .xc .xc-empty { border: 1px solid var(--xc-line); }
+.xc .xc-search { box-shadow: none; }
+.xc .xc-chip { height: calc(1.7rem); }
 .xc .xc-empty { background: var(--xc-solid-row); border-radius: 10px; }
 .xc .xc-sec { padding-left: .15rem; }
 

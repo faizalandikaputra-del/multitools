@@ -238,15 +238,10 @@
 .xc .xc-ta:focus, .xc .xc-ta:hover { background: transparent !important; }
 
 /* Solid (non-transparent) surfaces: the dock, editor and code preview must not show the panel background image through them. */
-.xc { --xc-solid: #171717; --xc-solid-code: #0a0a0a; }
-:root[data-theme="light"] .xc { --xc-solid: #f4f4f7; --xc-solid-code: #e9e9ee; }
 .xc .xc-dock { background: var(--xc-solid-row) !important; border-top: 1px solid var(--xc-line); -webkit-backdrop-filter: none; backdrop-filter: none; opacity: 1; }
 .xc .xc-editor, .xc .xc-row-pre { background: var(--xc-solid-code) !important; }
 
 /* Page stays see-through (the panel background photo shows). Only the boxes below are solid. */
-/* Same neutral palette as the Settings window (css/mt-settings-window.css): content #171717, surface #111111, hover #262626, border #262626, deepest #0a0a0a. */
-.xc { --xc-solid-field: #111111; --xc-solid-row: #171717; --xc-solid-hover: #262626; --xc-line: #262626; }
-:root[data-theme="light"] .xc { --xc-solid-field: #e6e6ec; --xc-solid-row: #f4f4f7; --xc-solid-hover: #dcdce3; --xc-line: #cfcfd8; }
 .xc .xc-search, .xc .xc-new + *, .xc .xc-chip:not(.is-active):not(.xc-chip-add) { background: var(--xc-solid-field) !important; }
 .xc .xc-chip.is-active { background: var(--accent-strong) !important; }
 .xc .xc-chip-add { background: var(--xc-solid-row) !important; }
@@ -269,3 +264,14 @@
 .main.is-solid-tab > .panel > .xc { flex: 1 0 auto; }
 .main.is-solid-tab .xc-list { flex: 1 0 auto; }
 .main.is-solid-tab .xc-dock { margin-top: auto; }
+
+/* Solid colors follow Settings > Background color: main.js (applyCardSurfaces) derives these opaque tiers from the chosen color
+   (sunken = base -6, solid = base +12, hover-solid = base +20) and they also switch for light and Material You themes. */
+.xc {
+  --xc-solid-field: var(--surface-sunken, #121216);
+  --xc-solid-row: var(--surface-solid, #1e1e24);
+  --xc-solid-hover: var(--surface-hover-solid, #272730);
+  --xc-solid: var(--surface-solid, #1e1e24);
+  --xc-solid-code: var(--surface-sunken, #121216);
+  --xc-line: var(--border, #333333);
+}

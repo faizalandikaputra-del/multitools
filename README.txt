@@ -2732,3 +2732,8 @@ expression-code-settings-palette (tab Expression Code: warna kotak solid = palet
   - Permintaan: warna solid dibuat mirip background pengaturan MultiTool.
   - Fix: css/mt-expr-layout.css (?v=6): kotak memakai palet css/mt-settings-window.css - baris/dock #171717, search/chip/tombol #111111, hover/terpilih #262626, editor/preview #0a0a0a, garis 1px #262626. Light theme punya padanan terang sendiri.
   - Files: css/mt-expr-layout.css, html/index.html, README.txt.
+
+expression-code-follow-bg (tab Expression Code: warna kotak solid mengikuti Settings > Background color)
+  - Permintaan: kalau Background color di pengaturan diubah, warna solid tab Expression Code ikut berubah.
+  - Fix: css/mt-expr-layout.css (?v=7): warna hardcode diganti token yang diturunkan main.js applyCardSurfaces dari warna pilihan - search/chip/tombol/editor/preview = --surface-sunken (dasar -6), baris + dock = --surface-solid (+12), hover/terpilih = --surface-hover-solid (+20), garis = --border. Token yang sama otomatis ikut light theme dan Material You.
+  - Files: css/mt-expr-layout.css, html/index.html, README.txt.

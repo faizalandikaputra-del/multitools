@@ -242,3 +242,16 @@
 :root[data-theme="light"] .xc { --xc-solid: #f4f4f7; --xc-solid-code: #e9e9ee; }
 .xc .xc-dock { background: var(--xc-solid) !important; -webkit-backdrop-filter: none; backdrop-filter: none; opacity: 1; }
 .xc .xc-editor, .xc .xc-row-pre { background: var(--xc-solid-code) !important; }
+
+/* Whole tab solid: header + list area get an opaque page color, so the panel background image / glow never shows through. */
+.main.is-solid-tab { background: var(--xc-page, #17171b) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+:root[data-theme="light"] .main.is-solid-tab { --xc-page: #ececf0; }
+.main.is-solid-tab .xc-dock { background: var(--xc-solid) !important; }
+
+/* Dock pinned to the bottom edge of the tab: the panel stretches to the full height, the list takes the free space,
+   and the dock sits at the bottom even with few snippets (it stays sticky when the list is long). */
+.main.is-solid-tab { padding-bottom: 0 !important; }
+.main.is-solid-tab > .panel { flex: 1 0 auto; display: flex; flex-direction: column; padding-bottom: 0; }
+.main.is-solid-tab > .panel > .xc { flex: 1 0 auto; }
+.main.is-solid-tab .xc-list { flex: 1 0 auto; }
+.main.is-solid-tab .xc-dock { margin-top: auto; }

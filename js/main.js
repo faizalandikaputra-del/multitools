@@ -4712,6 +4712,7 @@
   function showTab(tabId) {
     if (!TABS[tabId]) { return; }
     if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
+    try { $("main").classList.toggle("is-solid-tab", tabId === "expr-code"); } catch (eSolid) { }   // Expression Code: solid page (css/mt-expr-layout.css)
     var head = document.querySelector(".panel-head");
     var hasOld = panel && panel.firstChild && currentTab && currentTab !== tabId &&
                  TABS[currentTab] && TABS[currentTab].custom !== "curve";

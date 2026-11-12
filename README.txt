@@ -2712,3 +2712,13 @@ expression-code-solid (tab Expression Code: dock & editor tidak transparan)
   - Masalah: dock bawah ("Write an expression...") dan editor tembus pandang, gambar background panel terlihat lewat.
   - Fix: css/mt-expr-layout.css (?v=2) - dock, editor, dan preview kode pakai warna solid (--xc-solid / --xc-solid-code, dark + light). Daftar snippet dan search tidak diubah.
   - Files: css/mt-expr-layout.css, html/index.html, README.txt.
+
+expression-code-solid-all (tab Expression Code: seluruh tab solid)
+  - Permintaan: semua bagian tab Expression Code solid, bukan hanya dock.
+  - Fix: js/main.js showTab memberi class is-solid-tab pada .main saat tab expr-code aktif (?v=87); css/mt-expr-layout.css (?v=3): .main.is-solid-tab pakai warna halaman opaque (--xc-page, dark #17171b / light #ececf0), tanpa backdrop-filter. Sidebar kiri tidak diubah.
+  - Files: js/main.js, css/mt-expr-layout.css, html/index.html, README.txt.
+
+expression-code-dock-bottom (tab Expression Code: "Write an expression" selalu menempel di bawah)
+  - Masalah: dock mengambang tepat di bawah daftar saat snippet sedikit.
+  - Fix: css/mt-expr-layout.css (?v=4): saat is-solid-tab, .panel + .xc + .xc-list memenuhi tinggi, dock margin-top:auto dan rata dengan tepi bawah panel (padding bawah .main = 0); tetap sticky saat daftar panjang.
+  - Files: css/mt-expr-layout.css, html/index.html, README.txt.

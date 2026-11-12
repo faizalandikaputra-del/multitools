@@ -243,10 +243,19 @@
 .xc .xc-dock { background: var(--xc-solid) !important; -webkit-backdrop-filter: none; backdrop-filter: none; opacity: 1; }
 .xc .xc-editor, .xc .xc-row-pre { background: var(--xc-solid-code) !important; }
 
-/* Whole tab solid: header + list area get an opaque page color, so the panel background image / glow never shows through. */
-.main.is-solid-tab { background: var(--xc-page, #17171b) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-:root[data-theme="light"] .main.is-solid-tab { --xc-page: #ececf0; }
-.main.is-solid-tab .xc-dock { background: var(--xc-solid) !important; }
+/* Page stays see-through (the panel background photo shows). Only the boxes below are solid. */
+.xc { --xc-solid-field: #2a2a31; --xc-solid-row: #1d1d22; }
+:root[data-theme="light"] .xc { --xc-solid-field: #dcdce3; --xc-solid-row: #f1f1f5; }
+.xc .xc-search, .xc .xc-new + *, .xc .xc-chip:not(.is-active):not(.xc-chip-add) { background: var(--xc-solid-field) !important; }
+.xc .xc-chip.is-active { background: var(--accent-strong) !important; }
+.xc .xc-chip-add { background: var(--xc-solid-row) !important; }
+.xc .xc-addrow-in input { background: var(--xc-solid-field) !important; }
+.xc .xc-row { background: var(--xc-solid-row) !important; margin-bottom: 6px; }
+.xc .xc-row.is-selected { background: var(--xc-solid-field) !important; }
+.xc .xc-row:not(.is-selected) .xc-row-main:hover { background: var(--xc-solid-field) !important; }
+.xc .xc-btn:not(.xc-btn-main):not(.xc-btn-ghost) { background: var(--xc-solid-field) !important; }
+.xc .xc-empty { background: var(--xc-solid-row); border-radius: 10px; }
+.xc .xc-sec { padding-left: .15rem; }
 
 /* Dock pinned to the bottom edge of the tab: the panel stretches to the full height, the list takes the free space,
    and the dock sits at the bottom even with few snippets (it stays sticky when the list is long). */

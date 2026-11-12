@@ -2722,3 +2722,8 @@ expression-code-dock-bottom (tab Expression Code: "Write an expression" selalu m
   - Masalah: dock mengambang tepat di bawah daftar saat snippet sedikit.
   - Fix: css/mt-expr-layout.css (?v=4): saat is-solid-tab, .panel + .xc + .xc-list memenuhi tinggi, dock margin-top:auto dan rata dengan tepi bawah panel (padding bawah .main = 0); tetap sticky saat daftar panjang.
   - Files: css/mt-expr-layout.css, html/index.html, README.txt.
+
+expression-code-solid-boxes (tab Expression Code: foto background kembali terlihat, hanya kotak yang solid)
+  - Penyebab foto hilang: fix sebelumnya (expression-code-solid-all) memberi seluruh area .main warna opaque, menutupi foto background panel.
+  - Fix: css/mt-expr-layout.css (?v=5): background halaman dikembalikan transparan; yang solid hanya kotaknya (search, chip, tombol, baris snippet, detail, dock, editor, preview kode; warna --xc-solid-field / --xc-solid-row / --xc-solid, dark + light). Dock tetap di bawah.
+  - Files: css/mt-expr-layout.css, html/index.html, README.txt. (js/main.js: class is-solid-tab tetap dipakai hanya untuk layout dock di bawah.)

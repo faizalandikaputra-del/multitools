@@ -2705,76 +2705,246 @@
   var ExprCode = {
     escapeHtml: function (s) { return escapeHtml(s); },
 
-    render: function () {
-      var self = this;
-      var wrap = document.createElement("div");
-      wrap.className = "ta";
-      var editingId = null;
+    // Tiny ExtendScript/expression highlighter. Returns escaped HTML. Used by the editor overlay and by the
+    // expanded snippet preview, so both show the same colors.
+    highlight: function (code) {
+      var re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(\b\d+(?:\.\d+)?\b|\.\d+\b)|\b(var|let|const|if|else|for|while|return|function|true|false|null|new|this|thisComp|thisLayer|thisProperty|time|value|index)\b/g;
+      var out = "", last = 0, m;
+      while ((m = re.exec(code)) !== null) {
+        out += escapeHtml(code.slice(last, m.index));
+        var cls = m[1] ? "c" : m[2] ? "s" : m[3] ? "n" : "k";
+        out += '<span class="xc-t-' + cls + '">' + escapeHtml(m[0]) + "</span>";
+        last = re.lastIndex;
+        if (m[0].length === 0) { re.lastIndex++; }
+      }
+      return out + escapeHtml(code.slice(last));
+    },
 
-      // Legacy migration: earlier versions kept one flat "exprSnippets" list.
-      // The first time the categorized store runs, that list becomes the seed
-      // for a single "Snippets" category - nothing is lost.
+    render: function () {
+      var wrap = document.createElement("div");
+      wrap.className = "xc";
+      var editingId = null;
+      var selectedId = null;
+      var query = "";
+
       var legacy = null;
       try { legacy = JSON.parse(Store.get("exprSnippets") || "null"); } catch (e) { legacy = null; }
       var catData = exprCatStore.ensure("Snippets", legacy || []);
 
+      var ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>';
+      var ICON_SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>';
+      var ICON_PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+      var ICON_STAR_LINE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.16 6.6.62-5 4.53 1.5 6.6L12 16.9l-5.99 3.51 1.5-6.6-5-4.53 6.6-.62L12 2.5Z"/></svg>';
+      var ICON_EXPAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
+
       wrap.innerHTML =
-        '<div class="ta-section snippet-card">' +
-          '<h2 class="ta-title">New / Edit Snippet</h2>' +
-          '<input type="text" id="expr-name" class="text-input" placeholder="Snippet name (e.g. Elastic Scale)">' +
-          '<div class="saber-wrap saber-wrap--code is-active">' +
-            '<div class="code-editor">' +
-              '<div class="code-editor-head">' +
-                '<span class="code-editor-lang"><span class="code-editor-dot"></span>JavaScript / ExtendScript</span>' +
-                '<div class="code-editor-tools">' +
-                  '<button class="icon-btn" id="expr-copy" type="button" title="Copy code">' + ICON_COPY_SVG + "</button>" +
-                  '<button class="icon-btn" id="expr-clear-code" type="button" title="Clear code">' + ICON_CLEAR_SVG + "</button>" +
-                "</div>" +
-              "</div>" +
-              '<textarea id="expr-code" class="code-area" rows="6" placeholder="wiggle(2, 30)"></textarea>' +
-            "</div>" +
-          "</div>" +
-          '<div class="field-actions">' +
-            '<button class="btn" id="expr-apply-current">Apply to Selected Properties</button>' +
-            '<button class="btn btn-ghost" id="expr-clear-form" type="button">Clear</button>' +
-          "</div>" +
-          '<button class="btn-apply" id="expr-save">Save Snippet</button>' +
+        '<div class="xc-top">' +
+          '<label class="xc-search">' + ICON_SEARCH +
+            '<input type="text" id="xc-search" placeholder="Search snippets" autocomplete="off" spellcheck="false">' +
+            '<button class="xc-search-clear" id="xc-search-clear" type="button" aria-label="Clear search" hidden>' + ICON_CLEAR_SVG + "</button>" +
+          "</label>" +
+          '<button class="xc-new" id="xc-new" type="button" title="New snippet" aria-label="New snippet">' + ICON_PLUS + "</button>" +
         "</div>" +
-        '<div class="ta-section">' +
-          '<h2 class="ta-title">Saved Snippets</h2>' +
-          '<div id="expr-cat-controls"></div>' +
-          '<div id="expr-list" class="expr-list"></div>' +
+        '<div class="xc-chips" id="xc-chips" role="tablist"></div>' +
+        '<div class="xc-addrow" id="xc-addrow"><div class="xc-addrow-in">' +
+          '<input type="text" id="xc-add-input" placeholder="Category name" maxlength="40">' +
+          '<button class="xc-btn xc-btn-sm" id="xc-add-ok" type="button">Add</button>' +
+          '<button class="xc-btn xc-btn-sm xc-btn-ghost" id="xc-add-cancel" type="button">Cancel</button>' +
+        "</div></div>" +
+        '<div class="xc-list" id="xc-list"></div>' +
+        '<div class="xc-dock" id="xc-dock">' +
+          '<button class="xc-dock-bar" id="xc-dock-bar" type="button" aria-expanded="false">' +
+            '<span class="xc-dock-hint" id="xc-dock-hint">Write an expression…</span>' +
+            '<span class="xc-dock-chev">' + ICON_EXPAND + "</span>" +
+          "</button>" +
+          '<div class="xc-dock-body" id="xc-dock-body"><div class="xc-dock-inner">' +
+            '<div class="xc-dock-head">' +
+              '<input type="text" id="expr-name" class="xc-name" placeholder="Snippet name" maxlength="80" autocomplete="off" spellcheck="false">' +
+              '<button class="xc-ib" id="expr-copy" type="button" title="Copy code" aria-label="Copy code">' + ICON_COPY_SVG + "</button>" +
+              '<button class="xc-ib" id="expr-clear-code" type="button" title="Clear code" aria-label="Clear code">' + ICON_CLEAR_SVG + "</button>" +
+              '<button class="xc-ib" id="xc-close" type="button" title="Close editor" aria-label="Close editor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+            "</div>" +
+            '<div class="xc-editor">' +
+              '<div class="xc-gutter" id="xc-gutter" aria-hidden="true"></div>' +
+              '<div class="xc-code-wrap">' +
+                '<pre class="xc-hl" id="xc-hl" aria-hidden="true"></pre>' +
+                '<textarea id="expr-code" class="xc-ta" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" placeholder="wiggle(2, 30)"></textarea>' +
+              "</div>" +
+            "</div>" +
+            '<div class="xc-meta"><span>JavaScript / ExtendScript</span><span id="xc-count">0 lines</span></div>' +
+            '<div class="xc-actions">' +
+              '<button class="xc-btn xc-btn-main" id="expr-apply-current" type="button">Apply to selected</button>' +
+              '<button class="xc-btn" id="expr-save" type="button">Save</button>' +
+            "</div>" +
+          "</div></div>" +
         "</div>";
 
-      var nameInput = wrap.querySelector("#expr-name");
-      var codeInput = wrap.querySelector("#expr-code");
-      var listEl = wrap.querySelector("#expr-list");
-      var catControls = wrap.querySelector("#expr-cat-controls");
+      var $q = function (id) { return wrap.querySelector("#" + id); };
+      var searchEl = $q("xc-search"), searchClear = $q("xc-search-clear");
+      var chipsEl = $q("xc-chips"), listEl = $q("xc-list");
+      var addRow = $q("xc-addrow"), addInput = $q("xc-add-input");
+      var dock = $q("xc-dock"), dockBar = $q("xc-dock-bar"), dockHint = $q("xc-dock-hint");
+      var nameInput = $q("expr-name"), codeInput = $q("expr-code");
+      var hlEl = $q("xc-hl"), gutterEl = $q("xc-gutter"), countEl = $q("xc-count");
 
-      function iconSvg(name) {
-        if (name === "apply") { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>'; }
-        if (name === "edit") { return ICON_EDIT_SVG; }
-        return ICON_DELETE_SVG; // delete
+      function reduceMotion() { return document.documentElement.getAttribute("data-reduce-motion") === "true"; }
+      function canAnimate(el) { return !reduceMotion() && el && el.animate; }
+
+      // ---------- editor (line numbers + highlight overlay) ----------
+      function syncEditor() {
+        var code = codeInput.value;
+        hlEl.innerHTML = ExprCode.highlight(code) + "\n ";
+        var n = code.length ? code.split("\n").length : 0, g = "";
+        for (var i = 1; i <= Math.max(n, 1); i++) { g += i + "\n"; }
+        gutterEl.textContent = g;
+        countEl.textContent = n + (n === 1 ? " line" : " lines") + " · " + code.length + " chars";
+        syncScroll();
+        var first = "";
+        var lines = code.split("\n");
+        for (var j = 0; j < lines.length; j++) { if (lines[j].trim()) { first = lines[j].trim(); break; } }
+        dockHint.textContent = first || "Write an expression…";
+        dockHint.classList.toggle("is-draft", !!first);
+      }
+      function syncScroll() {
+        hlEl.scrollTop = codeInput.scrollTop; hlEl.scrollLeft = codeInput.scrollLeft;
+        gutterEl.scrollTop = codeInput.scrollTop;
+      }
+      codeInput.addEventListener("input", syncEditor);
+      codeInput.addEventListener("scroll", syncScroll);
+      codeInput.addEventListener("keydown", function (e) {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          var s = codeInput.selectionStart, en = codeInput.selectionEnd;
+          codeInput.value = codeInput.value.slice(0, s) + "  " + codeInput.value.slice(en);
+          codeInput.selectionStart = codeInput.selectionEnd = s + 2;
+          syncEditor();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault(); $q("expr-apply-current").click();
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+          e.preventDefault(); $q("expr-save").click();
+        }
+      });
+
+      // ---------- dock open / close ----------
+      var dockOpen = false;
+      function setDock(open, focusTarget) {
+        if (open === dockOpen) { if (open && focusTarget) { focusTarget.focus(); } return; }
+        dockOpen = open;
+        dock.classList.toggle("is-open", open);
+        dockBar.setAttribute("aria-expanded", open ? "true" : "false");
+        $q("xc-new").classList.toggle("is-open", open);
+        if (open) {
+          // The scroll wrapper is smooth-scrolling, so the dock glides into view as it grows.
+          setTimeout(function () {
+            try { dock.scrollIntoView({ block: "nearest", behavior: reduceMotion() ? "auto" : "smooth" }); } catch (e) {}
+            if (focusTarget) { focusTarget.focus(); }
+          }, reduceMotion() ? 0 : 120);
+        }
+      }
+      function resetForm() {
+        editingId = null; nameInput.value = ""; codeInput.value = "";
+        wrap.classList.remove("is-editing");
+        syncEditor();
+      }
+      dockBar.addEventListener("click", function () { setDock(true, codeInput); });
+      $q("xc-close").addEventListener("click", function () {
+        if (editingId) { resetForm(); }
+        setDock(false);
+      });
+      $q("xc-new").addEventListener("click", function () {
+        if (dockOpen) { if (editingId) { resetForm(); } setDock(false); return; }
+        if (editingId) { resetForm(); }
+        setDock(true, nameInput);
+      });
+
+      // ---------- categories (chips) ----------
+      function renderChips() {
+        var html = catData.cats.map(function (c) {
+          var active = c.id === catData.activeId;
+          return '<span class="xc-chip' + (active ? " is-active" : "") + '" data-cat="' + c.id + '" role="tab" aria-selected="' + active + '" tabindex="0">' +
+            '<span class="xc-chip-label">' + escapeHtml(c.name) + "</span>" +
+            '<span class="xc-chip-n">' + c.items.length + "</span>" +
+            (active ? '<span class="xc-chip-tools">' +
+              '<button type="button" data-ca="rename" title="Rename category" aria-label="Rename category">' + ICON_EDIT_SVG + "</button>" +
+              (catData.cats.length > 1 ? '<button type="button" data-ca="delete" title="Delete category" aria-label="Delete category">' + ICON_DELETE_SVG + "</button>" : "") +
+            "</span>" : "") +
+          "</span>";
+        }).join("");
+        chipsEl.innerHTML = html + '<button class="xc-chip xc-chip-add" id="xc-chip-add" type="button" title="New category" aria-label="New category">' + ICON_PLUS + "</button>";
+        var act = chipsEl.querySelector(".xc-chip.is-active");
+        if (act && act.scrollIntoView) { try { chipsEl.scrollLeft = Math.max(0, act.offsetLeft - 24); } catch (e) {} }
       }
 
-      function renderCats() {
-        renderCatTabs(catControls, catData, {
-          id: "expr-cat",
-          escape: escapeHtml,
-          activeCat: exprCatStore.activeCat(catData),
-          onSwitch: function (id) { exprCatStore.setActive(catData, id); renderCats(); renderList(); },
-          onAdd: function (name) { exprCatStore.addCat(catData, name); renderCats(); renderList(); toast("Category added."); },
-          onRename: function (id, name) { exprCatStore.renameCat(catData, id, name); renderCats(); },
-          onDelete: function (id) {
-            if (!exprCatStore.deleteCat(catData, id)) { toast("Keep at least one category.", true); return; }
-            renderCats(); renderList(); toast("Category deleted.");
+      var delTimer = 0;
+      function disarmCat() {
+        clearTimeout(delTimer);
+        var b = chipsEl.querySelector('[data-ca="delete"].is-confirm');
+        if (b) { b.classList.remove("is-confirm"); b.innerHTML = ICON_DELETE_SVG; b.title = "Delete category"; }
+      }
+      chipsEl.addEventListener("click", function (e) {
+        var tool = e.target.closest ? e.target.closest("[data-ca]") : null;
+        var chip = e.target.closest ? e.target.closest("[data-cat]") : null;
+        if (e.target.closest && e.target.closest("#xc-chip-add")) {
+          addRow.classList.toggle("is-open");
+          if (addRow.classList.contains("is-open")) { addInput.value = ""; setTimeout(function () { addInput.focus(); }, 160); }
+          return;
+        }
+        if (tool) {
+          var act = tool.getAttribute("data-ca");
+          var cat = exprCatStore.activeCat(catData);
+          if (act === "rename") { startRename(chip, cat); return; }
+          if (act === "delete") {
+            if (!tool.classList.contains("is-confirm")) {
+              disarmCat(); tool.classList.add("is-confirm"); tool.textContent = "Sure?"; tool.title = "Click again to delete this category and its snippets";
+              delTimer = setTimeout(disarmCat, 3000); return;
+            }
+            disarmCat();
+            if (!exprCatStore.deleteCat(catData, cat.id)) { toast("Keep at least one category.", true); return; }
+            selectedId = null; renderChips(); renderList("enter"); toast("Category deleted.");
           }
+          return;
+        }
+        if (chip && chip.getAttribute("data-cat") !== catData.activeId) {
+          exprCatStore.setActive(catData, chip.getAttribute("data-cat"));
+          selectedId = null; disarmCat(); renderChips(); renderList("enter");
+        }
+      });
+      chipsEl.addEventListener("keydown", function (e) {
+        if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("xc-chip") && e.target.getAttribute("data-cat")) {
+          e.preventDefault(); e.target.click();
+        }
+      });
+      function startRename(chip, cat) {
+        var label = chip.querySelector(".xc-chip-label");
+        var input = document.createElement("input");
+        input.type = "text"; input.className = "xc-chip-input"; input.value = cat.name; input.maxLength = 40;
+        label.replaceWith(input); input.focus(); input.select();
+        var done = false;
+        function commit(save) {
+          if (done) { return; } done = true;
+          var v = input.value.trim();
+          if (save && v && v !== cat.name) { exprCatStore.renameCat(catData, cat.id, v); }
+          renderChips();
+        }
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") { commit(true); } else if (e.key === "Escape") { commit(false); }
         });
+        input.addEventListener("blur", function () { commit(true); });
       }
+      function confirmAdd() {
+        var name = addInput.value.trim();
+        if (!name) { toast("Give the category a name first.", true); return; }
+        addRow.classList.remove("is-open");
+        exprCatStore.addCat(catData, name);
+        selectedId = null; renderChips(); renderList("enter"); toast("Category added.");
+      }
+      $q("xc-add-ok").addEventListener("click", confirmAdd);
+      $q("xc-add-cancel").addEventListener("click", function () { addRow.classList.remove("is-open"); });
+      addInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { confirmAdd(); } else if (e.key === "Escape") { addRow.classList.remove("is-open"); }
+      });
 
-      // Favorites float to the top; original save order is kept stable within
-      // each group (favorite / not) so favoriting something doesn't shuffle
-      // the rest of the list around it.
+      // ---------- list ----------
       function orderedItems(items) {
         return items
           .map(function (it, i) { return { it: it, i: i }; })
@@ -2785,113 +2955,213 @@
           .map(function (x) { return x.it; });
       }
 
-      // Stagger the entrance animation per card (capped so a long list doesn't
-      // take forever to finish appearing) - see .expr-item in style.css.
-      var ENTER_STAGGER_MS = 35, ENTER_STAGGER_CAP_MS = 350;
+      // Entries to show: the active category, or every category while a search is active.
+      function visibleEntries() {
+        var q = query.trim().toLowerCase(), out = [];
+        if (!q) {
+          orderedItems(exprCatStore.activeCat(catData).items).forEach(function (it) { out.push({ it: it, cat: null }); });
+          return out;
+        }
+        var words = q.split(/\s+/);
+        catData.cats.forEach(function (c) {
+          c.items.forEach(function (it) {
+            var hay = (it.name + " " + it.code + " " + c.name).toLowerCase();
+            for (var i = 0; i < words.length; i++) { if (hay.indexOf(words[i]) === -1) { return; } }
+            out.push({ it: it, cat: c });
+          });
+        });
+        return out;
+      }
 
-      function renderList() {
-        var items = exprCatStore.activeCat(catData).items;
-        if (!items.length) {
-          listEl.innerHTML = '<p class="field-note">No saved snippets yet.</p>';
+      function firstLine(code) { return code.replace(/\s+/g, " ").trim().slice(0, 140); }
+
+      function rowHtml(en) {
+        var it = en.it, sel = it.id === selectedId;
+        return '<div class="xc-row' + (sel ? " is-selected" : "") + (it.favorite ? " is-fav" : "") + '" data-id="' + it.id + '"' + (en.cat ? ' data-cat="' + en.cat.id + '"' : "") + ">" +
+          '<div class="xc-row-main" tabindex="0" role="button" aria-expanded="' + sel + '">' +
+            '<button class="xc-star" type="button" data-action="fav" title="' + (it.favorite ? "Remove from favorites" : "Add to favorites") + '" aria-label="Toggle favorite" aria-pressed="' + (!!it.favorite) + '">' +
+              (it.favorite ? ICON_STAR_SVG : ICON_STAR_LINE) + "</button>" +
+            '<div class="xc-row-text">' +
+              '<div class="xc-row-name">' + escapeHtml(it.name) + (en.cat ? '<span class="xc-row-cat">' + escapeHtml(en.cat.name) + "</span>" : "") + "</div>" +
+              '<div class="xc-row-code">' + escapeHtml(firstLine(it.code)) + "</div>" +
+            "</div>" +
+            '<button class="xc-ib xc-run" type="button" data-action="apply" title="Apply to selected properties" aria-label="Apply">' + ICON_PLAY + "</button>" +
+          "</div>" +
+          '<div class="xc-row-more"><div class="xc-row-more-in">' +
+            '<pre class="xc-row-pre">' + ExprCode.highlight(it.code) + "</pre>" +
+            '<div class="xc-row-tools">' +
+              '<button class="xc-btn xc-btn-sm" type="button" data-action="edit">' + ICON_EDIT_SVG + "Edit</button>" +
+              '<button class="xc-btn xc-btn-sm xc-btn-ghost xc-del" type="button" data-action="delete" title="Delete">' + ICON_DELETE_SVG + "<span>Delete</span></button>" +
+            "</div>" +
+          "</div></div>" +
+        "</div>";
+      }
+
+      function snapshot() {
+        var map = {};
+        Array.prototype.forEach.call(listEl.querySelectorAll(".xc-row"), function (r) {
+          map[r.getAttribute("data-id")] = r.getBoundingClientRect().top;
+        });
+        return map;
+      }
+
+      // mode "enter": fresh list (staggered fade-up). mode "flip": same rows reordered (they glide to the new spot).
+      function renderList(mode) {
+        var before = mode === "flip" ? snapshot() : null;
+        var entries = visibleEntries();
+        var q = query.trim();
+        if (!entries.length) {
+          listEl.innerHTML = '<div class="xc-empty"><b>' + (q ? "No matches" : "No snippets yet") + "</b>" +
+            '<span>' + (q ? 'Nothing found for "' + escapeHtml(q) + '".' : "Press + to write your first one.") + "</span></div>";
+          if (canAnimate(listEl.firstChild)) { listEl.firstChild.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(0.22,1,0.36,1)" }); }
           return;
         }
-        listEl.innerHTML = orderedItems(items).map(function (it, idx) {
-          var delay = Math.min(idx * ENTER_STAGGER_MS, ENTER_STAGGER_CAP_MS);
-          return '<div class="expr-item' + (it.favorite ? " is-favorite" : "") + '" data-id="' + it.id + '" style="animation-delay:' + delay + 'ms">' +
-            '<div class="expr-item-head">' +
-              (it.favorite ? '<span class="expr-item-fav-badge" title="Favorite">' + ICON_STAR_SVG + "</span>" : "") +
-              '<span class="expr-item-name">' + escapeHtml(it.name) + "</span>" +
-              '<div class="expr-item-actions">' +
-                '<button class="icon-btn" data-action="apply" title="Apply">' + iconSvg("apply") + "</button>" +
-                '<button class="icon-btn" data-action="edit" title="Edit">' + iconSvg("edit") + "</button>" +
-                '<button class="icon-btn preset-del" type="button" data-action="delete" title="Delete">' + iconSvg("delete") + "</button>" +
-              "</div>" +
-            "</div>" +
-            '<pre class="expr-item-code">' + escapeHtml(it.code) + "</pre>" +
-          "</div>";
-        }).join("");
-      }
-
-      // Press-and-hold anywhere on a snippet card (outside its buttons) to toggle
-      // "favorite". Pointer Events cover mouse + touch/pen in one listener set.
-      // A hold that moves too far or lands on a button is treated as a drag/click,
-      // not a favorite toggle.
-      var LONG_PRESS_MS = 550, LONG_PRESS_MOVE_TOLERANCE = 10;
-      var lpTimer = null, lpEl = null, lpStartX = 0, lpStartY = 0, lpFired = false;
-
-      function lpClear() {
-        clearTimeout(lpTimer);
-        lpTimer = null;
-        if (lpEl) { lpEl.classList.remove("is-pressing"); }
-        lpEl = null;
-      }
-
-      function toggleFavorite(id) {
-        var cat = exprCatStore.activeCat(catData);
-        var item = null;
-        for (var i = 0; i < cat.items.length; i++) { if (cat.items[i].id === id) { item = cat.items[i]; break; } }
-        if (!item) { return; }
-        item.favorite = !item.favorite;
-        exprCatStore.save(catData);
-        renderList();
-        toast(item.favorite ? "Added to favorites." : "Removed from favorites.");
-      }
-
-      listEl.addEventListener("pointerdown", function (e) {
-        if (e.button !== undefined && e.button !== 0) { return; } // left click / touch / pen only
-        var itemEl = e.target.closest ? e.target.closest(".expr-item") : null;
-        if (!itemEl || (e.target.closest && e.target.closest("[data-action]"))) { return; }
-        lpClear();
-        lpEl = itemEl; lpStartX = e.clientX; lpStartY = e.clientY; lpFired = false;
-        itemEl.classList.add("is-pressing");
-        lpTimer = setTimeout(function () {
-          lpFired = true;
-          var id = itemEl.getAttribute("data-id");
-          itemEl.classList.remove("is-pressing");
-          toggleFavorite(id);
-        }, LONG_PRESS_MS);
-      });
-      listEl.addEventListener("pointermove", function (e) {
-        if (!lpEl) { return; }
-        if (Math.abs(e.clientX - lpStartX) > LONG_PRESS_MOVE_TOLERANCE || Math.abs(e.clientY - lpStartY) > LONG_PRESS_MOVE_TOLERANCE) {
-          lpClear();
+        var html = "", favCount = entries.filter(function (x) { return x.it.favorite; }).length;
+        if (q) {
+          html += '<div class="xc-sec">' + entries.length + (entries.length === 1 ? " result" : " results") + "</div>";
+          html += entries.map(rowHtml).join("");
+        } else if (favCount && favCount < entries.length) {
+          html += '<div class="xc-sec">Favorites</div>';
+          html += entries.slice(0, favCount).map(rowHtml).join("");
+          html += '<div class="xc-sec">' + escapeHtml(exprCatStore.activeCat(catData).name) + "</div>";
+          html += entries.slice(favCount).map(rowHtml).join("");
+        } else {
+          html += entries.map(rowHtml).join("");
         }
-      });
-      ["pointerup", "pointercancel", "pointerleave"].forEach(function (evt) {
-        listEl.addEventListener(evt, function () { lpClear(); });
-      });
-      // A long-press that already toggled the favorite shouldn't also fire the
-      // trailing click as if it were a normal tap on the card.
+        listEl.innerHTML = html;
+
+        var rows = listEl.querySelectorAll(".xc-row");
+        if (!canAnimate(listEl)) { return; }
+        var EASE = "cubic-bezier(0.22,1,0.36,1)";
+        Array.prototype.forEach.call(rows, function (r, i) {
+          if (mode === "enter") {
+            r.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }],
+              { duration: 320, delay: Math.min(i * 28, 260), easing: EASE, fill: "backwards" });
+          } else if (before) {
+            var id = r.getAttribute("data-id");
+            if (before[id] !== undefined) {
+              var dy = before[id] - r.getBoundingClientRect().top;
+              if (Math.abs(dy) > 1) { r.animate([{ transform: "translateY(" + dy + "px)" }, { transform: "none" }], { duration: 380, easing: EASE }); }
+            } else {
+              r.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: EASE });
+            }
+          }
+        });
+      }
+
+      function findItem(id, catId) {
+        var cats = catId ? catData.cats.filter(function (c) { return c.id === catId; }) : [exprCatStore.activeCat(catData)];
+        for (var c = 0; c < cats.length; c++) {
+          for (var i = 0; i < cats[c].items.length; i++) { if (cats[c].items[i].id === id) { return { cat: cats[c], item: cats[c].items[i] }; } }
+        }
+        return null;
+      }
+
+      function selectRow(rowEl) {
+        var id = rowEl.getAttribute("data-id");
+        var prev = selectedId ? listEl.querySelector('.xc-row[data-id="' + selectedId + '"]') : null;
+        if (prev && prev !== rowEl) { prev.classList.remove("is-selected"); prev.firstChild.setAttribute("aria-expanded", "false"); }
+        var on = !rowEl.classList.contains("is-selected");
+        rowEl.classList.toggle("is-selected", on);
+        rowEl.firstChild.setAttribute("aria-expanded", on ? "true" : "false");
+        selectedId = on ? id : null;
+        disarmRows();
+        if (on) {
+          // wait for the expand transition, then make sure the whole card is visible
+          setTimeout(function () { try { rowEl.scrollIntoView({ block: "nearest", behavior: reduceMotion() ? "auto" : "smooth" }); } catch (e) {} }, reduceMotion() ? 0 : 200);
+        }
+      }
+
+      var rowDelTimer = 0;
+      function disarmRows() {
+        clearTimeout(rowDelTimer);
+        Array.prototype.forEach.call(listEl.querySelectorAll(".xc-del.is-confirm"), function (b) {
+          b.classList.remove("is-confirm"); b.querySelector("span").textContent = "Delete";
+        });
+      }
+
+      function applyCode(code, btn) {
+        if (btn) { btn.classList.add("is-pending"); }
+        Bridge.call("EXPR_applyCode", [code]).then(function (res) {
+          if (btn) { flashButtonResult(btn, !!res.ok); }
+          toast(res.message || (res.ok ? "Applied." : "Something went wrong."), !res.ok);
+        });
+      }
+
       listEl.addEventListener("click", function (e) {
-        if (lpFired && !(e.target.closest && e.target.closest("[data-action]"))) {
-          lpFired = false;
-          e.stopImmediatePropagation();
-          e.preventDefault();
+        var rowEl = e.target.closest ? e.target.closest(".xc-row") : null;
+        if (!rowEl) { return; }
+        var btn = e.target.closest("[data-action]");
+        var found = findItem(rowEl.getAttribute("data-id"), rowEl.getAttribute("data-cat"));
+        if (!found) { return; }
+        var item = found.item;
+
+        if (!btn) {
+          if (e.target.closest(".xc-row-more")) { return; }
+          selectRow(rowEl); return;
         }
-      }, true);
-
-      renderCats();
-      renderList();
-
-      // Requirement 3: on every load of this tab, check whether the persistent JSON file has
-      // data that localStorage doesn't (e.g. right after the extension was reinstalled/updated
-      // and localStorage came back empty) and restore it automatically.
-      ExprFile.restoreIfNeeded(catData, function (restored) {
-        catData = restored;
-        renderCats();
-        renderList();
-        toast("Restored saved expressions from your backup file.");
+        var action = btn.getAttribute("data-action");
+        if (action === "apply") {
+          disarmRows(); applyCode(item.code, btn);
+        } else if (action === "fav") {
+          item.favorite = !item.favorite;
+          exprCatStore.save(catData);
+          renderList("flip");
+          toast(item.favorite ? "Added to favorites." : "Removed from favorites.");
+        } else if (action === "edit") {
+          disarmRows();
+          editingId = item.id;
+          wrap.classList.add("is-editing");
+          nameInput.value = item.name; codeInput.value = item.code;
+          editingCat = found.cat;
+          syncEditor();
+          setDock(true, nameInput);
+        } else if (action === "delete") {
+          var label = btn.querySelector("span");
+          if (!btn.classList.contains("is-confirm")) {
+            disarmRows(); btn.classList.add("is-confirm"); label.textContent = "Delete?";
+            rowDelTimer = setTimeout(disarmRows, 3000); return;
+          }
+          disarmRows();
+          var removeNow = function () {
+            found.cat.items = found.cat.items.filter(function (it) { return it.id !== item.id; });
+            exprCatStore.save(catData);
+            if (selectedId === item.id) { selectedId = null; }
+            if (editingId === item.id) { resetForm(); setDock(false); }
+            renderChips(); renderList("flip");
+          };
+          if (canAnimate(rowEl)) {
+            var h = rowEl.getBoundingClientRect().height;
+            rowEl.style.pointerEvents = "none";
+            var a = rowEl.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateX(18px)" }], { duration: 180, easing: "ease-in", fill: "forwards" });
+            a.onfinish = removeNow;
+            void h;
+          } else { removeNow(); }
+        }
+      });
+      listEl.addEventListener("keydown", function (e) {
+        if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("xc-row-main")) {
+          e.preventDefault(); selectRow(e.target.parentNode);
+        }
       });
 
-      wrap.querySelector("#expr-clear-form").addEventListener("click", function () {
-        editingId = null; nameInput.value = ""; codeInput.value = "";
+      // ---------- search ----------
+      var searchTimer = 0;
+      searchEl.addEventListener("input", function () {
+        searchClear.hidden = !searchEl.value;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () { query = searchEl.value; renderList("enter"); }, 120);
+      });
+      searchEl.addEventListener("keydown", function (e) { if (e.key === "Escape") { searchClear.click(); } });
+      searchClear.addEventListener("click", function () {
+        searchEl.value = ""; searchClear.hidden = true; query = ""; renderList("enter"); searchEl.focus();
       });
 
-      wrap.querySelector("#expr-clear-code").addEventListener("click", function () {
-        codeInput.value = ""; codeInput.focus();
-      });
+      // ---------- editor buttons ----------
+      var editingCat = null;
+      $q("expr-clear-code").addEventListener("click", function () { codeInput.value = ""; syncEditor(); codeInput.focus(); });
 
-      wrap.querySelector("#expr-copy").addEventListener("click", function () {
+      $q("expr-copy").addEventListener("click", function () {
         var code = codeInput.value;
         if (!code) { toast("Nothing to copy yet.", true); return; }
         var done = function () { toast("Code copied."); };
@@ -2911,87 +3181,52 @@
         } catch (e) { fail(); }
       });
 
-      wrap.querySelector("#expr-save").addEventListener("click", function () {
+      $q("expr-save").addEventListener("click", function () {
         var name = nameInput.value.trim(), code = codeInput.value;
-        if (!name) { toast("Give the snippet a name first.", true); return; }
-        if (!code.trim()) { toast("The snippet is empty.", true); return; }
+        if (!name) { toast("Give the snippet a name first.", true); nameInput.focus(); return; }
+        if (!code.trim()) { toast("The snippet is empty.", true); codeInput.focus(); return; }
 
-        var cat = exprCatStore.activeCat(catData);
+        var savedId = editingId;
         if (editingId) {
-          var idx = -1;
-          for (var i = 0; i < cat.items.length; i++) { if (cat.items[i].id === editingId) { idx = i; break; } }
-          if (idx !== -1) { cat.items[idx].name = name; cat.items[idx].code = code; }
+          var f = findItem(editingId, editingCat ? editingCat.id : null);
+          if (f) { f.item.name = name; f.item.code = code; }
         } else {
-          cat.items.push({ id: "s" + Date.now() + Math.floor(Math.random() * 1000), name: name, code: code });
+          var cat = exprCatStore.activeCat(catData);
+          savedId = "s" + Date.now() + Math.floor(Math.random() * 1000);
+          cat.items.push({ id: savedId, name: name, code: code });
         }
         exprCatStore.save(catData);
-        // Requirement 1: expression snippets only ever lived in localStorage - this also drops a
-        // real .jsx copy into the Documents backup folder. Best-effort and silent.
+        // Also drops a real .jsx copy into the Documents backup folder. Best-effort and silent.
         if (Node) { Node.backupWrite(code, "Expressions", name, ".jsx"); }
-        renderList();
-        editingId = null; nameInput.value = ""; codeInput.value = "";
+        query = ""; searchEl.value = ""; searchClear.hidden = true;
+        selectedId = null;
+        renderChips(); renderList("flip");
+        resetForm(); setDock(false);
         toast("Snippet saved.");
+        var row = listEl.querySelector('.xc-row[data-id="' + savedId + '"]');
+        if (row) {
+          try { row.scrollIntoView({ block: "nearest", behavior: reduceMotion() ? "auto" : "smooth" }); } catch (e) {}
+          if (canAnimate(row)) { row.animate([{ backgroundColor: "var(--accent-soft)" }, { backgroundColor: "transparent" }], { duration: 1100, easing: "ease-out" }); }
+        }
       });
 
-      wrap.querySelector("#expr-apply-current").addEventListener("click", function (e) {
+      $q("expr-apply-current").addEventListener("click", function (e) {
         var code = codeInput.value;
         if (!code.trim()) { toast("Write or load a snippet first.", true); return; }
-        applyCode(code, e.target);
+        applyCode(code, e.currentTarget);
       });
 
-      function applyCode(code, btn) {
-        if (btn) { btn.classList.add("is-pending"); }
-        Bridge.call("EXPR_applyCode", [code]).then(function (res) {
-          if (btn) { flashButtonResult(btn, !!res.ok); }
-          toast(res.message || (res.ok ? "Applied." : "Something went wrong."), !res.ok);
-        });
-      }
+      renderChips();
+      renderList("enter");
+      syncEditor();
 
-      var confirmTimer = 0, CONFIRM_MS = 3000;
-      function disarmAll() {
-        clearTimeout(confirmTimer);
-        Array.prototype.forEach.call(listEl.querySelectorAll(".preset-del.is-confirm"), function (b) {
-          b.classList.remove("is-confirm");
-          b.innerHTML = iconSvg("delete");
-          b.title = "Delete";
-        });
-      }
-      function arm(btn) {
-        disarmAll();
-        btn.classList.add("is-confirm");
-        btn.textContent = "Delete?";
-        btn.title = "Click again to permanently delete this snippet";
-        confirmTimer = setTimeout(disarmAll, CONFIRM_MS);
-      }
-
-      listEl.addEventListener("click", function (e) {
-        var btn = e.target.closest ? e.target.closest("[data-action]") : null;
-        if (!btn) { return; }
-        var itemEl = btn.closest(".expr-item");
-        var id = itemEl.getAttribute("data-id");
-        var cat = exprCatStore.activeCat(catData);
-        var item = null;
-        for (var i = 0; i < cat.items.length; i++) { if (cat.items[i].id === id) { item = cat.items[i]; break; } }
-        if (!item) { return; }
-
-        var action = btn.getAttribute("data-action");
-        if (action === "apply") {
-          disarmAll();
-          applyCode(item.code, btn);
-        } else if (action === "edit") {
-          disarmAll();
-          editingId = item.id;
-          nameInput.value = item.name;
-          codeInput.value = item.code;
-          nameInput.focus();
-        } else if (action === "delete") {
-          if (!btn.classList.contains("is-confirm")) { arm(btn); return; }   // 1st click: arm, don't delete yet
-          disarmAll();                                                       // 2nd click within 3s: actually delete
-          cat.items = cat.items.filter(function (it) { return it.id !== id; });
-          exprCatStore.save(catData);
-          renderList();
-          if (editingId === id) { editingId = null; nameInput.value = ""; codeInput.value = ""; }
-        }
+      // On every load of this tab, check whether the persistent JSON file has data that localStorage
+      // doesn't (e.g. right after the extension was reinstalled/updated) and restore it automatically.
+      ExprFile.restoreIfNeeded(catData, function (restored) {
+        catData = restored;
+        renderChips();
+        renderList("enter");
+        toast("Restored saved expressions from your backup file.");
       });
 
       return wrap;

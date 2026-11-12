@@ -1,0 +1,238 @@
+/* Expression Code tab - library-first layout (search, category chips, compact rows, bottom editor dock).
+   All selectors start with .xc so nothing here touches the other tabs. Motion: transitions use --smooth,
+   and everything is switched off under html[data-reduce-motion="true"]. */
+.xc {
+  --xc-ease: var(--smooth, cubic-bezier(0.22, 1, 0.36, 1));
+  --xc-mono: Consolas, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --xc-field: color-mix(in srgb, var(--text) 7%, transparent);
+  display: flex; flex-direction: column; gap: 0; min-width: 0;
+}
+.xc { --xc-s: #7fd1b9; --xc-n: #f0b27a; --xc-c: var(--text-faint); }
+:root[data-theme="light"] .xc { --xc-s: #0b7a5c; --xc-n: #b4510d; --xc-c: #8a8a98; }
+
+.xc :where(button) { font: inherit; color: inherit; }
+.xc-ib {
+  width: 1.65rem; height: 1.65rem; border-radius: 8px; display: grid; place-items: center; flex: 0 0 auto;
+  color: var(--text-dim); background: transparent; border: 0; cursor: pointer;
+  transition: color .16s ease, background .16s ease, transform .16s var(--xc-ease);
+}
+.xc-ib svg { width: .9rem; height: .9rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.xc-ib:hover { color: var(--text); background: var(--xc-field); }
+.xc-ib:active { transform: scale(.88); }
+
+/* ---------- top: search + new ---------- */
+.xc-top { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); }
+.xc-search {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: .5rem; height: 2.2rem; padding: 0 .35rem 0 .75rem;
+  background: var(--xc-field); border-radius: 10px; color: var(--text-dim); cursor: text;
+  box-shadow: 0 0 0 0 transparent; transition: box-shadow .22s var(--xc-ease), background .22s ease;
+}
+.xc-search:focus-within { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 1px var(--accent-strong) inset; color: var(--text); }
+.xc-search > svg { width: .95rem; height: .95rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.xc-search input {
+  flex: 1; min-width: 0; background: none; border: 0; outline: 0; box-shadow: none; padding: 0; height: 100%;
+  color: var(--text); font-size: .78rem;
+}
+.xc-search input::placeholder { color: var(--text-faint); }
+.xc-search-clear { width: 1.5rem; height: 1.5rem; display: grid; place-items: center; border: 0; background: none; color: var(--text-dim); border-radius: 6px; cursor: pointer; }
+.xc-search-clear[hidden] { display: none; }
+.xc-search-clear svg { width: .8rem; height: .8rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.xc-search-clear:hover { color: var(--text); background: var(--xc-field); }
+.xc-new {
+  width: 2.2rem; height: 2.2rem; border-radius: 10px; flex: 0 0 auto; display: grid; place-items: center; border: 0; cursor: pointer;
+  background: var(--accent-strong); color: var(--on-accent);
+  transition: transform .2s var(--xc-ease), filter .16s ease;
+}
+.xc-new svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; transition: transform .35s var(--xc-ease); }
+.xc-new:hover { filter: brightness(1.08); }
+.xc-new:active { transform: scale(.92); }
+.xc-new.is-open svg { transform: rotate(45deg); }
+
+/* ---------- category chips ---------- */
+.xc-chips {
+  display: flex; gap: .35rem; overflow-x: auto; padding: 2px 1px .6rem; margin: 0 -1px; scrollbar-width: none; scroll-behavior: smooth;
+}
+.xc-chips::-webkit-scrollbar { display: none; }
+.xc-chip {
+  display: inline-flex; align-items: center; gap: .35rem; flex: 0 0 auto; height: 1.7rem; padding: 0 .7rem; border-radius: 999px; border: 0;
+  background: var(--xc-field); color: var(--text-dim); font-size: .72rem; white-space: nowrap; cursor: pointer; outline: 0;
+  transition: background .22s var(--xc-ease), color .22s var(--xc-ease), padding .28s var(--xc-ease), transform .16s var(--xc-ease);
+}
+.xc-chip:hover { color: var(--text); }
+.xc-chip:active { transform: scale(.96); }
+.xc-chip:focus-visible, .xc-ib:focus-visible, .xc-btn:focus-visible, .xc-new:focus-visible, .xc-star:focus-visible, .xc-row-main:focus-visible {
+  outline: 2px solid var(--accent-strong); outline-offset: 2px;
+}
+.xc-chip.is-active { background: var(--accent-strong); color: var(--on-accent); padding-right: .35rem; }
+.xc-chip-label { max-width: 8rem; overflow: hidden; text-overflow: ellipsis; }
+.xc-chip-n { font-size: .65rem; opacity: .6; font-variant-numeric: tabular-nums; }
+.xc-chip-tools { display: inline-flex; gap: 1px; margin-left: .1rem; animation: xc-pop .3s var(--xc-ease) backwards; }
+.xc-chip-tools button {
+  height: 1.2rem; min-width: 1.2rem; padding: 0 .25rem; display: grid; place-items: center; border: 0; border-radius: 999px; cursor: pointer;
+  background: transparent; color: inherit; opacity: .75; font-size: .62rem; font-weight: 600; transition: opacity .16s, background .16s;
+}
+.xc-chip-tools button:hover { opacity: 1; background: color-mix(in srgb, var(--on-accent) 16%, transparent); }
+.xc-chip-tools svg { width: .72rem; height: .72rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.xc-chip-tools .is-confirm { background: var(--danger); color: #fff; opacity: 1; padding: 0 .45rem; }
+.xc-chip-add { width: 1.7rem; padding: 0; justify-content: center; background: none; border: 1px dashed var(--border); color: var(--text-faint); }
+.xc-chip-add:hover { border-color: var(--accent-strong); color: var(--accent-strong); }
+.xc-chip-add svg { width: .8rem; height: .8rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.xc-chip-input {
+  width: 6.5rem; height: 1.2rem; padding: 0 .3rem; border-radius: 6px; border: 0; outline: 0; box-shadow: none;
+  background: color-mix(in srgb, var(--on-accent) 18%, transparent); color: inherit; font: inherit;
+}
+
+/* add-category row: height + fade, never display:none, so it can animate */
+.xc-addrow { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .34s var(--xc-ease), opacity .24s ease; }
+.xc-addrow.is-open { max-height: 3rem; opacity: 1; }
+.xc-addrow-in { display: flex; gap: .4rem; padding: 0 1px .6rem; }
+.xc-addrow-in input {
+  flex: 1; min-width: 0; height: 1.9rem; padding: 0 .65rem; border-radius: 8px; border: 0; outline: 0; background: var(--xc-field);
+  color: var(--text); font-size: .74rem;
+}
+.xc-addrow-in input:focus { box-shadow: 0 0 0 1px var(--accent-strong) inset; }
+
+/* ---------- list ---------- */
+.xc-list { display: flex; flex-direction: column; min-height: 6rem; padding-bottom: .75rem; }
+.xc-sec { padding: .7rem .15rem .25rem; font-size: .66rem; color: var(--text-faint); letter-spacing: .02em; }
+.xc-sec:first-child { padding-top: .1rem; }
+.xc-row { position: relative; border-radius: 10px; will-change: transform; }
+.xc-row::before {
+  content: ""; position: absolute; left: 0; top: .55rem; bottom: .55rem; width: 3px; border-radius: 3px; background: var(--accent-strong);
+  transform: scaleY(0); transition: transform .3s var(--xc-ease);
+}
+.xc-row.is-selected { background: var(--xc-field); }
+.xc-row.is-selected::before { transform: scaleY(1); }
+.xc-row-main {
+  display: flex; align-items: center; gap: .55rem; padding: .5rem .35rem .5rem .55rem; border-radius: 10px; cursor: pointer; outline: 0;
+  transition: background .16s ease;
+}
+.xc-row:not(.is-selected) .xc-row-main:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.xc-star {
+  width: 1.4rem; height: 1.4rem; flex: 0 0 auto; display: grid; place-items: center; border: 0; background: none; cursor: pointer; border-radius: 6px;
+  color: var(--text-faint); transition: color .16s ease, transform .3s var(--bounce);
+}
+.xc-star svg { width: .85rem; height: .85rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.xc-star svg.icon-star-fill { fill: currentColor; stroke: none; }
+.xc-row.is-fav .xc-star { color: var(--accent-strong); }
+.xc-star:hover { color: var(--accent-strong); transform: scale(1.2); }
+.xc-star:active { transform: scale(.85); }
+.xc-row-text { flex: 1; min-width: 0; }
+.xc-row-name { display: flex; align-items: baseline; gap: .4rem; font-size: .78rem; font-weight: 600; color: var(--text); }
+.xc-row-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.xc-row-cat { font-size: .62rem; font-weight: 500; color: var(--text-faint); }
+.xc-row-code { margin-top: 2px; font: .68rem/1.3 var(--xc-mono); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xc-run { color: var(--text-dim); opacity: 0; transform: scale(.85); }
+.xc-row-main:hover .xc-run, .xc-row.is-selected .xc-run, .xc-run:focus-visible { opacity: 1; transform: none; }
+.xc-row.is-selected .xc-run { background: var(--accent-strong); color: var(--on-accent); }
+.xc-run.is-pending { opacity: .5; pointer-events: none; }
+
+/* expanded detail: max-height + opacity (works in every CEP Chromium) */
+.xc-row-more { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .42s var(--xc-ease), opacity .28s ease; }
+.xc-row.is-selected .xc-row-more { max-height: 15rem; opacity: 1; }
+.xc-row-more-in { padding: 0 .55rem .6rem 2.5rem; }
+.xc-row-pre {
+  margin: 0 0 .5rem; padding: .55rem .65rem; max-height: 8.5rem; overflow: auto; border-radius: 8px; background: color-mix(in srgb, var(--bg) 70%, #000);
+  font: .68rem/1.55 var(--xc-mono); color: var(--text); white-space: pre; tab-size: 2; user-select: text;
+}
+:root[data-theme="light"] .xc-row-pre { background: color-mix(in srgb, var(--bg) 80%, #fff); }
+.xc-row-pre::-webkit-scrollbar, .xc-ta::-webkit-scrollbar { width: 6px; height: 6px; }
+.xc-row-pre::-webkit-scrollbar-thumb, .xc-ta::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+.xc-row-pre::-webkit-scrollbar-corner, .xc-ta::-webkit-scrollbar-corner { background: transparent; }
+.xc-row-tools { display: flex; gap: .4rem; }
+.xc-del.is-confirm { background: var(--danger); color: #fff; }
+.xc-del svg, .xc-row-tools svg { width: .8rem; height: .8rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.xc-empty { display: flex; flex-direction: column; gap: .2rem; padding: 2rem .5rem; text-align: center; color: var(--text-dim); font-size: .72rem; }
+.xc-empty b { color: var(--text); font-size: .8rem; font-weight: 600; }
+
+/* syntax colors (editor overlay + row preview) */
+.xc-t-c { color: var(--xc-c); font-style: italic; }
+.xc-t-s { color: var(--xc-s); }
+.xc-t-n { color: var(--xc-n); }
+.xc-t-k { color: var(--accent-strong); }
+
+/* ---------- buttons ---------- */
+.xc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .35rem; height: 2.1rem; padding: 0 .9rem; border-radius: 10px; border: 0; cursor: pointer;
+  background: var(--xc-field); color: var(--text); font-size: .74rem; font-weight: 600; white-space: nowrap;
+  transition: background .16s ease, filter .16s ease, transform .16s var(--xc-ease), color .16s ease;
+}
+.xc-btn:hover { background: color-mix(in srgb, var(--text) 13%, transparent); }
+.xc-btn:active { transform: scale(.97); }
+.xc-btn-sm { height: 1.7rem; padding: 0 .65rem; font-size: .7rem; border-radius: 8px; }
+.xc-btn-ghost { background: transparent; color: var(--text-dim); }
+.xc-btn-main { flex: 1; background: var(--accent-strong); color: var(--on-accent); }
+.xc-btn-main:hover { background: var(--accent-strong); filter: brightness(1.08); }
+.xc-btn.is-pending { opacity: .6; pointer-events: none; }
+
+/* ---------- bottom dock ---------- */
+.xc-dock {
+  position: sticky; bottom: 0; z-index: 5; margin: 0 calc(-1 * var(--space-1)); padding-bottom: var(--space-3);
+  border-radius: 14px 14px 0 0; background: var(--surface); box-shadow: 0 -1px 0 var(--border), 0 -14px 28px -10px rgba(0,0,0,.35);
+}
+:root[data-theme="light"] .xc-dock { box-shadow: 0 -1px 0 var(--border), 0 -14px 28px -12px rgba(0,0,0,.14); }
+.xc-dock-bar {
+  width: 100%; display: flex; align-items: center; gap: .6rem; height: 2.9rem; padding: 0 .9rem; border: 0; background: none; cursor: pointer; text-align: left;
+  color: var(--text-faint); border-radius: 14px 14px 0 0;
+}
+.xc-dock-hint { flex: 1; min-width: 0; font: .72rem var(--xc-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xc-dock-hint.is-draft { color: var(--text-dim); }
+.xc-dock-chev svg { width: 1rem; height: 1rem; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .4s var(--xc-ease); }
+.xc-dock-bar:hover { color: var(--text-dim); }
+.xc-dock.is-open .xc-dock-bar { height: 0; padding: 0; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.xc-dock-body { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .5s var(--xc-ease), opacity .3s ease; }
+.xc-dock.is-open .xc-dock-body { max-height: 26rem; opacity: 1; }
+.xc-dock-inner { padding: .8rem .9rem 0; }
+.xc-dock-head { display: flex; align-items: center; gap: .15rem; margin-bottom: .6rem; }
+.xc-name {
+  flex: 1; min-width: 0; height: 1.8rem; padding: 0 .1rem; margin-right: .4rem; background: none; border: 0; border-bottom: 1px solid var(--border); border-radius: 0;
+  outline: 0; box-shadow: none; color: var(--text); font-size: .85rem; font-weight: 600; transition: border-color .2s ease;
+}
+.xc-name:focus { border-bottom-color: var(--accent-strong); }
+.xc-name::placeholder { color: var(--text-faint); font-weight: 500; }
+.xc.is-editing .xc-name { color: var(--accent-strong); }
+
+.xc-editor {
+  display: flex; height: 9.5rem; border-radius: 10px; overflow: hidden; background: color-mix(in srgb, var(--bg) 70%, #000);
+  box-shadow: 0 0 0 1px transparent; transition: box-shadow .2s ease;
+}
+:root[data-theme="light"] .xc-editor { background: color-mix(in srgb, var(--bg) 80%, #fff); }
+.xc-editor:focus-within { box-shadow: 0 0 0 1px var(--accent-strong); }
+.xc-gutter, .xc-hl, .xc-ta { font: .7rem/1.1rem var(--xc-mono); tab-size: 2; letter-spacing: 0; }
+.xc-gutter {
+  flex: 0 0 auto; min-width: 2.1rem; padding: .55rem .5rem .55rem .6rem; text-align: right; color: var(--text-faint); white-space: pre; overflow: hidden;
+  user-select: none; border-right: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+}
+.xc-code-wrap { position: relative; flex: 1; min-width: 0; }
+.xc-hl, .xc-ta {
+  position: absolute; inset: 0; margin: 0; padding: .55rem .65rem; border: 0; border-radius: 0; white-space: pre; word-wrap: normal; overflow: auto;
+}
+.xc-hl { color: var(--text); pointer-events: none; overflow: hidden; }
+.xc-ta {
+  background: transparent; color: transparent; caret-color: var(--text); resize: none; outline: 0; box-shadow: none; -webkit-text-fill-color: transparent;
+}
+.xc-ta::selection { background: var(--accent-soft); -webkit-text-fill-color: transparent; }
+.xc-ta::placeholder { color: var(--text-faint); -webkit-text-fill-color: var(--text-faint); }
+.xc-meta { display: flex; justify-content: space-between; margin: .4rem .15rem .6rem; font-size: .64rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.xc-actions { display: flex; gap: .5rem; }
+.xc-actions .xc-btn { height: 2.25rem; }
+
+@keyframes xc-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+
+/* The overlay + textarea must share exact metrics, so the panel UI scale never changes them separately. */
+:root[data-reduce-motion="true"] .xc *, :root[data-reduce-motion="true"] .xc *::before { transition: none !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .xc *, .xc *::before { transition: none !important; animation: none !important; } }
+
+/* Global theme rules style every input/textarea (pill background, ring, radius). Inside .xc the fields draw their own look. */
+.xc .xc-search input, .xc .xc-name, .xc .xc-addrow-in input, .xc .xc-chip-input, .xc .xc-ta {
+  -webkit-appearance: none; appearance: none; box-shadow: none !important; transform: none !important;
+}
+.xc .xc-search input, .xc .xc-ta { background: transparent !important; border: 0 !important; border-radius: 0 !important; }
+.xc .xc-search input { height: 100%; padding: 0; }
+.xc .xc-name { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--border) !important; border-radius: 0 !important; padding: 0 .1rem; }
+.xc .xc-name:focus { border-bottom-color: var(--accent-strong) !important; }
+.xc .xc-addrow-in input { background: var(--xc-field) !important; border: 0 !important; border-radius: 8px !important; }
+.xc .xc-addrow-in input:focus { box-shadow: 0 0 0 1px var(--accent-strong) inset !important; }
+.xc .xc-chip-input { border: 0 !important; border-radius: 6px !important; }
+.xc .xc-ta:focus, .xc .xc-ta:hover { background: transparent !important; }

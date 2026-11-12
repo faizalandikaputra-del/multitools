@@ -2695,3 +2695,15 @@ remove-description-text (hapus teks keterangan statis di semua tab panel)
   - Tidak disentuh: tab Info (About), jendela Pengaturan dan modal pengaturan lama di html/index.html (catatan di sana masih ada), tooltip (atribut title).
   - Files: js/main.js (?v=85), js/mt-newtools.js (?v=3), js/mt-shape.js (?v=5), css/mt-shape.css (?v=8), css/mt-presets-tidy.css (?v=2), html/index.html, README.txt.
   - Dicek di Chromium (screenshot Shape); tab lain hanya diperiksa lewat node --check dan grep sisa kelas keterangan. Belum diuji di After Effects.
+
+expression-code-layout (tab Expression Code: layout baru library-first + animasi smooth)
+  - Permintaan: desain ulang layout tab Expression Code (mockup sudah di-acc), animasi harus smooth.
+  - Layout: atas = kolom Search + tombol "+"; chip kategori dengan jumlah snippet (chip aktif punya ikon rename/hapus, "+" membuka baris tambah kategori);
+    daftar baris ringkas (bintang favorit, nama, preview satu baris), grup "Favorites" di atas; klik baris = buka detail (kode berwarna + Edit / Delete), tombol play = Apply;
+    editor menempel di bawah (sticky dock): tertutup = satu baris "Write an expression...", terbuka = nama, editor dengan nomor baris + warna sintaks, hitungan baris/karakter, Apply to selected + Save.
+    Search mencari di semua kategori (nama, kode, nama kategori). Ctrl+Enter = Apply, Ctrl+S = Save, Tab = 2 spasi di editor.
+  - Animasi: daftar masuk berurutan (fade-up) saat tab/kategori/pencarian berganti; favorite / simpan / hapus membuat baris meluncur ke posisi baru (FLIP, Web Animations API); hapus = baris geser keluar;
+    detail baris, dock, dan baris tambah kategori memakai transisi max-height + opacity (--smooth); mati otomatis di data-reduce-motion="true" dan prefers-reduced-motion.
+  - Fungsi lama tidak berubah: penyimpanan exprSnippetCats, mirror ke saved_expressions.json, backup .jsx, restore otomatis, EXPR_applyCode, konfirmasi hapus 2 klik (3 dtk). Long-press favorit diganti klik bintang.
+  - Files: js/main.js (?v=86, modul ExprCode ditulis ulang), css/mt-expr-layout.css (baru, ?v=1), html/index.html, README.txt.
+  - Dicek di Chromium headless (layout, ketik + highlight sejajar, simpan, favorite reorder, search). Belum diuji di After Effects. Kelas lama .expr-item / .snippet-card tidak dipakai lagi tab ini.

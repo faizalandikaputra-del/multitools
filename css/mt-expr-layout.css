@@ -236,3 +236,9 @@
 .xc .xc-addrow-in input:focus { box-shadow: 0 0 0 1px var(--accent-strong) inset !important; }
 .xc .xc-chip-input { border: 0 !important; border-radius: 6px !important; }
 .xc .xc-ta:focus, .xc .xc-ta:hover { background: transparent !important; }
+
+/* Solid (non-transparent) surfaces: the dock, editor and code preview must not show the panel background image through them. */
+.xc { --xc-solid: #1f1f24; --xc-solid-code: #111114; }
+:root[data-theme="light"] .xc { --xc-solid: #f4f4f7; --xc-solid-code: #e9e9ee; }
+.xc .xc-dock { background: var(--xc-solid) !important; -webkit-backdrop-filter: none; backdrop-filter: none; opacity: 1; }
+.xc .xc-editor, .xc .xc-row-pre { background: var(--xc-solid-code) !important; }

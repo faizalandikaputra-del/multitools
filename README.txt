@@ -2707,3 +2707,8 @@ expression-code-layout (tab Expression Code: layout baru library-first + animasi
   - Fungsi lama tidak berubah: penyimpanan exprSnippetCats, mirror ke saved_expressions.json, backup .jsx, restore otomatis, EXPR_applyCode, konfirmasi hapus 2 klik (3 dtk). Long-press favorit diganti klik bintang.
   - Files: js/main.js (?v=86, modul ExprCode ditulis ulang), css/mt-expr-layout.css (baru, ?v=1), html/index.html, README.txt.
   - Dicek di Chromium headless (layout, ketik + highlight sejajar, simpan, favorite reorder, search). Belum diuji di After Effects. Kelas lama .expr-item / .snippet-card tidak dipakai lagi tab ini.
+
+expression-code-solid (tab Expression Code: dock & editor tidak transparan)
+  - Masalah: dock bawah ("Write an expression...") dan editor tembus pandang, gambar background panel terlihat lewat.
+  - Fix: css/mt-expr-layout.css (?v=2) - dock, editor, dan preview kode pakai warna solid (--xc-solid / --xc-solid-code, dark + light). Daftar snippet dan search tidak diubah.
+  - Files: css/mt-expr-layout.css, html/index.html, README.txt.

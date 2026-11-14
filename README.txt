@@ -2772,3 +2772,13 @@ neucurve-bg-color-smooth (ganti Background color terasa patah-patah: warna tab N
   - Penyebab: picker mengirim banyak "input" per frame, tiap event menata ulang seluruh panel (sekitar 40 variabel CSS), mengirim state ke NeuCurve, menulis localStorage dan event CEP. Di NeuCurve, nc-theme-sync.js menulis ulang satu stylesheet besar (sekitar 60 selector) setiap tik, dan transisi background 150-300 ms membuat tiap tik tertinggal dari tik sebelumnya.
   - Fix: js/main.js (?v=89): input picker digabung jadi satu penerapan per frame; Curve.sync() mengirim satu pesan per frame (force tetap langsung); localStorage + event CEP untuk window terpisah hanya mengirim state terakhir tiap 120 ms. neucurve/nc-theme-sync.js (?v=5): stylesheet ditulis sekali, warna lewat variabel --mt-tone-<angka>; kelas html.mt-bg-live selama 250 ms setelah perubahan. neucurve/nc-fix27.css (?v=4): tanpa transisi selama mt-bg-live.
   - Files: js/main.js, html/index.html, neucurve/nc-theme-sync.js, neucurve/nc-fix27.css, neucurve/index.html, README.txt.
+
+animator-text-ease-locks-freq-decay (tab Animator Text: Frequency dan Decay terkunci saat Motion Style = Ease)
+  - Penyebab: gaya Ease tidak punya pantulan, jadi Frequency dan Decay tidak berpengaruh, tapi slider tetap bisa diubah.
+  - Fix: js/main.js (?v=90) syncStyleLock() menonaktifkan slider + kotak angka Frequency dan Decay saat Ease dipilih (nilai tetap tersimpan, aktif lagi saat Overshoot). Dipanggil saat radio berubah, Preset, Reset, Import from layer, dan saat tab dibuka. css/mt-motion-fix.css (?v=7) meredupkan baris yang terkunci.
+  - Files: js/main.js, css/mt-motion-fix.css, html/index.html, README.txt.
+
+animator-text-layout-tidy (tab Animator Text, kotak Text Properties: layout dirapikan)
+  - Penyebab: Markers dan 3D adalah chip inline yang menumpuk ke kiri dengan lebar lain dari baris In / In/Out / Out dan Motion Style; baris properti tidak konsisten (Position, Anchor, Rotation, Skew judul di atas, Scale, Tracking, Blur, Opacity judul di kiri).
+  - Fix: js/main.js (?v=91): Markers + 3D memakai grid chips-2 (dua kolom sama lebar), propRow memberi class prop-row-N (N = jumlah nilai). css/mt-motion-fix.css (?v=8): chip In / In/Out / Out tiga kolom penuh; baris 2 atau 3 nilai = judul di atas + kolom sama lebar, baris 1 nilai = judul kiri, field kanan.
+  - Files: js/main.js, css/mt-motion-fix.css, html/index.html, README.txt.

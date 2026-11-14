@@ -55,3 +55,23 @@ html.mt-moving .ambient-orb { animation-play-state: paused !important; }
 .preset-item:hover, .expr-item:hover, .snippet-card:hover, .qce-res-tile:hover {
   box-shadow: 0 6px 14px -8px rgba(0, 0, 0, .6), 0 0 0 1px rgba(var(--accent-rgb, 127, 0, 255), .45);
 }
+
+/* Animator Text: Frequency and Decay are locked while Motion Style = Ease (they only shape the Overshoot bounce). */
+.ta .param.is-locked { opacity: .38; cursor: not-allowed; }
+.ta .param.is-locked input { pointer-events: none; cursor: not-allowed; }
+
+/* Animator Text layout. Mode chips, Markers / 3D and Motion Style share one full-width column grid, so every
+   edge lines up. Property rows follow one rule: 2 or 3 values = title on top and equal columns below,
+   1 value = title left and the field right. */
+.ta .chips-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+.ta .chips-3 .chip { max-width: none; }
+.ta .prop-row { flex-wrap: nowrap; }
+.ta .prop-row-2, .ta .prop-row-3 { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: var(--space-2); }
+.ta .prop-row-2 .prop-coords, .ta .prop-row-3 .prop-coords { display: grid; gap: var(--space-2); }
+.ta .prop-row-2 .prop-coords { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ta .prop-row-3 .prop-coords { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ta .prop-row .coord { min-width: 0; }
+.ta .prop-row-2 .coord .num, .ta .prop-row-3 .coord .num { flex: 1 1 auto; width: 100%; min-width: 0; }
+.ta .prop-row-1 .prop-coords { flex-wrap: nowrap; margin-left: auto; }
+.ta .prop-row-1 .coord .num { width: 5.5rem; }
+.ta .prop-row-2 .prop-chip, .ta .prop-row-3 .prop-chip { justify-self: start; }

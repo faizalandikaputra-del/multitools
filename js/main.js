@@ -3827,7 +3827,7 @@
         return '<label class="coord"><span>' + f.label + '</span>' +
           '<input class="num" type="number" step="1" data-axis="' + f.axis + '" value="' + f.def + '"></label>';
       }).join("");
-      return '<div class="prop-row" data-prop="' + key + '">' +
+      return '<div class="prop-row prop-row-' + fields.length + '" data-prop="' + key + '">' +
         '<label class="chip chip-solo prop-chip"><input type="checkbox" class="prop-on"' + (checkedByDefault ? " checked" : "") + '><span>' + title + '</span></label>' +
         '<div class="prop-coords">' + coords + '</div>' +
       '</div>';
@@ -3899,9 +3899,9 @@
             '<label class="chip"><input type="radio" name="tf-mode" value="inout"><span>In/Out</span></label>' +
             '<label class="chip"><input type="radio" name="tf-mode" value="out"><span>Out</span></label>' +
           '</div>' +
-          '<div class="field-actions" style="justify-content:flex-start">' +
-            '<label class="chip chip-solo"><input type="checkbox" id="tf-markers"><span>Markers</span></label>' +
-            '<label class="chip chip-solo"><input type="checkbox" id="tf-3d"><span>3D</span></label>' +
+          '<div class="chips chips-2 tf-toggles">' +
+            '<label class="chip"><input type="checkbox" id="tf-markers"><span>Markers</span></label>' +
+            '<label class="chip"><input type="checkbox" id="tf-3d"><span>3D</span></label>' +
           '</div>' +
           '<div class="field field-column">' +
             '<span class="field-label">Motion Style</span>' +
@@ -3936,6 +3936,25 @@
       // TextFlex keeps its own copy of every value (see "keep every value" below), so the generic FormState
       // restore must not touch these fields: it only knew about trusted input events and could overwrite newer values.
       Array.prototype.forEach.call(wrap.querySelectorAll("input, select, textarea"), function (el) { el.setAttribute("data-no-restore", ""); });
+
+      // Ease has no bounce, so Frequency and Decay do nothing there: lock both (values are kept) until Overshoot is picked again.
+      function syncStyleLock() {
+        var ease = wrap.querySelector('input[name="tf-style"]:checked').value === "ease";
+        ["tf-frequency", "tf-decay"].forEach(function (id) {
+          var range = wrap.querySelector("#" + id), num = wrap.querySelector("#" + id + "-num");
+          range.disabled = ease;
+          num.disabled = ease;
+          if (range.parentNode) {
+            range.parentNode.classList.toggle("is-locked", ease);
+            if (ease) { range.parentNode.setAttribute("title", "Frequency and Decay only apply to the Overshoot style."); }
+            else { range.parentNode.removeAttribute("title"); }
+          }
+        });
+      }
+      Array.prototype.forEach.call(wrap.querySelectorAll('input[name="tf-style"]'), function (el) {
+        el.addEventListener("change", syncStyleLock);
+      });
+      syncStyleLock();
 
       // ---- collect every field into the config object the JSX side expects ----
       function collect() {
@@ -3986,6 +4005,7 @@
         wrap.querySelector("#tf-3d").checked = !!cfg.threeD;
         var styleEl = wrap.querySelector('input[name="tf-style"][value="' + (cfg.style || "overshoot") + '"]');
         if (styleEl) { styleEl.checked = true; }
+        syncStyleLock();
         var p = cfg.props || {};
         ["position", "anchor", "rotation", "scale", "skew", "tracking", "blur", "opacity"].forEach(function (key) {
           var row = wrap.querySelector('.prop-row[data-prop="' + key + '"]');
@@ -4117,6 +4137,7 @@
         });
         setRadio("tf-mode", cfg.mode);
         setRadio("tf-style", cfg.style);
+        syncStyleLock();
         if (typeof cfg.markers === "boolean") { wrap.querySelector("#tf-markers").checked = cfg.markers; }
         if (typeof cfg.threeD === "boolean") { wrap.querySelector("#tf-3d").checked = cfg.threeD; }
         var p = cfg.props || {};

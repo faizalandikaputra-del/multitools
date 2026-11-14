@@ -2762,3 +2762,8 @@ neucurve-tab-background-follows-background-color (tab NeuCurve: latar tab mengik
   - Penyebab: latar tab NeuCurve (.extension-wrapper) diwarnai Background color dikurangi 8 per channel oleh nc-theme-sync.js, jadi sedikit lebih gelap dari warna yang dipilih.
   - Fix: neucurve/nc-fix27.css (?v=3) memakai --mt-bg-rgb persis untuk .extension-wrapper, html dan body. Tidak berlaku saat gradient (nc-grad-on) atau Effects (nc-fx-on) NeuCurve aktif, supaya layer itu tetap terlihat. Tanpa Background color custom tidak ada perubahan.
   - Files: neucurve/nc-fix27.css, neucurve/index.html, README.txt.
+
+neucurve-bg-color-material-you (tab NeuCurve tidak berubah warna saat Background color diganti di style Material You)
+  - Penyebab: di style Material You, picker Background color hanya memanggil MTMaterial.setBg() lalu return, jadi Settings.applyColor() tidak jalan dan BgState.bgHex tetap null. Panel mengirim bgHex null ke NeuCurve, sehingga nc-theme-sync.js tidak pernah mewarnai tab NeuCurve.
+  - Fix: Curve.sync() di js/main.js (?v=88) membaca warna dari MTMaterial.getBg() saat style Material You aktif (tanpa warna custom = null, tampilan bawaan). Update lewat event mt-palette yang sudah ada.
+  - Files: js/main.js, html/index.html, README.txt.

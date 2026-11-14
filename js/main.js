@@ -4481,14 +4481,26 @@
     // neucurve/nc-theme-sync.js). postMessage works whether or not the frame counts as same-origin, so
     // nothing else is needed.
     sync: function (force) {
+      // Background color for NeuCurve. In Material You the picker only goes to MTMaterial.setBg() (Settings.applyColor never runs, so
+      // BgState stays null), so NeuCurve never heard about the color. Read it from the palette there; no custom color = null (native dark).
+      var bgHex = BgState.bgHex, bgRgb = BgState.bgRgb;
+      try {
+        if (document.documentElement.getAttribute("data-ui-theme") === "material" && window.MTMaterial) {
+          var mb = window.MTMaterial.getBg();
+          if (mb && /^#[0-9a-f]{6}$/i.test(mb)) {
+            bgHex = mb.toLowerCase();
+            bgRgb = [parseInt(mb.substr(1, 2), 16), parseInt(mb.substr(3, 2), 16), parseInt(mb.substr(5, 2), 16)].join(",");
+          } else { bgHex = null; bgRgb = null; }
+        }
+      } catch (eMat) { }
       var msg = {
         mtBg: true,
         opacity: BgState.opacity,
         hasMedia: BgState.hasMedia,
         themeHex: ThemeState.hex,
         themeRgb: ThemeState.rgb,
-        bgHex: BgState.bgHex,
-        bgRgb: BgState.bgRgb,
+        bgHex: bgHex,
+        bgRgb: bgRgb,
         // Panel style scheme ("light" | "dark", = <html data-theme>: Glass auto/pinned light-dark, or Material You's
         // scheme) + the panel's EFFECTIVE background color, so NeuCurve can switch to its light look by itself.
         scheme: Curve.scheme(),

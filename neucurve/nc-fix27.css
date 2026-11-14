@@ -1,0 +1,15 @@
+/* NeuCurve - nc-fix27.css (loaded LAST, after nc-fix26.css)
+   GRAPH BACKING = PANEL BACKGROUND COLOR. The solid behind the graph (the floor <rect> and the .canvas-area box) used the "canvas"
+   tier of nc-theme-sync.js (Background color - 20 per channel), so it was always darker than Settings > Background color.
+   Here both use the exact Background color the panel posts (--mt-bg-rgb). Nothing changes when no custom Background color is set
+   (html.mt-bg-themed is then off) - the default dark floor stays. */
+
+/* box backing (dark and light picks alike) */
+html.mt-bg-themed.mt-bg-themed body .shell.shell .canvas-area.canvas-area { background-color: rgb(var(--mt-bg-rgb)) !important; }
+
+/* floor rect: plain, and with a gradient mode on. Beats nc-theme-sync.css, nc-fix26.css and the light-mode rules. */
+html.mt-bg-themed.mt-bg-themed body svg.curve-svg.curve-svg > rect:first-of-type,
+html.mt-bg-themed.mt-bg-themed.mt-light body svg.curve-svg.curve-svg > rect:first-of-type,
+html.mt-bg-themed.mt-bg-themed.nc-grad-on body svg.curve-svg.curve-svg > rect:first-of-type {
+  fill: rgb(var(--mt-bg-rgb)) !important;
+}

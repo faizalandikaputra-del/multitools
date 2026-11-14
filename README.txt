@@ -2747,3 +2747,8 @@ neucurve-island-backdrop-continuous (tab NeuCurve: latar belakang dynamic island
   - Penyebab: css/mt-curve-top.css melukis band solid 50px di atas pane (pane NeuCurve mulai 50px di bawah), jadi gradient / gambar / efek background NeuCurve tidak sampai ke belakang island dan band terlihat hitam.
   - Fix: pane NeuCurve mulai dari paling atas lagi (css/mt-curve-top.css ?v=5, band dimatikan); js/mt-curve-top.js (?v=2) memberi frame variabel --mt-top-inset (50px, 0px kalau island off); neucurve/nc-theme-sync.css (?v=3) memakainya sebagai padding-top body, jadi toolbar tetap mulai di bawah island sementara background NeuCurve memanjang sampai ke belakang island.
   - Files: css/mt-curve-top.css, js/mt-curve-top.js, neucurve/nc-theme-sync.css, neucurve/index.html, html/index.html, README.txt.
+
+neucurve-graph-solid-follows-background (tab NeuCurve: solid di belakang grafik mengikuti Background color pengaturan Multi Tool)
+  - Penyebab: floor rect grafik dan kotak .canvas-area memakai tier "canvas" (Background color dikurangi 20 per channel), jadi selalu lebih gelap dari Background color.
+  - Fix: neucurve/nc-fix27.css (dimuat paling akhir) memakai --mt-bg-rgb persis untuk .canvas-area dan floor rect, termasuk saat mode gradient aktif dan saat warna terang. Tanpa Background color custom tidak ada perubahan.
+  - Files: neucurve/nc-fix27.css, neucurve/index.html, README.txt.

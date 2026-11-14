@@ -2752,3 +2752,13 @@ neucurve-graph-solid-follows-background (tab NeuCurve: solid di belakang grafik 
   - Penyebab: floor rect grafik dan kotak .canvas-area memakai tier "canvas" (Background color dikurangi 20 per channel), jadi selalu lebih gelap dari Background color.
   - Fix: neucurve/nc-fix27.css (dimuat paling akhir) memakai --mt-bg-rgb persis untuk .canvas-area dan floor rect, termasuk saat mode gradient aktif dan saat warna terang. Tanpa Background color custom tidak ada perubahan.
   - Files: neucurve/nc-fix27.css, neucurve/index.html, README.txt.
+
+neucurve-graph-solid-color-option (NeuCurve Settings > Appearance: opsi warna "Graph Solid Color" untuk solid di belakang grafik)
+  - Kosong (default) = ikut Background color Multi Tool (nc-fix27.css). Setelah dipilih, warna itu dipakai; tombol Reset di Interface Colors mengembalikan ke ikut Background.
+  - Key baru: neucurve_graphSolid. Dibaca nc-pro.js (set html[data-nc-gsolid] + --nc-gsolid-rgb), diatur dari nc-settings.js / nc-pro-settings.js / settings.html.
+  - Files: neucurve/nc-pro.js (?v=9), neucurve/nc-settings.js (?v=19), neucurve/nc-pro-settings.js (?v=5), neucurve/settings.html, neucurve/nc-fix27.css (?v=2), neucurve/index.html, README.txt.
+
+neucurve-tab-background-follows-background-color (tab NeuCurve: latar tab mengikuti Background color pengaturan Multi Tool, hanya warna, tanpa gambar/video)
+  - Penyebab: latar tab NeuCurve (.extension-wrapper) diwarnai Background color dikurangi 8 per channel oleh nc-theme-sync.js, jadi sedikit lebih gelap dari warna yang dipilih.
+  - Fix: neucurve/nc-fix27.css (?v=3) memakai --mt-bg-rgb persis untuk .extension-wrapper, html dan body. Tidak berlaku saat gradient (nc-grad-on) atau Effects (nc-fx-on) NeuCurve aktif, supaya layer itu tetap terlihat. Tanpa Background color custom tidak ada perubahan.
+  - Files: neucurve/nc-fix27.css, neucurve/index.html, README.txt.

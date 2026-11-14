@@ -13,3 +13,23 @@ html.mt-bg-themed.mt-bg-themed.mt-light body svg.curve-svg.curve-svg > rect:firs
 html.mt-bg-themed.mt-bg-themed.nc-grad-on body svg.curve-svg.curve-svg > rect:first-of-type {
   fill: rgb(var(--mt-bg-rgb)) !important;
 }
+
+/* GRAPH SOLID COLOR (NeuCurve Settings > Appearance > Graph Solid Color). nc-pro.js sets html[data-nc-gsolid] + --nc-gsolid-rgb only when
+   a color was picked; "" keeps the Background-color rules above. The doubled attribute out-ranks them (dark, light and gradient variants). */
+html[data-nc-gsolid][data-nc-gsolid][data-nc-gsolid][data-nc-gsolid] body .shell.shell .canvas-area.canvas-area {
+  background-color: rgb(var(--nc-gsolid-rgb)) !important;
+}
+html[data-nc-gsolid][data-nc-gsolid][data-nc-gsolid][data-nc-gsolid] body svg.curve-svg.curve-svg > rect:first-of-type {
+  fill: rgb(var(--nc-gsolid-rgb)) !important;
+}
+
+/* TAB BACKGROUND = PANEL BACKGROUND COLOR. The Curve tab's own background is .extension-wrapper (nc-flow.css --fl-bg #1a1a1a). nc-theme-sync.js
+   tinted it as Background color - 8, so the tab was always a little darker than Settings > Background color. Now it is the exact color.
+   Only the plain color is synced: with a gradient (nc-grad-on) or Effects (nc-fx-on) on, those layers keep their see-through surface. */
+html.mt-bg-themed.mt-bg-themed:not(.nc-grad-on):not(.nc-fx-on) body .shell.shell .extension-wrapper.extension-wrapper {
+  background: rgb(var(--mt-bg-rgb)) !important;
+}
+html.mt-bg-themed.mt-bg-themed:not(.nc-grad-on):not(.nc-fx-on),
+html.mt-bg-themed.mt-bg-themed:not(.nc-grad-on):not(.nc-fx-on) body {
+  background-color: rgb(var(--mt-bg-rgb));
+}

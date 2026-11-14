@@ -9,7 +9,7 @@
 
   var APP_ID = "nc-settings";
   var DEF = {
-    uiColor: "#FFFFFF", graphLineColor: "#FFFFFF", handleColor: "#FFFFFF",
+    uiColor: "#FFFFFF", graphLineColor: "#FFFFFF", handleColor: "#FFFFFF", graphSolid: "",
     autoApply: "false", overshoot: "true", liveBall: "1", layoutMode: "auto",
     bgImagePath: "", bgOpacity: "1",
     gradOn: "0", gradC1: "#000000", gradC2: "#ffffff", gradGlow: "#ffffff", gradDir: "160", gradInt: "100", gradArea: "panel", gradP: "bw",
@@ -72,8 +72,14 @@
   }
   /* glow colors: lineGlowColor / hGlowColor are "" = follow the curve / handle color, so the Edit button shows that color until one is picked */
   var GLOW_AUTO = { lineGlowColor: "graphLineColor", hGlowColor: "handleColor" };
+  /* graphSolid: "" = follow the Multi Tool Background color (the panel mirrors it into localStorage "mt_theme_state"); dark floor if unknown */
+  function panelBgHex() {
+    try { var d = JSON.parse(localStorage.getItem("mt_theme_state") || "null"); var h = d && normalizeHex(d.bgHex || d.panelBgHex); if (h) { return h; } } catch (e) { }
+    return "#121214";
+  }
   function colorOf(key) {
     var c = normalizeHex(read(key));
+    if (!c && key === "graphSolid") { return panelBgHex(); }
     if (!c && GLOW_AUTO[key]) { return colorOf(GLOW_AUTO[key]); }
     return c || normalizeHex(DEF[key]) || "#ffffff";
   }

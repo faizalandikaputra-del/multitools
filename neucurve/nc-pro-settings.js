@@ -9,6 +9,7 @@
     lineW: "2.5", lineStyle: "solid", lineGlow: "0", lineGlowColor: "",
     hGlow: "0", hGlowColor: "", hHover: "0", hGuides: "1", hGuideStyle: "solid", hGuideOp: "100", hLabels: "1",
     hotkeysOn: "1", hotkeys: "",
+    graphSolid: "",
     cardStyle: "grid", cardShape: "soft",
     /* defaults of keys that nc-settings.js owns (needed by the page / group Reset buttons) */
     uiColor: "#FFFFFF", graphLineColor: "#FFFFFF", handleColor: "#FFFFFF",
@@ -21,7 +22,7 @@
     grid: ["gridShow", "gridLabels", "gridX", "gridY", "gridStyle", "gridOp", "gridW", "gridColor"],
     line: ["lineW", "lineStyle", "lineGlow", "lineGlowColor"],
     handle: ["hGlow", "hGlowColor", "hHover", "hGuides", "hGuideStyle", "hGuideOp", "hLabels"],
-    colors: ["uiColor", "graphLineColor", "handleColor"],
+    colors: ["uiColor", "graphLineColor", "handleColor", "graphSolid"],
     media: ["bgImagePath", "bgOpacity", "bgOrig", "gWp", "gHp", "gWl", "gHl"],
     handleStyle: ["hStyle", "hSize", "hLine", "hImg"],
     behavior: ["autoApply", "overshoot", "liveBall", "layoutMode"],

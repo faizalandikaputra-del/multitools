@@ -15,7 +15,8 @@
     gridShow: "1", gridLabels: "1", gridX: "6", gridY: "5", gridStyle: "solid", gridOp: "100", gridW: "1", gridColor: "#ffffff",
     lineW: "2.5", lineStyle: "solid", lineGlow: "0", lineGlowColor: "",
     hGlow: "0", hGlowColor: "", hHover: "0", hGuides: "1", hGuideStyle: "solid", hGuideOp: "100", hLabels: "1",
-    hotkeysOn: "1", hotkeys: ""
+    hotkeysOn: "1", hotkeys: "",
+    graphSolid: ""   /* "" = follow Multi Tool Background color */
   };
   function rd(k) { var v = null; try { v = ls ? ls.getItem(P + k) : null; } catch (e) { } return (v === null || v === undefined) ? DEF[k] : v; }
   function nm(k, lo, hi, d) { var v = parseFloat(rd(k)); if (!isFinite(v)) { v = d; } return Math.max(lo, Math.min(hi, v)); }
@@ -60,6 +61,11 @@
     flag("data-nc-hgs", rd("hGuideStyle") === "dashed", "dashed");
     var ho = Math.round(nm("hGuideOp", 10, 100, 100)); flag("data-nc-hgo", ho !== 100); cssv("--nc-hgo", String(ho / 100));
     flag("data-nc-hl", rd("hLabels") === "0", "off");
+
+    /* Graph Solid Color: the solid behind the graph. "" = follow the panel Background color (nc-fix27.css). */
+    var gsHex = hexOrEmpty(rd("graphSolid"));
+    flag("data-nc-gsolid", !!gsHex, "1");
+    if (gsHex) { cssv("--nc-gsolid-rgb", hexToRgb(gsHex)); } else { root.style.removeProperty("--nc-gsolid-rgb"); }
 
     var gk = x + "|" + y + "|" + rgb;
     if (gk !== lastGrid) { var first = lastGrid === ""; lastGrid = gk; if (!first) { redrawGrid(); } }

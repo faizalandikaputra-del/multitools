@@ -4480,7 +4480,16 @@
     // Pushes the current background + theme state into the NeuCurve iframe (see neucurve/index.html and
     // neucurve/nc-theme-sync.js). postMessage works whether or not the frame counts as same-origin, so
     // nothing else is needed.
+    // Many panel events call sync() in a burst (picker drag, palette rebuild). Normal calls are merged into ONE post per frame;
+    // force=true (frame load / mtBgRequest) posts at once.
     sync: function (force) {
+      if (force) { this._syncNow(true); return; }
+      if (this._syncRaf) { return; }
+      var self = this;
+      this._syncRaf = requestAnimationFrame(function () { self._syncRaf = 0; self._syncNow(false); });
+    },
+
+    _syncNow: function (force) {
       // Background color for NeuCurve. In Material You the picker only goes to MTMaterial.setBg() (Settings.applyColor never runs, so
       // BgState stays null), so NeuCurve never heard about the color. Read it from the palette there; no custom color = null (native dark).
       var bgHex = BgState.bgHex, bgRgb = BgState.bgRgb;
@@ -4521,7 +4530,16 @@
       // The Large Graph Editor / NeuCurve Settings are SEPARATE CEP windows (not iframes), so postMessage never
       // reaches them. Hand them the same state through localStorage (read on load + "storage" event) and a CEP
       // application-scope event (live updates while they're open). See neucurve/nc-theme-sync.js.
-      this.broadcastExternal(msg);
+      this.broadcastSoon(msg, force);
+    },
+
+    // localStorage + CEP event for the separate windows: heavy and not needed 60 times a second, so only the latest state goes out (120 ms).
+    broadcastSoon: function (msg, now) {
+      var self = this;
+      this._extMsg = msg;
+      if (now) { clearTimeout(this._extTimer); this._extTimer = 0; this.broadcastExternal(msg); return; }
+      if (this._extTimer) { return; }
+      this._extTimer = setTimeout(function () { self._extTimer = 0; self.broadcastExternal(self._extMsg); }, 120);
     },
 
     broadcastExternal: function (msg) {
@@ -5740,13 +5758,23 @@
       this.modal.addEventListener("mousedown", function (e) { if (e.target === self.modal) { self.close(); } });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && self.modal.classList.contains("is-open")) { self.close(); } });
 
-      $("bg-color").addEventListener("input", function (e) {
+      // Smooth color change: the picker fires "input" many times per frame while dragging, and every call re-themes the whole panel
+      // (about 40 CSS variables) and NeuCurve. Only the LAST value of each frame is applied, so the color glides instead of stepping.
+      var bgPending = null, bgRaf = 0;
+      function applyBgPending() {
+        bgRaf = 0;
+        var v = bgPending; bgPending = null;
+        if (!v) { return; }
         // ONE background colour for both styles (Glass + Material You): saved once in "mtx.bgColor" and mirrored into the
         // Material You palette (js/mt-material.js), so switching style keeps the colour you picked.
-        Store.set("bgColor", e.target.value);
-        if (document.documentElement.getAttribute("data-ui-theme") === "material" && window.MTMaterial) { window.MTMaterial.setBg(e.target.value); return; }   // Glass inline colour is re-applied when you switch back
-        self.applyColor(e.target.value);
-        if (window.MTMaterial) { window.MTMaterial.setBg(e.target.value); }
+        Store.set("bgColor", v);
+        if (document.documentElement.getAttribute("data-ui-theme") === "material" && window.MTMaterial) { window.MTMaterial.setBg(v); return; }   // Glass inline colour is re-applied when you switch back
+        self.applyColor(v);
+        if (window.MTMaterial) { window.MTMaterial.setBg(v); }
+      }
+      $("bg-color").addEventListener("input", function (e) {
+        bgPending = e.target.value;
+        if (!bgRaf) { bgRaf = requestAnimationFrame(applyBgPending); }
       });
       $("bg-reset").addEventListener("click", function () {         // back to the default background colour - for both styles
         Store.remove("bgColor");

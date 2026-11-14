@@ -95,31 +95,39 @@
 
   // Builds (or clears, when rgb is null) the #mt-bg-dynamic-sync stylesheet from BASE_TONES + the current
   // background color. Called on every sync, same as the tier vars above.
+  /* SMOOTH COLOR CHANGE: the stylesheet below is written ONCE and reads each tone from a variable (--mt-tone-<base>, "r,g,b").
+     Before, every new color re-wrote this whole <style> block (about 60 selectors), which re-parsed it and restyled the page for each
+     tick of the color picker, so the change looked choppy. Now a tick only updates 12 variables. The rules only apply while
+     html.mt-bg-themed is on, so removing that class (no custom color) turns them off without touching the sheet. */
   function rebuildDynamicBgCss(rgb) {
     if (!dynStyle) {
       dynStyle = document.createElement("style");
       dynStyle.id = "mt-bg-dynamic-sync";
+      dynStyle.textContent = BASE_TONES.map(function (t) {
+        var scoped = t.sel.split(",").map(function (s) { return "html.mt-bg-themed " + s.trim(); }).join(", ");
+        return scoped + " { background: rgb(var(--mt-tone-" + t.base + ")) !important; }";
+      }).join("\n");
       document.head.appendChild(dynStyle);
     }
-    var css = !rgb ? "" : BASE_TONES.map(function (t) {
-      var r = clamp255(rgb[0] + (t.base - 30));
-      var g = clamp255(rgb[1] + (t.base - 30));
-      var b = clamp255(rgb[2] + (t.base - 30));
-      var scoped = t.sel.split(",").map(function (s) { return "html.mt-bg-themed " + s.trim(); }).join(", ");
-      return scoped + " { background: rgb(" + r + "," + g + "," + b + ") !important; }";
-    }).join("\n");
-    /* flicker fix: rewriting a <style> block with identical text still forces a full-page restyle + repaint (visible as a
-       quick blink every time the panel re-posts its state, e.g. while a slider is dragged). Only write on a real change. */
-    if (dynStyle.textContent !== css) { dynStyle.textContent = css; }
+    BASE_TONES.forEach(function (t) {
+      if (!rgb) { root.style.removeProperty("--mt-tone-" + t.base); return; }
+      root.style.setProperty("--mt-tone-" + t.base,
+        clamp255(rgb[0] + (t.base - 30)) + "," + clamp255(rgb[1] + (t.base - 30)) + "," + clamp255(rgb[2] + (t.base - 30)));
+    });
   }
 
   // Applies one theme/background state object (same shape the panel posts: { themeHex, themeRgb, bgHex, bgRgb }).
-  var lastStateKey = "";
+  var lastStateKey = "", liveTimer = 0;
   function applyState(d) {
     if (!d) { return; }
     var key = [d.motionOff, d.bgHex, d.bgRgb, d.scheme, d.panelBgHex].join("|");
     if (key === lastStateKey) { return; }       // same state re-posted (opacity/theme tweaks elsewhere): nothing to do
     lastStateKey = key;
+    /* while the color changes, surfaces must follow at once: a 150-300 ms background transition on each of them made every tick lag
+       behind the previous one (looked like steps). nc-fix27.css drops transitions while html.mt-bg-live is on (250 ms after the last change). */
+    root.classList.add("mt-bg-live");
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function () { root.classList.remove("mt-bg-live"); }, 250);
     if (typeof d.motionOff === "boolean") {
       if (d.motionOff) { root.setAttribute("data-reduce-motion", "true"); } else { root.removeAttribute("data-reduce-motion"); }
     }

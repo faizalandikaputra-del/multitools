@@ -33,3 +33,7 @@ html.mt-bg-themed.mt-bg-themed:not(.nc-grad-on):not(.nc-fx-on),
 html.mt-bg-themed.mt-bg-themed:not(.nc-grad-on):not(.nc-fx-on) body {
   background-color: rgb(var(--mt-bg-rgb));
 }
+
+/* While the panel Background color is being changed (nc-theme-sync.js keeps html.mt-bg-live on for 250 ms after each change), nothing
+   transitions: every surface follows the picker immediately instead of easing behind it (that lag looked like stepping). */
+html.mt-bg-live, html.mt-bg-live *, html.mt-bg-live *::before, html.mt-bg-live *::after { transition: none !important; }

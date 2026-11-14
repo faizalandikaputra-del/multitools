@@ -2767,3 +2767,8 @@ neucurve-bg-color-material-you (tab NeuCurve tidak berubah warna saat Background
   - Penyebab: di style Material You, picker Background color hanya memanggil MTMaterial.setBg() lalu return, jadi Settings.applyColor() tidak jalan dan BgState.bgHex tetap null. Panel mengirim bgHex null ke NeuCurve, sehingga nc-theme-sync.js tidak pernah mewarnai tab NeuCurve.
   - Fix: Curve.sync() di js/main.js (?v=88) membaca warna dari MTMaterial.getBg() saat style Material You aktif (tanpa warna custom = null, tampilan bawaan). Update lewat event mt-palette yang sudah ada.
   - Files: js/main.js, html/index.html, README.txt.
+
+neucurve-bg-color-smooth (ganti Background color terasa patah-patah: warna tab NeuCurve berubah per langkah)
+  - Penyebab: picker mengirim banyak "input" per frame, tiap event menata ulang seluruh panel (sekitar 40 variabel CSS), mengirim state ke NeuCurve, menulis localStorage dan event CEP. Di NeuCurve, nc-theme-sync.js menulis ulang satu stylesheet besar (sekitar 60 selector) setiap tik, dan transisi background 150-300 ms membuat tiap tik tertinggal dari tik sebelumnya.
+  - Fix: js/main.js (?v=89): input picker digabung jadi satu penerapan per frame; Curve.sync() mengirim satu pesan per frame (force tetap langsung); localStorage + event CEP untuk window terpisah hanya mengirim state terakhir tiap 120 ms. neucurve/nc-theme-sync.js (?v=5): stylesheet ditulis sekali, warna lewat variabel --mt-tone-<angka>; kelas html.mt-bg-live selama 250 ms setelah perubahan. neucurve/nc-fix27.css (?v=4): tanpa transisi selama mt-bg-live.
+  - Files: js/main.js, html/index.html, neucurve/nc-theme-sync.js, neucurve/nc-fix27.css, neucurve/index.html, README.txt.

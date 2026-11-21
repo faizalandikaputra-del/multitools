@@ -1,7 +1,0 @@
-/* Multi Tool - mt-param-ui.css : big number box + slider rows (Tools tab, Animator Text tab). See js/mt-param-ui.js. */
-.param.mtn-p { row-gap: 0.55rem; }
-.param.mtn-p .num { width: 6.5rem; max-width: none; flex: none; justify-self: end; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 1rem; font-weight: 600; cursor: ew-resize; }
-.param.mtn-p input[type="range"] { grid-column: 1 / -1; width: 100%; }
-.param.mtn-p input[type="range"]:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 3px; border-radius: 999px; }
-/* Animator Text: the X / Y / Z boxes sit three to a row, so they get the taller, bolder look but keep their width */
-#panel[data-mtn-pui] .coord .num { padding-top: 0.4rem; padding-bottom: 0.4rem; font-weight: 600; cursor: ew-resize; }

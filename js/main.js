@@ -2368,6 +2368,36 @@
       }
       moveSegInd();
 
+      // Mouse wheel over the source switch (Curated / Saved / Image / Labels) = next / previous source. One notch = one step,
+      // touchpad deltas are collected to ~55px, no wrap. Registered once on window (capture) so smooth-scroll.js never scrolls
+      // the panel; it clicks the neighbour button, so the normal click handler above does all the work.
+      if (!window.__cpSegWheel) {
+        window.__cpSegWheel = true;
+        var segAcc = 0, segLastEvt = 0, segLastStep = 0;
+        window.addEventListener("wheel", function (e) {
+          var t = e.target, seg = t && t.closest ? t.closest(".cp-root .cp-seg") : null;
+          if (!seg || e.ctrlKey) { return; }
+          try { window.dispatchEvent(new Event("mt-wheel-activity")); } catch (eAct) { }
+          e.preventDefault(); e.stopPropagation();
+          if (e.stopImmediatePropagation) { e.stopImmediatePropagation(); }
+          var dy = e.deltaY || e.deltaX || 0;
+          if (e.deltaMode === 1) { dy *= 33; } else if (e.deltaMode === 2) { dy *= 300; }
+          if (!dy) { return; }
+          var now = Date.now();
+          if (now - segLastEvt > 260 || (segAcc && (segAcc > 0) !== (dy > 0))) { segAcc = 0; }
+          segLastEvt = now; segAcc += dy;
+          if (Math.abs(segAcc) < 55) { return; }
+          if (now - segLastStep < 120) { segAcc = 0; return; }
+          var list = Array.prototype.slice.call(seg.querySelectorAll("[data-cp-tab]")), cur = -1, i;
+          for (i = 0; i < list.length; i++) { if (list[i].classList.contains("is-active")) { cur = i; break; } }
+          var nb = list[cur + (segAcc > 0 ? 1 : -1)];
+          segAcc = 0;
+          if (!nb) { return; }
+          segLastStep = now;
+          nb.click();
+        }, { passive: false, capture: true });
+      }
+
       function renderCustomGrid() {
         var cat = colorCatStore.activeCat(catData);
         customGrid.innerHTML = stripsHtml(cat.items, "remove", ADD_TILE);

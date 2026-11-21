@@ -2787,3 +2787,8 @@ tools-icon-bar-wheel (tab Tools dan Quick Comp Edit: scroll mouse di atas kotak-
   - Penyebab: kotak ikon (layout Compact) hanya bisa dipindah dengan klik atau tombol panah.
   - Fix: js/mt-tools-layout.js (?v=5): wheel di atas .mtt-bar = fitur berikutnya (scroll bawah) / sebelumnya (scroll atas), berhenti di kotak pertama/terakhir (tanpa wrap). Satu notch mouse = satu kotak, touchpad dikumpulkan sampai ~55px. Listener di window (capture) seperti js/tab-wheel.js, jadi smooth-scroll.js tidak ikut menggeser panel. Scroll di atas kartu di bawah kotak tetap menggulir panel. Hanya aktif di layout Compact (Settings > Appearance > Tab layout).
   - Files: js/mt-tools-layout.js, html/index.html, README.txt.
+
+palette-source-wheel (tab Color Palette: scroll mouse di atas switch Curated / Saved / Image / Labels memindah sumber)
+  - Penyebab: switch sumber swatch hanya bisa dipindah dengan klik.
+  - Fix: js/main.js (?v=92): wheel di atas .cp-seg = sumber berikutnya (scroll bawah) / sebelumnya (scroll atas), tanpa wrap, satu notch = satu langkah (touchpad ~55px). Listener window (capture) didaftarkan sekali, lalu meng-klik tombol tetangga, jadi animasi indikator, pane dan penyimpanan cpSwatchTab memakai handler klik yang sudah ada. smooth-scroll.js tidak ikut menggeser panel.
+  - Files: js/main.js, html/index.html, README.txt.

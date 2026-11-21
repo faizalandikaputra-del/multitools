@@ -2814,3 +2814,8 @@ motion-tile-recent (Motion Tile Generator: kolom Scale lebih mudah diubah + daft
 motion-tile-box-size (Motion Tile Generator: kotak Scale dikunci ke ukuran kotak angka kompak panel)
   - Perubahan: #mtn-mt-pct lebar 4.2rem (sama dengan .param .num: angka + panah naik/turun), rata kanan di baris Scale (%), tidak melebar.
   - Files: css/mt-newtools.css (?v=6), html/index.html, README.txt.
+
+tools-reset-and-scale-slider (Tools: tombol Reset di tiap kartu + kotak Scale lebih besar dengan slider)
+  - Motion Tile Generator: kotak Scale diperbesar (lebar 6.5rem, tinggi lebih besar, kursor ew-resize) supaya mudah di-drag kiri/kanan (scrub bawaan mt-scrub.js, step 1, Shift = x10). Di bawahnya ada slider 10-1000 (step 10) yang mengisi kotak; Apply tetap lewat tombol. Normal = 150 dan Mirror Edges nyala (data-reset-value / data-reset-checked).
+  - Reset: js/mt-tools-reset.js (baru, ?v=1). Tiap kartu di tab Tools yang punya pengaturan mendapat tombol Reset kecil di bawah. Klik = semua kontrol kartu kembali ke nilai normal (default markup kartu, atau data-reset-value / data-reset-checked), lalu event input + change dikirim supaya preview dan simpanan kartu ikut. Tanpa tombol: kartu tanpa pengaturan (Anchor Point, Align to Composition), kartu yang sudah punya Reset sendiri (Keyframe Timing), kontrol dengan data-no-reset, hasil scan Cleaner (.mtn-report). Daftar Recent Motion Tile tidak ikut dihapus.
+  - Files: js/mt-tools-reset.js, js/mt-newtools.js (?v=7), css/mt-newtools.css (?v=7), html/index.html, README.txt.

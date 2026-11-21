@@ -73,5 +73,13 @@
 .mtn-mt-chip:hover { color: var(--accent-strong, var(--accent, #fff)); }
 .mtn-mt-chip:active { transform: scale(0.96); }
 .mtn-mt-chip:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
-/* Motion Tile Generator: Scale box = the panel's standard compact number box (value + stepper), pinned so nothing stretches it */
-#mtn-mt-pct { width: 4.2rem; max-width: 4.2rem; flex: none; justify-self: end; }
+/* Motion Tile Generator: bigger Scale box (easier to grab and drag left / right) + a slider underneath */
+.mtn-mt-param { row-gap: 0.55rem; }
+#mtn-mt-pct { width: 6.5rem; max-width: none; flex: none; justify-self: end; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 1rem; font-weight: 600; cursor: ew-resize; }
+.mtn-mt-param input[type="range"] { grid-column: 1 / -1; width: 100%; }
+/* Tools tab: Reset button at the bottom of each card */
+.mtn-reset-row { display: flex; justify-content: flex-end; margin-top: var(--space-3, 0.75rem); }
+.mtn-reset { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--text-dim, #a0a0a0); }
+.mtn-reset svg { width: 0.85rem; height: 0.85rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mtn-reset:hover { color: var(--text, #f0f0f0); }
+.mtn-reset:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }

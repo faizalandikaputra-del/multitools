@@ -332,11 +332,13 @@
   function upgradeMotionTile(group) {
     var st = mtLoad();
     var box = setBody(group,
-      '<div class="param"><label for="mtn-mt-pct">Scale (%)</label><input class="num" type="number" id="mtn-mt-pct" min="1" max="10000" step="10" value="' + st.p + '"></div>' +
+      '<div class="param mtn-mt-param"><label for="mtn-mt-pct">Scale (%)</label>' +
+        '<input class="num" type="number" id="mtn-mt-pct" min="1" max="10000" step="1" value="' + st.p + '" data-reset-value="' + MT_DEFAULT.p + '">' +
+        '<input type="range" id="mtn-mt-range" min="10" max="1000" step="10" value="' + Math.min(1000, Math.max(10, st.p)) + '" data-reset-value="' + MT_DEFAULT.p + '" aria-label="Scale slider"></div>' +
       '<div class="mtn-mt-recent" id="mtn-mt-recent" hidden><span class="mtn-label">Recent</span><div class="mtn-mt-chips" id="mtn-mt-chips"></div></div>' +
-      '<label class="switch-row" for="mtn-mt-mirror"><span>Mirror Edges</span><input type="checkbox" id="mtn-mt-mirror"' + (st.mirror ? " checked" : "") + '><span class="switch-track"></span></label>' +
+      '<label class="switch-row" for="mtn-mt-mirror"><span>Mirror Edges</span><input type="checkbox" id="mtn-mt-mirror" data-reset-checked="' + (MT_DEFAULT.mirror ? "1" : "0") + '"' + (st.mirror ? " checked" : "") + '><span class="switch-track"></span></label>' +
       '<button class="btn-apply" id="mtn-mt-apply" type="button">Apply Motion Tile</button>');
-    var inp = q(box, "#mtn-mt-pct"), applyBtn = q(box, "#mtn-mt-apply"), recentBox = q(box, "#mtn-mt-recent"), chips = q(box, "#mtn-mt-chips");
+    var inp = q(box, "#mtn-mt-pct"), rng = q(box, "#mtn-mt-range"), applyBtn = q(box, "#mtn-mt-apply"), recentBox = q(box, "#mtn-mt-recent"), chips = q(box, "#mtn-mt-chips");
     function save() { lsSet(MT_KEY, JSON.stringify(st)); }
     function drawRecent() {
       recentBox.hidden = st.recent.length === 0;
@@ -355,7 +357,7 @@
     function run(v) {
       if (applyBtn.classList.contains("is-pending")) { return; }
       if (!mtOk(v)) { toast("Enter a scale between 1 and 10000 percent.", true); return; }
-      st.p = v; inp.value = String(v); inp.classList.remove("is-bad"); save();
+      st.p = v; inp.value = String(v); rng.value = String(Math.min(1000, Math.max(10, v))); inp.classList.remove("is-bad"); save();
       pressed(applyBtn, true);
       call("TOOLS_motionTile", [{ percent: v, mirror: st.mirror }]).then(function (res) {
         if (finish(applyBtn, res) && !(res.data && res.data.skipped)) { remember(v); }   // only a real apply counts as recent
@@ -366,10 +368,17 @@
       if (!mtOk(v)) { inp.classList.add("is-bad"); return; }
       inp.classList.remove("is-bad");
       st.p = v; save();
+      rng.value = String(Math.min(1000, Math.max(10, v)));   // slider follows the box (parked at its end for values beyond 10..1000)
+    });
+    rng.addEventListener("input", function () {   // slide left / right: fills the box, applies on Apply
+      var v = parseFloat(rng.value);
+      if (!mtOk(v)) { return; }
+      inp.value = String(v); inp.classList.remove("is-bad");
+      st.p = v; save();
     });
     inp.addEventListener("focus", function () { try { inp.select(); } catch (e) { } });
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); run(parseFloat(inp.value)); } });
-    inp.addEventListener("blur", function () { inp.value = String(st.p); inp.classList.remove("is-bad"); });
+    inp.addEventListener("blur", function () { inp.value = String(st.p); inp.classList.remove("is-bad"); rng.value = String(Math.min(1000, Math.max(10, st.p))); });
     q(box, "#mtn-mt-mirror").addEventListener("change", function (e) { st.mirror = !!e.target.checked; save(); });
     applyBtn.addEventListener("click", function () { run(parseFloat(inp.value)); });
     chips.addEventListener("click", function (e) {

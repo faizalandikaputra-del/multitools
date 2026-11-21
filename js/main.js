@@ -59,12 +59,6 @@
       tools: [],
       custom: "quickCompEdit"
     },
-    "anchor-align": {
-      title: "Anchor Point & Align",
-      hint: "Select one or more layers, then set the anchor point or align to the composition.",
-      tools: [],
-      custom: "anchorAlign"
-    },
     "shape": {
       title: "Shape",
       hint: "Pick a shape or device, then add it as a layer, mask or track matte.",
@@ -673,7 +667,7 @@
       '<div class="info-socials">' + socialBtns + '</div>' +
       '<div class="info-divider"></div>' +
       '<p><strong>Multi Tool</strong> v' + infoVersion() + '</p>' +
-      '<p class="info-caps">Includes Quick Comp Edit, Anchor Point &amp; Align, Color Palette Pro, and other layer utilities.</p>' +
+      '<p class="info-caps">Includes Quick Comp Edit, Anchor Point &amp; Align (in Tools), Color Palette Pro, and other layer utilities.</p>' +
       '<p>Left-click a tool to run it. Right-click a tool to set its image.</p>' +
       '<p>Use the gear icon to change the background.</p>';
 
@@ -721,7 +715,8 @@
 
 
   // ---------------------------------------------------------
-  // Anchor Point & Align tab
+  // Anchor Point & Align: used to be its own tab, now the first two boxes of the Tools tab
+  // (UtilityTools.render() moves AnchorAlign.render()'s ".ta-section" boxes to the top).
   // ---------------------------------------------------------
   var ANCHOR_POINTS = [
     { code: "tl", row: 0, col: 0, label: "Top Left" },
@@ -808,11 +803,11 @@
 
       wrap.innerHTML =
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Anchor Point</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2"/></svg><span>Anchor Point</span></h2>' +
           '<div class="anchor-grid">' + anchorBtns + '</div>' +
         '</div>' +
         '<div class="ta-section">' +
-          '<h2 class="ta-title">Align to Composition</h2>' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v18M9 7h11M9 12h7M9 17h9"/></svg><span>Align to Composition</span></h2>' +
           '<div class="align-grid">' + alignBtns + '</div>' +
         '</div>';
 
@@ -844,7 +839,7 @@
 
   // ---------------------------------------------------------
   // Quick Comp Edit tab: start timecode + duration controller, a Composition
-  // Settings shortcut, Fit to Composition (relocated from the Anchor Point & Align tab), and
+  // Settings shortcut, Fit to Composition (relocated from the old Anchor Point & Align tab), and
   // Match Comp to Layer (relocated from the Tools tab).
   // ---------------------------------------------------------
   function _qceSettingsIconSvg() {
@@ -3825,6 +3820,21 @@
       // Keyframe Timing: one more box at the end of the Tools tab.
       wrap.appendChild(KeyframeTiming.render());
 
+      // Motion Tile Generator: last box of the Tools tab. Only the card shell is here; js/mt-newtools.js fills the body
+      // (3 scale buttons + Mirror Edges) and calls host.jsx TOOLS_motionTile.
+      (function () {
+        var mt = document.createElement("div");
+        mt.className = "ta-section";
+        mt.innerHTML = '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg><span>Motion Tile Generator</span></h2>';
+        wrap.appendChild(mt);
+      })();
+
+      // Anchor Point + Align to Composition: the two boxes that used to be the "Anchor Point & Align" tab go first.
+      (function () {
+        var aa = AnchorAlign.render(), first = wrap.firstChild;
+        while (aa.firstChild) { wrap.insertBefore(aa.firstChild, first); }
+      })();
+
       return wrap;
     }
   };
@@ -4940,8 +4950,6 @@
     var built = null;
     if (cfg.info) {
       built = renderInfo();
-    } else if (cfg.custom === "anchorAlign") {
-      built = AnchorAlign.render();
     } else if (cfg.custom === "quickCompEdit") {
       built = QuickCompEdit.render();
     } else if (cfg.custom === "colorPalette") {

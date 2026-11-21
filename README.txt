@@ -2792,3 +2792,13 @@ palette-source-wheel (tab Color Palette: scroll mouse di atas switch Curated / S
   - Penyebab: switch sumber swatch hanya bisa dipindah dengan klik.
   - Fix: js/main.js (?v=92): wheel di atas .cp-seg = sumber berikutnya (scroll bawah) / sebelumnya (scroll atas), tanpa wrap, satu notch = satu langkah (touchpad ~55px). Listener window (capture) didaftarkan sekali, lalu meng-klik tombol tetangga, jadi animasi indikator, pane dan penyimpanan cpSwatchTab memakai handler klik yang sudah ada. smooth-scroll.js tidak ikut menggeser panel.
   - Files: js/main.js, html/index.html, README.txt.
+
+motion-tile-generator (tab Tools: kartu baru Motion Tile Generator, paling bawah)
+  - Fitur: tiga tombol skala (bawaan 150%, 300%, 500%), tiap tombol punya kotak angka sendiri di bawahnya, jadi persen bisa diatur (1-10000, tersimpan di localStorage mtx.motionTile). Switch Mirror Edges, bawaan nyala, juga tersimpan.
+  - Cara kerja: satu klik menambah efek Motion Tile (ADBE Tile) ke tiap layer terpilih, Output Width dan Output Height = skala, Mirror Edges sesuai switch. Layer yang sudah punya Motion Tile diperbarui, tidak ditumpuk. Satu undo group. Layer yang tidak bisa diberi efek (kamera, light) dilewati dan disebut di toast.
+  - Files: jsx/host.jsx (TOOLS_motionTile), js/main.js (?v=93, cangkang kartu setelah Keyframe Timing), js/mt-newtools.js (?v=4, isi kartu), css/mt-newtools.css (?v=3), html/index.html, README.txt.
+
+anchor-align-into-tools (tab Anchor Point & Align dihapus, isinya pindah ke tab Tools paling atas)
+  - Perubahan: tab Anchor Point & Align dan tombol sidebarnya dihapus. Kotak Anchor Point (grid 3x3) dan Align to Composition sekarang menjadi dua kotak pertama di tab Tools, di atas Save Frame as Image. Kotak Anchor Point terbuka bawaan (kotak pertama). Logika tidak berubah (AA_setAnchor / AA_align di jsx/host.jsx).
+  - Cara: AnchorAlign.render() di js/main.js tetap membuat dua .ta-section, lalu UtilityTools.render() memindahkannya ke awal tab Tools, jadi tombol, toast dan style lama ikut jalan. Kedua judul diberi ikon supaya muncul di bar ikon layout Compact. Entri TABS "anchor-align" dan cabang render-nya dihapus. Urutan tab tersimpan atau tab terakhir "anchor-align" diabaikan dengan aman (TABS[reopen] dicek, restoreTabOrder melewati id yang tidak ada).
+  - Files: js/main.js (?v=94), html/index.html, README.txt.

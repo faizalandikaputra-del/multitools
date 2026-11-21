@@ -4,6 +4,7 @@
      - Batch Rename Layers            -> Rename & Label   (host.jsx TOOLS_renamePreview / TOOLS_renamePro)
      - Project Cleaner & Sanitizer    -> + scan report    (host.jsx TOOLS_cleanerScan / TOOLS_cleanerRun)
      - Pre-compose                    -> + Pre-comp Smart (host.jsx TOOLS_precompSmart)
+     - Motion Tile Generator          -> new last card    (host.jsx TOOLS_motionTile)
    The tabs are rebuilt on every tab switch, so a MutationObserver on #panel re-applies the upgrade each time.
    Loaded after main.js and panel-refinements.js. Needs window.MTCore (Bridge) and window.__MT (toast). ES5. */
 (function () {
@@ -310,6 +311,50 @@
     });
   }
 
+  /* ---------------- 7. Motion Tile Generator ---------------- */
+  var MT_KEY = "mtx.motionTile", MT_DEFAULT = { p: [150, 300, 500], mirror: true };
+  function mtLoad() {
+    var o = null, p, i, v;
+    try { o = JSON.parse(lsGet(MT_KEY) || "null"); } catch (e) { o = null; }
+    p = MT_DEFAULT.p.slice();
+    if (o && o.p && o.p.length === 3) { for (i = 0; i < 3; i++) { v = parseFloat(o.p[i]); if (isFinite(v) && v >= 1 && v <= 10000) { p[i] = v; } } }
+    return { p: p, mirror: o && typeof o.mirror === "boolean" ? o.mirror : MT_DEFAULT.mirror };
+  }
+  function upgradeMotionTile(group) {
+    var st = mtLoad(), cells = "", i;
+    for (i = 0; i < 3; i++) {
+      cells += '<div class="mtn-mt-cell">' +
+        '<button type="button" class="mtn-mt-go" data-i="' + i + '" aria-label="Apply Motion Tile at the scale below"><b>' + st.p[i] + '</b><i>%</i></button>' +
+        '<input class="num mtn-mt-in" type="number" min="1" max="10000" step="10" value="' + st.p[i] + '" data-i="' + i + '" aria-label="Scale ' + (i + 1) + ' in percent">' +
+        '</div>';
+    }
+    var box = setBody(group,
+      '<div class="mtn-mt-row">' + cells + '</div>' +
+      '<label class="switch-row" for="mtn-mt-mirror"><span>Mirror Edges</span><input type="checkbox" id="mtn-mt-mirror"' + (st.mirror ? " checked" : "") + '><span class="switch-track"></span></label>' +
+      '<p class="field-note">Click a scale to add Motion Tile to the selected layers. Change a number under a button to set your own scale. Clicking again updates the same effect.</p>');
+    function save() { lsSet(MT_KEY, JSON.stringify(st)); }
+    qa(box, ".mtn-mt-in").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var i2 = parseInt(inp.getAttribute("data-i"), 10), v = parseFloat(inp.value);
+        if (!isFinite(v) || v < 1 || v > 10000) { inp.classList.add("is-bad"); return; }
+        inp.classList.remove("is-bad");
+        st.p[i2] = v; save();
+        q(box, '.mtn-mt-go[data-i="' + i2 + '"] b').textContent = String(v);
+      });
+      inp.addEventListener("blur", function () { var i2 = parseInt(inp.getAttribute("data-i"), 10); inp.value = String(st.p[i2]); inp.classList.remove("is-bad"); });
+    });
+    q(box, "#mtn-mt-mirror").addEventListener("change", function (e) { st.mirror = !!e.target.checked; save(); });
+    qa(box, ".mtn-mt-go").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.classList.contains("is-pending")) { return; }
+        var i2 = parseInt(btn.getAttribute("data-i"), 10);
+        pressed(btn, true);
+        call("TOOLS_motionTile", [{ percent: st.p[i2], mirror: st.mirror }]).then(function (res) { finish(btn, res); });
+      });
+    });
+    refit(box);
+  }
+
   /* ---------------- apply to each freshly built tab ---------------- */
   function enhance() {
     var title = document.getElementById("panel-title");
@@ -320,6 +365,7 @@
       if ((g = groupByLabel("Batch Rename Layers")) && !g.getAttribute("data-mtn")) { upgradeRename(g); }
       if ((g = groupByLabel("Project Cleaner & Sanitizer")) && !g.getAttribute("data-mtn")) { upgradeCleaner(g); }
       if ((g = groupByLabel("Pre-compose")) && !g.getAttribute("data-mtn")) { upgradePrecomp(g); }
+      if ((g = groupByLabel("Motion Tile Generator")) && !g.getAttribute("data-mtn")) { upgradeMotionTile(g); }
     }
   }
   var scheduled = false;

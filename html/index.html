@@ -28,7 +28,7 @@
        premium-ornaments.css on purpose, see the file's own header comment for what it does and
        doesn't touch. Companion script: js/panel-refinements.js (loaded at the end of body). -->
   <link rel="stylesheet" href="../css/panel-refinements.css?v=13">
-  <link rel="stylesheet" href="../css/mt-newtools.css?v=2">
+  <link rel="stylesheet" href="../css/mt-newtools.css?v=3">
   <!-- Ambient colour circles (random drift + slow blink). Must stay BEFORE glass-theme.css, which hides the old static .app::before pools. -->
   <link rel="stylesheet" href="../css/ambient-orbs.css?v=11">
   <!-- Tab motion: staggered card entrance + quick panel leave on tab switch (opacity/transform only).
@@ -169,13 +169,6 @@
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="quick-comp-edit" aria-label="Quick Comp Edit">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9.5 2h5"/></svg>
-        </button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="anchor-align" aria-label="Anchor Point & Align">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/>
-            <circle cx="12" cy="12" r="2.8"/>
-            <path d="M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2"/>
-          </svg>
         </button>
         <button class="tab" role="tab" aria-selected="false" data-tab="shape" aria-label="Shape">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="5.2"/><rect x="11.5" y="11.5" width="9" height="9" rx="2"/></svg>
@@ -785,7 +778,7 @@
   <script src="../js/mt-pro.js?v=3"></script>
   <script src="../js/mt-shape-data.js?v=1"></script>
   <script src="../js/mt-shape.js?v=5"></script>
-  <script src="../js/main.js?v=92"></script>
+  <script src="../js/main.js?v=94"></script>
   <script src="../js/mt-loader.js?v=1"></script>
   <script src="../js/mt-curve-top.js?v=2"></script>
   <script src="../js/mt-smooth.js?v=4"></script>
@@ -806,7 +799,7 @@
        file's own header comment. Loaded last so window.PanelRefinements is guaranteed to exist
        by the time any tab (currently just Tools) calls groupifyTaSections(). -->
   <script src="../js/panel-refinements.js?v=13"></script>
-  <script src="../js/mt-newtools.js?v=3"></script>
+  <script src="../js/mt-newtools.js?v=4"></script>
   <script src="../js/mt-tools-layout.js?v=5"></script>
   <script src="../js/mt-backup.js?v=3"></script>
 </body>

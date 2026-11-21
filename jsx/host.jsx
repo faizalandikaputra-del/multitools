@@ -9750,3 +9750,77 @@ function KT_apply(cfg) {
     if (touched && comp && selSnap) { try { _ktSelRestore(comp, selSnap); } catch (eSel) { } }
   }
 }
+
+
+// ---------------------------------------------------------
+// Motion Tile Generator (Tools tab). Adds / updates the Motion Tile effect on every selected layer:
+// Output Width + Output Height = opts.percent, Mirror Edges = opts.mirror. Layers that cannot take
+// effects (camera, light) are skipped and counted so the panel can say so in its toast.
+// ---------------------------------------------------------
+function _mtlProp(fx, matchName, displayName) {
+  var p = null, i;
+  try { p = fx.property(matchName); } catch (e0) { p = null; }
+  if (p) { return p; }
+  try {
+    for (i = 1; i <= fx.numProperties; i++) {
+      if (fx.property(i).name === displayName) { return fx.property(i); }
+    }
+  } catch (e1) { }
+  return null;
+}
+
+function TOOLS_motionTile(opts) {
+  var undoOpen = false;
+  try {
+    opts = opts || {};
+    var pct = parseFloat(opts.percent);
+    if (!isFinite(pct) || pct < 1 || pct > 10000) { return _notice("Enter a scale between 1 and 10000 percent."); }
+    var mirror = _isTrue(opts.mirror);
+    var comp = app.project ? app.project.activeItem : null;
+    if (!(comp instanceof CompItem)) { return _notice("Open a composition first."); }
+    var sel = comp.selectedLayers;
+    if (!sel || sel.length < 1) { return _notice("Select one or more layers first."); }
+
+    var added = 0, updated = 0, skipped = 0, failed = 0, i, j, L, parade, fx, w, h, m;
+    app.beginUndoGroup("Motion Tile " + pct + "%");
+    undoOpen = true;
+    for (i = 0; i < sel.length; i++) {
+      L = sel[i];
+      parade = null;
+      try { parade = L.property("ADBE Effect Parade"); } catch (eP) { parade = null; }
+      if (!parade) { skipped++; continue; }
+      try {
+        fx = null;
+        for (j = 1; j <= parade.numProperties; j++) {
+          if (parade.property(j).matchName === "ADBE Tile") { fx = parade.property(j); break; }
+        }
+        if (fx) { updated++; } else { fx = parade.addProperty("ADBE Tile"); added++; }
+        w = _mtlProp(fx, "ADBE Tile-0004", "Output Width");
+        h = _mtlProp(fx, "ADBE Tile-0005", "Output Height");
+        m = _mtlProp(fx, "ADBE Tile-0006", "Mirror Edges");
+        if (!w || !h) { failed++; continue; }
+        w.setValue(pct);
+        h.setValue(pct);
+        if (m) { m.setValue(mirror ? 1 : 0); }
+      } catch (eL) { failed++; }
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+
+    var done = added + updated;
+    if (done === 0) {
+      return _notice(skipped > 0 ? "Skipped " + skipped + " layer" + (skipped === 1 ? "" : "s") + " that cannot take effects (camera, light). Select a layer that can." : "Could not set Motion Tile on the selected layers.");
+    }
+    var msg = "Motion Tile " + pct + "%" + (mirror ? " with Mirror Edges" : "") + " on " + done + " layer" + (done === 1 ? "" : "s");
+    if (updated > 0 && added > 0) { msg += " (" + updated + " updated, " + added + " new)"; }
+    else if (updated > 0) { msg += " (updated)"; }
+    msg += ".";
+    if (skipped > 0) { msg += " Skipped " + skipped + " layer" + (skipped === 1 ? "" : "s") + " that cannot take effects (camera, light)."; }
+    if (failed > 0) { msg += " " + failed + " layer" + (failed === 1 ? "" : "s") + " failed."; }
+    return _ok(msg);
+  } catch (e) {
+    return _err(e);
+  } finally {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+  }
+}

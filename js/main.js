@@ -1020,12 +1020,12 @@
             '<span class="qce-sub-title">Custom</span>' +
             '<div class="qce-prev" aria-live="polite">' +
               '<div class="qce-prev-stage"><div class="qce-prev-box" id="qce-prev-box"></div></div>' +
-              '<div class="qce-prev-info"><span class="qce-prev-size" id="qce-prev-size">&mdash;</span><span class="qce-prev-ratio" id="qce-prev-ratio">Enter width and height</span></div>' +
+              '<div class="qce-prev-info"><span class="qce-prev-size" id="qce-prev-size">&mdash;</span><span class="qce-prev-ratio" id="qce-prev-ratio">Enter a ratio, e.g. 1 : 1</span></div>' +
             '</div>' +
             '<div class="qce-custom-row">' +
-              '<input type="number" class="text-input qce-pill" id="qce-custom-w" min="4" max="30000" step="1" placeholder="Width" aria-label="Custom width in pixels">' +
-              '<span class="qce-times" aria-hidden="true">×</span>' +
-              '<input type="number" class="text-input qce-pill" id="qce-custom-h" min="4" max="30000" step="1" placeholder="Height" aria-label="Custom height in pixels">' +
+              '<input type="number" class="text-input qce-pill" id="qce-custom-w" min="0.1" max="1000" step="any" placeholder="W" aria-label="Custom ratio, width part">' +
+              '<span class="qce-times" aria-hidden="true">:</span>' +
+              '<input type="number" class="text-input qce-pill" id="qce-custom-h" min="0.1" max="1000" step="any" placeholder="H" aria-label="Custom ratio, height part">' +
               '<button type="button" class="qce-mini-btn" id="qce-custom-apply">Apply</button>' +
             '</div>' +
           '</div>' +
@@ -1038,18 +1038,17 @@
             '</div>' +
           '</div>' +
           '<label class="chip chip-solo qce-res-keep"><input type="checkbox" id="qce-res-keep"><span id="qce-res-keep-text">Keep for new comps</span></label>' +
-        '</div>' +
-
-        '<div class="ta-section">' +
-          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9v6M12 9v6M16 9v6"/></svg><span>Frame Rate</span></h2>' +
-          '<div class="qce-seg" id="qce-fps-row">' +
-            QCE_FPS_PRESETS.map(function (f) {
-              return '<button type="button" class="qce-seg-btn" data-fps="' + f + '" aria-label="' + f + ' frames per second">' + f + '</button>';
-            }).join("") +
-          '</div>' +
-          '<div class="qce-custom-row qce-fps-custom">' +
-            '<input type="number" class="text-input qce-pill" id="qce-fps-custom" min="1" max="999" step="any" placeholder="Custom fps" aria-label="Custom frame rate">' +
-            '<button type="button" class="qce-mini-btn" id="qce-fps-apply">Apply</button>' +
+          '<div class="qce-sub">' +
+            '<span class="qce-sub-title">Frame Rate</span>' +
+            '<div class="qce-seg" id="qce-fps-row">' +
+              QCE_FPS_PRESETS.map(function (f) {
+                return '<button type="button" class="qce-seg-btn" data-fps="' + f + '" aria-label="' + f + ' frames per second">' + f + '</button>';
+              }).join("") +
+            '</div>' +
+            '<div class="qce-custom-row qce-fps-custom">' +
+              '<input type="number" class="text-input qce-pill" id="qce-fps-custom" min="1" max="999" step="any" placeholder="Custom fps" aria-label="Custom frame rate">' +
+              '<button type="button" class="qce-mini-btn" id="qce-fps-apply">Apply</button>' +
+            '</div>' +
           '</div>' +
         '</div>' +
 
@@ -1091,22 +1090,38 @@
       var prevSizeEl = wrap.querySelector("#qce-prev-size");
       var prevRatioEl = wrap.querySelector("#qce-prev-ratio");
       function _gcd(a, b) { return b ? _gcd(b, a % b) : a; }
-      // Live preview of the Custom size: the box takes the real aspect ratio (long side fixed, so it never overflows).
+      // Custom is a RATIO (1 : 1, 4 : 5 ...). The pixel size keeps the comp's current short side, long side follows the ratio (even numbers).
+      function ratioToSize(a, b) {
+        var base = (lastW && lastH) ? Math.min(lastW, lastH) : 1080;
+        var longSide = Math.round(base * Math.max(a, b) / Math.min(a, b) / 2) * 2;
+        return (a >= b) ? { w: longSide, h: base } : { w: base, h: longSide };
+      }
+      // Simplest ratio of a pixel size. A preset's own label wins (2520 x 1080 -> 21:9, not 7:3).
+      function compRatio(w, h) {
+        var i, p, g;
+        for (i = 0; i < QCE_RES_PRESETS.length; i++) {
+          p = QCE_RES_PRESETS[i];
+          if (p.w === w && p.h === h) { var m = p.ratio.split(":"); return [parseInt(m[0], 10), parseInt(m[1], 10)]; }
+        }
+        g = _gcd(w, h);
+        return (w / g <= 50 && h / g <= 50) ? [w / g, h / g] : [Math.round(w / h * 100) / 100, 1];
+      }
+      // Live preview: the box takes the typed ratio (long side fixed, so it never overflows); text shows the ratio and the pixel size Apply will give.
       function updatePreview() {
-        var w = Math.round(parseFloat(customWEl.value)), h = Math.round(parseFloat(customHEl.value));
-        var ok = isFinite(w) && isFinite(h) && w >= 4 && h >= 4;
-        var bw = 16, bh = 9, ratio = "Enter width and height", size = "—";
+        var a = parseFloat(customWEl.value), b = parseFloat(customHEl.value);
+        var ok = isFinite(a) && isFinite(b) && a > 0 && b > 0;
+        var bw = 16, bh = 9, big = "\u2014", small = "Enter a ratio, e.g. 1 : 1";
         if (ok) {
-          var g = _gcd(w, h), rw = w / g, rh = h / g;
-          bw = w; bh = h; size = w + " × " + h;
-          ratio = (rw <= 50 && rh <= 50) ? rw + ":" + rh : (w / h).toFixed(2) + ":1";
+          var sz = ratioToSize(a, b);
+          bw = a; bh = b; big = (Math.round(a * 100) / 100) + ":" + (Math.round(b * 100) / 100);
+          small = sz.w + " \u00d7 " + sz.h + " px";
         }
         var longSide = 3.2, k = longSide / Math.max(bw, bh);
         prevBoxEl.style.width = (bw * k).toFixed(3) + "rem";
         prevBoxEl.style.height = (bh * k).toFixed(3) + "rem";
         prevBoxEl.classList.toggle("is-empty", !ok);
-        prevSizeEl.textContent = size;
-        prevRatioEl.textContent = ratio;
+        prevSizeEl.textContent = big;
+        prevRatioEl.textContent = small;
       }
       var keepEl = wrap.querySelector("#qce-res-keep");
       var keepTextEl = wrap.querySelector("#qce-res-keep-text");
@@ -1142,7 +1157,8 @@
         lastW = w; lastH = h;
         // Untouched Custom fields follow the comp's current size, so the preview shows what is open right now.
         if (!customDirty && w > 0 && h > 0 && document.activeElement !== customWEl && document.activeElement !== customHEl) {
-          customWEl.value = w; customHEl.value = h; updatePreview();
+          var cr = compRatio(w, h);
+          customWEl.value = cr[0]; customHEl.value = cr[1]; updatePreview();
         }
         Array.prototype.forEach.call(qualityBtns, function (b) {
           b.classList.toggle("is-active", w > 0 && h > 0 && Math.min(w, h) === parseInt(b.getAttribute("data-side"), 10));
@@ -1348,20 +1364,26 @@
       Array.prototype.forEach.call(resTiles, function (tile) {
         tile.addEventListener("click", function () {
           var tw = parseInt(tile.getAttribute("data-w"), 10), th = parseInt(tile.getAttribute("data-h"), 10);
-          customWEl.value = tw; customHEl.value = th; customDirty = true; updatePreview();   // preview follows the picked shape
+          var tr = compRatio(tw, th);
+          customWEl.value = tr[0]; customHEl.value = tr[1]; customDirty = true; updatePreview();   // preview follows the picked shape
           resizeTo(tw, th, tile);
         });
       });
 
-      // Custom width x height.
+      // Custom ratio (W : H).
       var customApplyBtn = wrap.querySelector("#qce-custom-apply");
       function applyCustom() {
-        var w = Math.round(parseFloat(customWEl.value)), h = Math.round(parseFloat(customHEl.value));
-        if (!isFinite(w) || !isFinite(h) || w < 4 || h < 4 || w > 30000 || h > 30000) {
-          toast("Enter a width and height between 4 and 30000.", true);
+        var a = parseFloat(customWEl.value), b = parseFloat(customHEl.value);
+        if (!isFinite(a) || !isFinite(b) || a <= 0 || b <= 0) {
+          toast("Enter a ratio, e.g. 1 : 1 or 4 : 5.", true);
           return;
         }
-        resizeTo(w, h, customApplyBtn);
+        var sz = ratioToSize(a, b);
+        if (sz.w < 4 || sz.h < 4 || sz.w > 30000 || sz.h > 30000) {
+          toast("That ratio gives a size outside 4 - 30000 px.", true);
+          return;
+        }
+        resizeTo(sz.w, sz.h, customApplyBtn);
       }
       customApplyBtn.addEventListener("click", applyCustom);
       [customWEl, customHEl].forEach(function (el) {

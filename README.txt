@@ -2836,3 +2836,11 @@ quick-res-more (Quick Comp Edit: ratio baru, Custom, Resolution 720p/1080p/4K, F
 quick-res-custom-preview (Custom: kotak preview ikut ukuran)
   - Perubahan: di atas kolom Custom ada kotak preview kecil. Bentuknya ikut rasio Width x Height yang diketik (sisi panjang tetap, tidak meluber), dengan teks ukuran + rasio (mis. 1920 x 1080 / 16:9). Memilih tile rasio mengisi kolom Custom dan preview ikut berubah. Kolom yang belum disentuh mengikuti ukuran comp aktif; kosong / tidak valid = kotak putus-putus "Enter width and height".
   - Files: js/main.js (?v=96), css/style.css (?v=20), html/index.html, README.txt.
+
+quick-res-custom-ratio (Custom: input berupa rasio, bukan pixel)
+  - Perubahan: kolom Custom sekarang rasio W : H (mis. 1 : 1, 4 : 5, 21 : 9; desimal boleh), bukan lagi 1080 x 1350. Preview menampilkan rasio dan di bawahnya ukuran pixel yang akan dipakai. Apply mengubah comp ke rasio itu dengan sisi pendek = sisi pendek comp saat ini (long side mengikuti rasio, angka genap); tombol 720p / 1080p / 4K di bawahnya lalu menentukan ukurannya. Memilih tile mengisi kolom dengan rasio tile; kolom yang belum disentuh menunjukkan rasio comp aktif (label preset menang: 2520 x 1080 tampil 21:9).
+  - Files: js/main.js (?v=97), html/index.html, README.txt.
+
+quick-res-fps-merge (Frame Rate dipindah ke dalam Quick Resolution Presets, paling bawah)
+  - Perubahan: kartu Frame Rate yang berdiri sendiri dihapus. Isinya (tombol 24/25/30/50/60 + Custom fps + Apply) sekarang blok terakhir di kartu Quick Resolution Presets, di bawah "Keep for new comps". Logika dan id tidak berubah.
+  - Files: js/main.js (?v=98), html/index.html, README.txt.

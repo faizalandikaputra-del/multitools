@@ -2823,3 +2823,7 @@ tools-reset-and-scale-slider (Tools: tombol Reset di tiap kartu + kotak Scale le
 param-ui-revert (tab Tools + Animator Text kembali ke ukuran kotak angka semula)
   - Perubahan: js/mt-param-ui.js dan css/mt-param-ui.css dihapus (kotak angka besar + slider otomatis di semua baris dibatalkan). Kotak angka dan slider di tab Tools dan Animator Text kembali seperti sebelumnya. Hanya kartu Motion Tile Generator yang tetap memakai kotak Scale besar + slider.
   - Files: html/index.html, README.txt (js/mt-param-ui.js dan css/mt-param-ui.css dihapus).
+
+motion-tile-box-compact (Motion Tile Generator: kotak Scale kembali ke ukuran kompak standar panel, slider tetap)
+  - Perubahan: aturan #mtn-mt-pct (lebar 6.5rem, font 1rem tebal) dihapus; kotak Scale memakai ukuran standar .param .num (4.2rem). Slider di bawahnya tetap untuk geser kiri/kanan.
+  - Files: css/mt-newtools.css (?v=8), html/index.html, README.txt.

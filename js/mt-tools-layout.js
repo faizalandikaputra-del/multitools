@@ -113,6 +113,40 @@
     select(h, cur);
   }
 
+  /* Mouse wheel over the icon boxes = pick the next / previous tool (Tools + Quick Comp Edit, Compact layout).
+     Wheel down = next box, wheel up = previous box, stops at the first / last box (no wrap). One notch = one box;
+     touchpad deltas are collected until ~55px = one box. Wheel over the card below the boxes still scrolls the panel.
+     Registered on window in the capture phase (like js/tab-wheel.js) so smooth-scroll.js never sees the event. */
+  var WH_STEP = 55, WH_COOLDOWN = 90, WH_RESET = 260, whAcc = 0, whLastEvt = 0, whLastStep = 0;
+  window.addEventListener("wheel", function (e) {
+    var t = e.target;
+    if (e.ctrlKey || !t || !t.closest) { return; }
+    var bar = t.closest(".mtt-bar");
+    if (!bar || !bar.parentNode) { return; }
+    try { window.dispatchEvent(new Event("mt-wheel-activity")); } catch (eAct) { }
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) { e.stopImmediatePropagation(); }
+
+    var dy = e.deltaY || e.deltaX || 0;
+    if (e.deltaMode === 1) { dy *= 33; } else if (e.deltaMode === 2) { dy *= 300; }
+    if (!dy) { return; }
+    var now = Date.now();
+    if (now - whLastEvt > WH_RESET || (whAcc && (whAcc > 0) !== (dy > 0))) { whAcc = 0; }
+    whLastEvt = now;
+    whAcc += dy;
+    if (Math.abs(whAcc) < WH_STEP) { return; }
+    if (now - whLastStep < WH_COOLDOWN) { whAcc = 0; return; }
+
+    var btns = qa(bar, ".mtt-ico"), cur = -1, i;
+    for (i = 0; i < btns.length; i++) { if (btns[i].getAttribute("aria-selected") === "true") { cur = i; break; } }
+    var next = cur + (whAcc > 0 ? 1 : -1);
+    whAcc = 0;
+    if (next < 0 || next >= btns.length) { return; }   // already at the first / last box
+    whLastStep = now;
+    select(bar.parentNode, next);
+  }, { passive: false, capture: true });
+
   // The tab is rebuilt on every tab switch, and mt-newtools.js renames / rebuilds some cards a moment later: run again.
   var timers = [];
   function schedule() {

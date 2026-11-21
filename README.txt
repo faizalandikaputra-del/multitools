@@ -2782,3 +2782,8 @@ animator-text-layout-tidy (tab Animator Text, kotak Text Properties: layout dira
   - Penyebab: Markers dan 3D adalah chip inline yang menumpuk ke kiri dengan lebar lain dari baris In / In/Out / Out dan Motion Style; baris properti tidak konsisten (Position, Anchor, Rotation, Skew judul di atas, Scale, Tracking, Blur, Opacity judul di kiri).
   - Fix: js/main.js (?v=91): Markers + 3D memakai grid chips-2 (dua kolom sama lebar), propRow memberi class prop-row-N (N = jumlah nilai). css/mt-motion-fix.css (?v=8): chip In / In/Out / Out tiga kolom penuh; baris 2 atau 3 nilai = judul di atas + kolom sama lebar, baris 1 nilai = judul kiri, field kanan.
   - Files: js/main.js, css/mt-motion-fix.css, html/index.html, README.txt.
+
+tools-icon-bar-wheel (tab Tools dan Quick Comp Edit: scroll mouse di atas kotak-kotak ikon memindah fitur)
+  - Penyebab: kotak ikon (layout Compact) hanya bisa dipindah dengan klik atau tombol panah.
+  - Fix: js/mt-tools-layout.js (?v=5): wheel di atas .mtt-bar = fitur berikutnya (scroll bawah) / sebelumnya (scroll atas), berhenti di kotak pertama/terakhir (tanpa wrap). Satu notch mouse = satu kotak, touchpad dikumpulkan sampai ~55px. Listener di window (capture) seperti js/tab-wheel.js, jadi smooth-scroll.js tidak ikut menggeser panel. Scroll di atas kartu di bawah kotak tetap menggulir panel. Hanya aktif di layout Compact (Settings > Appearance > Tab layout).
+  - Files: js/mt-tools-layout.js, html/index.html, README.txt.

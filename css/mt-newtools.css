@@ -73,3 +73,5 @@
 .mtn-mt-chip:hover { color: var(--accent-strong, var(--accent, #fff)); }
 .mtn-mt-chip:active { transform: scale(0.96); }
 .mtn-mt-chip:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
+/* Motion Tile Generator: Scale box = the panel's standard compact number box (value + stepper), pinned so nothing stretches it */
+#mtn-mt-pct { width: 4.2rem; max-width: 4.2rem; flex: none; justify-self: end; }

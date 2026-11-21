@@ -2810,3 +2810,7 @@ motion-tile-single (Motion Tile Generator: tiga kolom jadi satu, catatan di bawa
 motion-tile-recent (Motion Tile Generator: kolom Scale lebih mudah diubah + daftar Recent)
   - Perubahan: klik kotak Scale memilih seluruh angka, Enter langsung Apply, dan scrub/panah angka bawaan panel tetap jalan. Di bawahnya ada baris Recent: sampai 5 skala terakhir yang berhasil di-Apply (terbaru di kiri, tanpa duplikat, tersimpan di mtx.motionTile.recent). Klik chip = langsung Apply skala itu. Apply yang dilewati (tidak ada layer terpilih) tidak masuk Recent. Baris Recent tersembunyi selama kosong.
   - Files: js/mt-newtools.js (?v=6), css/mt-newtools.css (?v=5), html/index.html, README.txt.
+
+motion-tile-box-size (Motion Tile Generator: kotak Scale dikunci ke ukuran kotak angka kompak panel)
+  - Perubahan: #mtn-mt-pct lebar 4.2rem (sama dengan .param .num: angka + panah naik/turun), rata kanan di baris Scale (%), tidak melebar.
+  - Files: css/mt-newtools.css (?v=6), html/index.html, README.txt.

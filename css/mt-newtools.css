@@ -65,15 +65,5 @@
 .mtn-grp input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
 .mtn-grp input[type="checkbox"]:disabled { opacity: .4; cursor: default; }
 :root[data-reduce-motion="true"] .mtn-grp input[type="checkbox"], :root[data-reduce-motion="true"] .mtn-grp input[type="checkbox"]::after { transition: none; }
-/* Motion Tile Generator: three scale buttons, each with its own editable percent underneath */
-.mtn-mt-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2, 0.5rem); }
-.mtn-mt-cell { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
-.mtn-mt-go { appearance: none; border: 0; cursor: pointer; font: inherit; display: flex; align-items: baseline; justify-content: center; gap: 0.1rem; padding: 0.7rem 0.25rem; border-radius: var(--radius-s, 0.5rem); color: var(--text, #f0f0f0); background: var(--surface-sunken, #181818); box-shadow: inset 0 0 0 1px var(--border-soft, #2a2a2a); transition: transform .15s var(--smooth, ease), background .15s, box-shadow .15s; }
-.mtn-mt-go b { font-family: var(--font-mono, monospace); font-size: 1.05rem; font-weight: 600; }
-.mtn-mt-go i { font-style: normal; font-size: 0.7rem; color: var(--text-dim, #a0a0a0); }
-.mtn-mt-go:hover { background: var(--surface-hover, #2d2d2d); box-shadow: inset 0 0 0 1px var(--accent, #fff); }
-.mtn-mt-go:active { transform: scale(0.97); }
-.mtn-mt-go:focus-visible, .mtn-mt-in:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
-.mtn-mt-go.is-pending { opacity: 0.6; pointer-events: none; }
-.mtn-mt-in { width: 100%; min-width: 0; text-align: center; }
-.mtn-mt-in.is-bad { border-color: var(--danger, #ff6b7a); }
+/* Motion Tile Generator: one scale field, Mirror Edges switch, one Apply button */
+.mtn-body .num.is-bad { border-color: var(--danger, #ff6b7a); }

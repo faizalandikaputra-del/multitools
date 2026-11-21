@@ -2802,3 +2802,7 @@ anchor-align-into-tools (tab Anchor Point & Align dihapus, isinya pindah ke tab 
   - Perubahan: tab Anchor Point & Align dan tombol sidebarnya dihapus. Kotak Anchor Point (grid 3x3) dan Align to Composition sekarang menjadi dua kotak pertama di tab Tools, di atas Save Frame as Image. Kotak Anchor Point terbuka bawaan (kotak pertama). Logika tidak berubah (AA_setAnchor / AA_align di jsx/host.jsx).
   - Cara: AnchorAlign.render() di js/main.js tetap membuat dua .ta-section, lalu UtilityTools.render() memindahkannya ke awal tab Tools, jadi tombol, toast dan style lama ikut jalan. Kedua judul diberi ikon supaya muncul di bar ikon layout Compact. Entri TABS "anchor-align" dan cabang render-nya dihapus. Urutan tab tersimpan atau tab terakhir "anchor-align" diabaikan dengan aman (TABS[reopen] dicek, restoreTabOrder melewati id yang tidak ada).
   - Files: js/main.js (?v=94), html/index.html, README.txt.
+
+motion-tile-single (Motion Tile Generator: tiga kolom jadi satu, catatan di bawah dihapus)
+  - Perubahan: kartu sekarang satu kotak angka Scale (%) (bawaan 150, 1-10000, tersimpan), switch Mirror Edges, dan satu tombol Apply Motion Tile. Tiga tombol skala dan teks catatan di bawah dihapus. Simpanan lama (tiga skala) memakai skala pertama.
+  - Files: js/mt-newtools.js (?v=5), css/mt-newtools.css (?v=4), html/index.html, README.txt.

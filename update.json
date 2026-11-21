@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.226",
-    "changelog":  "- Update 1.8.226",
+    "latest_version":  "1.8.227",
+    "changelog":  "- Update 1.8.227",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -252,7 +252,7 @@
                   },
                   {
                       "path":  "css/style.css",
-                      "sha256":  "af3d9d4c24577fb738ff6c2fd5a534e1cee59848495c0f6e1275c6b73863371d"
+                      "sha256":  "2a616fac7b8071df01987db70092513db1ccfa211d1009cca64e6363471e75d9"
                   },
                   {
                       "path":  "css/tab-motion.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "a6b848ab634156f01d836e310fed5b7477bfd89c10ff588a8e4a38b8504aedcc"
+                      "sha256":  "95e00e75b6cf12750300dac80725857310e8964685db21d8ef5d62de7405a2c7"
                   },
                   {
                       "path":  "html/settings.html",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "66ac8dfee729c4e17cfae9d1dc8d48992625a3505304c3c7b3f3e3633928c663"
+                      "sha256":  "af8e7f67dd3f219403227cf2ff925589d87af7eee1ed44d22207cd80eaae11da"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -468,7 +468,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "b7629a0f4c6d7d5a14dec03bf28ef31a6885d2ed34d67bb672e86113d6311c1e"
+                      "sha256":  "c688dca9b8eb98e08147fdfadb827277bcc5a69417b76cc09d04159d96828fcf"
                   },
                   {
                       "path":  "neucurve/assets/index.js",
@@ -784,7 +784,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "76893b09e11da09ca357430bb5104b0f0938bb25a1f4e56d8a3d0acbca763053"
+                      "sha256":  "16e60295b33639819a8713130d3e898e8a3e138a2a4950e0a5ae0ca9828d9aa9"
                   }
               ]
 }

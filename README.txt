@@ -2827,3 +2827,12 @@ param-ui-revert (tab Tools + Animator Text kembali ke ukuran kotak angka semula)
 motion-tile-box-compact (Motion Tile Generator: kotak Scale kembali ke ukuran kompak standar panel, slider tetap)
   - Perubahan: aturan #mtn-mt-pct (lebar 6.5rem, font 1rem tebal) dihapus; kotak Scale memakai ukuran standar .param .num (4.2rem). Slider di bawahnya tetap untuk geser kiri/kanan.
   - Files: css/mt-newtools.css (?v=8), html/index.html, README.txt.
+
+quick-res-more (Quick Comp Edit: ratio baru, Custom, Resolution 720p/1080p/4K, Frame Rate)
+  - Perubahan: Quick Resolution Presets sekarang punya 8 tile (tambah 3:4 = 1080x1440, 3:2 = 1620x1080, 21:9 = 2520x1080). Di bawah tile: baris Custom (Width x Height + Apply, Enter juga jalan), lalu tombol Resolution 720p / 1080p / 4K, lalu kartu baru Frame Rate (tombol 24 / 25 / 30 / 50 / 60 + kolom Custom fps + Apply).
+  - Cara: 720p / 1080p / 4K mengisi sisi PENDEK (720 / 1080 / 2160) dan sisi panjang mengikuti rasio comp saat ini (16:9 -> 1280x720 / 1920x1080 / 3840x2160, 9:16 -> 720x1280 / 1080x1920 / 2160x3840). Semua jalur resize memakai setCompResolution yang sama (posisi layer tetap relatif ke tengah comp, "Keep for new comps" ikut). Tombol aktif menyala sesuai ukuran / fps comp saat ini. Frame rate lewat setCompFrameRate (host.jsx, undo group, 1-999 fps); durasi dalam detik dan ukuran comp tidak berubah.
+  - Files: js/main.js (?v=95), jsx/host.jsx, css/style.css (?v=19), html/index.html, README.txt.
+
+quick-res-custom-preview (Custom: kotak preview ikut ukuran)
+  - Perubahan: di atas kolom Custom ada kotak preview kecil. Bentuknya ikut rasio Width x Height yang diketik (sisi panjang tetap, tidak meluber), dengan teks ukuran + rasio (mis. 1920 x 1080 / 16:9). Memilih tile rasio mengisi kolom Custom dan preview ikut berubah. Kolom yang belum disentuh mengikuti ukuran comp aktif; kosong / tidak valid = kotak putus-putus "Enter width and height".
+  - Files: js/main.js (?v=96), css/style.css (?v=20), html/index.html, README.txt.

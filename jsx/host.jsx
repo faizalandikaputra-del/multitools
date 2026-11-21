@@ -619,6 +619,26 @@ function setCompResolution(width, height) {
   }
 }
 
+// Sets the active composition's frame rate (Quick Comp Edit > Frame Rate). Only comp.frameRate changes;
+// size, duration (in seconds) and layers stay as they were. AE accepts 1 - 999 fps.
+function setCompFrameRate(fps) {
+  try {
+    var comp = _activeComp();
+    var f = parseFloat(fps);
+    if (!isFinite(f)) { throw new Error("Enter a valid frame rate."); }
+    if (f < 1 || f > 999) { throw new Error("Frame rate must be between 1 and 999."); }
+    app.beginUndoGroup("Change Comp Frame Rate");
+    try {
+      comp.frameRate = f;
+    } finally {
+      app.endUndoGroup();
+    }
+    return _ok('"' + comp.name + '" set to ' + comp.frameRate + " fps.", _qceInfo(comp));
+  } catch (e) {
+    return _err(e);
+  }
+}
+
 // Remembered resolution (Quick Resolution Presets). The panel calls this about once a second with the pinned size
 // (0, 0 = "do not resize, only note which comps exist"). A comp is "new" when its id was not seen on an earlier call
 // of this session; only NEW comps with NO layers are resized, so pre-comps, "New Comp from Selection" and duplicates

@@ -893,8 +893,19 @@
     { ratio: "9:16", w: 1080, h: 1920, shape: "portrait",  name: "Portrait / TikTok / Reels" },
     { ratio: "4:5",  w: 1080, h: 1350, shape: "portrait",  name: "Instagram Feed" },
     { ratio: "1:1",  w: 1080, h: 1080, shape: "square",    name: "Square" },
-    { ratio: "4:3",  w: 1440, h: 1080, shape: "landscape", name: "Standard" }
+    { ratio: "4:3",  w: 1440, h: 1080, shape: "landscape", name: "Standard" },
+    { ratio: "3:4",  w: 1080, h: 1440, shape: "portrait",  name: "Portrait Standard" },
+    { ratio: "3:2",  w: 1620, h: 1080, shape: "landscape", name: "Photo" },
+    { ratio: "21:9", w: 2520, h: 1080, shape: "landscape", name: "Ultrawide" }
   ];
+  // Resolution buttons: value = length of the SHORT side. The comp keeps its current aspect ratio
+  // (16:9 -> 1280x720 / 1920x1080 / 3840x2160, 9:16 -> 720x1280 / 1080x1920 / 2160x3840).
+  var QCE_RES_QUALITY = [
+    { label: "720p",  side: 720 },
+    { label: "1080p", side: 1080 },
+    { label: "4K",    side: 2160 }
+  ];
+  var QCE_FPS_PRESETS = [24, 25, 30, 50, 60];
   // Material-style outlined ratio icon (same idea as Material Symbols "crop_16_9" / "crop_portrait" / "crop_square"):
   // one rounded rectangle at the preset's TRUE aspect ratio, longest side 20 in a 24 box (squares 16). No corner
   // brackets, no extra marks. Colours come from CSS (currentColor), so Glass and Material You each theme it.
@@ -1005,7 +1016,41 @@
           '<div class="qce-res-row" id="qce-res-row">' +
             QCE_RES_PRESETS.map(_qceResTileHtml).join("") +
           '</div>' +
+          '<div class="qce-sub">' +
+            '<span class="qce-sub-title">Custom</span>' +
+            '<div class="qce-prev" aria-live="polite">' +
+              '<div class="qce-prev-stage"><div class="qce-prev-box" id="qce-prev-box"></div></div>' +
+              '<div class="qce-prev-info"><span class="qce-prev-size" id="qce-prev-size">&mdash;</span><span class="qce-prev-ratio" id="qce-prev-ratio">Enter width and height</span></div>' +
+            '</div>' +
+            '<div class="qce-custom-row">' +
+              '<input type="number" class="text-input qce-pill" id="qce-custom-w" min="4" max="30000" step="1" placeholder="Width" aria-label="Custom width in pixels">' +
+              '<span class="qce-times" aria-hidden="true">×</span>' +
+              '<input type="number" class="text-input qce-pill" id="qce-custom-h" min="4" max="30000" step="1" placeholder="Height" aria-label="Custom height in pixels">' +
+              '<button type="button" class="qce-mini-btn" id="qce-custom-apply">Apply</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="qce-sub">' +
+            '<span class="qce-sub-title">Resolution</span>' +
+            '<div class="qce-seg" id="qce-quality-row">' +
+              QCE_RES_QUALITY.map(function (q) {
+                return '<button type="button" class="qce-seg-btn" data-side="' + q.side + '" aria-label="' + q.label + ', short side ' + q.side + ' pixels">' + q.label + '</button>';
+              }).join("") +
+            '</div>' +
+          '</div>' +
           '<label class="chip chip-solo qce-res-keep"><input type="checkbox" id="qce-res-keep"><span id="qce-res-keep-text">Keep for new comps</span></label>' +
+        '</div>' +
+
+        '<div class="ta-section">' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9v6M12 9v6M16 9v6"/></svg><span>Frame Rate</span></h2>' +
+          '<div class="qce-seg" id="qce-fps-row">' +
+            QCE_FPS_PRESETS.map(function (f) {
+              return '<button type="button" class="qce-seg-btn" data-fps="' + f + '" aria-label="' + f + ' frames per second">' + f + '</button>';
+            }).join("") +
+          '</div>' +
+          '<div class="qce-custom-row qce-fps-custom">' +
+            '<input type="number" class="text-input qce-pill" id="qce-fps-custom" min="1" max="999" step="any" placeholder="Custom fps" aria-label="Custom frame rate">' +
+            '<button type="button" class="qce-mini-btn" id="qce-fps-apply">Apply</button>' +
+          '</div>' +
         '</div>' +
 
         '<div class="ta-section">' +
@@ -1034,6 +1079,35 @@
       var resNoteEl = wrap.querySelector("#qce-res-current");
       var resTiles = wrap.querySelectorAll(".qce-res-tile");
       var resBusy = false;
+      var lastW = 0, lastH = 0;   // comp size from the latest refresh; the 720p / 1080p / 4K buttons keep this aspect ratio
+      var qualityBtns = wrap.querySelectorAll("#qce-quality-row .qce-seg-btn");
+      var fpsBtns = wrap.querySelectorAll("#qce-fps-row .qce-seg-btn");
+      var customWEl = wrap.querySelector("#qce-custom-w");
+      var customHEl = wrap.querySelector("#qce-custom-h");
+      var fpsCustomEl = wrap.querySelector("#qce-fps-custom");
+      var fpsBusy = false;
+      var customDirty = false;    // true while the Custom fields hold something the user typed / picked and it is not applied yet
+      var prevBoxEl = wrap.querySelector("#qce-prev-box");
+      var prevSizeEl = wrap.querySelector("#qce-prev-size");
+      var prevRatioEl = wrap.querySelector("#qce-prev-ratio");
+      function _gcd(a, b) { return b ? _gcd(b, a % b) : a; }
+      // Live preview of the Custom size: the box takes the real aspect ratio (long side fixed, so it never overflows).
+      function updatePreview() {
+        var w = Math.round(parseFloat(customWEl.value)), h = Math.round(parseFloat(customHEl.value));
+        var ok = isFinite(w) && isFinite(h) && w >= 4 && h >= 4;
+        var bw = 16, bh = 9, ratio = "Enter width and height", size = "—";
+        if (ok) {
+          var g = _gcd(w, h), rw = w / g, rh = h / g;
+          bw = w; bh = h; size = w + " × " + h;
+          ratio = (rw <= 50 && rh <= 50) ? rw + ":" + rh : (w / h).toFixed(2) + ":1";
+        }
+        var longSide = 3.2, k = longSide / Math.max(bw, bh);
+        prevBoxEl.style.width = (bw * k).toFixed(3) + "rem";
+        prevBoxEl.style.height = (bh * k).toFixed(3) + "rem";
+        prevBoxEl.classList.toggle("is-empty", !ok);
+        prevSizeEl.textContent = size;
+        prevRatioEl.textContent = ratio;
+      }
       var keepEl = wrap.querySelector("#qce-res-keep");
       var keepTextEl = wrap.querySelector("#qce-res-keep-text");
       // Shows which size new comps will get once a tile has been picked.
@@ -1065,6 +1139,14 @@
       function updateResTiles(width, height) {
         var w = Math.round(width || 0), h = Math.round(height || 0);
         var matched = null;
+        lastW = w; lastH = h;
+        // Untouched Custom fields follow the comp's current size, so the preview shows what is open right now.
+        if (!customDirty && w > 0 && h > 0 && document.activeElement !== customWEl && document.activeElement !== customHEl) {
+          customWEl.value = w; customHEl.value = h; updatePreview();
+        }
+        Array.prototype.forEach.call(qualityBtns, function (b) {
+          b.classList.toggle("is-active", w > 0 && h > 0 && Math.min(w, h) === parseInt(b.getAttribute("data-side"), 10));
+        });
         Array.prototype.forEach.call(resTiles, function (t) {
           var isMatch = w > 0 && h > 0 &&
             parseInt(t.getAttribute("data-w"), 10) === w && parseInt(t.getAttribute("data-h"), 10) === h;
@@ -1075,6 +1157,13 @@
         if (!w || !h) { resNoteEl.textContent = "Open a composition to see its resolution."; return; }
         var label = matched ? matched.querySelector(".qce-res-label").textContent : "Custom";
         resNoteEl.textContent = w + " \u00d7 " + h + " \u00b7 " + label;
+      }
+
+      // Highlights the frame-rate button that equals the comp's rate (23.976 etc. match no button).
+      function updateFpsButtons(fps) {
+        Array.prototype.forEach.call(fpsBtns, function (b) {
+          b.classList.toggle("is-active", Math.abs(parseFloat(b.getAttribute("data-fps")) - fps) < 0.001);
+        });
       }
 
       // Never writes "undefined"/stale values into the DOM: a missing or unusable payload just
@@ -1090,6 +1179,7 @@
       function applyCompInfo(data) {
         if (!data || data.duration === undefined || data.frameRate === undefined) { return; }
         lastFps = data.frameRate || 30;
+        updateFpsButtons(lastFps);
         setFieldsEnabled(true);
         startEl.value = _qceFormatTimecode(data.startFrame || 0, lastFps);
         durEl.value = _qceFormatTimecode(data.durationFrames || 0, lastFps);
@@ -1100,7 +1190,7 @@
 
       function applyLayerInfo(data) {
         if (!data) { return; }
-        if (data.frameRate) { lastFps = data.frameRate; }
+        if (data.frameRate) { lastFps = data.frameRate; updateFpsButtons(lastFps); }
         if (!data.hasSelection) {
           setEmptyState("Select a layer to see and edit its Start Timecode / Duration.");
           updateResTiles(data.compWidth, data.compHeight); // comp itself is still known even with no layer selected
@@ -1227,16 +1317,15 @@
       // Quick Resolution Presets: one click applies that tile's width/height to the active comp,
       // no Composition Settings dialog and no typing. Independent of the Timing controls above
       // (isBusy()/actionsEl), so it stays clickable while a timecode commit is in flight.
-      Array.prototype.forEach.call(resTiles, function (tile) {
-        tile.addEventListener("click", function () {
+      // Shared by the ratio tiles, the Custom row and the 720p / 1080p / 4K buttons.
+      function resizeTo(w, h, btn) {
           if (resBusy) { return; }
-          var w = parseInt(tile.getAttribute("data-w"), 10);
-          var h = parseInt(tile.getAttribute("data-h"), 10);
           resBusy = true;
-          tile.classList.add("is-pending");
+          btn.classList.add("is-pending");
           Bridge.call("setCompResolution", [w, h]).then(function (res) {
             resBusy = false;
-            flashButtonResult(tile, !!(res && res.ok));
+            if (res && res.ok) { customDirty = false; }
+            flashButtonResult(btn, !!(res && res.ok));
             toast((res && res.message) || (res && res.ok ? "Done." : "Something went wrong."), !(res && res.ok));
             if (res && res.ok && res.data) { updateResTiles(res.data.width, res.data.height); }
             if (res && res.ok) { ResPin.set(w, h); updateKeepLabel(); }
@@ -1254,8 +1343,64 @@
               });
             }
           });
+      }
+
+      Array.prototype.forEach.call(resTiles, function (tile) {
+        tile.addEventListener("click", function () {
+          var tw = parseInt(tile.getAttribute("data-w"), 10), th = parseInt(tile.getAttribute("data-h"), 10);
+          customWEl.value = tw; customHEl.value = th; customDirty = true; updatePreview();   // preview follows the picked shape
+          resizeTo(tw, th, tile);
         });
       });
+
+      // Custom width x height.
+      var customApplyBtn = wrap.querySelector("#qce-custom-apply");
+      function applyCustom() {
+        var w = Math.round(parseFloat(customWEl.value)), h = Math.round(parseFloat(customHEl.value));
+        if (!isFinite(w) || !isFinite(h) || w < 4 || h < 4 || w > 30000 || h > 30000) {
+          toast("Enter a width and height between 4 and 30000.", true);
+          return;
+        }
+        resizeTo(w, h, customApplyBtn);
+      }
+      customApplyBtn.addEventListener("click", applyCustom);
+      [customWEl, customHEl].forEach(function (el) {
+        el.addEventListener("keydown", function (e) { if (e.key === "Enter") { applyCustom(); } });
+        el.addEventListener("input", function () { customDirty = true; updatePreview(); });
+        el.addEventListener("change", updatePreview);   // spin arrows / scrub from mt-spinbox
+      });
+      updatePreview();
+
+      // 720p / 1080p / 4K: short side = preset, long side follows the comp's current aspect ratio (even numbers).
+      Array.prototype.forEach.call(qualityBtns, function (btn) {
+        btn.addEventListener("click", function () {
+          if (!lastW || !lastH) { toast("Open a composition first.", true); return; }
+          var side = parseInt(btn.getAttribute("data-side"), 10);
+          var longSide = Math.round(side * Math.max(lastW, lastH) / Math.min(lastW, lastH) / 2) * 2;
+          if (lastW >= lastH) { resizeTo(longSide, side, btn); } else { resizeTo(side, longSide, btn); }
+        });
+      });
+
+      // Frame rate: preset buttons + custom field.
+      function setFps(fps, btn) {
+        if (fpsBusy) { return; }
+        if (!isFinite(fps) || fps < 1 || fps > 999) { toast("Enter a frame rate between 1 and 999.", true); return; }
+        fpsBusy = true;
+        btn.classList.add("is-pending");
+        Bridge.call("setCompFrameRate", [fps]).then(function (res) {
+          fpsBusy = false;
+          flashButtonResult(btn, !!(res && res.ok));
+          toast((res && res.message) || (res && res.ok ? "Done." : "Something went wrong."), !(res && res.ok));
+          if (res && res.ok && res.data && res.data.frameRate) { lastFps = res.data.frameRate; updateFpsButtons(lastFps); }
+          refresh();
+        });
+      }
+      Array.prototype.forEach.call(fpsBtns, function (btn) {
+        btn.addEventListener("click", function () { setFps(parseFloat(btn.getAttribute("data-fps")), btn); });
+      });
+      var fpsApplyBtn = wrap.querySelector("#qce-fps-apply");
+      fpsApplyBtn.addEventListener("click", function () { setFps(parseFloat(fpsCustomEl.value), fpsApplyBtn); });
+      fpsCustomEl.addEventListener("keydown", function (e) { if (e.key === "Enter") { setFps(parseFloat(fpsCustomEl.value), fpsApplyBtn); } });
 
       // Fit to Composition (relocated here from Anchor Point & Align) - independent of the
       // Timing/resolution controls above, same as the resolution tiles.

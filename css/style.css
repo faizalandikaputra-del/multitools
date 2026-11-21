@@ -1088,6 +1088,51 @@ input[type="color"] {
 .chip.qce-res-keep { display: block; width: 100%; max-width: none; margin-bottom: 0; }
 .qce-res-tile.is-loading { opacity: 0.55; pointer-events: none; animation: pulse 0.9s ease-in-out infinite; }
 
+/* Quick Resolution Presets, lower blocks: Custom (W x H), Resolution (720p / 1080p / 4K) and Frame Rate.
+   Same surface / accent tokens as the ratio tiles so both themes carry over. */
+.qce-sub { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.7rem; }
+.qce-sub-title { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.04em; color: var(--text-dim); }
+.qce-prev { display: flex; align-items: center; gap: 0.8rem; }
+.qce-prev-stage {
+  flex: none; width: 4.2rem; height: 4.2rem; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-s); background: var(--surface-sunken); box-shadow: inset 0 0 0 1px var(--border-soft);
+}
+.qce-prev-box {
+  box-sizing: border-box; border: 1.8px solid var(--accent); border-radius: 3px; background: var(--accent-soft);
+  transition: width var(--dur) var(--bounce), height var(--dur) var(--bounce), opacity var(--dur-fast) ease;
+}
+.qce-prev-box.is-empty { border-style: dashed; border-color: var(--text-faint); background: transparent; opacity: 0.6; }
+.qce-prev-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.qce-prev-size { font-size: 0.85rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.qce-prev-ratio { font-size: 0.68rem; color: var(--text-dim); }
+:root[data-reduce-motion="true"] .qce-prev-box { transition: none; }
+.qce-custom-row { display: flex; align-items: center; gap: var(--gap-fluid-s); min-width: 0; }
+.qce-custom-row .qce-pill { flex: 1 1 0; min-width: 0; width: 100%; }
+.qce-times { flex: none; color: var(--text-faint); font-size: 0.8rem; }
+.qce-mini-btn {
+  flex: none; padding: 0.55rem 0.9rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  background: var(--accent); color: var(--on-accent);
+  transition: transform var(--dur-micro) ease, filter var(--dur-fast) ease;
+}
+.qce-mini-btn:hover { filter: brightness(1.1); }
+.qce-mini-btn:active { transform: scale(0.94); }
+.qce-mini-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.qce-seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(3.2rem, 1fr)); gap: var(--gap-fluid-s); }
+.qce-seg-btn {
+  padding: 0.6rem 0.4rem; border-radius: var(--radius-s); font-size: 0.72rem; font-weight: 700;
+  background: var(--surface-sunken); color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease, box-shadow var(--dur-fast) ease,
+              transform var(--dur-micro) ease, filter var(--dur-fast) ease;
+}
+.qce-seg-btn:hover { filter: brightness(1.18); color: var(--text); box-shadow: inset 0 0 0 1px var(--text-faint); }
+.qce-seg-btn:active { transform: scale(0.94); }
+.qce-seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.qce-seg-btn.is-active, .qce-seg-btn.is-active:hover { background: var(--accent); color: var(--on-accent); box-shadow: inset 0 0 0 1.5px var(--accent-strong); }
+.qce-fps-custom { margin-top: 0.5rem; }
+.qce-seg-btn.is-pending, .qce-mini-btn.is-pending { opacity: 0.6; pointer-events: none; }
+:root[data-reduce-motion="true"] .qce-seg-btn, :root[data-reduce-motion="true"] .qce-mini-btn { transition: none; }
+
 /* ---------- Save Frame: split buttons (main = auto-save, icon = change folder) ---------- */
 .split-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--gap-fluid-s); }
 .split-btn {

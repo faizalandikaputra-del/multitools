@@ -312,39 +312,71 @@
   }
 
   /* ---------------- 7. Motion Tile Generator ---------------- */
-  var MT_KEY = "mtx.motionTile", MT_DEFAULT = { p: 150, mirror: true };
+  var MT_KEY = "mtx.motionTile", MT_DEFAULT = { p: 150, mirror: true }, MT_RECENT_MAX = 5;
+  function mtOk(v) { return isFinite(v) && v >= 1 && v <= 10000; }
   function mtLoad() {
-    var o = null, v = MT_DEFAULT.p;
+    var o = null, v = MT_DEFAULT.p, recent = [], i, r;
     try { o = JSON.parse(lsGet(MT_KEY) || "null"); } catch (e) { o = null; }
     if (o) {
       v = parseFloat(o.p instanceof Array ? o.p[0] : o.p);   // older saves kept three scales; the first one carries over
-      if (!isFinite(v) || v < 1 || v > 10000) { v = MT_DEFAULT.p; }
+      if (!mtOk(v)) { v = MT_DEFAULT.p; }
+      if (o.recent instanceof Array) {
+        for (i = 0; i < o.recent.length && recent.length < MT_RECENT_MAX; i++) {
+          r = parseFloat(o.recent[i]);
+          if (mtOk(r) && recent.indexOf(r) < 0) { recent.push(r); }
+        }
+      }
     }
-    return { p: v, mirror: o && typeof o.mirror === "boolean" ? o.mirror : MT_DEFAULT.mirror };
+    return { p: v, mirror: o && typeof o.mirror === "boolean" ? o.mirror : MT_DEFAULT.mirror, recent: recent };
   }
   function upgradeMotionTile(group) {
     var st = mtLoad();
     var box = setBody(group,
       '<div class="param"><label for="mtn-mt-pct">Scale (%)</label><input class="num" type="number" id="mtn-mt-pct" min="1" max="10000" step="10" value="' + st.p + '"></div>' +
+      '<div class="mtn-mt-recent" id="mtn-mt-recent" hidden><span class="mtn-label">Recent</span><div class="mtn-mt-chips" id="mtn-mt-chips"></div></div>' +
       '<label class="switch-row" for="mtn-mt-mirror"><span>Mirror Edges</span><input type="checkbox" id="mtn-mt-mirror"' + (st.mirror ? " checked" : "") + '><span class="switch-track"></span></label>' +
       '<button class="btn-apply" id="mtn-mt-apply" type="button">Apply Motion Tile</button>');
-    var inp = q(box, "#mtn-mt-pct");
+    var inp = q(box, "#mtn-mt-pct"), applyBtn = q(box, "#mtn-mt-apply"), recentBox = q(box, "#mtn-mt-recent"), chips = q(box, "#mtn-mt-chips");
     function save() { lsSet(MT_KEY, JSON.stringify(st)); }
+    function drawRecent() {
+      recentBox.hidden = st.recent.length === 0;
+      chips.innerHTML = st.recent.map(function (v) {
+        return '<button type="button" class="mtn-chip mtn-mt-chip" data-v="' + v + '" title="Apply ' + v + '%">' + v + '%</button>';
+      }).join("");
+      refit(box);
+    }
+    function remember(v) {
+      var i = st.recent.indexOf(v);
+      if (i >= 0) { st.recent.splice(i, 1); }
+      st.recent.unshift(v);
+      if (st.recent.length > MT_RECENT_MAX) { st.recent.length = MT_RECENT_MAX; }
+      save(); drawRecent();
+    }
+    function run(v) {
+      if (applyBtn.classList.contains("is-pending")) { return; }
+      if (!mtOk(v)) { toast("Enter a scale between 1 and 10000 percent.", true); return; }
+      st.p = v; inp.value = String(v); inp.classList.remove("is-bad"); save();
+      pressed(applyBtn, true);
+      call("TOOLS_motionTile", [{ percent: v, mirror: st.mirror }]).then(function (res) {
+        if (finish(applyBtn, res) && !(res.data && res.data.skipped)) { remember(v); }   // only a real apply counts as recent
+      });
+    }
     inp.addEventListener("input", function () {
       var v = parseFloat(inp.value);
-      if (!isFinite(v) || v < 1 || v > 10000) { inp.classList.add("is-bad"); return; }
+      if (!mtOk(v)) { inp.classList.add("is-bad"); return; }
       inp.classList.remove("is-bad");
       st.p = v; save();
     });
+    inp.addEventListener("focus", function () { try { inp.select(); } catch (e) { } });
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); run(parseFloat(inp.value)); } });
     inp.addEventListener("blur", function () { inp.value = String(st.p); inp.classList.remove("is-bad"); });
     q(box, "#mtn-mt-mirror").addEventListener("change", function (e) { st.mirror = !!e.target.checked; save(); });
-    q(box, "#mtn-mt-apply").addEventListener("click", function (e) {
-      var btn = e.currentTarget;
-      if (btn.classList.contains("is-pending")) { return; }
-      pressed(btn, true);
-      call("TOOLS_motionTile", [{ percent: st.p, mirror: st.mirror }]).then(function (res) { finish(btn, res); });
+    applyBtn.addEventListener("click", function () { run(parseFloat(inp.value)); });
+    chips.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest(".mtn-mt-chip") : null;
+      if (b) { run(parseFloat(b.getAttribute("data-v"))); }
     });
-    refit(box);
+    drawRecent();
   }
 
   /* ---------------- apply to each freshly built tab ---------------- */

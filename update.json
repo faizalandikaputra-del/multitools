@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.220",
-    "changelog":  "- Update 1.8.220",
+    "latest_version":  "1.8.221",
+    "changelog":  "- Update 1.8.221",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -132,7 +132,7 @@
                   },
                   {
                       "path":  "css/mt-newtools.css",
-                      "sha256":  "9585515a9e01a79a94e6b397323838f97710664bfcf18691f8cd23f72e99ffa5"
+                      "sha256":  "5a2b6294481977a658048390b263fc41bed96afc9bfb17ea0bef488dd90b9e08"
                   },
                   {
                       "path":  "css/mt-palette-ui.css",
@@ -272,7 +272,7 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "ebe178b3e919a7c959490f9409a692ad455f23b1fefdec0fd50386e98e9cb77b"
+                      "sha256":  "7f66b18151f58b28fc31fb76edc9feebb28c78add8df0a88d10a9db44e7889ad"
                   },
                   {
                       "path":  "html/settings.html",
@@ -368,7 +368,7 @@
                   },
                   {
                       "path":  "js/mt-newtools.js",
-                      "sha256":  "51068349cd390300d60f3c9036165d2ce01e53bae6b260463a0bb7ec89c0e652"
+                      "sha256":  "eb531b2f290dffe7dff1cd34d0725c5f827fcc5cf464646c6a52c16a339cfb79"
                   },
                   {
                       "path":  "js/mt-persist.js",
@@ -780,7 +780,7 @@
                   },
                   {
                       "path":  "README.txt",
-                      "sha256":  "7a819ed4ac9098ef5a3067b53d022ba67890ecfdecd1e2b7cdfdedc25c3bb76a"
+                      "sha256":  "3009825bf773fcdbffc29f8484fe3ba13e4a2007d9ce8c8ae2a9edb1eaff6e8c"
                   }
               ]
 }

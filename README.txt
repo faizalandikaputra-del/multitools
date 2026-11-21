@@ -2806,3 +2806,7 @@ anchor-align-into-tools (tab Anchor Point & Align dihapus, isinya pindah ke tab 
 motion-tile-single (Motion Tile Generator: tiga kolom jadi satu, catatan di bawah dihapus)
   - Perubahan: kartu sekarang satu kotak angka Scale (%) (bawaan 150, 1-10000, tersimpan), switch Mirror Edges, dan satu tombol Apply Motion Tile. Tiga tombol skala dan teks catatan di bawah dihapus. Simpanan lama (tiga skala) memakai skala pertama.
   - Files: js/mt-newtools.js (?v=5), css/mt-newtools.css (?v=4), html/index.html, README.txt.
+
+motion-tile-recent (Motion Tile Generator: kolom Scale lebih mudah diubah + daftar Recent)
+  - Perubahan: klik kotak Scale memilih seluruh angka, Enter langsung Apply, dan scrub/panah angka bawaan panel tetap jalan. Di bawahnya ada baris Recent: sampai 5 skala terakhir yang berhasil di-Apply (terbaru di kiri, tanpa duplikat, tersimpan di mtx.motionTile.recent). Klik chip = langsung Apply skala itu. Apply yang dilewati (tidak ada layer terpilih) tidak masuk Recent. Baris Recent tersembunyi selama kosong.
+  - Files: js/mt-newtools.js (?v=6), css/mt-newtools.css (?v=5), html/index.html, README.txt.

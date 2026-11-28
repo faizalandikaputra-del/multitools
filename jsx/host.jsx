@@ -3704,6 +3704,227 @@ function SHAPE_capture() {
   }
 }
 
+// ---------- Tools tab: Auto Mask (shape layer -> mask on a duplicate of the image layer) ----------
+// Called from JS as: TOOLS_autoMask(optsJson)   opts = { mode: "add"|"subtract"|"intersect", inverted: bool, feather: px, dup: bool, hide: bool }
+// Sources = shape layers (the paths drawn in them). If some Path properties are selected inside a shape layer, only those paths are used.
+// Targets = the selected layers that are NOT shape / text / null layers (image, video, solid, pre-comp). None selected: the first such layer below each shape layer.
+// For every source x target: the target is duplicated (dup = true; false masks the original), and every path becomes a mask on that copy.
+// The paths are converted by full transforms at the current time (shape layer, groups, parents of both layers), so the mask lands exactly where the shape is in the comp.
+// Not covered: stars / polystars, Trim Paths, Repeaters, Offset Paths, skew, 3D rotation, animated transforms (frozen at the current time).
+function _amMul(A, B) {
+  return [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3],
+          A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
+}
+function _amInv(M) {
+  var det = M[0] * M[3] - M[1] * M[2], a, b, c, d;
+  if (Math.abs(det) < 1e-12) { return null; }
+  a = M[3] / det; b = -M[1] / det; c = -M[2] / det; d = M[0] / det;
+  return [a, b, c, d, -(a * M[4] + c * M[5]), -(b * M[4] + d * M[5])];
+}
+function _amTRS(pos, anc, sc, rotDeg) {
+  var r = rotDeg * Math.PI / 180, co = Math.cos(r), si = Math.sin(r), sx = sc[0] / 100, sy = sc[1] / 100;
+  var a = co * sx, b = si * sx, c = -si * sy, d = co * sy;
+  return [a, b, c, d, pos[0] - (a * anc[0] + c * anc[1]), pos[1] - (b * anc[0] + d * anc[1])];
+}
+function _amVal(prop, t, fallback) {
+  try { return prop.valueAtTime(t, false); } catch (e0) { }
+  try { return prop.value; } catch (e1) { }
+  return fallback;
+}
+// Comp-space matrix of a layer including its parent chain.
+function _amLayerMatrix(layer, t) {
+  var tg = layer.property("ADBE Transform Group"), pos, anc, sc, rot, M, par;
+  pos = null;
+  try { pos = tg.property("ADBE Position").valueAtTime(t, false); } catch (e0) { }
+  if (!pos) {
+    try { pos = [tg.property("ADBE Position_0").valueAtTime(t, false), tg.property("ADBE Position_1").valueAtTime(t, false)]; } catch (e1) { pos = [0, 0]; }
+  }
+  anc = _amVal(tg.property("ADBE Anchor Point"), t, [0, 0]);
+  sc = _amVal(tg.property("ADBE Scale"), t, [100, 100]);
+  rot = _amVal(tg.property("ADBE Rotate Z"), t, 0);
+  M = _amTRS(pos, anc, sc, rot);
+  par = layer.parent;
+  if (par) { M = _amMul(_amLayerMatrix(par, t), M); }
+  return M;
+}
+function _amGroupMatrix(grp, t) {
+  var tg = null, pos, anc, sc, rot;
+  try { tg = grp.property("ADBE Vector Transform Group"); } catch (e0) { }
+  if (!tg) { return [1, 0, 0, 1, 0, 0]; }
+  pos = _amVal(tg.property("ADBE Vector Position"), t, [0, 0]);
+  anc = _amVal(tg.property("ADBE Vector Anchor"), t, [0, 0]);
+  sc = _amVal(tg.property("ADBE Vector Scale"), t, [100, 100]);
+  rot = _amVal(tg.property("ADBE Vector Rotation"), t, 0);
+  return _amTRS(pos, anc, sc, rot);
+}
+// Collects the paths of a Contents group: out.push({ c: contour in the group's space, M: matrix to comp space, g: id of the Contents level, sel: path was selected }).
+function _amWalk(cont, M, t, out, st, gid) {
+  var i, it, mn, pv, pos, sz, rd, cs, k, myId = st.next++, sel;
+  for (i = cont.numProperties; i >= 1; i--) {
+    it = cont.property(i);
+    try { if (it.enabled === false) { continue; } } catch (e0) { }
+    mn = it.matchName;
+    sel = false; try { sel = !!it.selected; } catch (e1) { }
+    if (mn === "ADBE Vector Shape - Group") {
+      try {
+        pv = it.property("ADBE Vector Shape");
+        try { if (pv.selected) { sel = true; } } catch (e2) { }
+        pv = _amVal(pv, t, null);
+        if (pv && pv.vertices && pv.vertices.length) {
+          out.push({ c: { c: !!pv.closed, v: pv.vertices, i: pv.inTangents, o: pv.outTangents }, M: M, g: myId, sel: sel });
+        }
+      } catch (e3) { }
+    } else if (mn === "ADBE Vector Shape - Rect") {
+      try {
+        pos = _amVal(it.property("ADBE Vector Rect Position"), t, [0, 0]); sz = _amVal(it.property("ADBE Vector Rect Size"), t, [100, 100]); rd = _amVal(it.property("ADBE Vector Rect Roundness"), t, 0);
+        cs = _shPartContours({ t: "r", x: pos[0], y: pos[1], w: sz[0], h: sz[1], r: rd });
+        for (k = 0; k < cs.length; k++) { out.push({ c: cs[k], M: M, g: myId, sel: sel }); }
+      } catch (e4) { }
+    } else if (mn === "ADBE Vector Shape - Ellipse") {
+      try {
+        pos = _amVal(it.property("ADBE Vector Ellipse Position"), t, [0, 0]); sz = _amVal(it.property("ADBE Vector Ellipse Size"), t, [100, 100]);
+        cs = _shPartContours({ t: "e", x: pos[0], y: pos[1], w: sz[0], h: sz[1] });
+        for (k = 0; k < cs.length; k++) { out.push({ c: cs[k], M: M, g: myId, sel: sel }); }
+      } catch (e5) { }
+    } else if (mn === "ADBE Vector Shape - Star") {
+      st.skipped++;
+    } else if (mn === "ADBE Vector Group") {
+      try {
+        var sub = it.property("ADBE Vectors Group");
+        if (sub) { _amWalk(sub, _amMul(M, _amGroupMatrix(it, t)), t, out, st, myId); }
+      } catch (e6) { }
+    }
+  }
+}
+function _amIsImage(L) {
+  try {
+    if (!(L instanceof AVLayer)) { return false; }
+    if (L instanceof ShapeLayer || L instanceof TextLayer) { return false; }
+    if (L.nullLayer || L.adjustmentLayer) { return false; }
+    if (!L.hasVideo) { return false; }
+    if (!L.property("ADBE Mask Parade")) { return false; }
+    return true;
+  } catch (e) { return false; }
+}
+function _amMapContour(c, F) {
+  var v = [], ti = [], to = [], k, n = c.v.length, p, q;
+  for (k = 0; k < n; k++) {
+    p = c.v[k]; v.push([F[0] * p[0] + F[2] * p[1] + F[4], F[1] * p[0] + F[3] * p[1] + F[5]]);
+    q = c.i[k]; ti.push([F[0] * q[0] + F[2] * q[1], F[1] * q[0] + F[3] * q[1]]);
+    q = c.o[k]; to.push([F[0] * q[0] + F[2] * q[1], F[1] * q[0] + F[3] * q[1]]);
+  }
+  return { c: c.c, v: v, i: ti, o: to };
+}
+
+function TOOLS_autoMask(optsJson) {
+  var undoOpen = false;
+  try {
+    var o = { mode: "add", inverted: false, feather: 0, dup: true, hide: true };
+    try { var u = JSON.parse(optsJson); var key; for (key in u) { if (u.hasOwnProperty(key)) { o[key] = u[key]; } } } catch (eP) { }
+    var comp = app.project ? app.project.activeItem : null;
+    if (!(comp instanceof CompItem)) { return _notice("Open a composition first."); }
+    var sel = comp.selectedLayers, t = comp.time, i, j, k, shapes = [], images = [], S, L;
+    if (!sel || !sel.length) { return _notice("Select a shape layer and the image layer first."); }
+    for (i = 0; i < sel.length; i++) {
+      if (sel[i] instanceof ShapeLayer) { shapes.push(sel[i]); } else if (_amIsImage(sel[i])) { images.push(sel[i]); }
+    }
+    if (!shapes.length) { return _notice("Select a shape layer (or some paths inside it) first."); }
+
+    // 1) read the paths of every shape layer
+    var srcs = [], st = { next: 0, skipped: 0 }, list, anySel, kept, M0, threeD = false, ref;
+    for (i = 0; i < shapes.length; i++) {
+      S = shapes[i];
+      list = [];
+      st.next = 0;
+      M0 = _amLayerMatrix(S, t);
+      _amWalk(S.property("ADBE Root Vectors Group"), M0, t, list, st, 0);
+      anySel = false;
+      for (k = 0; k < list.length; k++) { if (list[k].sel) { anySel = true; } }
+      kept = [];
+      for (k = 0; k < list.length; k++) { if (!anySel || list[k].sel) { kept.push(list[k]); } }
+      if (kept.length) { srcs.push({ layer: S, paths: kept }); }
+      try { if (S.threeDLayer) { threeD = true; } } catch (e3) { }
+    }
+    if (!srcs.length) { return _notice("No usable paths found. Rectangles, ellipses and Path shapes work; stars are skipped."); }
+
+    // 2) pick the image layers: selected ones, else the first image layer under each shape layer
+    var jobs = [], below, idx;
+    for (i = 0; i < srcs.length; i++) {
+      if (images.length) {
+        for (j = 0; j < images.length; j++) { jobs.push({ s: srcs[i], t: images[j] }); }
+      } else {
+        below = null;
+        for (idx = srcs[i].layer.index + 1; idx <= comp.numLayers; idx++) { if (_amIsImage(comp.layer(idx))) { below = comp.layer(idx); break; } }
+        if (below) { jobs.push({ s: srcs[i], t: below }); }
+      }
+    }
+    if (!jobs.length) { return _notice("No image layer found. Select the image layer together with the shape layer."); }
+
+    // 3) one undo group: duplicate the image layer, write the masks
+    app.beginUndoGroup("Auto Mask");
+    undoOpen = true;
+    var made = [], masks = 0, failed = 0, lastErr = "", T, dup, wasLocked, Fm, Ti, p, c, mk, a0, a1, shp, nm, n, curG, refArea, mm;
+    for (i = 0; i < jobs.length; i++) {
+      T = jobs[i].t; S = jobs[i].s.layer; list = jobs[i].s.paths;
+      dup = null;
+      try {
+        Ti = _amInv(_amLayerMatrix(T, t));
+        if (!Ti) { throw new Error(T.name + " has a zero scale, cannot place the mask."); }
+        try { if (T.threeDLayer) { threeD = true; } } catch (e4) { }
+        wasLocked = T.locked;
+        if (o.dup) {
+          if (wasLocked) { T.locked = false; }
+          dup = T.duplicate();
+          if (wasLocked) { T.locked = true; dup.locked = false; }
+          try { dup.name = T.name + " - " + S.name; } catch (eN) { }
+        } else {
+          dup = T;
+          if (wasLocked) { throw new Error(T.name + " is locked."); }
+        }
+        var parade = dup.property("ADBE Mask Parade");
+        curG = -1; refArea = 0; n = 0;
+        for (k = 0; k < list.length; k++) {
+          p = list[k];
+          Fm = _amMul(Ti, p.M);
+          c = _amMapContour(p.c, Fm);
+          a0 = _shArea(c);
+          mk = parade.addProperty("ADBE Mask Atom");
+          n++;
+          try { mk.name = S.name + (list.length > 1 ? " " + n : ""); } catch (eM) { }
+          mk.property("ADBE Mask Shape").setValue(_shShapeObj(c));
+          mm = MaskMode.ADD;
+          if (o.mode === "subtract") { mm = MaskMode.SUBTRACT; } else if (o.mode === "intersect") { mm = MaskMode.INTERSECT; }
+          if (p.g !== curG) { curG = p.g; refArea = a0; } else if (a0 * refArea < 0 && o.mode === "add") { mm = MaskMode.SUBTRACT; }   // a hole (reverse winding), like a donut
+          try { mk.maskMode = mm; } catch (eMo) { }
+          if (o.inverted) { try { mk.inverted = true; } catch (eI) { } }
+          if (o.feather > 0) { try { mk.property("ADBE Mask Feather").setValue([o.feather, o.feather]); } catch (eF) { } }
+          masks++;
+        }
+        made.push(dup);
+      } catch (eJob) {
+        failed++; lastErr = (eJob && eJob.message) ? eJob.message : String(eJob);
+        if (dup && o.dup) { try { dup.remove(); } catch (eRm) { } }
+      }
+    }
+    if (o.hide && made.length) { for (i = 0; i < srcs.length; i++) { try { srcs[i].layer.enabled = false; } catch (eH) { } } }
+    if (made.length) {
+      try { for (i = 1; i <= comp.numLayers; i++) { comp.layer(i).selected = false; } } catch (eD) { }
+      for (i = 0; i < made.length; i++) { try { made[i].selected = true; } catch (eS) { } }
+    }
+    app.endUndoGroup();
+    undoOpen = false;
+
+    if (!made.length) { throw new Error(lastErr || "Could not add the mask."); }
+    return _ok("Auto Mask: " + masks + " mask" + (masks === 1 ? "" : "s") + " on " + made.length + (o.dup ? " new layer" : " layer") + (made.length === 1 ? "" : "s") + "." +
+      (failed ? " " + failed + " failed (" + lastErr + ")." : "") +
+      (st.skipped ? " " + st.skipped + " star shape" + (st.skipped === 1 ? "" : "s") + " skipped." : "") +
+      (threeD ? " 3D layers are masked flat." : ""));
+  } catch (e) {
+    if (undoOpen) { try { app.endUndoGroup(); } catch (eU) { } }
+    return _err(e);
+  }
+}
+
 // ---------- Expression Code (snippet manager) ----------
 
 // Applies raw expression code (as text) to every selected property.

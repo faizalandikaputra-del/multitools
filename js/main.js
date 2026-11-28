@@ -3608,6 +3608,23 @@
         '</div>' +
 
         '<div class="ta-section">' +
+          '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9.5" cy="12" r="3.5"/><path d="M14 9.5h4M14 14.5h4"/></svg><span>Auto Mask</span></h2>' +
+          '<div class="chips">' +
+            '<label class="chip"><input type="radio" name="am-mode" value="add" checked><span>Add</span></label>' +
+            '<label class="chip"><input type="radio" name="am-mode" value="subtract"><span>Subtract</span></label>' +
+            '<label class="chip"><input type="radio" name="am-mode" value="intersect"><span>Intersect</span></label>' +
+          '</div>' +
+          '<label class="chip chip-solo"><input type="checkbox" id="am-dup" checked><span>Duplicate the image layer</span></label>' +
+          '<label class="chip chip-solo"><input type="checkbox" id="am-hide" checked><span>Hide the shape layer</span></label>' +
+          '<label class="chip chip-solo"><input type="checkbox" id="am-inv"><span>Invert mask</span></label>' +
+          '<div class="param">' +
+            '<label for="am-feather">Feather (px)</label>' +
+            '<input class="num" type="number" id="am-feather" min="0" max="500" step="1" value="0">' +
+          '</div>' +
+          '<button class="btn-apply" data-tool-action="auto-mask" title="Select the shape layer (or just some of its paths) and the image layer. Without an image layer, the first image under the shape is used.">Mask Image With Shape</button>' +
+        '</div>' +
+
+        '<div class="ta-section">' +
           '<h2 class="ta-title ta-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v4l-3 3-3-3zM12 10v10M4 20h16"/></svg><span>Trim to Playhead</span></h2>' +
           '<div class="chips">' +
             '<label class="chip"><input type="radio" name="trim-edge" value="in" checked><span>In Point</span></label>' +
@@ -3756,6 +3773,16 @@
             call = Bridge.call("TOOLS_precomposeTogether", [wrap.querySelector("#precomp-move-attrs").checked]);
           } else if (action === "duplicate-precomp-deep") {
             call = Bridge.call("TOOLS_duplicatePrecompDeep", [wrap.querySelector("#dupdeep-folder").checked]);
+          } else if (action === "auto-mask") {
+            var amFeather = parseFloat(wrap.querySelector("#am-feather").value);
+            if (!isFinite(amFeather) || amFeather < 0) { amFeather = 0; }
+            call = Bridge.call("TOOLS_autoMask", [JSON.stringify({
+              mode: wrap.querySelector('input[name="am-mode"]:checked').value,
+              dup: wrap.querySelector("#am-dup").checked,
+              hide: wrap.querySelector("#am-hide").checked,
+              inverted: wrap.querySelector("#am-inv").checked,
+              feather: amFeather
+            })]);
           } else if (action === "trim") {
             var edge = wrap.querySelector('input[name="trim-edge"]:checked').value;
             call = Bridge.call("TOOLS_trimToPlayhead", [edge]);

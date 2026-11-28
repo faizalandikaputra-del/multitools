@@ -3706,7 +3706,7 @@ function SHAPE_capture() {
 }
 
 // ---------- Tools tab: Auto Mask (shape layer -> mask on a duplicate of the image layer) ----------
-// Called from JS as: TOOLS_autoMask(optsJson)   opts = { mode: "add"|"subtract"|"intersect", inverted: bool, feather: px, dup: bool, hide: bool, label: 0-16 }
+// Called from JS as: TOOLS_autoMask(optsJson)   opts = { mode: "add"|"subtract"|"intersect", inverted: bool, feather: px, dup: bool, hide: bool, del: bool (remove the shape layer, wins over hide), label: 0-16 }
 // Sources = shape layers (the paths drawn in them). If some Path properties are selected inside a shape layer, only those paths are used.
 // Targets = the selected layers that are NOT shape / text / null layers (image, video, solid, pre-comp). None selected: the first such layer below each shape layer.
 // For every source x target: the target is duplicated (dup = true; false masks the original), and every path becomes a mask on that copy.
@@ -3820,7 +3820,7 @@ function _amMapContour(c, F) {
 function TOOLS_autoMask(optsJson) {
   var undoOpen = false;
   try {
-    var o = { mode: "add", inverted: false, feather: 0, dup: true, hide: true };
+    var o = { mode: "add", inverted: false, feather: 0, dup: true, hide: true, del: false };
     try { var u = JSON.parse(optsJson); var key; for (key in u) { if (u.hasOwnProperty(key)) { o[key] = u[key]; } } } catch (eP) { }
     var comp = app.project ? app.project.activeItem : null;
     if (!(comp instanceof CompItem)) { return _notice("Open a composition first."); }
@@ -3904,12 +3904,18 @@ function TOOLS_autoMask(optsJson) {
           masks++;
         }
         made.push(dup);
+        jobs[i].s.ok = true;
       } catch (eJob) {
         failed++; lastErr = (eJob && eJob.message) ? eJob.message : String(eJob);
         if (dup && o.dup) { try { dup.remove(); } catch (eRm) { } }
       }
     }
-    if (o.hide && made.length) { for (i = 0; i < srcs.length; i++) { try { srcs[i].layer.enabled = false; } catch (eH) { } } }
+    if (o.del && made.length) {                                              // delete the shape layers that were turned into masks (also when they are locked)
+      for (i = 0; i < srcs.length; i++) {
+        if (!srcs[i].ok) { continue; }
+        try { if (srcs[i].layer.locked) { srcs[i].layer.locked = false; } srcs[i].layer.remove(); } catch (eDel) { }
+      }
+    } else if (o.hide && made.length) { for (i = 0; i < srcs.length; i++) { try { srcs[i].layer.enabled = false; } catch (eH) { } } }
     if (made.length) {
       try { for (i = 1; i <= comp.numLayers; i++) { comp.layer(i).selected = false; } } catch (eD) { }
       for (i = 0; i < made.length; i++) { try { made[i].selected = true; } catch (eS) { } }

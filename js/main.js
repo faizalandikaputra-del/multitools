@@ -3619,7 +3619,10 @@
             '<label class="chip"><input type="radio" name="am-mode" value="intersect"><span>Intersect</span></label>' +
           '</div>' +
           '<label class="chip chip-solo"><input type="checkbox" id="am-dup" checked><span>Duplicate the image layer</span></label>' +
-          '<label class="chip chip-solo"><input type="checkbox" id="am-hide" checked><span>Hide the shape layer</span></label>' +
+          '<div class="chips">' +
+            '<label class="chip"><input type="checkbox" id="am-hide" checked><span>Hide shape layer</span></label>' +
+            '<label class="chip"><input type="checkbox" id="am-del"><span>Delete shape layer</span></label>' +
+          '</div>' +
           '<label class="chip chip-solo"><input type="checkbox" id="am-inv"><span>Invert mask</span></label>' +
           '<div class="param">' +
             '<label for="am-feather">Feather (px)</label>' +
@@ -3745,6 +3748,11 @@
         for (ri = 0; ri < rndChips.length; ri++) { rndChips[ri].addEventListener("change", function (e) { if (e.target.checked) { rndSync(e.target.value); } }); }
       })();
 
+      (function () {                                   // Auto Mask: Delete shape layer replaces Hide, so Hide is greyed out while Delete is on
+        var amDel = wrap.querySelector("#am-del"), amHide = wrap.querySelector("#am-hide");
+        if (amDel && amHide) { amDel.addEventListener("change", function () { amHide.disabled = amDel.checked; }); }
+      })();
+
       (function () {
         var seqBox = wrap.querySelector("#br-seq"), seqFields = wrap.querySelector("#br-seq-fields");
         if (seqBox && seqFields) { seqBox.addEventListener("change", function () { seqFields.hidden = !seqBox.checked; }); }
@@ -3784,6 +3792,7 @@
               mode: wrap.querySelector('input[name="am-mode"]:checked').value,
               dup: wrap.querySelector("#am-dup").checked,
               hide: wrap.querySelector("#am-hide").checked,
+              del: wrap.querySelector("#am-del").checked,
               inverted: wrap.querySelector("#am-inv").checked,
               label: EasyLayerLabels.get("automask"),
               feather: amFeather

@@ -127,7 +127,7 @@
     add(list, "tool:precomp:all", "Tools", "Pre-compose layers together", function () { call("TOOLS_precomposeTogether", [true]); });
     add(list, "tool:unprecomp", "Tools", "Unprecompose (copy attributes)", function () { call("TOOLS_unprecompose", ["copy"]); });
     add(list, "tool:precomp:deep", "Tools", "Duplicate precomp (deep, nested too)", function () { call("TOOLS_duplicatePrecompDeep", [true]); }, "copy nested");
-    add(list, "tool:automask", "Tools", "Auto mask: shape layer to mask on image copy", function () { call("TOOLS_autoMask", [JSON.stringify({ mode: "add", dup: true, hide: true, inverted: false, feather: 0 })]); }, "masking shape duplicate");
+    add(list, "tool:automask", "Tools", "Auto mask: shape layer to mask on image copy", function () { call("TOOLS_autoMask", [JSON.stringify({ mode: "add", dup: true, hide: true, inverted: false, feather: 0, label: core.autoMaskLabel ? core.autoMaskLabel() : "" })]); }, "masking shape duplicate");
     add(list, "tool:color:sel", "Tools", "Color-code selected layers", function () { call("TOOLS_autoColorCode", ["selected"]); }, "label");
     add(list, "tool:color:all", "Tools", "Color-code whole comp", function () { call("TOOLS_autoColorCode", ["all"]); }, "label");
     function saveFrame(fmt) {

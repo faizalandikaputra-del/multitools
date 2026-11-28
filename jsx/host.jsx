@@ -3706,7 +3706,7 @@ function SHAPE_capture() {
 }
 
 // ---------- Tools tab: Auto Mask (shape layer -> mask on a duplicate of the image layer) ----------
-// Called from JS as: TOOLS_autoMask(optsJson)   opts = { mode: "add"|"subtract"|"intersect", inverted: bool, feather: px, dup: bool, hide: bool }
+// Called from JS as: TOOLS_autoMask(optsJson)   opts = { mode: "add"|"subtract"|"intersect", inverted: bool, feather: px, dup: bool, hide: bool, label: 0-16 }
 // Sources = shape layers (the paths drawn in them). If some Path properties are selected inside a shape layer, only those paths are used.
 // Targets = the selected layers that are NOT shape / text / null layers (image, video, solid, pre-comp). None selected: the first such layer below each shape layer.
 // For every source x target: the target is duplicated (dup = true; false masks the original), and every path becomes a mask on that copy.
@@ -3883,6 +3883,7 @@ function TOOLS_autoMask(optsJson) {
           if (wasLocked) { throw new Error(T.name + " is locked."); }
           try { dup.name = "[Mask] " + String(T.name).replace(/^\[Mask\] /, ""); } catch (eN2) { }
         }
+        if (parseInt(o.label, 10) > 0) { try { dup.label = parseInt(o.label, 10); } catch (eLb) { } }   // label color from Settings > Easy Layer > Auto Mask
         var parade = dup.property("ADBE Mask Parade");
         curG = -1; refArea = 0; n = 0;
         for (k = 0; k < list.length; k++) {

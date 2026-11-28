@@ -1,6 +1,6 @@
 {
-    "latest_version":  "1.8.230",
-    "changelog":  "- Update 1.8.230",
+    "latest_version":  "1.8.231",
+    "changelog":  "- Update 1.8.231",
     "files":  [
                   {
                       "path":  "css/ambient-orbs.css",
@@ -272,11 +272,11 @@
                   },
                   {
                       "path":  "html/index.html",
-                      "sha256":  "f113d83e2a0808b52e4d20e28dfec249c4badfdf7cdb48d308e3238d4a7d0a57"
+                      "sha256":  "ca7b57f21cf40b1e09a7b4e320c83a1ab662b960d85512942847aacfd120c61f"
                   },
                   {
                       "path":  "html/settings.html",
-                      "sha256":  "c690951fab0c48cdcb4c51c1adc26b325f2e859d19e3ea87290910e077456768"
+                      "sha256":  "a0df047774cb9223c686d0cea1977c482a639e38d30f65f4befa48b3a5bae9c9"
                   },
                   {
                       "path":  "js/ae2021-compat.js",
@@ -292,7 +292,7 @@
                   },
                   {
                       "path":  "js/main.js",
-                      "sha256":  "40b0c70eeb9b6ca9ce9212127f64174886fdbd6c6dbbe79d363892ab3fe382ea"
+                      "sha256":  "d4aa80c1760ddead17bc22acff7441879e46fe04ad8141a7dbc6a0134f3340be"
                   },
                   {
                       "path":  "js/mt-anim.js",
@@ -324,7 +324,7 @@
                   },
                   {
                       "path":  "js/mt-hotkeys.js",
-                      "sha256":  "c8dd2026cd78e8fc42c7a512f3b328f2beb5ec8018bc567acbaf15e2af3d22e3"
+                      "sha256":  "4614c41c5c76f9ac96afc3471f819c606f0f9828767a7bf422459cbb35a9e32b"
                   },
                   {
                       "path":  "js/mt-hotkeys-settings.js",
@@ -468,7 +468,7 @@
                   },
                   {
                       "path":  "jsx/host.jsx",
-                      "sha256":  "341f97cda27b5a02361377d9988abfb659624681824d0ce0440d53c6add8318f"
+                      "sha256":  "cbf1dc0b2b592cde2a13db4c2e24df0eb546b9383c8784059a3fc41151f59633"
                   },
                   {
                       "path":  "neucurve/assets/index.js",

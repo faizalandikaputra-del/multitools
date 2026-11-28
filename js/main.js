@@ -1487,7 +1487,7 @@
   // ---------------------------------------------------------
   var EasyLayerLabels = {
     key: "easyLayerLabels",
-    defaults: { adj: 13, sol: 14 }, // ADJ -> Fuchsia, SOL -> Cyan (per the spec example)
+    defaults: { adj: 13, sol: 14, automask: 11 }, // ADJ -> Fuchsia, SOL -> Cyan (per the spec example); Auto Mask -> Orange
 
     load: function () {
       try {
@@ -1500,11 +1500,15 @@
     // Returns the assigned label index for a tool id, or "" if none is set.
     get: function (toolId) {
       var map = this.load();
+      if (toolId === "automask") {                                  // Auto Mask: never picked = Orange, picked "None" is stored as 0
+        if (!map.hasOwnProperty(toolId)) { return this.defaults.automask; }
+        return map[toolId] > 0 ? map[toolId] : "";
+      }
       return map.hasOwnProperty(toolId) ? map[toolId] : "";
     },
     set: function (toolId, labelIndex) {
       var map = this.load();
-      if (labelIndex === "" || labelIndex === null || labelIndex === undefined) { delete map[toolId]; }
+      if (labelIndex === "" || labelIndex === null || labelIndex === undefined) { if (toolId === "automask") { map[toolId] = 0; } else { delete map[toolId]; } }
       else { map[toolId] = parseInt(labelIndex, 10); }
       this.save(map);
     }
@@ -3781,6 +3785,7 @@
               dup: wrap.querySelector("#am-dup").checked,
               hide: wrap.querySelector("#am-hide").checked,
               inverted: wrap.querySelector("#am-inv").checked,
+              label: EasyLayerLabels.get("automask"),
               feather: amFeather
             })]);
           } else if (action === "trim") {
@@ -5808,7 +5813,7 @@
       var optionsHtml = '<option value="">None</option>' +
         LAYER_LABELS.map(function (l) { return '<option value="' + l.index + '" data-hex="' + l.hex + '">' + l.name + "</option>"; }).join("");
 
-      list.innerHTML = TABS["easy-layer"].tools.map(function (tool) {
+      list.innerHTML = TABS["easy-layer"].tools.concat([{ id: "automask", name: "Auto Mask (masked layer)" }]).map(function (tool) {
         var current = EasyLayerLabels.get(tool.id);
         var swatchHex = "transparent";
         for (var i = 0; i < LAYER_LABELS.length; i++) {
@@ -8094,6 +8099,7 @@
     showTab: showTab,
     runTool: runTool,
     SaveFrame: SaveFrame,
+    autoMaskLabel: function () { return EasyLayerLabels.get("automask"); },
     currentTab: function () { return currentTab; }
   };
 

@@ -3575,6 +3575,7 @@ function SHAPE_insert(payloadJson) {
       } else {
         layer = _shBuildLayer(comp, o, { center: [comp.width / 2, comp.height / 2], t0: span ? span.a : t0, fitLayer: o.fit ? text : null, markerLayer: marker });
         _shApplySpan(layer, span);
+        if (!span) { try { if (t0 > 0 && t0 < layer.outPoint) { layer.inPoint = t0; } } catch (eIn) { } }   // nothing selected: the shape starts at the playhead
         if (o.fit) { layer.moveAfter(text); }
         else {
           for (k = 0; k < (sel ? sel.length : 0); k++) { try { sel[k].selected = false; } catch (eS) { } }
@@ -3876,10 +3877,11 @@ function TOOLS_autoMask(optsJson) {
           if (wasLocked) { T.locked = false; }
           dup = T.duplicate();
           if (wasLocked) { T.locked = true; dup.locked = false; }
-          try { dup.name = T.name + " - " + S.name; } catch (eN) { }
+          try { dup.name = "[Mask] " + String(T.name).replace(/^\[Mask\] /, "") + " - " + S.name; } catch (eN) { }   // prefix tells the masked copy from the original
         } else {
           dup = T;
           if (wasLocked) { throw new Error(T.name + " is locked."); }
+          try { dup.name = "[Mask] " + String(T.name).replace(/^\[Mask\] /, ""); } catch (eN2) { }
         }
         var parade = dup.property("ADBE Mask Parade");
         curG = -1; refArea = 0; n = 0;
